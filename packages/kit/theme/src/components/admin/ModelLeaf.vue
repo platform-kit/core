@@ -41,8 +41,8 @@ const choices = computed(() => (kind.value === 'reference' || kind.value === 'ta
  * is what stops one subject becoming two spellings of itself. On, it suggests from the list and
  * takes what is typed.
  */
-const freeTags = computed(() => choices.value.some((o: any) => o && o.value === '__free__'))
-const tagChoices = computed(() => choices.value.filter((o: any) => o && o.value !== '__free__'))
+const freeTags = computed(() => choices.value.some((o: { value: string }) => o && o.value === '__free__'))
+const tagChoices = computed(() => choices.value.filter((o: { value: string }) => o && o.value !== '__free__'))
 const suggestions = ref<any>([])
 const suggest = (e: any) => {
   const q = String((e && e.query) || '').trim().toLowerCase()

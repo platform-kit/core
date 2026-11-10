@@ -51,8 +51,8 @@ import { isMain } from './is-main.mjs'
 
 const ROOT = process.cwd()
 const args = process.argv.slice(2)
-const has = (k: any) => args.includes(k)
-const arg = (k: any) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : null }
+const has = (k: string) => args.includes(k)
+const arg = (k: string) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : null }
 const WORK = path.join(path.dirname(fileURLToPath(import.meta.url)), 'print')   /* the templates and fonts travel with the kit (the theme's, in phase 2) */
 const BUCKET = 'print'
 /* the covers as art for the store's book (public/print/<slug>/<edition>/cover-<key>.svg): the
@@ -76,12 +76,12 @@ const readIndex = () => { try { return JSON.parse(fs.readFileSync(INDEX, 'utf8')
    printer itself asked by our SKU besides. */
 const registered: any = []   /* what this run made or found, for the commit at the end */
 export const registryOf = registryIn   /* the shared rule; print-render keeps the same registry */
-async function readRegistry(st: any, slug: any) {
+async function readRegistry(st: any, slug: string|number) {
   let fromBucket = null
   try { const { data } = await st.download(`${slug}/registry.json`); if (data) fromBucket = JSON.parse(await data.text()) } catch (e) { /* none yet */ }
   return { [slug]: mergeRegistry(registryOf(readIndex(), slug), fromBucket) }
 }
-async function writeRegistry(st: any, slug: any, reg: any) {
+async function writeRegistry(st: any, slug: string|number, reg: any) {
   const { error } = await st.upload(`${slug}/registry.json`, Buffer.from(JSON.stringify(reg, null, 2)), { contentType: 'application/json', upsert: true })
   if (error) throw new Error('the registry could not be written to the bucket: ' + error.message)
   fs.writeFileSync(INDEX, JSON.stringify(withTitles(readIndex(), slug, reg.titles), null, 2) + '\n')
@@ -101,12 +101,12 @@ const PRINT_DRIVER = process.env.PRINT_DRIVER || 'node'
    a listing nicety, so their absence degrades the listing and never the book. */
 const NO_BROWSER = process.env.PRINT_NO_SHOTS === '1' || PRINT_DRIVER === 'wasm'
 const compiler = () => typesetter({ driver: PRINT_DRIVER, workspace: ROOT, fonts: path.join(WORK, 'fonts') })
-const compile = (c: any, file: any) => c.pdf(file)
+const compile = (c: any, file: string) => c.pdf(file)
 /* one browser for a run's pictures, opened when the first is needed */
 let rasterizer: any = null
 const pictures = async () => rasterizer || (rasterizer = await raster())
 export async function closePictures() { if (rasterizer) { await rasterizer.close(); rasterizer = null } }
-const pageCount = (pdf: any) => { const m = pdf.toString('latin1').match(/\/Count\s+(\d+)/g); return m ? Math.max(...m.map((x: any) => Number(x.replace(/\D/g, '')))) : 0 }
+const pageCount = (pdf: { toString: (arg0: string) => string }) => { const m = pdf.toString('latin1').match(/\/Count\s+(\d+)/g); return m ? Math.max(...m.map((x: string) => Number(x.replace(/\D/g, '')))) : 0 }
 export { coverKey }   /* the naming is the shared one; print.json and the order function read it */
 
 /* who prints a format: the block's word, or the cheapest of the printers with keys (every
@@ -115,7 +115,7 @@ export { coverKey }   /* the naming is the shared one; print.json and the order 
    machine's keys (build/print/provider.mjs says why it is not written twice) */
 const bound = { providersFor, printer, costUsd }
 const candidates = (spec: any, format: any) => candidatesOf(spec, format, bound)
-const chooseFor = (spec: any, format: any, pages: any, trim: any, paper: any) => chooseProvider(spec, format, pages, trim, paper, bound)
+const chooseFor = (spec: any, format: any, pages: number, trim: string, paper: string) => chooseProvider(spec, format, pages, trim, paper, bound)
 
 /* one book: every edition its block asks for. Returns the manifests, one per contents */
 export async function printBook(slug: any, { local = false, force = false, keepTyp = false, only = null as string | null } = {}) {
@@ -223,7 +223,7 @@ export async function printBook(slug: any, { local = false, force = false, keepT
       const pics = await pictures()
       const all = await pics.stats(interior)
       const pick: any = choose(me.where, me.marks, all)
-      const keep = async (pdf: any, page: any, name: any) => { const jpg = (await pics.render(pdf, [page], { pad: SHOT_PAD })).get(page); fs.writeFileSync(path.join(artDir, name), jpg); return `/print/${slug}/${edition}/${name}` }
+      const keep = async (pdf: any, page: any, name: string) => { const jpg = (await pics.render(pdf, [page], { pad: SHOT_PAD })).get(page); fs.writeFileSync(path.join(artDir, name), jpg); return `/print/${slug}/${edition}/${name}` }
       if (pick.chapter) {
         shots.chapter = pick.chapter.title
         shots.edition = { contents, page: pick.chapter.page, art: await keep(interior, pick.chapter.page, `page-${pick.chapter.page}.jpg`) }
@@ -259,7 +259,7 @@ export async function printBook(slug: any, { local = false, force = false, keepT
     /* a paperback's front is the e-book's own cover (the picture beside the book's markdown), the
        mark and the edition line over it; a hardcover's is set in type */
     const picture = await coverPicture(slug, bookFile, book.cover)
-    const drawCover = async (key: any, d: any, cloth: any, foil: any, foilLayer = false, paperback = false) => {
+    const drawCover = async (key: string, d: any, cloth: any, foil: any, foilLayer = false, paperback = false) => {
       /* the source is the SHARED one: a cover set here and a cover set in the function are the
          same bytes, or an edition would mean two different books */
       const src = coverSource({ d, trim, cloth, foil, foilOnly: foilLayer, paperback, picture, book, companion, spec, words: W, spine })
@@ -308,7 +308,7 @@ export async function printBook(slug: any, { local = false, force = false, keepT
     }
     const jacket = Object.values(printersOut).some((x: any) => x.product && x.product.jacket)
     const anyMock = Object.values(printersOut).some((x: any) => printer(x.provider).mock())
-    console.log(`${slug} (${contents}): ${chapters} chapters, ${marks} marked lines → ${pages} pages, ${printed.map((f: any) => `${f} at ${printersOut[f].provider}`).join(' + ')}${wantEpub ? ' + epub' : ''}, ${Object.keys(dims).map((k) => `${k} ${(dims[k].width / 72).toFixed(2)}×${(dims[k].height / 72).toFixed(2)}in (spine ${(dims[k].spine / 72).toFixed(2)}in)`).join(', ')}, ${Date.now() - t0} ms · edition ${edition}${anyMock ? ' · printer mocked' : ''}`)
+    console.log(`${slug} (${contents}): ${chapters} chapters, ${marks} marked lines → ${pages} pages, ${printed.map((f: string|number) => `${f} at ${printersOut[f].provider}`).join(' + ')}${wantEpub ? ' + epub' : ''}, ${Object.keys(dims).map((k) => `${k} ${(dims[k].width / 72).toFixed(2)}×${(dims[k].height / 72).toFixed(2)}in (spine ${(dims[k].spine / 72).toFixed(2)}in)`).join(', ')}, ${Date.now() - t0} ms · edition ${edition}${anyMock ? ' · printer mocked' : ''}`)
     const manifest = { slug, contents, edition, pages, trim, paper, cloth: spec.cloth, foil: spec.foil, printers: printersOut, covers, dims, art, shots, epub: wantEpub, foilStamp: jacket ? { title: spine.title, author: spine.edition } : null, title: book.title, author: book.author || '', made: new Date().toISOString(), mock: anyMock, sells: spec.contents }
     if (local) { out.push({ ...manifest, local: true }); continue }
     if (DRY()) {
@@ -317,11 +317,11 @@ export async function printBook(slug: any, { local = false, force = false, keepT
     }
 
     /* to the bucket, then checked by the printers from there */
-    const put = async (name: any, body: any, type: any) => { const { error } = await st.upload(`${slug}/${edition}/${name}`, body, { contentType: type, upsert: true }); if (error) throw new Error('upload ' + name + ': ' + error.message) }
+    const put = async (name: string, body: any, type: string) => { const { error } = await st.upload(`${slug}/${edition}/${name}`, body, { contentType: type, upsert: true }); if (error) throw new Error('upload ' + name + ': ' + error.message) }
     await put('interior.pdf', interior, 'application/pdf')
     for (const [name, pdf] of Object.entries(files)) await put(name, pdf, 'application/pdf')
     if (epub) await put('book.epub', epub, 'application/epub+zip')
-    const signed = async (name: any) => { const { data, error } = await st.createSignedUrl(`${slug}/${edition}/${name}`, 7 * 86400); if (error) throw new Error('sign ' + name + ': ' + error.message); return data.signedUrl }
+    const signed = async (name: string) => { const { data, error } = await st.createSignedUrl(`${slug}/${edition}/${name}`, 7 * 86400); if (error) throw new Error('sign ' + name + ': ' + error.message); return data.signedUrl }
     /* a printer fetches the files itself, so a local stack's bucket (127.0.0.1) is out of its
        reach: the files are kept and costed, and the check waits for a bucket it can see (deploy) */
     const url = await signed('interior.pdf')
@@ -366,13 +366,13 @@ export async function printBook(slug: any, { local = false, force = false, keepT
 /* the e-book's cover as a PNG Typst can read, for a paperback's front: the file the book's cover address
    names (a PNG, a JPEG or a WebP under any name), decoded and written once per book as .print/<slug>/picture.png */
 /* the picture's bytes, hashed, for the edition id; '' when there is none */
-async function pictureHash(bookFile: any, cover: any) {
+async function pictureHash(bookFile: string, cover: string) {
   if (!cover) return ''
   const src = await resolveAsset(cover, { root: ROOT, fromFile: bookFile })
   return src ? pictureId(fs.readFileSync(src)) : ''
 }
 
-async function coverPicture(slug: any, bookFile: any, cover: any) {
+async function coverPicture(slug: string, bookFile: string, cover: string) {
   if (!cover) return ''
   const src = await resolveAsset(cover, { root: ROOT, fromFile: bookFile })   /* by its address (build/assets.mjs), never looked for beside the markdown */
   if (!src) return ''

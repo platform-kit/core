@@ -45,7 +45,7 @@ const env = (k: string) => {
 }
 export const hostOf = () => String(env('VITE_APP_URL') || (typeof location !== 'undefined' ? location.origin : ''))
   .replace(/^https?:\/\//, '').replace(/\/+$/, '')
-export const roomIdOf = (channel: any, host = hostOf()) => `!c${pack(channel)}:${host}`
+export const roomIdOf = (channel: string, host = hostOf()) => `!c${pack(channel)}:${host}`
 export const userIdOf = (person: string, host = hostOf()) => `@${pack(person)}:${host}`
 /* …and back, for an id the library hands us */
 export const personOf = (mxid: string) => {
@@ -141,7 +141,7 @@ async function aesFor(recoveryKey: string, salt: Uint8Array<any>) {
   )
 }
 
-export async function sealSecrets(recoveryKey: any, value: { master: any; self_signing: any; user_signing: any }) {
+export async function sealSecrets(recoveryKey: string, value: { master: any; self_signing: any; user_signing: any }) {
   const salt = randomBytes(16), iv = randomBytes(12)
   const key = await aesFor(recoveryKey, salt)
   const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, utf8(JSON.stringify(value)))
@@ -727,7 +727,7 @@ export function context({ me, device, db, host, store }: any) {
 
 let here: any = null
 
-async function mine(me: any) {
+async function mine(me: string) {
   const device = deviceId()
   if (here && here.me === me && here.device === device) return here
   const db = await database()

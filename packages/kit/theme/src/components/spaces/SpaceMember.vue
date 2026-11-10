@@ -84,7 +84,7 @@ const said = computed(() => {
   if (!n) return W.value['said-none']
   return n === 1 ? W.value['said-one'] : (W.value['said-many'] || '').replace('{n}', n)
 })
-const when = (v: any) => {
+const when = (v: string|number|Date) => {
   const d = new Date(v)
   return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
 }

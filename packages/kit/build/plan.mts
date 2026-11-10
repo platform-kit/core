@@ -54,7 +54,7 @@ import { isMain } from './is-main.mjs'
 const SCHEMAS = 'public,storage,auth'
 /* a statement's target: its kind and the schema of the object it makes, changes or drops — a policy's or a
    trigger's is the table it is on; anything else's the first qualified name after its kind */
-const target = (text: any) => {
+const target = (text: string) => {
   const m = /^(create|alter|drop|comment\s+on|grant|revoke)\s+(?:or\s+replace\s+)?(?:(?:temp|temporary|unique|materialized|constraint|event|all\s+privileges|usage|select|insert|update|delete|execute|all)\s+)*(policy|trigger|table|function|view|sequence|index|type|schema|publication|domain|aggregate|on)?\b/i.exec(text)
   const kind = (m && m[2] || '').toLowerCase()
   const on = /\bon\s+(?:table\s+|function\s+|sequence\s+)?"?(\w+)"?\."?(\w+)"?/i.exec(text)
@@ -67,7 +67,7 @@ const MANAGED = new Set(['auth', 'storage'])
    the platform's: made by its init, differing between a local stack, a hosted project and one that grew through
    migrations, and never the declaration's to say */
 const SCHEMA_ITSELF = /^(?:(?:create|drop|alter)\s+schema\b|comment\s+on\s+schema\b|(?:grant|revoke)\b[^;]*?\bon\s+schema\b|alter\s+default\s+privileges\b)/i
-const leftToPlatform = (text: any) => { if (SCHEMA_ITSELF.test(text)) return true; const t = target(text); return MANAGED.has(t.schema) && t.kind !== 'policy' && t.kind !== 'trigger' }
+const leftToPlatform = (text: string) => { if (SCHEMA_ITSELF.test(text)) return true; const t = target(text); return MANAGED.has(t.schema) && t.kind !== 'policy' && t.kind !== 'trigger' }
 const DECLARATION = '00000000000000_declaration.sql'
 
 /* TLS for every database that is not on this machine (a hosted pooler insists on it and its url does not say so);
@@ -75,15 +75,15 @@ const DECLARATION = '00000000000000_declaration.sql'
 const isLocal = (url: any) => /@(?:127\.0\.0\.1|localhost|\[::1\]|host\.docker\.internal)(?::\d+)?\//.test(url) ||
   /* the end-to-end run's own Docker daemon, where its stacks are (build/e2e-container.mjs) */
   (!!process.env.SUPABASE_SERVICES_HOSTNAME && url.includes('@' + process.env.SUPABASE_SERVICES_HOSTNAME.trim() + ':'))
-const sql = (url: any, tls: any) => new pg.Client({ connectionString: url, ssl: tls ? { rejectUnauthorized: false } : false })
+const sql = (url: any, tls: boolean) => new pg.Client({ connectionString: url, ssl: tls ? { rejectUnauthorized: false } : false })
 /* TLS first for a database elsewhere; a server that has none (a private-network Postgres) is met again without */
-const connect = async (url: any) => {
+const connect = async (url: string) => {
   const tls = !(/sslmode=disable/.test(url) || isLocal(url))
   let c = sql(url, tls)
   try { await c.connect() } catch (e: any) { if (tls && /SSL|TLS/i.test(e.message)) { c = sql(url, false); await c.connect() } else throw e }
   return c
 }
-export const withDb = async (url: any, fn: any) => { const c = await connect(url); try { return await fn(c) } finally { await c.end() } }
+export const withDb = async (url: string, fn: any) => { const c = await connect(url); try { return await fn(c) } finally { await c.end() } }
 
 /* every column the database computes for itself (GENERATED ALWAYS AS … STORED), as
    `schema.table.column`. The guard is told these so that changing one — which postgres can only do
@@ -91,7 +91,7 @@ export const withDb = async (url: any, fn: any) => { const c = await connect(url
 const generatedIn = async (db: any) => new Set((await db.query(`
   select (table_schema || '.' || table_name || '.' || column_name) as name
     from information_schema.columns
-   where is_generated = 'ALWAYS' and table_schema not in ('pg_catalog', 'information_schema')`)).rows.map((r: any) => r.name.toLowerCase()))
+   where is_generated = 'ALWAYS' and table_schema not in ('pg_catalog', 'information_schema')`)).rows.map((r: { name: string }) => r.name.toLowerCase()))
 /*
  * WHAT A DESTRUCTIVE STATEMENT WOULD ACTUALLY COST, asked of the database it is about to change.
  *
@@ -141,7 +141,7 @@ export async function costsIn(db: any, hits: any) {
 }
 
 /* the commit this plan is of, for an allowance that names one: git, else whatever the host says */
-export function commitOf(root: any, env = process.env) {
+export function commitOf(root: string, env = process.env) {
   for (const k of ['PLATFORMKIT_COMMIT', 'RENDER_GIT_COMMIT', 'GITHUB_SHA', 'VERCEL_GIT_COMMIT_SHA', 'SOURCE_COMMIT', 'CF_PAGES_COMMIT_SHA']) {
     if (env[k] && /^[0-9a-f]{7,40}$/i.test(String(env[k]).trim())) return String(env[k]).trim().toLowerCase()
   }
@@ -150,12 +150,12 @@ export function commitOf(root: any, env = process.env) {
   return /^[0-9a-f]{40}$/i.test(sha) ? sha.toLowerCase() : ''
 }
 
-const q = (s: any) => '"' + s.replace(/"/g, '""') + '"'
+const q = (s: string) => '"' + s.replace(/"/g, '""') + '"'
 /* a database's identity for the guards and the log: user, host and database, never the password (two projects share a pooler host and differ by user) */
-const bare = (url: any) => { try { const u = new URL(url); return (u.username ? u.username + '@' : '') + u.host + u.pathname } catch { return url } }
+const bare = (url: string|URL) => { try { const u = new URL(url); return (u.username ? u.username + '@' : '') + u.host + u.pathname } catch { return url } }
 
 /* ---- the declaration as one text, in reset order: the kit's files, the site's, and its data script ---- */
-export function readDeclaration(root: any) {
+export function readDeclaration(root: string) {
   const dir = path.join(root, 'supabase', 'schemas')
   /* the kit's files, the glue between the modules that are on (it loads after every module's), the site's */
   const files = [...list(dir), ...list(path.join(dir, 'glue')), ...list(path.join(dir, 'site'))]
@@ -166,7 +166,7 @@ export function readDeclaration(root: any) {
 const list = (d: any) => fs.existsSync(d) ? fs.readdirSync(d).filter((f) => f.endsWith('.sql')).sort().map((f) => path.join(d, f)) : []
 
 /* ---- the annotations: { table: { schema, name, former: [] }, columns: [{ schema, table, name, former }] } ---- */
-export function renamesDeclared(schema: any) {
+export function renamesDeclared(schema: string) {
   const tables = [], columns = []
   let cur = null
   for (const line of schema.split('\n')) {
@@ -180,7 +180,7 @@ export function renamesDeclared(schema: any) {
   }
   return { tables, columns }
 }
-const former = (line: any) => { const m = /--\s*renamed\s+from:\s*(.+)$/i.exec(line); return m ? m[1].split(',').map((s) => s.trim().replace(/"/g, '')).filter(Boolean) : null }
+const former = (line: string) => { const m = /--\s*renamed\s+from:\s*(.+)$/i.exec(line); return m ? m[1].split(',').map((s) => s.trim().replace(/"/g, '')).filter(Boolean) : null }
 
 /* ---- the rename statements for one database: what exists decides ---- */
 export async function renamesFor(db: any, declared: any) {
@@ -228,7 +228,7 @@ export async function renamesFor(db: any, declared: any) {
 }
 
 /* ---- the shadow: a throwaway project the CLI builds a shadow from ---- */
-function shadowProject(root: any, declaration: any) {
+function shadowProject(root: string, declaration: string|NodeJS.ArrayBufferView<ArrayBufferLike>) {
   const dir = platformkitRuntimePath(root, 'shadow')
   fs.rmSync(dir, { recursive: true, force: true })
   fs.mkdirSync(path.join(dir, 'supabase', 'migrations'), { recursive: true })
@@ -240,7 +240,7 @@ function shadowProject(root: any, declaration: any) {
   fs.writeFileSync(path.join(dir, 'supabase', 'migrations', DECLARATION), declaration)
   return dir
 }
-const cli = (dir: any, args: any) => {
+const cli = (dir: string, args: any) => {
   const r = spawnSync('npx', ['supabase', '--workdir', dir, ...args, '--output-format', 'json'], { cwd: dir, encoding: 'utf8', env: process.env, maxBuffer: 64 * 1024 * 1024 })   /* --workdir: the throwaway project by name, never the site's found by walking up */
   const lines = (r.stdout + '\n' + r.stderr).split('\n').filter((l) => l.startsWith('{'))
   let json = null; for (const l of lines) { try { json = JSON.parse(l) } catch {} }
@@ -303,9 +303,9 @@ alter default privileges for role postgres in schema public grant all on functio
 alter default privileges for role postgres in schema public grant all on sequences to postgres, anon, authenticated, service_role;
 alter default privileges for role postgres in schema public revoke execute on functions from public;
 `
-export async function resetShadow(url: any, declaration: any) {
+export async function resetShadow(url: string, declaration: string) {
   await withDb(url, async (db: any) => {
-    const one = async (q: any) => { try { return Number((await db.query(q)).rows[0].n) } catch { return 0 } }
+    const one = async (q: string) => { try { return Number((await db.query(q)).rows[0].n) } catch { return 0 } }
     /* a real Supabase database (the platform's roles and schemas) or a plain Postgres the plan has shaped and marked;
        anything else with objects in public is somebody's — never a shadow */
     const supabase = await one("select count(*)::int as n from pg_roles where rolname = 'supabase_admin'")
@@ -345,7 +345,7 @@ export async function resetShadow(url: any, declaration: any) {
 }
 
 /* the local stack's url, from the CLI (the site's own project) */
-export function localUrl(root: any) {
+export function localUrl(root: string) {
   const r = spawnSync('npx', ['supabase', 'status', '-o', 'env'], { cwd: root, encoding: 'utf8', env: process.env })
   const m = /^DB_URL="?([^"\n]+)"?/m.exec(r.stdout || '')
   if (!m) throw new Error('plan: the local stack is not up (supabase status gave no DB_URL) — platformkit dev, or supabase start')
@@ -353,7 +353,7 @@ export function localUrl(root: any) {
 }
 
 /* ---- the diff from the target to the declaration ---- */
-export async function diffAgainst(root: any, target: any, declaration: any, shadowUrl: any) {
+export async function diffAgainst(root: any, target: any, declaration: string, shadowUrl: any) {
   const dir = shadowProject(root, declaration)
   let to
   if (shadowUrl) { await resetShadow(shadowUrl, declaration); to = isLocal(shadowUrl) ? disableSsl(shadowUrl) : shadowUrl } else to = 'migrations'
@@ -367,18 +367,18 @@ export async function diffAgainst(root: any, target: any, declaration: any, shad
 }
 
 /* the event triggers of the target that depend on a function the diff drops, dropped ahead of it */
-async function withEventTriggers(db: any, sql: any) {
+async function withEventTriggers(db: any, sql: string) {
   const drops = [...sql.matchAll(/^DROP FUNCTION "?(\w+)"?\."?(\w+)"?\s*\(/gm)].map((m) => [m[1], m[2]])
   if (!drops.length) return sql
   const r = await db.query("select e.evtname, n.nspname, p.proname from pg_event_trigger e join pg_proc p on p.oid = e.evtfoid join pg_namespace n on n.oid = p.pronamespace")
   const gone = r.rows.filter((x: any) => drops.some(([sch, fn]) => x.nspname === sch && x.proname === fn))
   if (!gone.length) return sql
   const head = gone.map((x: any) => `-- the event trigger ${x.evtname} depends on ${x.nspname}.${x.proname}(), which the declaration does not have\nDROP EVENT TRIGGER IF EXISTS ${q(x.evtname)};`).join('\n\n')
-  return sql.replace(/^(SET local[^\n]*\n)?/, (m: any) => m + '\n' + head + '\n\n')
+  return sql.replace(/^(SET local[^\n]*\n)?/, (m: string) => m + '\n' + head + '\n\n')
 }
 
 /* the `create extension if not exists …` statements of the data script, run ahead of the diff */
-export async function ensureExtensions(db: any, data: any) {
+export async function ensureExtensions(db: any, data: string) {
   for (const m of String(data || '').matchAll(/^\s*create extension if not exists [^;]+;/gim)) { try { await db.query(m[0]) } catch (e) { /* a plain Postgres without the extension: the diff will say */ } }
 }
 
@@ -390,12 +390,12 @@ export async function ensureExtensions(db: any, data: any) {
  * types its columns use, its grants and comments are left as they are, so switching the module back on finds every
  * row and the plan then has nothing to change in them.
  */
-export async function keepOffTables(db: any, sql: any, schema: any) {
+export async function keepOffTables(db: any, sql: string, schema: string) {
   if (!sql || !sql.trim()) return { sql, kept: [] }
   const declared = new Set(tablesIn(schema))
   const kit = kitDeclaredTables()
   const present = (await db.query("select tablename from pg_tables where schemaname = 'public'")).rows.map((r: any) => r.tablename)
-  const kept = present.filter((t: any) => kit.has(t) && !declared.has(t)).sort()
+  const kept = present.filter((t: string) => kit.has(t) && !declared.has(t)).sort()
   if (!kept.length) return { sql, kept }
   const names = new Set(kept)
   const more = await db.query(`
@@ -444,12 +444,12 @@ export async function computePlan({ root = process.cwd(), target, shadowUrl = pr
     const cols = renames.renamedCol || []
     /* a renamed TABLE is recognised by its name; a renamed COLUMN by its table AND either of its
        two names, since the table itself is unchanged and would otherwise match nothing */
-    const touchesCol = (t: any) => cols.some((c: any) => new RegExp('"' + c.table + '"').test(t)
+    const touchesCol = (t: string) => cols.some((c: { table: string; old: string; name: string }) => new RegExp('"' + c.table + '"').test(t)
       && (new RegExp('"' + c.old + '"').test(t) || new RegExp('"' + c.name + '"').test(t)))
-    const mentions = (t: any) => [...t.matchAll(/"?(\w+)"?\.\s*"?(\w+)"?/g)].some((m) => names.has(m[2])) || [...t.matchAll(/\b(\w+)_(pkey|idx|key|fkey|seq|id_seq)\b/g)].some((m) => names.has(m[1])) || touchesCol(t)
+    const mentions = (t: string) => [...t.matchAll(/"?(\w+)"?\.\s*"?(\w+)"?/g)].some((m) => names.has(m[2])) || [...t.matchAll(/\b(\w+)_(pkey|idx|key|fkey|seq|id_seq)\b/g)].some((m) => names.has(m[1])) || touchesCol(t)
     const keep: any = []
     for (const st of statements(diff.sql)) (mentions(st.text) ? setAside : keep).push(st.raw)
-    diff.sql = keep.filter((x: any) => !/^set\s+local/i.test(x)).length ? keep.join('\n\n') + '\n' : ''
+    diff.sql = keep.filter((x: string) => !/^set\s+local/i.test(x)).length ? keep.join('\n\n') + '\n' : ''
   }
   const parts = { renames: renames.sql, diff: diff.sql, data: d.data }
   /* what the target computes for itself, and what each destructive statement would cost it — both
@@ -466,9 +466,9 @@ export async function computePlan({ root = process.cwd(), target, shadowUrl = pr
 }
 
 /* apply: each part in its own transaction, in order */
-export async function applyPlan(plan: any, target: any, log = console.log) {
+export async function applyPlan(plan: any, target: string, log = console.log) {
   if (!plan.verdict.ok) throw new Error('plan: refused — ' + plan.verdict.refused.length + ' destructive statement(s) that would lose data, unallowed (PLATFORMKIT_ALLOW_DESTRUCTIVE=' + plan.verdict.digest + ')')
-  const part = async (db: any, name: any, text: any) => {
+  const part = async (db: any, name: string, text: string) => {
     if (!text || !text.trim()) { log(`  ${name}: nothing`); return }
     await db.query('begin')
     try { await db.query(text); await db.query('commit') } catch (e: any) { await db.query('rollback'); throw new Error(`plan: the ${name} part failed and was rolled back — ${e.message}`) }
@@ -485,7 +485,7 @@ export async function applyPlan(plan: any, target: any, log = console.log) {
       if (!v.ok) throw new Error('plan: the diff over the renamed objects holds a destructive statement — refused; the renames stand (they lose nothing and are the declaration\'s), nothing else applied:\n' + describeHits(v.hits))
       if (v.hits.length) log('  ! allowed by PLATFORMKIT_ALLOW_DESTRUCTIVE=1 after the renames:\n' + describeHits(v.hits))
       diff = again.sql
-      if (diff) log('  the diff after the renames:\n' + diff.trim().split('\n').map((l: any) => '    ' + l).join('\n'))
+      if (diff) log('  the diff after the renames:\n' + diff.trim().split('\n').map((l: string) => '    ' + l).join('\n'))
     }
     await part(db, 'diff', diff)
     /* a settling pass: a privilege a statement of the diff undid on the way (a table-wide REVOKE takes the column
@@ -494,10 +494,10 @@ export async function applyPlan(plan: any, target: any, log = console.log) {
     if (diff && diff.trim()) {
       const settle = await diffAgainst(plan._.root, target, plan._.schema, plan._.shadowUrl)
       settle.sql = (await keepOffTables(db, settle.sql, plan._.schema)).sql
-      const rest = statements(settle.sql || '').map((x: any) => x.raw).filter((x: any) => x.trim())
+      const rest = statements(settle.sql || '').map((x: any) => x.raw).filter((x: string) => x.trim())
       if (rest.length) {
-        if (rest.some((x: any) => !/^\s*(GRANT|REVOKE)\b/i.test(x))) log('  ! the diff after applying still holds statements that are not grants — left for the next plan:\n' + rest.filter((x: any) => !/^\s*(GRANT|REVOKE)\b/i.test(x)).map((x: any) => '    ' + x.split('\n')[0]).join('\n'))
-        const grants = rest.filter((x: any) => /^\s*(GRANT|REVOKE)\b/i.test(x)).join('\n')
+        if (rest.some((x: string) => !/^\s*(GRANT|REVOKE)\b/i.test(x))) log('  ! the diff after applying still holds statements that are not grants — left for the next plan:\n' + rest.filter((x: string) => !/^\s*(GRANT|REVOKE)\b/i.test(x)).map((x: string) => '    ' + x.split('\n')[0]).join('\n'))
+        const grants = rest.filter((x: string) => /^\s*(GRANT|REVOKE)\b/i.test(x)).join('\n')
         if (grants) await part(db, 'grants (settling)', grants)
       }
     }
@@ -533,8 +533,8 @@ export function printPlan(plan: any, target: any, log = console.log, { verbose =
     log('--   (PLATFORMKIT_VERBOSE=1 prints it whole; so does platformkit migrate --plan)')
   }
   if (plan.kept && plan.kept.length) log(`\n-- kept: ${plan.kept.length} table(s) of a module that is off, rows and all (${some(plan.kept, 8, verbose).join(', ')}) — switching it back on finds them; \`platformkit module drop <key>\` removes them`)
-  if (plan.setAside.length) log(`\n-- set aside until the renames are in (${plan.setAside.length} statement(s) on the renamed objects; the apply computes the diff again over them):\n` + some(plan.setAside.map((x: any) => '--   ' + x.split('\n')[0]), 8, verbose).join('\n'))
-  if (plan.left.length) log(`\n-- left to the platform (${plan.left.length} statement(s) on a schema itself, or in auth/storage but not a policy or trigger):\n` + some(plan.left.map((s: any) => '--   ' + s.split('\n')[0]), 8, verbose).join('\n'))
+  if (plan.setAside.length) log(`\n-- set aside until the renames are in (${plan.setAside.length} statement(s) on the renamed objects; the apply computes the diff again over them):\n` + some(plan.setAside.map((x: string) => '--   ' + x.split('\n')[0]), 8, verbose).join('\n'))
+  if (plan.left.length) log(`\n-- left to the platform (${plan.left.length} statement(s) on a schema itself, or in auth/storage but not a policy or trigger):\n` + some(plan.left.map((s: string) => '--   ' + s.split('\n')[0]), 8, verbose).join('\n'))
   log(`\n-- 3. the data script: ${statements(plan.parts.data).length} statement(s), idempotent`)
   /*
    * THE VERDICT, AND THE LINE TO PASTE. What a person does next is set one variable, so the value to
@@ -548,7 +548,7 @@ export function printPlan(plan: any, target: any, log = console.log, { verbose =
     if (allowance.kind === 'blanket') log('\n! PLATFORMKIT_ALLOW_DESTRUCTIVE=1 — a STANDING permission, not consent for this plan.'
       + `\n  To allow only what is here, and nothing a later deploy brings: PLATFORMKIT_ALLOW_DESTRUCTIVE=${digest}`)
     if (allowance.kind === 'stale') log(`\n! PLATFORMKIT_ALLOW_DESTRUCTIVE names "${allowance.named}", which is neither this plan (${digest}) nor the commit being deployed — ignored.`)
-    const at_risk = hits.filter((h: any) => h.loses !== 'nothing')
+    const at_risk = hits.filter((h: { loses: string }) => h.loses !== 'nothing')
     if (at_risk.length && ok) log(`\n! ALLOWED by PLATFORMKIT_ALLOW_DESTRUCTIVE (${allowance.kind}) — ${at_risk.length} statement(s) that would lose data:\n` + describeHits(at_risk))
     if (refused.length) log(`\n✖ REFUSED — ${refused.length} destructive statement(s) would lose data:\n` + describeHits(refused)
       + `\n\n  To allow exactly these, and nothing a later deploy brings:\n    PLATFORMKIT_ALLOW_DESTRUCTIVE=${digest}`)
@@ -603,4 +603,4 @@ if (isMain(import.meta.url)) {
   await applyPlan(plan, target)
   console.log('✔ the database is at the declaration')
 }
-function localUrlSafe(root: any) { try { return localUrl(root) } catch { return null } }
+function localUrlSafe(root: string) { try { return localUrl(root) } catch { return null } }

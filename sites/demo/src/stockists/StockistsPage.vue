@@ -40,7 +40,7 @@
   </SiteLayout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { us } from 'platformkit/lib/content.js'
 import SiteLayout from 'platformkit/theme/layouts/SiteLayout.vue'

@@ -28,7 +28,7 @@ function interpolate(value: any, fields: any) {
   return String(value || '').replace(/\{([a-z-]+)\}/g, (_match, key) => fields[key] || '')
 }
 
-function resolveLocalImage(image: any, localOrigin: any, canonicalUrl: any) {
+function resolveLocalImage(image: string|URL, localOrigin: any, canonicalUrl: string|URL) {
   if (!image) return ''
   try {
     const local = new URL(localOrigin)
@@ -47,7 +47,7 @@ function resolveLocalImage(image: any, localOrigin: any, canonicalUrl: any) {
   }
 }
 
-function isDefaultShareImage(image: any) {
+function isDefaultShareImage(image: string|URL) {
   if (!image) return false
   try {
     return new URL(image, 'http://localhost').pathname === '/share/default.png'
@@ -163,12 +163,12 @@ export function createDevDirectoryServer({ sites, ports, domain, frontDoorPort, 
   const previewCache = new Map()
   const pendingPreviews = new Map()
   let captureQueue = Promise.resolve()
-  function captureInOrder(url: any) {
+  function captureInOrder(url: string) {
     const pending = captureQueue.then(() => capture(url))
     captureQueue = pending.then(() => undefined, () => undefined)
     return pending
   }
-  async function previewFor(site: any) {
+  async function previewFor(site: { name: string|number }) {
     const cached = previewCache.get(site.name)
     if (cached && Date.now() - cached.createdAt < PREVIEW_CACHE_MS) return cached.image
     if (pendingPreviews.has(site.name)) return pendingPreviews.get(site.name)
@@ -206,7 +206,7 @@ export function createDevDirectoryServer({ sites, ports, domain, frontDoorPort, 
     if (pathname.startsWith(PREVIEW_PATH)) {
       const file = pathname.slice(PREVIEW_PATH.length)
       const name = file.endsWith('.png') ? file.slice(0, -4) : ''
-      const site = sites.find((entry: any) => entry.name === name)
+      const site = sites.find((entry: { name: string }) => entry.name === name)
       if (!site) {
         response.writeHead(404)
         response.end()
@@ -233,7 +233,7 @@ export function createDevDirectoryServer({ sites, ports, domain, frontDoorPort, 
       return
     }
 
-    const entries = await Promise.all(sites.map((site: any) => metadataFor(site, ports[site.name])))
+    const entries = await Promise.all(sites.map((site: { name: string|number }) => metadataFor(site, ports[site.name])))
     if (pathname === '/__platformkit/sites.json') {
       response.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' })
       response.end(JSON.stringify(entries.map((entry) => ({

@@ -541,7 +541,7 @@ t('a product takes its axes from a site supplier\u2019s catalogue, and loses one
   const { suppliersFor } = await import('./suppliers.mjs')
   const rg: any = (await suppliersFor({ root: DEMO })).find((x: any) => x.id === 'ridgeway')
   const axes = await rg.catalogue()
-  const every = axes.reduce((n2: any, o: { values: string|any[] }) => n2 + o.values.length, 0)
+  const every = axes.reduce((n2: number, o: { values: string|any[] }) => n2 + o.values.length, 0)
 
   const one = await refresh({ name: 'tee' }, ctx)
   assert.equal(one.changed, true)

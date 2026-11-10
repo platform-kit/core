@@ -62,8 +62,8 @@ export function coverSource({ d, trim = '6x9', cloth, foil, foilOnly = false, pa
 
 /* a cover's key — the format, its printer, and a linen's colours — and the file it is in */
 export const coverKey = (format: any, provider: any, cloth: any, foil: any) => cloth ? `${format}-${provider}-${cloth}-${foil}` : `${format}-${provider}`
-export const coverName = (key: any) => `cover-${key}.pdf`
-export const foilName = (key: any) => `foil-${key}.pdf`
+export const coverName = (key: string) => `cover-${key}.pdf`
+export const foilName = (key: string) => `foil-${key}.pdf`
 
 /* the covers one format calls for: a linen at Lulu is a jacket per cloth × foil the buyer may
    pick, and every other cover is one */

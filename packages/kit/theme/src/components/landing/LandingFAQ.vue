@@ -24,7 +24,7 @@ defineProps({
   more: { type: Object as PropType<any>, default: () => ({}) }, /* { heading, body, cta, href, faces: [{ image, name }] } */
 })
 const open = ref(-1)
-function toggle(i: any, e: any) { open.value = e.target.open ? i : open.value === i ? -1 : open.value }
+function toggle(i: number, e: any) { open.value = e.target.open ? i : open.value === i ? -1 : open.value }
 </script>
 
 <template>

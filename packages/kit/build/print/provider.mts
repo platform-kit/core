@@ -13,7 +13,7 @@
 
 /* what a block prints: the formats it sells, and for a linen every cloth × foil the buyer may pick */
 export function printedOf(spec: any, printed: any) {
-  const formats = printed.filter((f: any) => (spec.formats || {})[f])
+  const formats = printed.filter((f: string|number) => (spec.formats || {})[f])
   const combos = []
   const hc = (spec.formats || {}).hardcover
   if (hc) for (const c of [].concat(hc.cloth || [])) for (const g of [].concat(hc.foil || [])) combos.push([c, g])
@@ -26,7 +26,7 @@ export function printedOf(spec: any, printed: any) {
  * the function once padded a book to 40 pages where the build bound it at 32 — a press it will
  * never see had the higher minimum.
  */
-export function candidatesOf(spec: any, format: any, { providersFor, printer }: any) {
+export function candidatesOf(spec: any, format: string|number, { providersFor, printer }: any) {
   const named = (spec.printers || {})[format]
   if (named && named !== 'auto') { try { return [printer(named)] } catch (e) { return [] } }
   const all = providersFor(format), real = all.filter((p: any) => p.configured())
@@ -39,7 +39,7 @@ export function candidatesOf(spec: any, format: any, { providersFor, printer }: 
  * why this one won. A printer that throws is recorded as having refused rather than dropped: the
  * reason is what somebody reads when a book will not go to the press they expected.
  */
-export async function chooseProvider(spec: any, format: any, pages: any, trim: any, paper: any, { providersFor, printer, costUsd }: any) {
+export async function chooseProvider(spec: any, format: string|number, pages: number, trim: string, paper: string, { providersFor, printer, costUsd }: any) {
   const named = (spec.printers || {})[format]
   if (named && named !== 'auto') return { provider: named, quotes: {} }
   const pool = candidatesOf(spec, format, { providersFor, printer })

@@ -22,17 +22,17 @@ const T = us('orders')
 const BW = (us('library').coaching || {}).booker || {}
 const placeLine = (r: any) => placeOf(r.where, BW)
 /* the other addresses on a booking a host made for several */
-const others = (r: any) => (r.attendee_emails || []).filter((e: any) => e && e.toLowerCase() !== String(r.email || '').toLowerCase())
+const others = (r: any) => (r.attendee_emails || []).filter((e: string) => e && e.toLowerCase() !== String(r.email || '').toLowerCase())
 /* a host books for people from the desk too: the booker in its host mode over every published type */
 const booking = ref(false)
-const hostOptions = computed(() => (SESSIONS || []).filter((s: any) => s.published !== false).sort((a: any, b: any) => (a.order || 99) - (b.order || 99)).map((s: any) => ({ ...s, event: eventOfType(s), scheduler: schedulerOf(s), blocked: false, paid: false, credits: 0 })))
-const fillW = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const hostOptions = computed(() => (SESSIONS || []).filter((s: { published: boolean }) => s.published !== false).sort((a: any, b: any) => (a.order || 99) - (b.order || 99)).map((s: any) => ({ ...s, event: eventOfType(s), scheduler: schedulerOf(s), blocked: false, paid: false, credits: 0 })))
+const fillW = (t: any, m: { [x: string]: string }) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const H = T.bookings.head, ST = T.bookings.status, RF = T.bookings.refused, R = T.bookings.row
 const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 /* a call's recording on the desk: watched or downloaded from a signed url (session-files), fetched again when a pull failed */
 const media = ref<any>({}), mediaBusy = ref(''), watching = ref<any>(null)
-async function open(r: any, what: any) {
+async function open(r: { uid: string }, what: string) {
   mediaBusy.value = r.uid
   try {
     const m = media.value[r.uid] || (await recordingFor(r.uid)); media.value = { ...media.value, [r.uid]: m }
@@ -41,7 +41,7 @@ async function open(r: any, what: any) {
     else if (what === 'transcript' && m.transcript) window.open(m.transcript, '_blank', 'noopener')
   } catch (e) { media.value = { ...media.value, [r.uid]: { error: (e as any).message } } } finally { mediaBusy.value = '' }
 }
-async function retry(r: any) { mediaBusy.value = r.uid; try { const out = await fetchAgain(r.uid); const i = rows.value.findIndex((x: any) => x.uid === r.uid); if (i >= 0) rows.value[i] = { ...rows.value[i], recording_state: out.state === 'pulled' ? null : out.state, recording_error: out.error || null, recording_path: out.state === 'pulled' ? r.uid + '/recording.mp4' : rows.value[i].recording_path } } catch (e) { /* the row says */ } finally { mediaBusy.value = '' } }
+async function retry(r: { uid: string }) { mediaBusy.value = r.uid; try { const out = await fetchAgain(r.uid); const i = rows.value.findIndex((x: any) => x.uid === r.uid); if (i >= 0) rows.value[i] = { ...rows.value[i], recording_state: out.state === 'pulled' ? null : out.state, recording_error: out.error || null, recording_path: out.state === 'pulled' ? r.uid + '/recording.mp4' : rows.value[i].recording_path } } catch (e) { /* the row says */ } finally { mediaBusy.value = '' } }
 const state = ref('idle')      /* idle | loading | ok | denied | error */
 const rows = ref<any>([])
 const people = ref<any>({})
@@ -60,7 +60,7 @@ async function load() {
   listen()
 }
 async function names(list: any) {
-  const ids = [...new Set(list.flatMap((r: any) => [r.user_id, r.provider_id]).filter((id: any) => id && !people.value[id]))]
+  const ids = [...new Set(list.flatMap((r: any) => [r.user_id, r.provider_id]).filter((id: string|number) => id && !people.value[id]))]
   if (!ids.length) return
   const { data } = await (supabase as any).rpc('admin_people', { ids })
   for (const p of data || []) people.value[p.id] = p
@@ -80,21 +80,21 @@ onBeforeUnmount(() => { if (channel) (supabase as any).removeChannel(channel); c
 
 /* what became of it: refused and no-show first (they say more than the status), then the status, an accepted one ahead as upcoming */
 const now = () => Date.now()
-const isUpcoming = (r: any) => r.status === 'accepted' && r.start_at && new Date(r.start_at).getTime() > now()
+const isUpcoming = (r: { status: string; start_at: string|number|Date }) => r.status === 'accepted' && r.start_at && new Date(r.start_at).getTime() > now()
 const stateOf = (r: any) => (r.refused ? 'refused' : r.no_show ? 'no-show' : isUpcoming(r) ? 'upcoming' : r.status === 'accepted' ? 'ended' : r.status)
-const stateWord = (r: any) => { const k = stateOf(r); const w = ST[k] || k; return k === 'refused' && RF[r.refused] ? `${w} · ${RF[r.refused]}` : w }
+const stateWord = (r: { refused: string|number }) => { const k = stateOf(r); const w = ST[k] || k; return k === 'refused' && RF[r.refused] ? `${w} · ${RF[r.refused]}` : w }
 
-const upcoming = computed(() => rows.value.filter(isUpcoming).sort((a: any, b: any) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()))
+const upcoming = computed(() => rows.value.filter(isUpcoming).sort((a: { start_at: string|number|Date }, b: { start_at: string|number|Date }) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()))
 const past = computed(() => rows.value.filter((r: any) => !isUpcoming(r)))
 const shown = computed(() => (tab.value === 'upcoming' ? upcoming.value : tab.value === 'past' ? past.value : [...upcoming.value, ...past.value]))
 const counts = computed(() => ({ upcoming: upcoming.value.length, past: past.value.length, all: rows.value.length }))
 
 /* the booking type: the session record whose cal.com link ends in the event slug the webhook recorded */
 const typeOf = (r: any) => { const s = (SESSIONS || []).find((x: any) => (r.type && x.slug === r.type) || (x.url && r.event && String(x.url).split('?')[0].replace(/\/+$/, '').endsWith('/' + r.event))); return (s && s.title) || r.title || r.event || '—' }
-const who = (id: any) => (id && people.value[id]) || null
+const who = (id: string|number) => (id && people.value[id]) || null
 const attendee = (r: any) => { const p = who(r.user_id); return p ? { name: p.name, email: p.email, account: true } : { name: r.name || '', email: r.email || (r.attendee_emails || [])[0] || '', account: false } }
 const coach = (r: any) => { const p = who(r.provider_id); return p ? p.name + (p.email ? ' · ' + p.email : '') : r.provider_email || '—' }
-const when = (d: any) => { const t = new Date(d); return isNaN(t.getTime()) ? '' : t.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
+const when = (d: string|number|Date) => { const t = new Date(d); return isNaN(t.getTime()) ? '' : t.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) }
 /*
  * WHAT THEY ANSWERED ON THE WAY IN. A type may ask a form's questions before the booking is made,
  * and the host needs them where they are looking at the booking rather than in the forms section
@@ -130,8 +130,8 @@ async function loadAnswers(rows: any) {
   for (const [id, list] of Object.entries(by)) { const o = orderOf(formOf[id]); (list as any).sort((x: any, y: any) => (o.indexOf(x.key) + 1 || 99) - (o.indexOf(y.key) + 1 || 99)) }
   answers.value = by
 }
-const answersOf = (r: any) => (r.response_id && answers.value[r.response_id]) || []
-const minutes = (r: any) => { const a = new Date(r.start_at), b = new Date(r.end_at); const n = Math.round((b.getTime() - a.getTime()) / 60000); return n > 0 ? fill(R.minutes, { n }) : '' }
+const answersOf = (r: { response_id: string|number }) => (r.response_id && answers.value[r.response_id]) || []
+const minutes = (r: { start_at: string|number|Date; end_at: string|number|Date }) => { const a = new Date(r.start_at), b = new Date(r.end_at); const n = Math.round((b.getTime() - a.getTime()) / 60000); return n > 0 ? fill(R.minutes, { n }) : '' }
 function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 

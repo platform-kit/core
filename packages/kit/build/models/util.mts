@@ -3,7 +3,7 @@ import path from 'node:path'
 import matter from 'gray-matter'
 import { spawn } from 'node:child_process'
 import { keepComments } from './yaml-keep.mjs'
-const KIT = (f: any) => path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', f)
+const KIT = (f: string) => path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', f)
 
 export const NAME_RE = /^[a-z0-9]+(?:[-/][a-z0-9]+)*$/
 /* js-yaml's dump option: gray-matter hands its options to the yaml engine, but declares only its own */
@@ -48,11 +48,11 @@ export const frontmatter = {
   },
 }
 /* a kit script spawned in the site's root — a hook's compile; rejects with its stderr */
-export const script = (name: any, args = [], root = process.cwd(), env = process.env) => new Promise<void>((resolve, reject) => {
+export const script = (name: string, args = [], root = process.cwd(), env = process.env) => new Promise<void>((resolve, reject) => {
   const c = spawn(process.execPath, [KIT(name), ...args], { cwd: root, stdio: ['ignore', 'inherit', 'pipe'], env: { ...process.env, ...env } })
   let err = ''; c.stderr.on('data', (d) => { err += d })
   c.on('exit', (code) => (code ? reject(new Error(err.trim().split('\n').filter((l) => !/Deprecation|trace-deprecation/.test(l)).join(' ') || name + ' failed')) : resolve()))
 })
 export const issue = (path: any, message: any) => ({ path, message })
-export class Refusal extends Error { constructor(code: any, error: any, extra = {}) { super(error); ;(this as any).code = code; ;(this as any).extra = extra } }
+export class Refusal extends Error { constructor(code: number, error: string|undefined, extra = {}) { super(error); ;(this as any).code = code; ;(this as any).extra = extra } }
 

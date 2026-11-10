@@ -20,11 +20,11 @@ import { adminRequest } from './admin-pipe.mjs'
 import { registry, byKey, write, read } from './models/index.mjs'
 
 let n = 0, bad = 0
-const ta = async (name: any, fn: any) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
+const ta = async (name: string, fn: any) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 6).join('\n    ')) } }
 
 /* the rows are one table for the whole site, so the lists are read for the probes alone */
-const probes = (l: any) => l.filter((x: any) => x.includes('probe-'))
-async function exercise(st: any, tag: any) {
+const probes = (l: any) => l.filter((x: string|string[]) => x.includes('probe-'))
+async function exercise(st: any, tag: string) {
   await st.write('content/articles/probe-a.md', '---\ntitle: A\n---\nbody a\n', { collection: 'articles', slug: 'probe-a', data: { title: 'A' }, body: 'body a', published: true })
   await st.write('content/articles/probe-b.md', '---\ntitle: B\npublished: false\n---\n', { collection: 'articles', slug: 'probe-b', data: { title: 'B', published: false }, body: '', published: false })
   await st.write('content/articles/deep/probe-d.md', '---\ntitle: D\n---\n', { collection: 'articles', slug: 'deep/probe-d', data: { title: 'D' }, body: '' })
@@ -48,7 +48,7 @@ async function exercise(st: any, tag: any) {
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'store-'))
 await ta('the checkout store', async () => { await exercise(gitStore(dir), 'git') })
 /* the library's browse: the same files either side, the entries the same but for the address; the roots held */
-async function browse(st: any, tag: any) {
+async function browse(st: any, tag: string) {
   const A = st.assets, U = 'content/uploads/probe-lib'
   await st.assets.remove(U).catch(() => {})
   await st.putAsset(U + '/one.png', new Uint8Array([1, 2, 3]), 'image/png')
@@ -58,7 +58,7 @@ async function browse(st: any, tag: any) {
   const shape = (e: any) => ({ path: e.path, name: e.name, type: e.type, size: e.size, mime: e.mime })
   const top = (await A.list(U)).map(shape)
   assert.deepEqual(top, [{ path: U + '/inner', name: 'inner', type: 'dir', size: null, mime: null }, { path: U + '/one.png', name: 'one.png', type: 'file', size: 3, mime: 'image/png' }, { path: U + '/two.txt', name: 'two.txt', type: 'file', size: 2, mime: 'text/plain' }], tag + ' list')
-  const one = (await A.list(U)).find((e: any) => e.name === 'one.png'); assert.ok(one.url && /probe-lib\/one\.png$/.test(one.url), tag + ' an address'); assert.ok(one.modified > 0)
+  const one = (await A.list(U)).find((e: { name: string }) => e.name === 'one.png'); assert.ok(one.url && /probe-lib\/one\.png$/.test(one.url), tag + ' an address'); assert.ok(one.modified > 0)
   assert.equal(await A.rename(U + '/two.txt', 'deux.txt'), U + '/deux.txt')
   assert.equal(await A.move(U + '/deux.txt', U + '/inner'), U + '/inner/deux.txt')
   assert.deepEqual((await A.list(U + '/inner')).map((e: any) => e.name), ['deux.txt', 'three.png'], tag + ' moved')
@@ -73,11 +73,11 @@ async function browse(st: any, tag: any) {
   for (const bad of ['content/books', 'content/uploads/../books', 'public/../content', '']) await assert.rejects(() => A.list(bad), /reaches/, tag + ' outside the roots: ' + JSON.stringify(bad))
   await assert.rejects(() => A.remove('content/uploads'), /root/, tag + ' a root is not removed')
   await A.remove(U)
-  assert.equal((await A.list('content/uploads')).some((e: any) => e.name === 'probe-lib'), false, tag + ' gone')
+  assert.equal((await A.list('content/uploads')).some((e: { name: string }) => e.name === 'probe-lib'), false, tag + ' gone')
 }
 /* a file in use is kept: the pipe refuses to remove, rename or move a file a record names — a folder for any file
    under it — and writes nothing; a free file goes through */
-async function kept(st: any, tag: any) {
+async function kept(st: any, tag: string) {
   const U = 'content/uploads/probe-kept'
   await st.assets.remove(U).catch(() => {})
   await st.putAsset(U + '/used.png', new Uint8Array([1]), 'image/png'); await st.putAsset(U + '/free.png', new Uint8Array([2]), 'image/png')
@@ -144,16 +144,16 @@ else {
       await rows.write(P, 'v1', { collection: 'articles', slug: 'probe-life', data: { title: 'One' } })
       let r = await rows.row(P); assert.equal(r.text, null); assert.equal(r.draft_text, 'v1'); assert.equal(r.pending, false)
       assert.equal(await rows.read(P), 'v1', 'the admin reads the draft'); assert.equal(await rows.readLive(P), null, 'nothing live yet')
-      let d = await rows.drafts(); const mine = d.find((x: any) => x.path === P); assert.ok(mine && mine.fresh && !mine.removed && mine.title === 'One')
+      let d = await rows.drafts(); const mine = d.find((x: { path: string }) => x.path === P); assert.ok(mine && mine.fresh && !mine.removed && mine.title === 'One')
       await rows.publish([P])
       r = await rows.row(P); assert.equal(r.text, 'v1'); assert.equal(r.draft_text, null); assert.equal(r.pending, true); assert.ok(r.published_at)
-      assert.ok(!(await rows.drafts()).some((x: any) => x.path === P), 'published: no draft')
+      assert.ok(!(await rows.drafts()).some((x: { path: string }) => x.path === P), 'published: no draft')
       await rows.write(P, 'v2', { collection: 'articles', slug: 'probe-life', data: { title: 'Two' } })
       assert.equal(await rows.read(P), 'v2'); assert.equal(await rows.readLive(P), 'v1', 'the live version stands while the draft waits')
-      assert.equal((await rows.drafts()).find((x: any) => x.path === P).title, 'Two')
+      assert.equal((await rows.drafts()).find((x: { path: string }) => x.path === P).title, 'Two')
       await rows.remove(P)
       r = await rows.row(P); assert.equal(r, null, 'a draft removal leaves the admin\'s list'); assert.equal(await rows.readLive(P), 'v1', 'and keeps the page live')
-      d = (await rows.drafts()).find((x: any) => x.path === P); assert.ok(d.removed)
+      d = (await rows.drafts()).find((x: { path: string }) => x.path === P); assert.ok(d.removed)
       await rows.keep(P); assert.ok(await rows.row(P), 'kept: back on the list'); assert.equal((await rows.row(P)).draft_text, null, 'the removal took the draft with it')
       await rows.remove(P); await rows.publish('all')
       const { data: gone } = await rows.client.from('content').select('deleted_at, pending').eq('path', P).single(); assert.ok(gone.deleted_at && gone.pending, 'published removal: deleted, pending for the push')
@@ -189,7 +189,7 @@ else {
     await ta('a record through the pipe over the rows, byte-identical to the checkout', async () => {
       await write({ ...funnels, after: null }, 'probe-welcome', rec, dir, { create: true, store: rows })
       const text = await rows.read('content/funnels/probe-welcome.md')
-      const noId = (t: any) => t.replace(/^id: [0-9a-f-]{36}$/m, 'id: <uuid>')   /* the step's id is minted on the first save */
+      const noId = (t: string) => t.replace(/^id: [0-9a-f-]{36}$/m, 'id: <uuid>')   /* the step's id is minted on the first save */
       assert.equal(noId(text), noId(gitText))
       const row = await rows.row('content/funnels/probe-welcome.md')
       assert.equal(row.collection, 'funnels'); assert.equal(row.slug, 'probe-welcome'); assert.equal(row.pending, false, 'a save is a draft: nothing to push yet'); assert.equal(row.text, null); assert.equal(row.draft_data.title, 'Welcome')
@@ -259,7 +259,7 @@ else {
       assert.ok((await g.read(U + '/one.md')) === '---\ntitle: One\n---\n', '…it is overwritten by the row')
 
       /* and with a repository in the cycle the same shape behaves as it always has */
-      const withGit: any = await exportRows(xdir, rows, { under: U, mode: 'git' })
+      const withGit = await exportRows(xdir, rows, { under: U, mode: 'git' })
       assert.ok(withGit.inserted.includes(U + '/stray.md'), 'with a repository, the stray file becomes a row')
 
       await rows.client.from('content').delete().like('path', U + '/%')
@@ -305,7 +305,7 @@ else {
       await rows.write(U + '/gone.md', 'x', { collection: 'articles', slug: 'gone', live: true, pending: false }); await rows.remove(U + '/gone.md'); await rows.publish([U + '/gone.md'])
       /* the table may hold other pending rows (another test's, an editor's): the mock answers them too and the checks are on the probes */
       const calls: any = []
-      const github = ({ failRef = false } = {}) => async (u: any, init: any = {}) => {
+      const github = ({ failRef = false } = {}) => async (u: string, init: any = {}) => {
         const m = init.method || 'GET', path = u.replace('https://api.github.com', ''), body = init.body ? JSON.parse(init.body) : null
         calls.push({ m, path, body })
         const json = (o: any) => ({ ok: true, status: 200, json: async () => o, text: async () => JSON.stringify(o) })
@@ -327,13 +327,13 @@ else {
       calls.length = 0
       const r2 = await pushPending(sb, 'Tester', { fetchFn: github(), message: 'Autumn list' })
       assert.ok(r2.pushed >= 3); assert.equal(r2.error, null); assert.equal(r2.commit, 'commit1')
-      const commits = calls.filter((c: any) => c.m === 'POST' && /\/git\/commits$/.test(c.path))
+      const commits = calls.filter((c: { m: string; path: string }) => c.m === 'POST' && /\/git\/commits$/.test(c.path))
       assert.equal(commits.length, 1, 'one commit'); assert.equal(commits[0].body.message, 'Autumn list (Tester)'); assert.deepEqual(commits[0].body.parents, ['head0']); assert.equal(commits[0].body.tree, 'tree1')
-      const tree = calls.find((c: any) => c.m === 'POST' && /\/git\/trees$/.test(c.path)).body
+      const tree = calls.find((c: { m: string; path: string }) => c.m === 'POST' && /\/git\/trees$/.test(c.path)).body
       assert.equal(tree.base_tree, 'tree0')
-      const entry = (p: any) => tree.tree.find((e: any) => e.path === p)
+      const entry = (p: string) => tree.tree.find((e: any) => e.path === p)
       assert.equal(entry(U + '/one.md').sha, 'blob-one'); assert.equal(entry(U + '/two.md').sha, 'blob-two'); assert.equal(entry(U + '/gone.md').sha, null, 'a removal is an entry with no blob')
-      assert.equal(calls.filter((c: any) => c.m === 'PATCH').length, 1)
+      assert.equal(calls.filter((c: { m: string }) => c.m === 'PATCH').length, 1)
       for (const f of ['one', 'two']) { const r = await rows.row(U + '/' + f + '.md'); assert.equal(r.pending, false); assert.equal(r.push_error, null); assert.ok(r.pushed_at) }
       assert.equal((await sb.from('content').select('path').eq('path', U + '/gone.md')).data.length, 0, 'a removal is gone once pushed')
       const st2 = await githubSettings(sb); assert.equal(st2.error, null); assert.ok(st2.last_push)
@@ -357,7 +357,7 @@ else {
     if (!served) console.log('store: the admin function skipped — not served (npm run dev serves it)')
     else await ta('the admin function: administrators only', async () => {
       const { createClient } = await import('@supabase/supabase-js')
-      const as = async (email: any) => { const sb = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } }); if (email) { const { error } = await sb.auth.signInWithPassword({ email, password: 'password123' }); if (error) throw new Error(email + ': ' + error.message) } return sb }
+      const as = async (email: string|null) => { const sb = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } }); if (email) { const { error } = await sb.auth.signInWithPassword({ email, password: 'password123' }); if (error) throw new Error(email + ': ' + error.message) } return sb }
       const knock = async (sb: any) => { const { data, error } = await sb.functions.invoke('admin', { body: { seg: 'collections', method: 'GET' } }); return error ? (error.context ? error.context.status : 500) : (data && data.collections ? 200 : 500) }
       assert.equal(await knock(await as(null)), 401, 'a guest')
       assert.equal(await knock(await as('free@example.com')), 403, 'a reader')

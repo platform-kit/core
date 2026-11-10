@@ -5,11 +5,11 @@ const DEFAULT_RETRY_STATUSES = [0, 401, 402, 403, 404, 408, 409, 425, 429, ...Ar
 const MAX_PROVIDERS = 4
 const RATE_SCALE = 1_000_000
 
-function fail(message: any) {
+function fail(message: string) {
   throw new Error(`inference.${message}`)
 }
 
-function rate(value: any, where: any) {
+function rate(value: any, where: string) {
   const amount = Number(value)
   const scaled = amount * RATE_SCALE
   if (!Number.isFinite(amount) || amount <= 0 || Math.round(scaled) < 1 || !Number.isSafeInteger(Math.round(scaled))) {
@@ -18,7 +18,7 @@ function rate(value: any, where: any) {
   return Math.round(scaled)
 }
 
-function multiplier(value: any, where: any) {
+function multiplier(value: any, where: string) {
   const amount = Number(value)
   const scaled = amount * RATE_SCALE
   if (!Number.isFinite(amount) || amount <= 0 || Math.round(scaled) < 1 || !Number.isSafeInteger(Math.round(scaled))) {
@@ -27,7 +27,7 @@ function multiplier(value: any, where: any) {
   return Math.round(scaled)
 }
 
-function ratesFor(models: any, providerId: any) {
+function ratesFor(models: any, providerId: string) {
   if (!models || typeof models !== 'object' || Array.isArray(models) || !Object.keys(models).length) {
     fail(`providers.${providerId}.models must declare at least one priced model`)
   }
@@ -61,7 +61,7 @@ function ratesFor(models: any, providerId: any) {
   return rates
 }
 
-function baseUrl(value: any, where: any) {
+function baseUrl(value: any, where: string) {
   let parsed: any
   try { parsed = new URL(String(value)) } catch { fail(`${where} must be an absolute HTTP(S) URL`) }
   if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password || parsed.search || parsed.hash) {

@@ -33,7 +33,7 @@ export const KIT_ROOT = path.resolve(HERE, '..')
 export const KINDS = ['module', 'page', 'content-type', 'function', 'test', 'step']
 
 /* ---- names ---- */
-const words = (n: any) => n.split('-')
+const words = (n: string) => n.split('-')
 export const namesOf = (name: any, extra = {}) => ({
   name,
   Name: words(name).map((w: any) => w[0].toUpperCase() + w.slice(1)).join(''),
@@ -43,23 +43,23 @@ export const namesOf = (name: any, extra = {}) => ({
   today: new Date().toLocaleDateString('en-CA'),
   ...extra,
 })
-const fill = (text: any, v: any) => text.replace(/@@(\w+)@@/g, (m: any, k: any) => (k in v ? String(v[k]) : m))
+const fill = (text: string, v: any) => text.replace(/@@(\w+)@@/g, (m: any, k: string) => (k in v ? String(v[k]) : m))
 
 /* ---- the parser, for positions only ---- */
 let parseAst = null
 /* a TypeScript file (kit.mts) is read with its types blanked out, which keeps every position — so an edit found in
    the stripped text lands in the same place in the file */
-const parse = async (text: any) => { parseAst ||= (await import('rollup/parseAst')).parseAst; return parseAst(stripTypeScriptTypes(text, { mode: 'strip' }), { allowReturnOutsideFunction: false }) }
+const parse = async (text: string) => { parseAst ||= (await import('rollup/parseAst')).parseAst; return parseAst(stripTypeScriptTypes(text, { mode: 'strip' }), { allowReturnOutsideFunction: false }) }
 const keyOf = (p: any) => p.key && (p.key.type === 'Identifier' ? p.key.name : p.key.value)
-const propOf = (obj: any, key: any) => obj && obj.type === 'ObjectExpression' ? obj.properties.find((p: any) => p.type === 'Property' && keyOf(p) === key) : null
-const indentAt = (text: any, pos: any) => { const s = text.lastIndexOf('\n', pos - 1) + 1; return (/^[ \t]*/ as any).exec(text.slice(s))[0] }
+const propOf = (obj: any, key: string) => obj && obj.type === 'ObjectExpression' ? obj.properties.find((p: { type: string }) => p.type === 'Property' && keyOf(p) === key) : null
+const indentAt = (text: string|string[], pos: number) => { const s = text.lastIndexOf('\n', pos - 1) + 1; return (/^[ \t]*/ as any).exec(text.slice(s))[0] }
 const lineOf = (text: any, pos: any) => text.slice(0, pos).split('\n').length
-const safeKey = (k: any) => (/^[A-Za-z_$][\w$]*$/.test(k) ? k : `'${k}'`)
+const safeKey = (k: string) => (/^[A-Za-z_$][\w$]*$/.test(k) ? k : `'${k}'`)
 
 /* the object `export default` holds: a literal, a call's first argument (defineConfig({…})), or a const it names */
 async function defaultObject(text: any) {
   const ast = await parse(text)
-  const d = ast.body.find((n: any) => n.type === 'ExportDefaultDeclaration')
+  const d = ast.body.find((n: { type: string }) => n.type === 'ExportDefaultDeclaration')
   let o = d && d.declaration
   if (o && o.type === 'CallExpression') o = o.arguments[0]
   if (o && o.type === 'Identifier') {
@@ -70,11 +70,11 @@ async function defaultObject(text: any) {
 }
 
 /* past a comment that ends the line the last item is on, so a new line never takes the old line's comment */
-const pastLineComment = (text: any, at: any) => { const m = /^[ \t]*(\/\*[^\n]*?\*\/|\/\/[^\n]*)[ \t]*(?=\n)/.exec(text.slice(at)); return m ? at + m[0].length : at }
+const pastLineComment = (text: string, at: number) => { const m = /^[ \t]*(\/\*[^\n]*?\*\/|\/\/[^\n]*)[ \t]*(?=\n)/.exec(text.slice(at)); return m ? at + m[0].length : at }
 
 /* insert after the last item of a list (an object's properties or an array's elements), on its own line when the
    list is laid out a line per item, inline when it is on one line */
-function appendItem(text: any, container: any, items: any, itemText: any) {
+function appendItem(text: string, container: { start: number; end: number; type: string }, items: any, itemText: string) {
   if (!items.length) {
     const open = container.start + 1, close = container.end - 1
     const inner = text.slice(open, close)
@@ -98,7 +98,7 @@ function appendItem(text: any, container: any, items: any, itemText: any) {
 }
 
 /* set obj.<path…>.<key> = value, making the path's objects as needed; refuses (null) a key already there */
-export async function setIn(text: any, pathKeys: any, key: any, value: any, root = defaultObject) {
+export async function setIn(text: any, pathKeys: any, key: string, value: string, root = defaultObject) {
   let obj = await root(text)
   if (!obj) return null
   for (let i = 0; i < pathKeys.length; i++) {
@@ -115,7 +115,7 @@ export async function setIn(text: any, pathKeys: any, key: any, value: any, root
 }
 
 /* push a value onto obj.<path…> (an array), making it and its parents as needed */
-export async function pushIn(text: any, pathKeys: any, value: any, root = defaultObject) {
+export async function pushIn(text: any, pathKeys: any, value: string, root = defaultObject) {
   let obj = await root(text)
   if (!obj) return null
   for (let i = 0; i < pathKeys.length; i++) {
@@ -136,7 +136,7 @@ export async function pushIn(text: any, pathKeys: any, value: any, root = defaul
 }
 
 /* append a raw fragment (its own indentation and trailing comma) after the last element of an array */
-function appendRaw(text: any, arr: any, fragment: any) {
+function appendRaw(text: string, arr: any, fragment: string) {
   const last = arr.elements[arr.elements.length - 1]
   let at = last ? last.end : arr.start + 1
   const after = last && /^\s*,/.exec(text.slice(at))
@@ -147,7 +147,7 @@ function appendRaw(text: any, arr: any, fragment: any) {
 }
 
 /* the array a top-level `export const NAME = [...]` (or `const NAME = [...]`) holds */
-async function namedArray(text: any, name: any) {
+async function namedArray(text: string, name: string) {
   const ast = await parse(text)
   for (const n of ast.body) {
     const v = n.type === 'ExportNamedDeclaration' ? n.declaration : n
@@ -162,15 +162,15 @@ async function namedArray(text: any, name: any) {
 }
 
 /* add `import x from './file'` after the last import */
-async function addImport(text: any, line: any) {
+async function addImport(text: string, line: string) {
   const ast = await parse(text)
-  const imports = ast.body.filter((n: any) => n.type === 'ImportDeclaration')
+  const imports = ast.body.filter((n: { type: string }) => n.type === 'ImportDeclaration')
   const at = imports.length ? imports[imports.length - 1].end : 0
   return text.slice(0, at) + '\n' + line + text.slice(at)
 }
 
 /* a row added after the last row of the markdown table holding the line the anchor matches */
-export function addTableRow(text: any, anchor: any, row: any) {
+export function addTableRow(text: string, anchor: RegExp, row: string) {
   const lines = text.split('\n'); let i = lines.findIndex((l: any) => anchor.test(l))
   if (i < 0) return null
   while (i + 1 < lines.length && lines[i + 1].startsWith('|')) i++
@@ -179,7 +179,7 @@ export function addTableRow(text: any, anchor: any, row: any) {
 }
 
 /* ---- templates ---- */
-function templateDir(level: any, kind: any, siteRoot: any) {
+function templateDir(level: string, kind: string, siteRoot: string) {
   const own = siteRoot && path.join(siteRoot, 'generators', kind)
   if (level === 'site' && own && fs.existsSync(own)) return own
   return path.join(HERE, 'generators', level, kind)
@@ -192,10 +192,10 @@ function walk(dir: string, base = dir): string[] {
   })
 }
 /* every file a kind writes, its path filled, its text filled — fragments (_*.tmpl) left out */
-function filesOf(dir: any, v: any) {
+function filesOf(dir: string, v: any) {
   return walk(dir).filter((r: any) => !path.basename(r).startsWith('_')).map((r: any) => ({ rel: fill(r.replace(/\.tmpl$/, ''), v), text: fill(fs.readFileSync(path.join(dir, r), 'utf8'), v) }))
 }
-const fragment = (dir: any, name: any, v: any) => fill(fs.readFileSync(path.join(dir, name), 'utf8'), v)
+const fragment = (dir: string, name: string, v: any) => fill(fs.readFileSync(path.join(dir, name), 'utf8'), v)
 
 /* ---- is this PlatformKit's own checkout? ---- */
 export function kitCheckout(kitRoot = KIT_ROOT) {
@@ -250,7 +250,7 @@ export async function planFor({ kind, name, level = 'site', module: owner = null
       const models = site.admin && site.admin.models
       if (models) {
         const file = path.join(siteRoot, models)
-        edits.push({ path: file, what: `a ${name} model in ${models}`, apply: async (t: any) => { if (new RegExp(`key:\\s*'${name}'`).test(t)) return null; const arr = await namedArray(t, 'models'); return arr ? appendRaw(t, arr, entry) : null } })
+        edits.push({ path: file, what: `a ${name} model in ${models}`, apply: async (t: string) => { if (new RegExp(`key:\\s*'${name}'`).test(t)) return null; const arr = await namedArray(t, 'models'); return arr ? appendRaw(t, arr, entry) : null } })
       } else {
         writes.push({ path: path.join(siteRoot, 'build', 'admin-models.mjs'), text: fill(fragment(dir, '_models-file.mjs.tmpl', v), { entry }) })
         edits.push({ path: cfg, what: "admin.models: './build/admin-models.mjs'", apply: (t: any) => setIn(t, ['admin'], 'models', "'./build/admin-models.mjs'") })
@@ -262,13 +262,13 @@ export async function planFor({ kind, name, level = 'site', module: owner = null
 
   if (level === 'core' && ws) {   /* ws is the checkout: core was refused above without one */
     /* a file of the kit's build by the name a site has, or — kept as TypeScript in the source — its .mts */
-    const B = (f: any) => { const p = path.join(kitRoot, 'build', f); const t = p.replace(/\.(m?)js$/, '.$1ts'); return !fs.existsSync(p) && fs.existsSync(t) ? t : p }
+    const B = (f: string) => { const p = path.join(kitRoot, 'build', f); const t = p.replace(/\.(m?)js$/, '.$1ts'); return !fs.existsSync(p) && fs.existsSync(t) ? t : p }
     const D = (f: string) => path.join(ws, 'sites', 'docs', 'content', 'docs', f)
     if (kind === 'module') {
       edits.push({ path: kitMods, what: `MODULES += ${name}`, apply: async (t: any) => { const a = await namedArray(t, 'MODULES'); return a ? appendRaw(t, a, fragment(dir, '_entry.js.tmpl', v)) : null } })
       /* the module pages list every module: the modules table and the config's modules row */
       edits.push({ path: D('building-a-site/modules.md'), what: `a ${name} row in the modules table`, apply: (t: any) => addTableRow(t, /^\| `translation`/, `| \`${name}\` | ${v.Title}: describe what it adds (see [${v.Title}](/content/docs/building-a-site/${name})) |`) })
-      edits.push({ path: D('reference/config-keys.md'), what: `${name} in the modules row`, apply: (t: any) => { const m = /(the features (?:`[^`]+`, )*`[^`]+`)/.exec(t); return m ? t.slice(0, m.index) + m[1] + `, \`${name}\`` + t.slice(m.index + m[0].length) : null } })
+      edits.push({ path: D('reference/config-keys.md'), what: `${name} in the modules row`, apply: (t: string) => { const m = /(the features (?:`[^`]+`, )*`[^`]+`)/.exec(t); return m ? t.slice(0, m.index) + m[1] + `, \`${name}\`` + t.slice(m.index + m[0].length) : null } })
     }
     if (kind === 'page') edits.push({ path: D('running-a-site/settings/site-settings-and-strings.md'), what: `the ${name} scope in the strings table`, apply: (t: any) => addTableRow(t, /^\| `auth`/, `| \`${name}\` | The ${v.title} page (\`theme/src/content/ui/${name}.md\`) |`) })
     if (kind === 'step') edits.push({ path: B('steps/index.mjs'), what: `STEPS += ${v.camel}`, apply: async (t: any) => { const u = await addImport(t, `import ${v.camel} from './${name}.mjs'`); const a = await namedArray(u, 'STEPS'); return a ? appendItem(u, a, a.elements, v.camel) : null } })
@@ -277,7 +277,7 @@ export async function planFor({ kind, name, level = 'site', module: owner = null
     if (kind === 'function') {
       if (!owner) return { refused: 'A core function belongs to a module: pass --module <key>.' }
       edits.push({ path: kitMods, what: `${owner}.owns.functions += ${name}`, apply: async (t: any) => {
-        const a = await namedArray(t, 'MODULES'); const m = a && a.elements.find((e: any) => e && e.type === 'ObjectExpression' && propOf(e, 'key') && propOf(e, 'key').value.value === owner)
+        const a = await namedArray(t, 'MODULES'); const m = a && a.elements.find((e: { type: string }) => e && e.type === 'ObjectExpression' && propOf(e, 'key') && propOf(e, 'key').value.value === owner)
         if (!m) return null
         return pushIn(t, ['owns', 'functions'], `'${name}'`, async () => m)
       } })
@@ -285,7 +285,7 @@ export async function planFor({ kind, name, level = 'site', module: owner = null
     if (kind === 'page') {
       const app = path.join(kitRoot, 'theme', 'src', 'App.vue')
       const gate = owner ? `moduleOn('${owner}') ? defineAsyncComponent(() => import('./pages/${v.Name}Page.vue')) : null` : `defineAsyncComponent(() => import('./pages/${v.Name}Page.vue'))`
-      edits.push({ path: app, what: `App.vue routes /${name} to ${v.Name}Page`, apply: (t: any) => {
+      edits.push({ path: app, what: `App.vue routes /${name} to ${v.Name}Page`, apply: (t: string) => {
         const declAnchor = /\nconst EntriesPage = [^\n]*\n/.exec(t), routeAnchor = t.indexOf('  <LandingPage v-else-if="isPageRoute(route)"')
         if (!declAnchor || routeAnchor < 0) return null
         const decl = `/* ${v.title} (generated: platformkit generate page ${name} --level core) */\nconst ${v.Name}Page = ${gate}\n`
@@ -299,7 +299,7 @@ export async function planFor({ kind, name, level = 'site', module: owner = null
     /* the docs page that names every new file, or the docs check refuses them */
     const sources = writes.map((w: { path: string }) => path.relative(ws, w.path).split(path.sep).join('/'))
     const page = path.join(ws, 'sites', 'docs', 'content', 'docs', 'building-a-site', `${owner || name}.md`)
-    if (fs.existsSync(page)) edits.push({ path: page, what: `its sources += ${sources.join(', ')}`, apply: (t: any) => { const m = /^sources:\s*\[([\s\S]*?)\]/m.exec(t); if (!m) return null; const inner = m[1].replace(/[\s,]+$/, ''); return t.slice(0, m.index) + `sources: [${inner}${inner.trim() ? ', ' : ''}${sources.join(', ')}]` + t.slice(m.index + m[0].length) } })
+    if (fs.existsSync(page)) edits.push({ path: page, what: `its sources += ${sources.join(', ')}`, apply: (t: string) => { const m = /^sources:\s*\[([\s\S]*?)\]/m.exec(t); if (!m) return null; const inner = m[1].replace(/[\s,]+$/, ''); return t.slice(0, m.index) + `sources: [${inner}${inner.trim() ? ', ' : ''}${sources.join(', ')}]` + t.slice(m.index + m[0].length) } })
     else writes.push({ path: page, text: fill(fs.readFileSync(path.join(HERE, 'generators', 'core', '_docs', 'page.md.tmpl'), 'utf8'), { ...v, sources: sources.join(', ') }) })
   }
 
@@ -311,7 +311,7 @@ export async function planFor({ kind, name, level = 'site', module: owner = null
 export async function generate(opts: any) {
   const plan: any = await planFor(opts)
   if (plan.refused) return { ok: false, message: plan.refused }
-  const taken = plan.writes.find((w: any) => fs.existsSync(w.path))
+  const taken = plan.writes.find((w: { path: fs.PathLike }) => fs.existsSync(w.path))
   if (taken) return { ok: false, message: `${path.relative(process.cwd(), taken.path)} already exists — nothing was written.` }
   const results = []
   for (const e of plan.edits) {
@@ -319,7 +319,7 @@ export async function generate(opts: any) {
     const after = before === null ? null : await e.apply(before)
     results.push({ ...e, before, after })
   }
-  const rel = (p: any) => path.relative(process.cwd(), p) || p
+  const rel = (p: string) => path.relative(process.cwd(), p) || p
   const lines = []
   if (opts.dryRun) {
     lines.push('Would write:', ...plan.writes.map((w: any) => '  ' + rel(w.path)), 'Would add:', ...results.map((r) => `  ${rel(r.path)}: ${r.what}${r.after === null ? ' (by hand: the file could not be edited)' : ''}`))
@@ -344,7 +344,7 @@ export async function generate(opts: any) {
 /* run directly: compared as real paths, since /var on macOS is /private/var and a symlinked path would never match */
 if (isMain(import.meta.url)) {
   const a = process.argv.slice(2)
-  const flag = (k: any) => { const i = a.indexOf(k); return i >= 0 ? a[i + 1] : null }
+  const flag = (k: string) => { const i = a.indexOf(k); return i >= 0 ? a[i + 1] : null }
   const pos = a.filter((x, i) => !x.startsWith('--') && !['--level', '--module'].includes(a[i - 1]))
   if (!pos[0]) { console.log(`platformkit generate <kind> <name> [--level site|core] [--module <key>] [--dry-run]\nKinds: ${KINDS.join(', ')}.`); process.exit(0) }
   const r = await generate({ kind: pos[0], name: pos[1], level: flag('--level') || 'site', module: flag('--module'), dryRun: a.includes('--dry-run'), siteRoot: process.cwd() })

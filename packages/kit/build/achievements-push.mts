@@ -92,7 +92,7 @@ export async function pushAchievements({ check = false, root = process.cwd(), st
 
   /* THE ENVIRONMENT IS ONLY ASKED WHERE NOBODY HANDED A DATABASE IN. In an Edge Function there is
      no .env to read and the caller has the client already; supabaseUrl() opens a file. */
-  let db: any = client
+  let db = client
   if (!db) {
     const { supabaseUrl, serviceKey } = await import('./tts/storage.mjs')
     if (!supabaseUrl() || !serviceKey()) {

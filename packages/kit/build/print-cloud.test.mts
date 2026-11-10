@@ -313,7 +313,7 @@ if (set.body && set.body.ok) {
   ok('with the pages a printer will bind', ed && Number(ed.pages) === Number(set.body.pages))
   ok('and a cover on file for each printed format', ed && Object.keys(ed.printers || {}).every((f) => (set.body.incomplete || []).includes(f) || Object.keys(ed.printers[f].covers || {}).length))
 
-  const at = (n: any) => `${BOOK}/${set.body.edition}/${n}`
+  const at = (n: string) => `${BOOK}/${set.body.edition}/${n}`
   const has = async (n: string) => { const { data } = await sb.storage.from('print').download(at(n)); return !!data }
   ok('the interior is in the bucket', await has('interior.pdf'))
   ok('and the manifest beside it', await has('manifest.json'))

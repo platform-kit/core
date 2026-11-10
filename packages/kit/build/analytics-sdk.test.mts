@@ -15,11 +15,11 @@ import { execFileSync } from 'node:child_process'
 import { gzipSync } from 'node:zlib'
 import { context as browserContext } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */
 
-const note = (m: any) => console.log('analytics-sdk: ' + m)
+const note = (m: string) => console.log('analytics-sdk: ' + m)
 if (process.env.SDK_TEST === '0') { note('skipped (SDK_TEST=0)'); process.exit(0) }
 let pass = 0, fail = 0
-const ok = (msg: any, fn: any) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL  ' + msg + '\n    ' + String(e.message).split('\n')[0]) } }
-const ta = async (msg: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL  ' + msg + '\n    ' + String(e.message).split('\n').slice(0, 2).join(' ')) } }
+const ok = (msg: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void }) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL  ' + msg + '\n    ' + String(e.message).split('\n')[0]) } }
+const ta = async (msg: string, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL  ' + msg + '\n    ' + String(e.message).split('\n').slice(0, 2).join(' ')) } }
 
 const ROOT = process.cwd()
 const OUT = path.join(ROOT, 'dist/analytics.js')
@@ -87,7 +87,7 @@ if (browser) {
   const threw = await page.evaluate((names: any) => {
     const args: any = { init: ['pk_test', { api_host: 'http://localhost:1', capture_pageview: false }], capture: ['x', { a: 1 }], identify: ['u-1', { plan: 'a' }, { first: 1 }], alias: ['a', 'b'], register: [{ k: 1 }], register_once: [{ k: 2 }], register_for_session: [{ s: 1 }], unregister: ['k'], unregister_for_session: ['s'], getFeatureFlag: ['f'], getFeatureFlagPayload: ['f'], getFeatureFlagResult: ['f'], isFeatureEnabled: ['f'], onFeatureFlags: [() => {}], on: ['x', () => {}], onSurveysLoaded: [() => {}], onSessionId: [() => {}], getSurveys: [() => {}], getActiveMatchingSurveys: [() => {}], renderSurvey: ['s', '#x'], displaySurvey: ['s'], cancelPendingSurvey: ['s'], canRenderSurvey: ['s'], canRenderSurveyAsync: ['s'], group: ['company', 'c-1', { name: 'x' }], setPersonProperties: [{ a: 1 }], unsetPersonProperties: [['a']], setPersonPropertiesForFlags: [{}], setGroupPropertiesForFlags: [{}], resetGroupPropertiesForFlags: ['company'], captureException: [new Error('e')], addExceptionStep: [{}], captureLog: ['x'], get_property: ['k'], getSessionProperty: ['k'], set_config: [{ debug: false }], debug: [false], push: [['capture', 'queued']], captureTraceFeedback: ['t', 'f'], captureTraceMetric: ['t', 'm', 1], calculateEventProperties: ['x', {}], updateFlags: [{}], updateEarlyAccessFeatureEnrollment: ['f', true], getEarlyAccessFeatures: [() => {}], setIdentity: ['u-2'], setInternalOrTestUser: [true], opt_in_capturing: [{ captureEventName: false }], get_session_replay_url: [{}], startSessionRecording: [{}], loadToolbar: [{}], reset: [false], shutdown: [], clearIdentity: [], createPersonProfile: [] }
     const threw = []
-    const order = names.filter((n: any) => n !== 'init' && n !== 'reset' && n !== 'shutdown')
+    const order = names.filter((n: string) => n !== 'init' && n !== 'reset' && n !== 'shutdown')
     for (const n of order) { try { const r = (window as any).posthog[n](...(Object.hasOwn(args, n) ? args[n] : [])); if (r && typeof r.then === 'function') r.catch(() => {}) } catch (e: any) { threw.push(n + ': ' + e.message) } }
     try { (window as any).posthog.init(...args.init) } catch (e: any) { threw.push('init: ' + e.message) }
     for (const n of order) { try { const r = (window as any).posthog[n](...(Object.hasOwn(args, n) ? args[n] : [])); if (r && typeof r.then === 'function') r.catch(() => {}) } catch (e: any) { threw.push(n + ': ' + e.message) } }
@@ -107,7 +107,7 @@ if (browser) {
   try { served = !!(url && localStack()) && (await fetch(url + '/functions/v1/ingest', { method: 'OPTIONS', signal: AbortSignal.timeout(2000) })).status < 500 } catch { /* down */ }
   const cfgPath = path.join(ROOT, 'supabase/functions/_shared/analytics.json')
   const cfg = fs.existsSync(cfgPath) ? JSON.parse(fs.readFileSync(cfgPath, 'utf8')) : { sources: [] }
-  const src = (cfg.sources || []).find((s: any) => s.hosts.includes('localhost') || s.hosts.includes('*'))
+  const src = (cfg.sources || []).find((s: { hosts: string|string[] }) => s.hosts.includes('localhost') || s.hosts.includes('*'))
   if (!served) note('the functions are not served — the door is not checked')
   else if (!src) note('this site registers no source allowed from localhost — the drop-in against the door is checked on the demo')
   else {
@@ -201,7 +201,7 @@ if (browser) {
         assert.equal(kindOf('/e/'), 'events'); assert.equal(kindOf('/i/v0/e/'), 'events'); assert.equal(kindOf('/flags/'), 'flags'); assert.equal(kindOf('/array/x/config.js'), 'config'); assert.equal(kindOf('/s/'), 'recordings'); assert.equal(kindOf('/'), null)
       })
       /* the served door: a server's /batch/ plain and gzipped, an unregistered token */
-      const post = async (sub: any, body: any, headers = {}) => { const r = await fetch(DOOR + sub, { method: 'POST', headers: { origin: PAGE, ...headers }, body }); return { status: r.status, body: await r.json().catch(() => null) } }
+      const post = async (sub: string, body: string|NonSharedBuffer, headers = {}) => { const r = await fetch(DOOR + sub, { method: 'POST', headers: { origin: PAGE, ...headers }, body }); return { status: r.status, body: await r.json().catch(() => null) } }
       const b1 = await post('/batch/', JSON.stringify({ api_key: src.key, batch: [{ event: 'server_signup', distinct_id: 'u-9', properties: { plan: 'monthly', mark }, timestamp: new Date().toISOString(), type: 'capture' }] }), { 'content-type': 'application/json' })
       const b2 = await post('/batch/', gzipSync(JSON.stringify({ api_key: src.key, batch: [{ event: 'server_signup', distinct_id: 'u-10', properties: { plan: 'yearly', mark }, timestamp: new Date().toISOString(), type: 'capture' }] })), { 'content-type': 'application/json', 'content-encoding': 'gzip' })
       const b3 = await post('/e/', JSON.stringify({ event: 'nope', properties: { token: 'pk_unknown_000000000', $device_id: ev.properties.$device_id, mark } }), { 'content-type': 'application/json' })

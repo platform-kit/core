@@ -3,7 +3,7 @@
    compiled collections, so it runs after them, and a database to write to. */
 export const searchPushStep = {
   key: 'search-push', title: 'What the site has published, searchable', phase: 'after',
-  when: (env: any, site: any) => ['articles', 'books', 'wiki', 'docs', 'store'].some((k) => site.modules[k] !== false),
+  when: (env: any, site: { modules: { [x: string]: boolean } }) => ['articles', 'books', 'wiki', 'docs', 'store'].some((k) => site.modules[k] !== false),
   whenText: 'there is nothing published to index',
   needs: { env: ['SUPABASE_SERVICE_ROLE_KEY'] },
   localProjection: true,

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict'
 import { arrival, utmOf, browserOf, osOf, deviceOf } from '../src/lib/arrival.js'
 
 let pass = 0, fail = 0
-const ok = (msg: any, fn: any) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL  ' + msg + '\n    ' + String(e.message).split('\n')[0]) } }
+const ok = (msg: string, fn: any) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL  ' + msg + '\n    ' + String(e.message).split('\n')[0]) } }
 
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
 const MAC_CHROME = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
@@ -54,7 +54,7 @@ if (process.env.ANALYTICS_TEST !== '0') {
     const sb = createClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
     const { data: who, error: se } = await sb.auth.signInWithPassword({ email: 'admin@example.com', password: 'password123' })
     if (se) throw new Error(se.message)
-    const rpc = async (name: any, args: any) => { const { data, error } = await sb.rpc(name, args); if (error) throw new Error(name + ': ' + error.message); return data }
+    const rpc = async (name: string, args: any) => { const { data, error } = await sb.rpc(name, args); if (error) throw new Error(name + ': ' + error.message); return data }
 
     /* the channel rule, thirty fixed inputs */
     const cases = [
@@ -72,8 +72,8 @@ if (process.env.ANALYTICS_TEST !== '0') {
     /* rows written for the purpose: a session A → B, a session A alone, a session that came in now */
     const mark = 'analytics-test'
     const sid1 = crypto.randomUUID(), sid2 = crypto.randomUUID(), sid3 = crypto.randomUUID(), a1 = crypto.randomUUID(), a2 = crypto.randomUUID(), a3 = crypto.randomUUID()
-    const t = (m: any) => new Date(Date.now() - m * 60000).toISOString()
-    const piece = (id: any) => ({ kind: 'articles', id, title: mark + ' ' + id, tags: [] })
+    const t = (m: number) => new Date(Date.now() - m * 60000).toISOString()
+    const piece = (id: string) => ({ kind: 'articles', id, title: mark + ' ' + id, tags: [] })
     const rows = [
       { session_id: sid1, anon_id: a1, type: 'session_start', path: '/articles/' + mark + '-a', ref: 'https://www.google.com/', props: { entry: '/articles/' + mark + '-a', device: 'phone', browser: 'safari', os: 'ios', tz: 'Europe/Amsterdam', lang: 'nl' }, occurred_at: t(30) },
       { session_id: sid1, anon_id: a1, type: 'content_view', path: '/articles/' + mark + '-a', props: piece(mark + '-a'), occurred_at: t(30) },
@@ -90,22 +90,22 @@ if (process.env.ANALYTICS_TEST !== '0') {
     if (we) throw new Error('events: ' + we.message)
     try {
       const c = await rpc('admin_content', { days: 1, audience: 'all' })
-      const A = (c.items || []).find((x: any) => x.id === mark + '-a'), B = (c.items || []).find((x: any) => x.id === mark + '-b')
+      const A = (c.items || []).find((x: { id: string; }) => x.id === mark + '-a'), B = (c.items || []).find((x: { id: string; }) => x.id === mark + '-b')
       ok('recirculation: A → B in one session, A alone in another — A 50%, B 0%', () => { assert.ok(A && B); assert.equal(A.recirculation, 50); assert.equal(B.recirculation, 0) })
       const pa = await rpc('admin_piece', { kind: 'articles', id: mark + '-a', days: 1, audience: 'all', tz: 'UTC' })
       ok("a piece's page: the next piece, the channels, the devices", () => {
         assert.equal(pa.now.views, 2); assert.equal(pa.now.recirculation, 50)
-        assert.ok((pa.next || []).some((n: any) => n.id === mark + '-b' && n.n === 1))
-        assert.ok((pa.channels || []).some((x: any) => x.channel === 'search' && x.n === 1) && (pa.channels || []).some((x: any) => x.channel === 'email' && x.n === 1))
-        assert.ok((pa.devices || []).some((x: any) => x.device === 'phone' && x.n === 1))
+        assert.ok((pa.next || []).some((n: { id: string; n: number; }) => n.id === mark + '-b' && n.n === 1))
+        assert.ok((pa.channels || []).some((x: { channel: string; n: number; }) => x.channel === 'search' && x.n === 1) && (pa.channels || []).some((x: { channel: string; n: number; }) => x.channel === 'email' && x.n === 1))
+        assert.ok((pa.devices || []).some((x: { device: string; n: number; }) => x.device === 'phone' && x.n === 1))
       })
       const now = await rpc('admin_now', {})
-      ok('right now: the session of a minute ago is on the site, on its piece', () => { assert.ok(now.visitors >= 1); assert.ok((now.pieces || []).some((p: any) => p.id === mark + '-b')) })
+      ok('right now: the session of a minute ago is on the site, on its piece', () => { assert.ok(now.visitors >= 1); assert.ok((now.pieces || []).some((p: { id: string; }) => p.id === mark + '-b')) })
       const k = await rpc('admin_kpis', { days: 1, audience: 'all', tz: 'UTC' })
       ok("the channels: search, email and direct among them, and the campaign", () => {
         const ch = Object.fromEntries((k.channels || []).map((x: any) => [x.channel, x]))
         assert.ok(ch.search && ch.search.visitors >= 1); assert.ok(ch.email && ch.email.visitors >= 1); assert.ok(ch.direct && ch.direct.visitors >= 1)
-        assert.ok((k.campaigns || []).some((x: any) => x.source === 'welcome' && x.medium === 'email'))
+        assert.ok((k.campaigns || []).some((x: { source: string; medium: string; }) => x.source === 'welcome' && x.medium === 'email'))
       })
       ok('the channels partition the sessions and the credited sign-ups (a browser seen by two channels is a visitor in each)', () => {
         const sumS = (k.channels || []).reduce((s: any, x: any) => s + x.sessions, 0), sumV = (k.channels || []).reduce((s: any, x: any) => s + x.visitors, 0), sumG = (k.channels || []).reduce((s: any, x: any) => s + x.signups, 0)
@@ -122,21 +122,21 @@ if (process.env.ANALYTICS_TEST !== '0') {
         for (const [i, c] of (k.channels || []).entries()) assert.equal(byChannel[i].totals.sessions, c.sessions)
       })
       const phone = await rpc('admin_kpis', { days: 1, audience: 'all', tz: 'UTC', filters: { channel: 'search', device: 'phone' } })
-      ok('two chips together: the search session on a phone alone', () => { assert.ok(phone.totals.sessions >= 1); assert.ok(phone.totals.sessions <= (k.channels.find((c: any) => c.channel === 'search') || {}).sessions) })
+      ok('two chips together: the search session on a phone alone', () => { assert.ok(phone.totals.sessions >= 1); assert.ok(phone.totals.sessions <= (k.channels.find((c: { channel: string; }) => c.channel === 'search') || {}).sessions) })
       const cf = await rpc('admin_content', { days: 1, audience: 'all', published: {}, filters: { channel: 'email' } })
-      ok('the content page narrows to the chip too', () => { const A2 = (cf.items || []).find((x: any) => x.id === mark + '-a'); assert.ok(A2 && A2.views === 1) })
+      ok('the content page narrows to the chip too', () => { const A2 = (cf.items || []).find((x: { id: string; }) => x.id === mark + '-a'); assert.ok(A2 && A2.views === 1) })
       /* a site's own goal: registered by key, counted and per channel */
       const kg = await rpc('admin_kpis', { days: 1, audience: 'all', tz: 'UTC', filters: {}, goals: [{ key: 'Signed up for the webinar', label: 'Webinar', value: 'seats' }] })
       ok('a registered goal is counted with its value, and per channel', () => {
-        const g = (kg.goals.custom || []).find((x: any) => x.key === 'Signed up for the webinar'); assert.ok(g && g.n >= 1 && g.value >= 3)
+        const g = (kg.goals.custom || []).find((x: { key: string; }) => x.key === 'Signed up for the webinar'); assert.ok(g && g.n >= 1 && g.value >= 3)
         assert.ok((kg.channels || []).some((c: any) => c.channel === 'search' && (c.custom || {})['Signed up for the webinar'] >= 1))
       })
       /* the events read: every name as sent, and one opened */
       const ev = await rpc('admin_events', { days: 1, audience: 'all', filters: {}, event: 'Signed up for the webinar' })
       ok('the events read lists a name as it was sent, with its people and top values', () => {
-        const e = (ev.events || []).find((x: any) => x.type === 'Signed up for the webinar'); assert.ok(e && e.n >= 1 && e.people >= 1)
-        assert.ok(ev.one && (ev.one.properties || []).some((pp: any) => pp.key === 'plan' && pp.values.some((v: any) => v.value === 'monthly')))
-        assert.ok((ev.one.channels || []).some((c: any) => c.channel === 'search'))
+        const e = (ev.events || []).find((x: { type: string; }) => x.type === 'Signed up for the webinar'); assert.ok(e && e.n >= 1 && e.people >= 1)
+        assert.ok(ev.one && (ev.one.properties || []).some((pp: any) => pp.key === 'plan' && pp.values.some((v: { value: string; }) => v.value === 'monthly')))
+        assert.ok((ev.one.channels || []).some((c: { channel: string; }) => c.channel === 'search'))
       })
       /* retention: recomputed from the rows for the last two weeks */
       const ret = await rpc('admin_retention', { weeks: 8, audience: 'all', filters: {} })
@@ -173,7 +173,7 @@ if (process.env.ANALYTICS_TEST !== '0') {
       const cfg = JSON.parse(fsMod.readFileSync('supabase/functions/_shared/analytics.json', 'utf8'))
       const sid = crypto.randomUUID(), aid = crypto.randomUUID()
       const post = (body: any, headers = {}) => fetch(url + '/functions/v1/ingest', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: anon, ...headers }, body: JSON.stringify(body) })
-      const row = (type: any, extra = {}) => ({ type, session_id: sid, anon_id: aid, path: '/', props: {}, occurred_at: new Date().toISOString(), ...extra })
+      const row = (type: string, extra = {}) => ({ type, session_id: sid, anon_id: aid, path: '/', props: {}, occurred_at: new Date().toISOString(), ...extra })
       try {
         const bad = await post({ batch: [row('<script>alert(1)')] })
         const long = await post({ batch: [row('x'.repeat(200))] })
@@ -184,11 +184,11 @@ if (process.env.ANALYTICS_TEST !== '0') {
            the same millisecond can find one row or none. Wait for what was sent rather than
            asserting on whatever happened to have landed: that race passed on a warm function and
            failed in a full run, which is the worst way for a check to be wrong. */
-        const rowsIn = async (n: any) => { let r: any = []; for (let i = 0; i < 40; i++) { r = (await service.from('events').select('type, user_id, props, source').eq('session_id', sid).order('occurred_at')).data || []; if (r.length >= n) return r; await new Promise((z) => setTimeout(z, 250)) } return r }
+        const rowsIn = async (n: number) => { let r: any = []; for (let i = 0; i < 40; i++) { r = (await service.from('events').select('type, user_id, props, source').eq('session_id', sid).order('occurred_at')).data || []; if (r.length >= n) return r; await new Promise((z) => setTimeout(z, 250)) } return r }
         const got = await rowsIn(2)
         ok('the signed-in reader\'s rows carry their user from the JWT alone, the name as sent, the country from the header', () => {
           assert.equal(mine.status, 200); assert.equal(got.length, 2)
-          assert.ok(got.every((r: any) => r.user_id === who.user.id)); assert.equal(got[0].props.country, 'NL'); assert.ok(got.some((r: any) => r.type === 'Signed up for the webinar')); assert.ok(got.every((r: any) => r.source === null))
+          assert.ok(got.every((r: { user_id: string; }) => r.user_id === who.user.id)); assert.equal(got[0].props.country, 'NL'); assert.ok(got.some((r: { type: string; }) => r.type === 'Signed up for the webinar')); assert.ok(got.every((r: { source: null; }) => r.source === null))
         })
         const unknown = await post({ key: 'pk_no_such_key_000000', batch: [row('$pageview')] })
         ok('a batch under an unknown key is refused', () => assert.equal(unknown.status, 403))

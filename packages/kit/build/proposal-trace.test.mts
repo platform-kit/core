@@ -27,7 +27,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 let pass = 0, fail = 0
-const ok = (m: any, c: any, d?: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
+const ok = (m: string, c: boolean, d?: string|undefined) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
 console.log('\nA PROPOSAL PROMISES NOTHING IT DOES NOT REQUIRE\n')
 
 /* ---------- the pure reader, so the fixture and the real changes go through one path ---------- */
@@ -60,7 +60,7 @@ export function traceRows(proposal: any) {
    and would fail "spelled exactly" for no reason anybody could see — and a check that fails on
    something invisible is one somebody switches off. Normalising quotes and whitespace is
    deterministic, so it is not the prose-guessing this check refuses to do. */
-const norm = (s: any) => String(s || '')
+const norm = (s: string|null) => String(s || '')
   .replace(/[\u2018\u2019\u02bc]/g, "'")
   .replace(/[\u201c\u201d]/g, '"')
   .replace(/[\u2013\u2014]/g, '-')

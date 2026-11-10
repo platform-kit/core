@@ -16,7 +16,7 @@ import { createUsageGate, resolveUsageOperation } from '../supabase/functions/_s
 import { billableInferenceAttempts, boundedInferenceUsage, customerCostMicros, normalizeProviderUsage, providerCostMicros, tariffFor } from '../supabase/functions/_shared/inference-meter.mjs'
 import { ask, providersFrom } from '../supabase/functions/_shared/agents/provider.js'
 
-const fail = (message: any) => { throw new Error(message) }
+const fail = (message: string|undefined) => { throw new Error(message) }
 const inferenceFixture = inferenceOf({
   inference: {
     providers: [
@@ -204,13 +204,13 @@ assert.deepEqual(await disabledTopup({ userId: 'user-1', invocationRef: 'work-1'
 assert.deepEqual(await topupRunner(async () => { throw Object.assign(new Error('card declined'), { raw: { payment_intent: { id: 'pi_declined', status: 'requires_payment_method' } } }) })({
   userId: 'user-1', invocationRef: 'declined-work',
 }), { granted: false, reason: 'topup_payment_failed' })
-assert.equal(topupAttempts.get(topupEvents.find((event: any) => event.type === 'begin').input.attemptRef).status, 'failed')
+assert.equal(topupAttempts.get(topupEvents.find((event: { type: string }) => event.type === 'begin').input.attemptRef).status, 'failed')
 const actionAttempt = await topupRunner(async () => { throw Object.assign(new Error('authentication required'), { raw: { payment_intent: { id: 'pi_action', status: 'requires_action' } } }) })({
   userId: 'user-1', invocationRef: 'action-work',
 })
 assert.deepEqual(actionAttempt, { granted: false, reason: 'topup_requires_action' })
 assert.equal(topupGrants.size, 0, 'failed and action-required top-ups grant no units')
-const successfulTopup = topupRunner(async (input: any) => {
+const successfulTopup = topupRunner(async (input: { idempotencyKey: string }) => {
   assert.match(input.idempotencyKey, /^usage-topup:ut_[a-f0-9]{64}$/)
   return { paymentIntentId: 'pi_confirmed', status: 'succeeded' }
 })
@@ -254,7 +254,7 @@ assert.deepEqual(resolveUsageOperation(operationPolicies, 'agent.game'), {
 })
 assert.throws(() => resolveUsageOperation(operationPolicies, 'agent.npc'), /has no site policy/)
 const rejectedGate = createUsageGate({
-  resolveOffer: async (key: any) => key === 'abcdef12' ? topupPack : null,
+  resolveOffer: async (key: string) => key === 'abcdef12' ? topupPack : null,
   reserve: async () => ({ admitted: false, reason: 'usage_balance_exhausted', remaining_micros: 0 }),
   autoTopUp: async () => ({ granted: false, reason: 'topup_disabled' }),
   settle: async () => { throw new Error('a refused invocation cannot settle') },
@@ -405,10 +405,10 @@ assert.equal(compileUsage('yen-meter.md', {
 }, 'subscription', 'jpy', fail).incremental_charge_minor, 100)
 assert.throws(() => compileUsage('fractional-yen.md', {
   unit: 'request', rate: 0.01, meter: 'requests', overagePrice: 0.02, incrementalCharge: 0.5,
-}, 'subscription', 'jpy', (message: any) => { throw new Error(message) }), /at most 0 decimal places/)
+}, 'subscription', 'jpy', (message: string|undefined) => { throw new Error(message) }), /at most 0 decimal places/)
 assert.throws(() => compileUsage('one-time-increment.md', {
   unit: 'request', rate: 0.01, grant: 1, incrementalCharge: 100,
-}, 'once', 'usd', (message: any) => { throw new Error(message) }), /metered subscription/)
+}, 'once', 'usd', (message: string|undefined) => { throw new Error(message) }), /metered subscription/)
 assert.equal(meterUnitAmountDecimal(30_000, 'usd'), '0.000003')
 assert.equal(meterUnitAmountDecimal(30_000, 'jpy'), '0.00000003')
 assert.deepEqual(incrementalUsagePlan(9_999, 10_000), { thresholdCount: 0, remainderMinor: 9_999 })
@@ -489,7 +489,7 @@ const speechHandler = createSpeechHandler({
   }),
   authorizeUsage: speechGate,
   newId: () => 'segment-1',
-  fetchImpl: async (_url: any, init: any) => {
+  fetchImpl: async (_url: any, init: { body: string }) => {
     assert.equal(speechAuthorized, true, 'the shared usage gate admits work before speech is sent upstream')
     speechCalls.push(JSON.parse(init.body))
     return new Response(new Uint8Array(48_000), {

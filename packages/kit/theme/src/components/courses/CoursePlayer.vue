@@ -191,7 +191,7 @@ const emit = defineEmits(['enroll', 'sign-in', 'complete', 'form-done'])
 const { K, S } = words()
 
 const courseHref = computed(() => props.base + '/' + props.state.slug)
-const lessons = computed(() => (props.state.lessons || []).map((l: any, i: any) => ({ ...l, n: i + 1 })))
+const lessons = computed(() => (props.state.lessons || []).map((l: any, i: number) => ({ ...l, n: i + 1 })))
 /* the reader's measures for the sections a site's own kind measures */
 const { measures, refresh } = useMeasures(() => props.state)
 const modules = computed(() => modulesOf(props.state.lessons || [], measures))
@@ -215,11 +215,11 @@ function toggleSide() { if (narrow()) drawer.value = !drawer.value; else sideOpe
 watch(() => props.lessonKey, () => { drawer.value = false })
 
 const player = computed(() => sitePlayer(props.lesson))
-const tracks = computed(() => ((props.lesson && props.lesson.media) || []).filter((m: any) => m.type !== 'file'))
-const downloads = computed(() => ((props.lesson && props.lesson.media) || []).filter((m: any) => m.type === 'file'))
+const tracks = computed(() => ((props.lesson && props.lesson.media) || []).filter((m: { type: string }) => m.type !== 'file'))
+const downloads = computed(() => ((props.lesson && props.lesson.media) || []).filter((m: { type: string }) => m.type === 'file'))
 const bookSlug = computed(() => String((props.lesson && props.lesson.ref) || '').split('#')[0])
 const chapterN = computed(() => String((props.lesson && props.lesson.ref) || '').split('#')[1] || '')
-const book = computed(() => bookShelf().find((b: any) => b.slug === bookSlug.value) || null)
+const book = computed(() => bookShelf().find((b: { slug: string }) => b.slug === bookSlug.value) || null)
 const bookCover = computed(() => (bookSlug.value ? bookCoverOf(bookSlug.value) : ''))
 const goWord = computed(() => (({ article: S.value['read-article'], form: S.value['answer-form'], session: S.value['book-session'] } as any)[props.lesson && props.lesson.kind] || S.value.open))
 /* A FORM LESSON'S FORM, run here. Its result replaces the form's own end: the attempt just made, or, opening a lesson

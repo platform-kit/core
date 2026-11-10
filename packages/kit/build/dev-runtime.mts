@@ -98,7 +98,7 @@ export function processStart(pid: number) {
  * captured here, never handed the run's own streams, and it is given two minutes at most; the
  * caller prints what it said if it still has somewhere to print.
  */
-export function stopStack(workdir: any, cwd = process.cwd()) {
+export function stopStack(workdir: string, cwd = process.cwd()) {
   return spawnSync('npx', ['supabase', 'stop', ...(workdir ? ['--workdir', workdir] : [])], {
     cwd,
     encoding: 'utf8',

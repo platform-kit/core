@@ -48,7 +48,7 @@ async function askPrintRender(body: any) {
 async function setInteriors(waiting: any) {
   for (const w of waiting) {
     const name = CONTENTS_NAMES[w.contents] || w.contents
-    await finishWaiting({ job: w.job, ask: askPrintRender, base: supabaseUrl, wasm: typstWasm, onStep: (step: any) => { interiorStep.value = `${name}: ${((us('orders').editions || {}).interior || {})[step] || step}` } })
+    await finishWaiting({ job: w.job, ask: askPrintRender, base: supabaseUrl, wasm: typstWasm, onStep: (step: string|number) => { interiorStep.value = `${name}: ${((us('orders').editions || {}).interior || {})[step] || step}` } })
   }
   interiorStep.value = ''
 }
@@ -98,12 +98,12 @@ const state = (b: any) => {
   return { kind: 'ok', label: 'On sale · ' + on.map((p) => (FORMAT_NAMES[p.format] || p.format) + ' ' + money(p.price)).join(' · ') + proof }
 }
 const onSale = computed(() => books.value.filter((b: any) => state(b).kind === 'ok').length)
-const pagesOf = (b: any, contents: any) => { const e = b.edition && b.edition.editions && b.edition.editions[contents]; if (e) return e.pages; const d = b.draft && b.draft.editions && b.draft.editions[contents]; return d ? d.pages : null }
+const pagesOf = (b: any, contents: string) => { const e = b.edition && b.edition.editions && b.edition.editions[contents]; if (e) return e.pages; const d = b.draft && b.draft.editions && b.draft.editions[contents]; return d ? d.pages : null }
 
 /* the index: the same grid every collection has, one row per book */
 const theme = useAgGridTheme()
 const defaultColDef = { sortable: true, filter: true, resizable: true, floatingFilter: true }
-const cap = (v: any) => (v ? String(v)[0].toUpperCase() + String(v).slice(1) : '—')
+const cap = (v: string) => (v ? String(v)[0].toUpperCase() + String(v).slice(1) : '—')
 const columnDefs: ColDef[] = [
   { headerName: 'Book', field: 'title', pinned: 'left', flex: 1.6, minWidth: 260, cellRenderer: (q: any) => `<span class="pr-gtitle">${q.value}</span><span class="pr-gauthor">${q.data.author || ''}</span>` },
   { headerName: 'Sale', flex: 2, minWidth: 260, valueGetter: (q: any) => state(q.data).label, cellRenderer: (q: any) => `<span class="pr-gstate pr-${state(q.data).kind}">${q.value}</span>` },
@@ -157,7 +157,7 @@ function blockOf(f: any) {
    print-order function (a print order flagged proof, never a purchase); "Mark proofed" writes the
    edition's id on the block. The book is on sale either way. */
 const PROOF_WORDS: any = { proofed: 'Proofed', stale: 'Changed since its proof', never: 'Never proofed', unset: 'No edition set' }
-const proofs = computed(() => { const b = cur.value; if (!b || !form.pr) return []; const spec = printSpec(b.print); return spec ? form.pr.contents.map((c: any) => { const e = b.edition && b.edition.editions && b.edition.editions[c]; return { contents: c, edition: e ? e.edition : '', pages: e ? e.pages : 0, state: proofState(spec, b.edition, c), was: spec.proofed[c] || '' } }) : [] })
+const proofs = computed(() => { const b = cur.value; if (!b || !form.pr) return []; const spec = printSpec(b.print); return spec ? form.pr.contents.map((c: string) => { const e = b.edition && b.edition.editions && b.edition.editions[c]; return { contents: c, edition: e ? e.edition : '', pages: e ? e.pages : 0, state: proofState(spec, b.edition, c), was: spec.proofed[c] || '' } }) : [] })
 const ADDR_KEY = 'dl.admin.proof-address'
 const proofForm = reactive<any>({ contents: '', format: 'softcover', cloth: '', foil: '', level: 'standard', address: { name: '', line1: '', line2: '', city: '', state: '', postal_code: '', country: 'US', phone: '' } })
 try { Object.assign(proofForm.address, JSON.parse(localStorage.getItem(ADDR_KEY) || '{}')) } catch (e) { /* none kept */ }
@@ -198,15 +198,15 @@ watch(() => cur.value && cur.value.slug, () => { panel.value = 'edition' })
 
 /* a list toggled: contents kept in the canon's order, at least one; a linen's cloths and foils the same */
 function toggle(list: any, v: any, all: any, min = 1) { const i = list.indexOf(v); if (i >= 0) { if (list.length > min) list.splice(i, 1) } else { list.push(v); list.sort((a: any, b: any) => all.indexOf(a) - all.indexOf(b)) } }
-const sells = (k: any) => {
+const sells = (k: string) => {
   if (!form.pr || !cur.value) return ''
   const r = form.pr.formats[k]; if (!r.on) return ''
   const price = formatPrice(printSpec(blockOf(form.pr)), k, cur.value.edition)
   if (r.by === 'price') return price ? `Sells for ${money(price)}` : ''
   if (FILES.includes(k)) return price ? `Sells for ${money(price)}` : ''
-  const costs = form.pr.contents.map((c: any) => { const e = cur.value.edition && cur.value.edition.editions && cur.value.edition.editions[c]; return e && e.printers && e.printers[k] ? costUsd(e.printers[k]) : null })
+  const costs = form.pr.contents.map((c: string|number) => { const e = cur.value.edition && cur.value.edition.editions && cur.value.edition.editions[c]; return e && e.printers && e.printers[k] ? costUsd(e.printers[k]) : null })
   if (costs.some((c: any) => c == null)) return 'No quote yet for every contents — set the editions and the printers price them'
-  const who = [...new Set<string>(form.pr.contents.map((c: any) => cur.value.edition.editions[c].printers[k].provider))].map((p) => PRINTER_NAMES[p] || p).join(' / ')
+  const who = [...new Set<string>(form.pr.contents.map((c: string|number) => cur.value.edition.editions[c].printers[k].provider))].map((p) => PRINTER_NAMES[p] || p).join(' / ')
   return `Sells for ${money(price)} — ${who}'s ${money(Math.max(...costs))} to print the costliest contents plus the markup, rounded up to the next $${PRICE_STEP}; shipping is charged where it goes`
 }
 const spine = computed<any>(() => (cur.value && form.pr ? spineWords(cur.value.title, form.pr.spine, SPINE_EDITION()) : null))
@@ -215,12 +215,12 @@ const spine = computed<any>(() => (cur.value && form.pr ? spineWords(cur.value.t
    every printed format that is on is quoted at the printer named for it (or at every one that
    could make it, for auto), for the draft's page count, as the options change */
 const printedOn = computed(() => (form.pr ? PRINTED.filter((f) => form.pr.formats[f].on) : []))
-const makers: any = (f: any) => Object.values(printers.value).filter((p) => (p as any).formats.includes(f))
+const makers: any = (f: string) => Object.values(printers.value).filter((p) => (p as any).formats.includes(f))
 /* the printers whose options are shown: every one named for a format, and every one auto might pick */
 const shownProviders = computed(() => { const ids = new Set<string>(); for (const f of printedOn.value) { const id = form.pr.printers[f]; if (id && id !== 'auto') ids.add(id); else for (const p of makers(f)) if ((p as any).configured || !Object.values(printers.value).some((x) => (x as any).configured)) ids.add((p as any).id) } return [...ids] })
-const optionsFor = (id: any) => { const p = printers.value[id]; if (!p) return []; const seen = new Map(); for (const f of printedOn.value) if (p.formats.includes(f) && (form.pr.printers[f] === id || form.pr.printers[f] === 'auto')) for (const o of p.options[f] || []) if (!seen.has(o.key)) seen.set(o.key, o); return [...seen.values()] }
-const optionValue = (id: any, o: any) => { const v = form.pr.providers[id] && form.pr.providers[id][o.key]; return v == null || v === '' ? o.default : v }
-const setOption = (id: any, o: any, v: any) => { if (!form.pr.providers[id]) form.pr.providers[id] = {}; form.pr.providers[id][o.key] = o.type === 'toggle' ? !!v : o.type === 'select' && typeof o.choices[0].value === 'number' ? Number(v) : v; quoteAll() }
+const optionsFor = (id: string|number) => { const p = printers.value[id]; if (!p) return []; const seen = new Map(); for (const f of printedOn.value) if (p.formats.includes(f) && (form.pr.printers[f] === id || form.pr.printers[f] === 'auto')) for (const o of p.options[f] || []) if (!seen.has(o.key)) seen.set(o.key, o); return [...seen.values()] }
+const optionValue = (id: string|number, o: any) => { const v = form.pr.providers[id] && form.pr.providers[id][o.key]; return v == null || v === '' ? o.default : v }
+const setOption = (id: string|number, o: any, v: any) => { if (!form.pr.providers[id]) form.pr.providers[id] = {}; form.pr.providers[id][o.key] = o.type === 'toggle' ? !!v : o.type === 'select' && typeof o.choices[0].value === 'number' ? Number(v) : v; quoteAll() }
 const quotes = reactive<any>({})   /* `${format}:${provider}` → { print, shipping, currency, days, mock, error } */
 let quoteTimer: any = null
 function quoteAll() {
@@ -241,10 +241,10 @@ function quoteAll() {
     }))
   }, 350)
 }
-const quoteOf = (f: any, pid: any) => quotes[f + ':' + pid] || null
+const quoteOf = (f: string, pid: string) => quotes[f + ':' + pid] || null
 const quoteLine = (q: any) => { if (!q) return '…'; if (q.busy) return 'quoting…'; if (q.error) return 'no quote — ' + q.error; const cur = q.currency === 'GBP' ? '£' : q.currency === 'EUR' ? '€' : '$'; return `${cur}${Number(q.print).toFixed(2)} a copy${q.currency && q.currency !== 'USD' ? ' (≈ ' + money(costUsd({ cost: q.print, currency: q.currency })) + ')' : ''}${q.shipping ? ', ' + cur + Number(q.shipping).toFixed(2) + ' to ship' : ''}${q.days ? ', ' + q.days + ' days' : ''}${q.from === 'GB' ? ', from the UK' : ''}${q.mock ? ' · mock' : ''}` }
 /* the price a format would sell for at a quote, by the same rule the store uses */
-const priceAt = (f: any, q: any) => { if (!q || q.busy || q.error) return null; const r = form.pr.formats[f]; if (r.by === 'price') return Number(r.price); const usd = costUsd({ cost: q.print, currency: q.currency }); return Math.ceil((usd! + Number(r.markup || 0)) / PRICE_STEP) * PRICE_STEP }
+const priceAt = (f: string|number, q: any) => { if (!q || q.busy || q.error) return null; const r = form.pr.formats[f]; if (r.by === 'price') return Number(r.price); const usd = costUsd({ cost: q.print, currency: q.currency }); return Math.ceil((usd! + Number(r.markup || 0)) / PRICE_STEP) * PRICE_STEP }
 watch(() => form.pr && [form.pr.printers, form.pr.contents, form.pr.trim, form.pr.paper], () => quoteAll(), { deep: true })
 watch(panel, (p) => { if (p === 'printers') quoteAll() })
 const clothHex: any = { navy: '#1c2740', gray: '#585b60', red: '#712727', black: '#161512', tan: '#b39a72', forest: '#28422f' }
@@ -306,7 +306,7 @@ async function drawListing(eds: any) {
     for (const [contents, ed] of Object.entries(eds)) {
       if (!ed || !(ed as any).edition) continue
       const pictures: any = {}, art: any = {}
-      const url = (file: any) => pipe.fileUrl('print', 'pdf', { book: b.slug, edition: (ed as any).edition, file })
+      const url = (file: string) => pipe.fileUrl('print', 'pdf', { book: b.slug, edition: (ed as any).edition, file })
       /* the three pages, from the document's own account of itself — the function read it back out
          of the compiled file with the same Typst query the build makes */
       let shots: any = null
@@ -385,7 +385,7 @@ async function mountBook() {
   const { width, height } = pageSize()
   flip = new PageFlip(el, { width, height, size: 'fixed', showCover: true, maxShadowOpacity: 0.35, flippingTime: 650, usePortrait: false, mobileScrollSupport: false, drawShadow: true })
   flip.loadFromHTML(el.querySelectorAll('.pr-page'))
-  flip.on('flip', (e: any) => { pageAt.value = e.data })
+  flip.on('flip', (e: { data: number }) => { pageAt.value = e.data })
   const at = pageAt.value
   if (at > 0) { try { flip.turnToPage(at) } catch (e) { /* not yet */ } }
 }
@@ -420,7 +420,7 @@ async function loadPreview() {
   const keys = Object.keys(ed.covers || {})
   if (!keys.includes(previewCover.value)) previewCover.value = keys[0] || ''
   /* the dev server answers a GET; in cloud mode the action answers the bytes and this is a blob */
-  const url = (file: any) => pipe.fileUrl('print', 'pdf', { book: b.slug, edition: ed.edition, file })
+  const url = (file: string) => pipe.fileUrl('print', 'pdf', { book: b.slug, edition: ed.edition, file })
   const coverFile = previewCover.value ? 'cover-' + previewCover.value : ''
   /* the book opens on its cover and closes on its back: the cover's front and back panels,
      cropped by the binding's dimensions (trim wide, between the bleeds; past the flap and the
@@ -432,13 +432,13 @@ async function loadPreview() {
   handle = openPdf(await url('interior'), { width: 640,
     /* the list: the cover, the inside of the cover (blank), the pages, the inside of the back, the
        back — so page 1 opens on the right, as in the book */
-    onCount: (n: any, urls: any) => { pageCount.value = n; pages.value = [urls[0], urls[0], ...urls, urls[0], urls[0]]; mountBook() },
-    onPage: (i: any, u: any) => { if (pages.value.length > i + 1) pages.value[i + 1] = u } })
+    onCount: (n: number, urls: string[]) => { pageCount.value = n; pages.value = [urls[0], urls[0], ...urls, urls[0], urls[0]]; mountBook() },
+    onPage: (i: number, u: string) => { if (pages.value.length > i + 1) pages.value[i + 1] = u } })
   if (coverFile) {
     const cu = await url(coverFile)
-    jacketHandle = openPdf(cu, { width: 1400, onPage: (i: any, u: any) => { if (i === 1) jacket.value = u } })
-    if (front) { coverHandle = openPdf(cu, { width: 640, crop: front, onPage: (i: any, u: any) => { if (i === 1 && pages.value.length) pages.value[0] = u } }) }
-    if (back) { backHandle = openPdf(cu, { width: 640, crop: back, onPage: (i: any, u: any) => { if (i === 1 && pages.value.length) pages.value[pages.value.length - 1] = u } }) }
+    jacketHandle = openPdf(cu, { width: 1400, onPage: (i: number, u: string) => { if (i === 1) jacket.value = u } })
+    if (front) { coverHandle = openPdf(cu, { width: 640, crop: front, onPage: (i: number, u: string) => { if (i === 1 && pages.value.length) pages.value[0] = u } }) }
+    if (back) { backHandle = openPdf(cu, { width: 640, crop: back, onPage: (i: number, u: string) => { if (i === 1 && pages.value.length) pages.value[pages.value.length - 1] = u } }) }
   }
 }
 /* the book is mounted only while the interior is shown; switching back mounts it again */

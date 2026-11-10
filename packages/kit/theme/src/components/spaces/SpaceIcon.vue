@@ -77,8 +77,8 @@ const P: any = {
 /* A GLYPH TAKEN FROM LUCIDE keeps Lucide's drawing and its 24-unit grid ({ grid, d }); the line is
    thickened in proportion, so it reads at the same weight as the 20-unit glyphs beside it */
 const entry = (n: string|number) => P[n] || ''
-const GRID = (n: any) => (typeof entry(n) === 'object' ? entry(n).grid : 20)
-const D = (n: any) => (typeof entry(n) === 'object' ? entry(n).d : entry(n))
+const GRID = (n: string|number) => (typeof entry(n) === 'object' ? entry(n).grid : 20)
+const D = (n: string|number) => (typeof entry(n) === 'object' ? entry(n).d : entry(n))
 </script>
 
 <template>

@@ -40,7 +40,7 @@ export const status = reactive<any>({ phase: 'idle', provider: null, download: {
 export const tracks = reactive<any>({})
 
 /* the recording's name for a text: sha1 of the shared hash input, 16 hex */
-export async function hashText(text: any) {
+export async function hashText(text: string) {
   const bytes = new TextEncoder().encode(hashInput(text))
   const digest = await crypto.subtle.digest('SHA-1', bytes)
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16)

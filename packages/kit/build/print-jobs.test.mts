@@ -9,11 +9,11 @@
 import { planRuns, reoffset, pagesOf, PAGES_PER_RUN } from '../build/print/plan-pieces.mjs'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
 
 console.log('\nPRINT RUNS\n')
 
-const ch = (title: any, pages: any) => ({ title, pages });
+const ch = (title: string, pages: number) => ({ title, pages });
 
 /* --- a book that fits is one call --- */
 {
@@ -87,7 +87,7 @@ const ch = (title: any, pages: any) => ({ title, pages });
 
   /* the fetch is taken rather than assumed, so this needs no network */
   let asked = ''
-  const bytes = await sizePicture(obj, { fetchFn: async (u: any) => { asked = u; return { ok: true, arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer } } })
+  const bytes = await sizePicture(obj, { fetchFn: async (u: string) => { asked = u; return { ok: true, arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer } } })
   ok('a url is sized by Storage', asked.includes('render/image') && bytes.length === 3)
   let threw = ''
   try { await sizePicture(obj, { fetchFn: async () => ({ ok: false, status: 404 }) }) } catch (e: any) { threw = e.message }
@@ -110,10 +110,10 @@ const ch = (title: any, pages: any) => ({ title, pages });
      (the function's own copy asked without one, and bound 77 pages to 80 where the build bound them to 78) */
   const { bindingFor } = await import('../build/print/plan-pieces.mjs')
   const asked: any = []
-  const printer = (id: any, byFormat: any) => ({ id, product: ({ chosen }: any) => { asked.push(id + ':' + (chosen && chosen.format)); return byFormat[chosen && chosen.format] || {} } })
+  const printer = (id: string, byFormat: any) => ({ id, product: ({ chosen }: any) => { asked.push(id + ':' + (chosen && chosen.format)); return byFormat[chosen && chosen.format] || {} } })
   const lulu = printer('lulu', { softcover: { minPages: 32, pageStep: 2 }, hardcover: { minPages: 24, pageStep: 2 } })
   const vault = printer('bookvault', { hardcover: { minPages: 24, pageStep: 4 } })
-  const cands = (spec: any, f: any) => (f === 'softcover' ? [lulu] : [lulu, vault])
+  const cands = (spec: any, f: string) => (f === 'softcover' ? [lulu] : [lulu, vault])
   const b = bindingFor({ trim: '6x9' }, ['softcover', 'hardcover'], cands)
   ok('the binding is the largest minimum and step of every printer that may make each format', b.min === 32 && b.step === 4, JSON.stringify(b))
   ok('…each asked for the format it would make', asked.join(' ') === 'lulu:softcover lulu:hardcover bookvault:hardcover', asked.join(' '))
@@ -157,9 +157,9 @@ const ch = (title: any, pages: any) => ({ title, pages });
 {
   const { makeEpub } = await import('../build/print/epub.mjs')
   const { unzipSync } = await import('fflate')
-  const book = (slug: any) => ({ slug, title: 'A Book', author: 'Nobody', raw: '# One\n\nA line ==worth noticing==.\n\n# Two\n\nAnother.\n' })
+  const book = (slug: string) => ({ slug, title: 'A Book', author: 'Nobody', raw: '# One\n\nA line ==worth noticing==.\n\n# Two\n\nAnother.\n' })
   const opf = async (b: any, contents = 'full') => new TextDecoder().decode(unzipSync(await makeEpub({ book: b, companion: null, contents, words: { edition: 'E' } }))['OEBPS/content.opf'])
-  const uid = (s: any) => (/<dc:identifier id="uid">([^<]+)</.exec(s) || [])[1]
+  const uid = (s: string) => (/<dc:identifier id="uid">([^<]+)</.exec(s) || [])[1]
 
   const a = uid(await opf(book('one'))), b = uid(await opf(book('two')))
   ok('an EPUB carries a unique identifier', /^urn:uuid:[0-9a-f-]{36}$/.test(a || ''), a)

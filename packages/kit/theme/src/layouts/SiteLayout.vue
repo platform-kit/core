@@ -100,7 +100,7 @@ const chatOn = computed(() => moduleOn('coaching') && (site.coaching || {}).wher
    rest. A site whose only rooms are private falls back to the old rule on its own, because there
    is genuinely nothing there for a visitor to walk into; and a site that would rather keep the
    link to members says so, once: platformkit.config.js `spaces.link: 'members'`. */
-const OPEN_ROOM = (SPACES_RAW || []).some((s: any) => s && s.discoverable !== false)
+const OPEN_ROOM = (SPACES_RAW || []).some((s: { discoverable: boolean }) => s && s.discoverable !== false)
 const SPACE_LINK = ((site.spaces || {}).link || 'always')
 /* ONE ANSWER TO "IS THE COMMUNITY IN THE HEADER". A site that names the community in its own nav
    has said where it goes and what it is called, so the theme's own affordance stands down rather
@@ -226,7 +226,7 @@ const palette = ref<any>(null)
 
 /* the mobile nav menu: the links collapse behind a hamburger below 700px */
 const menuOpen = ref(false)
-function onKey(e: any) { if (e.key === 'Escape') menuOpen.value = false }
+function onKey(e: { key: string }) { if (e.key === 'Escape') menuOpen.value = false }
 onMounted(() => window.addEventListener('keydown', onKey))
 onUnmounted(() => window.removeEventListener('keydown', onKey))
 

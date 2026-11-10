@@ -100,12 +100,12 @@ export function searchesOf(v: any) {
   return out
 }
 
-const lower = (v: any) => String(v == null ? '' : v).trim().toLowerCase()
+const lower = (v: string|null) => String(v == null ? '' : v).trim().toLowerCase()
 
 /* who may summon it — the same grammar as everything else that is gated here */
-export function audienceOf(v: any) {
+export function audienceOf(v: string|null) {
   if (v == null || v === '' || v === 'anyone') return []
-  const one = (x: any) => {
+  const one = (x: string) => {
     if (typeof x !== 'string') return x && typeof x === 'object' ? x : null
     const s = x.trim()
     if (!s || s === 'anyone') return null
@@ -217,7 +217,7 @@ export async function readSkills(st: any, { theme, themeSkills }: any = {}) {
   const given = themeSkills && typeof themeSkills === 'object' ? themeSkills : null
   const themeDir = given ? Object.keys(given)
     : theme && fs.existsSync(theme) ? fs.readdirSync(theme).filter((n) => n.endsWith('.md')).map((n) => n.slice(0, -3)) : []
-  const read = async (name: any, fromTheme: any) => (fromTheme
+  const read = async (name: string, fromTheme: any) => (fromTheme
     ? (given ? String(given[name] || '') : fs.readFileSync(path.join(theme, name + '.md'), 'utf8'))
     : String((await st.read(`content/skills/${name}.md`)) || ''))
   const out: any = {}
@@ -317,7 +317,7 @@ export async function readBots(st: any, { tools = {}, skills = {}, sealed = null
        it knows whether this conversation has chosen the bot. */
     const ears = bot.offer === 'always' ? ['support-message'] : bot.offer === 'ask' ? ['support-asked', 'support-message'] : []
     for (const e of ears) {
-      if (!bot.hears.some((h: any) => h.kind === 'event' && h.event === e)) bot.hears = [...bot.hears, { kind: 'event', event: e, ask: '' }]
+      if (!bot.hears.some((h: { kind: string; event: string }) => h.kind === 'event' && h.event === e)) bot.hears = [...bot.hears, { kind: 'event', event: e, ask: '' }]
     }
     if (bot.extends === DESK_BOT.slug) bot = extend({ ...bot, prompt }, DESK_BOT)
     if (!bot.prompt) faults.push(`${where}: a bot's body is its prompt, and this one has none.`)
@@ -368,7 +368,7 @@ export async function readBots(st: any, { tools = {}, skills = {}, sealed = null
     /* what the worker needs of the tools this bot names, carried with it so one read is enough */
     /* the skills it carries, whole: the worker needs the body to hand when one is opened, and a
        file the function loads once is not a prompt — the progressive part is what reaches the MODEL */
-    bot.skills = bot.skills.filter((s: any) => (skills as any)[s]).map((s: any) => {
+    bot.skills = bot.skills.filter((s: string|number) => (skills as any)[s]).map((s: string|number) => {
       const { published, ...rest } = (skills as any)[s]
       return rest
     })

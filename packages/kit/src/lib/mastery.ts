@@ -29,7 +29,7 @@ export function tierFor(done: number, total: number) {
 }
 
 /* what a book's quizzes add up to */
-export function masteryOf(slug: any) {
+export function masteryOf(slug: string) {
   void masteryRev.value
   const titles = quizChapters(slug)
   const s = quizState(slug)

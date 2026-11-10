@@ -31,22 +31,22 @@ export const PAPERS = ['cream', 'white']
 export const BINDING: any = { softcover: 'softcover', hardcover: 'hardcover', premium: 'premium' }
 export const MAINS = ['online', ...FORMATS]   /* what a page may open on */
 
-export const PAGE_ID = (slug: any) => slug + '-print'
-export const FORMAT_SKU = (slug: any, format: any) => slug + '-' + format
+export const PAGE_ID = (slug: string) => slug + '-print'
+export const FORMAT_SKU = (slug: string, format: string) => slug + '-' + format
 /* the hardcover keeps the block's key (what has sold under it); every other format's key is
    made from it, once and always the same — eight hex characters of FNV-1a over key:format */
-export function formatKey(key: any, format: any) {
+export function formatKey(key: string, format: string) {
   if (format === 'hardcover') return String(key)
   let h = 0x811c9dc5
   for (const ch of String(key) + ':' + format) { h ^= ch.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0 }
   return (h >>> 0).toString(16).padStart(8, '0')
 }
 
-const list = (v: any, all: any, fallback: any) => {
+const list = (v: string|null, all: string|string[], fallback: any) => {
   const arr = (Array.isArray(v) ? v : v == null || v === '' ? [] : String(v).split(/[,\s]+/)).map((x) => String(x).trim()).filter((x) => all.includes(x))
   return arr.length ? [...new Set(arr)] : fallback
 }
-const num = (v: any) => (v == null || v === '' ? null : Number(v))
+const num = (v: string|null) => (v == null || v === '' ? null : Number(v))
 
 /* the block as one shape, whatever was written: every list a list, every format a record with
    its price or markup, the linen's colour choices, the defaults filled in */
@@ -107,20 +107,20 @@ export function printSpec(pr: { [x: string]: any; main?: any; key?: any; rights?
 /* what a proof says of each contents: the set edition (print.json) is the one a printed copy was
    read and passed at; proofed at an older one (a changed word is a new edition); or never. A
    record for the admin and the deploy log — nothing reads it to decide a sale. */
-export const proofState = (spec: any, editions: any, c: any) => { const e = editions && editions.editions && editions.editions[c]; const p = spec && spec.proofed[c]; return !e || !e.edition ? 'unset' : p === e.edition ? 'proofed' : p ? 'stale' : 'never' }
+export const proofState = (spec: any, editions: any, c: string) => { const e = editions && editions.editions && editions.editions[c]; const p = spec && spec.proofed[c]; return !e || !e.edition ? 'unset' : p === e.edition ? 'proofed' : p ? 'stale' : 'never' }
 
 /* what a format sells for: the price as written, or the markup over what the printer charges
    to make one copy (the costliest of the contents the buyer may choose, so the markup is a
    floor whatever they pick; the files cost nothing to make), rounded UP to the next $5 — never
    down; null while a markup has no quote to sit on */
 export const PRICE_STEP = 5
-export function formatPrice(spec: any, format: any, editions: any) {
+export function formatPrice(spec: PrintSpec | null, format: string, editions: any) {
   const f = spec && spec.formats && spec.formats[format]
   if (!f) return null
   if (f.price != null) return f.price > 0 ? f.price : null
   if (f.markup == null) return null
   if (FILES.includes(format)) return Math.ceil(f.markup / PRICE_STEP) * PRICE_STEP || null
-  const costs = spec.contents.map((c: any) => { const e = editions && editions.editions && editions.editions[c]; const p = e && e.printers && e.printers[format]; return p ? costUsd(p) : null }).filter((x: any) => typeof x === 'number')
+  const costs = spec.contents.map((c: string|number) => { const e = editions && editions.editions && editions.editions[c]; const p = e && e.printers && e.printers[format]; return p ? costUsd(p) : null }).filter((x: any) => typeof x === 'number')
   if (costs.length < spec.contents.length) return null
   return Math.ceil((Math.max(...costs) + f.markup) / PRICE_STEP) * PRICE_STEP
 }
@@ -133,7 +133,7 @@ export const costUsd = (p: any) => (p && typeof p.cost === 'number' ? p.cost * (
 /* a format's cover in an edition (print.json): the key its printer's cover is filed under — a
    linen's by its cloth and foil — with the art, the dimensions, the product: what the book is
    drawn from. Null while the edition has no such format. */
-export function coverFor(edition: any, format: any, cloth: any, foil: any) {
+export function coverFor(edition: any, format: string, cloth: any, foil: any) {
   const p = edition && edition.printers && edition.printers[format]
   if (!p) return null
   let key = p.key
@@ -157,7 +157,7 @@ export function coverFor(edition: any, format: any, cloth: any, foil: any) {
    characters it stamps (no underscore, no middot: the jacket draws the dot, the foil cannot).
    `fits` says whether it will; `room` how many characters a title may have. */
 export const SPINE_MAX = 42
-export function spineWords(title: any, spine: any, edition: any) {
+export function spineWords(title: string, spine: string, edition: string) {
   const clean = (s: any) => String(s || '').replace(/[_·•]/g, ' ').replace(/\s+/g, ' ').trim()
   const t = clean(spine) || clean(title), e = clean(edition).toUpperCase()
   return { title: t, edition: e, fits: t.length + e.length <= SPINE_MAX, room: SPINE_MAX - e.length }

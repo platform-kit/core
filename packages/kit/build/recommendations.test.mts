@@ -19,7 +19,7 @@ import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
-const note = (m: any) => console.log('recommendations: ' + m)
+const note = (m: string) => console.log('recommendations: ' + m)
 if (process.env.RECOMMENDATIONS_TEST === '0') { note('skipped (RECOMMENDATIONS_TEST=0)'); process.exit(0) }
 const url = supabaseUrl()
 const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -29,8 +29,8 @@ try { up = (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2
 if (!up) { note('skipped — the local stack is not up'); leave(0) }
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
-const as = async (email: any) => {
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const as = async (email: string) => {
   const sb = createClient<Database>(url, anon, { auth: { persistSession: false, autoRefreshToken: false } })
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(email + ': ' + error.message)
@@ -61,7 +61,7 @@ ok('the constants are named in the declaration and nowhere else',
   `floor=${floor} ceil=${ceil} buy=${buy} depth=${depth}`)
 ok('being done with something is a stricter bar than being interested in it', depth > 0 && depth < 100)
 
-const read = (uid: any, ref: any, kind: any, secs: any, depth: any) => ({
+const read = (uid: string, ref: string, kind: string, secs: number, depth: number) => ({
   session_id: crypto.randomUUID(), anon_id: crypto.randomUUID(), user_id: uid,
   type: 'content_read', path: '/x/' + ref, occurred_at: new Date().toISOString(),
   props: { kind, id: ref, title: ref, seconds: secs, depth },
@@ -82,8 +82,8 @@ const ours = (rows: any) => Object.fromEntries(Object.entries(rows).filter(([k])
   const { learnTags, readTags, normalise } = await import('./tags.mjs')
   const dir = nodefs.mkdtempSync(np.join(os.tmpdir(), 'tags-'))
   nodefs.mkdirSync(np.join(dir, 'content'), { recursive: true })
-  const put = (free: any, list: any) => nodefs.writeFileSync(np.join(dir, 'content/tags.md'),
-    '---\nfree: ' + free + '\ntags:\n' + list.map((v: any) => '  - ' + v).join('\n') + '\n---\n\nwhat this site writes about\n')
+  const put = (free: string|boolean, list: any) => nodefs.writeFileSync(np.join(dir, 'content/tags.md'),
+    '---\nfree: ' + free + '\ntags:\n' + list.map((v: string) => '  - ' + v).join('\n') + '\n---\n\nwhat this site writes about\n')
 
   put(false, ['meditation'])
   const closed = await learnTags(dir, ['meditation', 'astrology'])

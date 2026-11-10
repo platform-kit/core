@@ -74,7 +74,7 @@ const ruleOptions = computed(() => ruleKeys.value.map((k) => ({ value: k, label:
 const shape = (rule: string|number) => (RULES[rule] || {}).params
 function addRule() { const rule = ruleKeys.value.find((r) => !(f.value.rules || []).some((x: { rule: string }) => x.rule === r)) || ruleKeys.value[0]; if (!rule) return; f.value.rules = [...(f.value.rules || []), fresh(rule)]; f.value._kindChanged = true }
 function fresh(rule: string) { const s = shape(rule); return s === 'none' ? { rule } : s === 'range' ? { rule, params: [0, 10] } : s === 'list' ? { rule, params: [''] } : s === 'n' ? { rule, params: 1 } : { rule, params: '' } }
-function setRule(i: any, rule: any) { if (!rule) return; f.value.rules.splice(i, 1, fresh(rule)); f.value._kindChanged = true }
+function setRule(i: any, rule: string) { if (!rule) return; f.value.rules.splice(i, 1, fresh(rule)); f.value._kindChanged = true }
 function setParam(i: string|number, v: any, j?: string|number) { const r = f.value.rules[i]; const s = shape(r.rule); if (s === 'n') r.params = Number(v); else if (s === 'range') { r.params = [...r.params]; r.params[j!] = Number(v) } else r.params = v; f.value._kindChanged = true }
 function setListParam(i: string|number, j: string|number, v: any) { const r = f.value.rules[i]; r.params = [...r.params]; r.params[j] = v; f.value._kindChanged = true }
 function addListParam(i: string|number) { f.value.rules[i].params = [...f.value.rules[i].params, '']; f.value._kindChanged = true }

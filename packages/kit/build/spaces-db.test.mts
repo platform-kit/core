@@ -89,7 +89,7 @@ try {
   ok('…no member', ((await r.from('space_members').select('user_id').eq('space_id', spaceId)).data || []).length === 0)
   ok('…no reaction', ((await r.from('reactions').select('emoji').eq('surface', 'message').eq('channel_id', open_!.id)).data || []).length === 0)
   ok('…no mention', ((await r.from('space_mentions').select('user_id').eq('channel_id', open_!.id)).data || []).length === 0)
-  const rUnread: any = (await r.rpc('space_unread')).data as any[] | null || []
+  const rUnread = (await r.rpc('space_unread')).data as any[] | null || []
   ok('…no unread row for it', !rUnread.some((x: { channel: string }) => x.channel === open_!.id))
   ok('…no search hit', (((await r.rpc('space_search', { p_q: 'money' })).data as any[] | null) || []).length === 0)
   ok('…and the history is refused outright', ((await r.rpc('space_history', { p_channel: open_!.id })).data) === null)
@@ -211,7 +211,7 @@ try {
   ok('and the mentions with it', sAfter.mentions === 0)
 
   /* ---------------------------------------------------------------- catching up */
-  const c1: any = (await support.sb.rpc('space_catchup', { p_cursors: { [open_!.id]: 2 }, p_lim: 50 })).data as any[] | null || []
+  const c1 = (await support.sb.rpc('space_catchup', { p_cursors: { [open_!.id]: 2 }, p_lim: 50 })).data as any[] | null || []
   const mine = c1.find((x: { channel: string }) => x.channel === open_!.id)
   ok('a cursor returns only what is newer', mine && mine.messages.length === 2, JSON.stringify(mine && mine.messages.length))
   ok('and says where it started', mine && mine.from === 2)
@@ -220,15 +220,15 @@ try {
   ok('a channel further behind than the answer carries is marked for paging', c2 && c2.more === true && c2.messages.length === 2, JSON.stringify(c2 && { more: c2.more, n: c2.messages.length }))
 
   /* ---------------------------------------------------------------- search */
-  const hits: any = (await support.sb.rpc('space_search', { p_q: 'money', p_space: spaceId })).data as any[] | null || []
+  const hits = (await support.sb.rpc('space_search', { p_q: 'money', p_space: spaceId })).data as any[] | null || []
   ok('a search finds what is in their own channel', hits.length === 1 && hits[0].body.includes('money'), JSON.stringify(hits.length))
-  const noReach: any = (await support.sb.rpc('space_search', { p_q: 'closed door' })).data as any[] | null || []
+  const noReach = (await support.sb.rpc('space_search', { p_q: 'closed door' })).data as any[] | null || []
   ok('and never what is in a channel they are not in', noReach.length === 0)
-  const narrowed: any = (await support.sb.rpc('space_search', { p_q: 'money', p_space: spaceId, p_from: admin.id })).data as any[] | null || []
+  const narrowed = (await support.sb.rpc('space_search', { p_q: 'money', p_space: spaceId, p_from: admin.id })).data as any[] | null || []
   ok('narrowing by who wrote it keeps the hit', narrowed.length === 1)
-  const notThem: any = (await support.sb.rpc('space_search', { p_q: 'money', p_space: spaceId, p_from: support.id })).data as any[] | null || []
+  const notThem = (await support.sb.rpc('space_search', { p_q: 'money', p_space: spaceId, p_from: support.id })).data as any[] | null || []
   ok('narrowing to someone who did not write it finds nothing', notThem.length === 0)
-  const elsewhere: any = (await support.sb.rpc('space_search', { p_q: 'money', p_channel: priv!.id })).data as any[] | null || []
+  const elsewhere = (await support.sb.rpc('space_search', { p_q: 'money', p_channel: priv!.id })).data as any[] | null || []
   ok('narrowing to a channel they are not in finds nothing, rather than something', elsewhere.length === 0)
 
   /* A FILE IS LOOKED FOR BY ITS NAME. Somebody looks for the invoice, not for whatever was typed
@@ -253,19 +253,19 @@ try {
   await admin.sb.from('space_messages').insert({ channel_id: open_!.id, author_id: admin.id, thread_root_id: root.id, body: 'a reply' })
   const bumped: any = (await service.from('space_messages').select('reply_count, last_reply_at').eq('id', root.id).single()).data
   ok('a reply raises the root’s count', bumped.reply_count === 1 && !!bumped.last_reply_at)
-  const hist: any = (await admin.sb.rpc('space_history', { p_channel: open_!.id })).data as any[] | null || []
+  const hist = (await admin.sb.rpc('space_history', { p_channel: open_!.id })).data as any[] | null || []
   ok('a plain reply is in its thread and not in the stream', hist.length === 4, String(hist.length))
   await admin.sb.from('space_messages').insert({ channel_id: open_!.id, author_id: admin.id, thread_root_id: root.id, body: 'and to the channel', echoed: true })
-  const hist2: any = (await admin.sb.rpc('space_history', { p_channel: open_!.id })).data as any[] | null || []
+  const hist2 = (await admin.sb.rpc('space_history', { p_channel: open_!.id })).data as any[] | null || []
   ok('a reply also sent to the channel is in both, once each', hist2.length === 5, String(hist2.length))
   const th: any = (await admin.sb.rpc('space_thread', { p_root: root.id })).data
   ok('the thread holds both replies', th && th.replies.length === 2)
 
   await admin.sb.from('space_messages').insert({ channel_id: forum!.id, author_id: admin.id, title: 'A question', body: 'the body of it' })
-  const posts: any = (await admin.sb.rpc('space_posts', { p_channel: forum!.id })).data as any[] | null || []
+  const posts = (await admin.sb.rpc('space_posts', { p_channel: forum!.id })).data as any[] | null || []
   ok('a forum post is a message with a title', posts.length === 1 && posts[0].title === 'A question')
   await service.from('channels').update({ mode: 'stream' }).eq('id', forum!.id)
-  const asStream: any = (await admin.sb.rpc('space_history', { p_channel: forum!.id })).data as any[] | null || []
+  const asStream = (await admin.sb.rpc('space_history', { p_channel: forum!.id })).data as any[] | null || []
   ok('the same channel read the other way holds the same message', asStream.length === 1 && asStream[0].title === 'A question')
   await service.from('channels').update({ mode: 'forum' }).eq('id', forum!.id)
 
@@ -278,7 +278,7 @@ try {
   const feedBefore = (await service.from('space_messages').select('id, seq, reply_count').eq('channel_id', forum!.id).order('seq')).data || []
   const toFeed = await service.from('channels').update({ mode: 'feed' }).eq('id', forum!.id).select('mode').single()
   ok('a channel may be read as a feed', !toFeed.error && toFeed.data.mode === 'feed', toFeed.error?.message)
-  const asFeed: any = (await admin.sb.rpc('space_history', { p_channel: forum!.id })).data as any[] | null || []
+  const asFeed = (await admin.sb.rpc('space_history', { p_channel: forum!.id })).data as any[] | null || []
   ok('…and holds the same post', asFeed.some((m: { id: any }) => m.id === fpost.id))
   const firstAns: any = (await admin.sb.rpc('space_first_replies', { p_roots: [fpost.id], p_n: 2 })).data || {}
   ok('a feed shows a post\u2019s first answers, oldest first', (firstAns[fpost.id] || []).map((r: { body: any }) => r.body).join('|') === 'first answer|second answer', JSON.stringify(firstAns))
@@ -856,7 +856,7 @@ try {
     const made: any = (await admin.sb.rpc('space_schedule', { p_channel: open_!.id, p_body: 'At nine, then.', p_at: soon })).data
     ok('a message may be put down for later', made && made.ok === true)
 
-    const mine: any = (await admin.sb.rpc('space_scheduled_mine')).data as any[] | null || []
+    const mine = (await admin.sb.rpc('space_scheduled_mine')).data as any[] | null || []
     ok('…and its author sees it waiting, with where and when', mine.some((s: { id: any; channel: any; send_at: any }) => s.id === made!.id && s.channel && s.send_at))
     /* A MESSAGE THAT HAS NOT BEEN SENT HAS NOT BEEN SAID: nobody else sees it, not even the room */
     const nosy = await as('member2@example.com')
@@ -897,7 +897,7 @@ try {
       channel_id: open_!.id, author_id: admin.id, kind: 'text', body: 'Something somebody else said.',
     }).select().single()).data
 
-    const waiting: any = (await ordinary.sb.rpc('space_unseen')).data as any[] | null || []
+    const waiting = (await ordinary.sb.rpc('space_unseen')).data as any[] | null || []
     const ids = waiting.map((w: { id: any }) => w.id)
     ok('what somebody else said is waiting', ids.includes(theirs!.id))
     /* you have read what you wrote — the trigger says so, and the list agrees with the counter */
@@ -946,12 +946,12 @@ try {
 
     const done: any = (await admin.sb.rpc('space_pin', { p_message: said!.id, p_on: true, p_note: 'read this' })).data
     ok('whoever keeps the room may', done && done.ok === true)
-    const seen: any = (await admin.sb.rpc('space_pinned', { p_channel: open_!.id })).data as any[] | null || []
+    const seen = (await admin.sb.rpc('space_pinned', { p_channel: open_!.id })).data as any[] | null || []
     ok('…and it is there, with who put it there', seen.length === 1 && seen[0].message_id === said!.id && !!seen[0].by)
     ok('…and the note it was pinned with', seen[0].note === 'read this')
 
     /* the point of a pin: everybody in the room sees the same one */
-    const theirs: any = (await ordinary.sb.rpc('space_pinned', { p_channel: open_!.id })).data as any[] | null || []
+    const theirs = (await ordinary.sb.rpc('space_pinned', { p_channel: open_!.id })).data as any[] | null || []
     ok('everybody in the room sees it', theirs.length === 1 && theirs[0].message_id === said!.id)
     /* and nobody outside it sees anything at all */
     const outside = await as('free@example.com')

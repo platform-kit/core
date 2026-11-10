@@ -86,7 +86,7 @@ try {
   }
 
   const desk = await mine(admin)
-  const got = (src: string, id: any) => desk.find((r: any) => r.source === src && r.id === id)
+  const got = (src: string, id: string|undefined) => desk.find((r: any) => r.source === src && r.id === id)
   ok('the guest at the desk is in the list', !!got('support', supportConv))
   ok('the member waiting on their coach is in the list', !!got('coaching', chatConv))
   /* a room is not a queue: what waits in one is a mention or an unanswered direct message, and
@@ -154,7 +154,7 @@ try {
 
   /* ---------------------------------------------------------------- not for a reader */
   ok('a reader is refused the support inbox outright', (await reader.sb.rpc('support_inbox', { p_status: 'open' })).data === null)
-  const rChat: any = (await reader.sb.rpc('chat_inbox')).data as any[] | null || []
+  const rChat = (await reader.sb.rpc('chat_inbox')).data as any[] | null || []
   ok('…and sees none of the coaching threads', !rChat.some((c: { id: any }) => c.id === chatConv))
   ok('…no message of the guest\'s', ((await reader.sb.from('support_messages').select('id').eq('conversation_id', supportConv)).data || []).length === 0)
   ok('…no conversation of the guest\'s', ((await reader.sb.from('support_conversations').select('id').eq('id', supportConv)).data || []).length === 0)

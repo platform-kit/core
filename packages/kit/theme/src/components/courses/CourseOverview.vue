@@ -149,7 +149,7 @@ const emit = defineEmits(['enroll', 'sign-in'])
 const { L, K, S } = words()
 
 /* a ring that fills as the course does */
-const ProgressRing = (p: any) => {
+const ProgressRing = (p: { value: number }) => {
   const r = 26, c = 2 * Math.PI * r
   return h('span', { class: 'crs-ring' }, [
     h('svg', { viewBox: '0 0 64 64', 'aria-hidden': 'true' }, [
@@ -179,7 +179,7 @@ const metaLine = computed(() => {
   return m > 1 ? `${ls} · ${fill(L.value.modules, { n: m })}` : ls
 })
 const accessLine = computed(() => { const s = props.state || {}; return s.free ? K.value.free : s.tiers && s.tiers.length && !(s.skus && s.skus.length) ? K.value.included : K.value.sold })
-const kindWord = (l: any) => { const own = siteKind(l); if (own) return S.value['tag-' + l.kind] || own.label || ''; const k = kindOf(l); return S.value['tag-' + k] || S.value['kind-' + k] || '' }
+const kindWord = (l: { kind: string }) => { const own = siteKind(l); if (own) return S.value['tag-' + l.kind] || own.label || ''; const k = kindOf(l); return S.value['tag-' + k] || S.value['kind-' + k] || '' }
 
 /* which modules are unfolded: the one holding the next lesson, or the first; the reader's own choice after that */
 const shut = ref<any>(null)

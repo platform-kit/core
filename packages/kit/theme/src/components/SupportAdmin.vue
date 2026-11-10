@@ -129,7 +129,7 @@ watch([isSignedIn, roleKnown, isStaff], load)
 onBeforeUnmount(() => { if (channel) (supabase as any).removeChannel(channel); channel = null; clearTimeout(refreshTimer); clearInterval(seenTimer); seenTimer = null; document.removeEventListener('visibilitychange', onVisible) })
 
 /* ---- the list ---- */
-const counts = computed(() => ({ all: rows.value.length, open: rows.value.filter((r: any) => r.status === 'open').length, pending: rows.value.filter((r: any) => r.status === 'pending').length, resolved: rows.value.filter((r: any) => r.status === 'resolved').length }))
+const counts = computed(() => ({ all: rows.value.length, open: rows.value.filter((r: { status: string }) => r.status === 'open').length, pending: rows.value.filter((r: { status: string }) => r.status === 'pending').length, resolved: rows.value.filter((r: { status: string }) => r.status === 'resolved').length }))
 /* the search: names, addresses and notes on the rows in hand at once; every line by the server, a beat later */
 const q = ref(''), hits = ref<any>(null), searching = ref(false)
 let qTimer: any = null
@@ -146,9 +146,9 @@ const shown = computed(() => {
 const now = ref(Date.now())
 let clock = setInterval(() => { now.value = Date.now() }, 30000)
 onBeforeUnmount(() => clearInterval(clock))
-const waiting = (r: any) => (r.waiting_since ? fill(R.waiting, { span: spanOf(now.value - new Date(r.waiting_since).getTime()) }) : '')
-const when = (d: any) => whenOf(d, now.value, { yesterday: H.yesterday })
-const kindWord = (k: any) => R[k] || k
+const waiting = (r: { waiting_since: string|number|Date }) => (r.waiting_since ? fill(R.waiting, { span: spanOf(now.value - new Date(r.waiting_since).getTime()) }) : '')
+const when = (d: string|number|Date) => whenOf(d, now.value, { yesterday: H.yesterday })
+const kindWord = (k: string|number) => R[k] || k
 /* a guest has no name — nothing is known about them; a reader's comes from the account */
 const nameOf = (c: any) => (c && c.name) || R.anonymous
 const unverified = (c: any) => !!(c && c.user_id && !c.verified)
@@ -210,7 +210,7 @@ async function reply(text: any) {
   const row = { id, conversation_id: thread.id, author: ME, sender_id: ME, kind: 'text', agent_id: uid(), body: text, created_at: new Date().toISOString(), pending: true }
   thread.messages = mergeMessages(thread.messages, [row])
   const { error } = await (supabase as any).from('support_messages').insert({ id, conversation_id: thread.id, author: 'agent', agent_id: uid(), body: text })
-  if (error) { thread.messages = thread.messages.filter((m: any) => m.id !== id); said.value = error.message; busy.value = false; return }
+  if (error) { thread.messages = thread.messages.filter((m: { id: string }) => m.id !== id); said.value = error.message; busy.value = false; return }
   thread.messages = mergeMessages(thread.messages, [{ ...row, pending: false }])
   toFoot()
   try { const { data } = await (supabase as any).functions.invoke('support', { body: { action: 'notify', message_id: id } }); if (data && data.sent) said.value = T['notify-sent'] } catch (e) { /* a courtesy */ }
@@ -232,9 +232,9 @@ async function sendFile(file: any, { kind = 'file', seconds = 0, transcript = ''
   const row = { id, conversation_id: thread.id, author: ME, sender_id: ME, kind, agent_id: uid(), body: kind === 'file' ? name : (transcript || null), attachment_path: path, attachment_type: type, attachment_name: name, attachment_size: file.size, seconds: kind === 'voice' ? seconds : null, blob: kind === 'voice' ? file : null, url: kind === 'file' ? URL.createObjectURL(file) : null, created_at: new Date().toISOString(), pending: true }
   thread.messages = mergeMessages(thread.messages, [row])
   const up = await (supabase as any).storage.from('support').upload(path, file, { contentType: type, cacheControl: '31536000', upsert: false })
-  if (up.error) { thread.messages = thread.messages.filter((m: any) => m.id !== id); said.value = up.error.message; busy.value = false; return }
+  if (up.error) { thread.messages = thread.messages.filter((m: { id: string }) => m.id !== id); said.value = up.error.message; busy.value = false; return }
   const { error } = await (supabase as any).from('support_messages').insert({ id, conversation_id: thread.id, author: 'agent', agent_id: uid(), kind, body: row.body, attachment_path: path, attachment_type: type, attachment_name: name, attachment_size: file.size, seconds: row.seconds })
-  if (error) { thread.messages = thread.messages.filter((m: any) => m.id !== id); said.value = error.message; busy.value = false; return }
+  if (error) { thread.messages = thread.messages.filter((m: { id: string }) => m.id !== id); said.value = error.message; busy.value = false; return }
   thread.messages = mergeMessages(thread.messages, [{ ...row, pending: false }])
   toFoot()
   try { const { data } = await (supabase as any).functions.invoke('support', { body: { action: 'notify', message_id: id } }); if (data && data.sent) said.value = T['notify-sent'] } catch (e) { /* a courtesy */ }

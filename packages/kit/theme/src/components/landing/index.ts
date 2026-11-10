@@ -101,7 +101,7 @@ import { SKINS_BY_LOOK } from '#site/landing'   /* each look's skins, from platf
 export const LOOKS: any = SKINS_BY_LOOK
 
 /* the component for a section under a look */
-export function resolve(name: any, look: any) {
+export function resolve(name: string|number, look: string|number) {
   const skins = LOOKS[look]
   return (skins && skins[name]) || SECTIONS[name] || null
 }

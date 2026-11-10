@@ -16,10 +16,10 @@ const props = defineProps({ blocks: { type: Array as PropType<any[]>, default: (
 const emit = defineEmits(['enter'])
 const KIND: any = { text: FmText, email: FmText, url: FmText, tel: FmText, password: FmText, number: FmText, date: FmText, time: FmText, datetime: FmText, select: FmSelect, choice: FmChoice, picture: FmChoice, rating: FmRating, scale: FmScale, file: FmFile, voice: FmRecord, video: FmRecord }
 const shown = computed(() => props.blocks.filter((b) => holds((b as any).condition, props.ctx)))
-const classes = (b: any) => ['fdiv', ...(b.attrs && b.attrs.classes ? b.attrs.classes.map((c: any) => 'fmd-' + c) : [])]
+const classes = (b: any) => ['fdiv', ...(b.attrs && b.attrs.classes ? b.attrs.classes.map((c: string) => 'fmd-' + c) : [])]
 /* the first field of the slide takes focus when the document asks for it on every slide, or the field does */
 let focusGiven = false
-const focus = (b: any) => { if (b.params && b.params.autofocus !== undefined) return true; if (props.autofocusAll && !focusGiven) { focusGiven = true; return true } return false }
+const focus = (b: { params: { autofocus: undefined } }) => { if (b.params && b.params.autofocus !== undefined) return true; if (props.autofocusAll && !focusGiven) { focusGiven = true; return true } return false }
 </script>
 
 <template>

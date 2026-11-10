@@ -56,13 +56,13 @@ try {
   ok('and is nowhere in the file', !readFileSync(F, 'utf8').includes(process.env.WH_TEST_SECRET))
   ok('every kind is pushed', (await rows('support_webhooks')).some((r: any) => r.source === 'file'))
 
-  const before: any = (await rows('content_webhooks')).find((r: any) => r.source === 'file')
+  const before = (await rows('content_webhooks')).find((r: any) => r.source === 'file')
   await svc.from('content_webhooks').update({ last_at: new Date().toISOString() }).eq('id', before!.id)
   writeFileSync(F, JSON.stringify([{ kind: 'content', name: 'Our indexer, renamed', url: 'https://ours.example/hook', topics: [] }], null, 2) + '\n')
   await pushWebhooks({ file: F })
 
   c = await rows('content_webhooks')
-  const after: any = c.find((r: any) => r.source === 'file')
+  const after = c.find((r: any) => r.source === 'file')
   ok('one that stays is updated rather than remade, so what it has done survives a deploy', !!after && after.id === before!.id && !!after.last_at)
   ok('and says what the file now says', !!after && after.name === 'Our indexer, renamed')
   ok('a kind the file dropped entirely is cleared', !(await rows('support_webhooks')).some((r: any) => r.source === 'file'))

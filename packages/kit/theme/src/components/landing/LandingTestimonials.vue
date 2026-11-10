@@ -28,12 +28,12 @@ const props = defineProps({
 const W = (us('sections').testimonials || {}).nav || {}
 const at = ref(0)
 const n = computed(() => props.items.length)
-const go = (d: any) => { at.value = (at.value + d + n.value) % n.value }
+const go = (d: number) => { at.value = (at.value + d + n.value) % n.value }
 const initials = (name: any) => String(name || '').split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
 const big = computed(() => props.items[at.value] || {})
 /* the video the page names, opened large */
 const playing = ref(-1)
-const embedOfSafe: any = (u: any) => { try { return (u && /\.(mp4|webm|mov)(\?|$)/i.test(u)) ? { kind: 'file', src: u } : u ? { kind: 'embed', src: u } : null } catch (e) { return null } }
+const embedOfSafe: any = (u: string) => { try { return (u && /\.(mp4|webm|mov)(\?|$)/i.test(u)) ? { kind: 'file', src: u } : u ? { kind: 'embed', src: u } : null } catch (e) { return null } }
 </script>
 
 <template>

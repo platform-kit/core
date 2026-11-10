@@ -9,7 +9,7 @@
  * than CommonMark's second bold, because bold already has `**` and a sentence
  * has no other way to say underline.
  */
-const esc = (s: any) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as Record<string, string>)[c])
+const esc = (s: null) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as Record<string, string>)[c])
 
 /* escaped text with the marks as tags */
 export function inline(text: any) {
@@ -21,7 +21,7 @@ export function inline(text: any) {
 }
 
 /* the sentence with its marks removed, for anywhere that shows plain text */
-export function plain(text: any) {
+export function plain(text: null) {
   return String(text == null ? '' : text)
     .replace(/\*\*(.+?)\*\*/g, '$1')
     .replace(/__(.+?)__/g, '$1')

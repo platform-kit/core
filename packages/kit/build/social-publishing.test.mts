@@ -33,11 +33,11 @@ if (!mailHealth.ok) {
   process.exit(0)
 }
 
-const client = (key: any) => createClient<Database>(url, key, {
+const client = (key: string) => createClient<Database>(url, key, {
   auth: { persistSession: false, autoRefreshToken: false },
 })
 const service = client(serviceKey())
-const signIn = async (email: any) => {
+const signIn = async (email: string) => {
   const sb = client(anonKey)
   const { data, error } = await sb.auth.signInWithPassword({ email, password: 'password123' })
   if (error) throw new Error(`${email}: ${error.message}`)
@@ -80,9 +80,9 @@ const requireData = (label: any, result: any) => {
   if (result.error) throw new Error(`${label}: ${result.error.message}`)
   return result.data
 }
-const wait = (ms: any) => new Promise((resolve) => setTimeout(resolve, ms))
+const wait = (ms: number|undefined) => new Promise((resolve) => setTimeout(resolve, ms))
 
-async function authUserByEmail(email: any) {
+async function authUserByEmail(email: string|undefined) {
   for (let page = 1; page <= 20; page++) {
     const { data, error } = await service.auth.admin.listUsers({ page, perPage: 100 })
     if (error) throw new Error(`list users for cleanup: ${error.message}`)
@@ -97,25 +97,25 @@ async function mailMessages() {
   if (!response.ok) throw new Error(`Mailpit list failed: ${response.status}`)
   return (await response.json()).messages || []
 }
-async function rawMail(id: any) {
+async function rawMail(id: string|number|boolean) {
   const response = await fetch(`${mailUrl}/api/v1/message/${encodeURIComponent(id)}/raw`)
   if (!response.ok) throw new Error(`Mailpit message fetch failed: ${response.status}`)
   return response.text()
 }
-function mailText(raw: any) {
+function mailText(raw: string) {
   const decoded = [raw]
   for (const match of raw.matchAll(/Content-Transfer-Encoding:\s*base64\s*\r?\n(?:[^\r\n]*\r?\n)*\r?\n([\s\S]*?)(?=\r?\n--|\s*$)/gi)) {
     decoded.push(Buffer.from(match[1].replace(/\s/g, ''), 'base64').toString('utf8'))
   }
   return decoded.map((text) => text
     .replace(/=\r?\n/g, '')
-    .replace(/=([0-9a-f]{2})/gi, (_: any, hex: any) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/=([0-9a-f]{2})/gi, (_: any, hex: string) => String.fromCharCode(parseInt(hex, 16)))
     .replace(/&amp;/gi, '&')
     .replace(/&#x3d;/gi, '=')
     .replace(/&#61;/gi, '='))
     .join('\n')
 }
-function invitationUrl(raw: any) {
+function invitationUrl(raw: string) {
   const text = mailText(raw)
   const hrefs = [...text.matchAll(/href\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1])
   const candidate = hrefs.find((href) => /\/auth\/v1\/verify(?:\?|%3f)/i.test(href))
@@ -141,7 +141,7 @@ const grantedAccountIds: any = []
 let failure
 const cleanupErrors = []
 
-async function grantAccountAccess(accountId: any) {
+async function grantAccountAccess(accountId: string) {
   if (!grantedAccountIds.includes(accountId)) grantedAccountIds.push(accountId)
   const permissions = await invoke(adminLogin.sb, {
     action: 'save_permissions',
@@ -176,7 +176,7 @@ try {
   while (Date.now() < deadline) {
     message = (await mailMessages()).find((item: any) =>
       !existingMailIds.has(item.ID) &&
-      (item.To || []).some((to: any) => to.Address?.toLowerCase() === email))
+      (item.To || []).some((to: { Address: string }) => to.Address?.toLowerCase() === email))
     if (message) break
     await wait(250)
   }
@@ -388,7 +388,7 @@ try {
     scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   })
   assert.equal(redditMediaSchedule.status, 422, JSON.stringify(redditMediaSchedule))
-  assert.ok(redditMediaSchedule.targetErrors[0].issues.some((issue: any) =>
+  assert.ok(redditMediaSchedule.targetErrors[0].issues.some((issue: { code: string }) =>
     issue.code === 'reddit.media_unsupported'), 'Reddit rejects media at the served scheduling boundary')
 
   const redditDraft: any = await invoke(invitee, {
@@ -574,7 +574,7 @@ try {
     try {
       const message = (await mailMessages()).find((item: any) =>
         !existingMailIds.has(item.ID) &&
-        (item.To || []).some((to: any) => to.Address?.toLowerCase() === email))
+        (item.To || []).some((to: { Address: string }) => to.Address?.toLowerCase() === email))
       invitationMailId = message?.ID
     } catch (error: any) { cleanupErrors.push(`find test Mailpit message: ${error.message}`) }
   }

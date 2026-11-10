@@ -77,7 +77,7 @@ const moneyMinorOf = (amountMinor: any, currency = 'usd') => {
     maximumFractionDigits: fractionDigits,
   }).format(Number(amountMinor || 0) / (10 ** fractionDigits!))
 }
-const timeOf = (value: any) => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+const timeOf = (value: string|number|Date) => new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
 const kindOf = (kind: any) => W.value[`kind-${kind}`] || W.value['kind-other']
 const topupAvailable = computed(() => topupConfig.value.enabled && eligiblePacks.value.length > 0)
 const incrementalKey = (settlement: any) =>
@@ -106,7 +106,7 @@ async function topupRequest(body: any) {
   return data
 }
 
-async function payoutRequest(body: any) {
+async function payoutRequest(body: { action: string; return_url?: string }) {
   const { data, error } = await (supabase as any).functions.invoke('payouts', { body })
   if (error) {
     let detail = error.message || ''
@@ -123,7 +123,7 @@ async function payoutRequest(body: any) {
 const payoutSetupMode = () =>
   new URLSearchParams(window.location.search).get('payout_setup') === '1'
 
-function payoutReturnTarget(name: any) {
+function payoutReturnTarget(name: string) {
   const value = new URLSearchParams(window.location.search).get(name) || ''
   if (!value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return null
   const target = new URL(value, window.location.origin)
@@ -260,7 +260,7 @@ async function loadTopup() {
   }
 }
 
-async function loadPaymentSdk(provider: any, publishableKey: any, apiBaseUrl?: any, profileId?: any, clientUrl?: any) {
+async function loadPaymentSdk(provider: string, publishableKey: any, apiBaseUrl?: any, profileId?: any, clientUrl?: any) {
   if (provider === 'stripe') {
     if (!stripeScriptPromise && !(window as any).Stripe) {
       stripeScriptPromise = new Promise((resolve, reject) => {
@@ -570,7 +570,7 @@ async function confirmPaymentMethodManagement() {
   }
 }
 
-function onAuthChange(event: any, session: any) {
+function onAuthChange(event: string, session: any) {
   if (event === 'INITIAL_SESSION') return
   if (session?.user) {
     queueMicrotask(() => void load())

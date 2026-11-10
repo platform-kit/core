@@ -34,7 +34,7 @@ const pass = (name: string, detail = ''): Finding => ({ level: 'pass', name, det
 const warn = (name: string, detail: string, fix = ''): Finding => ({ level: 'warn', name, detail, fix })
 const fail = (name: string, detail: string, fix = ''): Finding => ({ level: 'fail', name, detail, fix })
 const readEnv = (file: any) => (fs.existsSync(file) ? parseEnv(fs.readFileSync(file, 'utf8')) : {})
-const sh = (cmd: any, args: any, opts = {}) => spawnSync(cmd, args, { encoding: 'utf8', timeout: 20000, ...opts })
+const sh = (cmd: string, args: readonly string[], opts = {}) => spawnSync(cmd, args, { encoding: 'utf8', timeout: 20000, ...opts })
 
 /* ---- the machine ---- */
 /* how a check runs a command: its exit status and what it printed */
@@ -85,7 +85,7 @@ export async function siteChecks(root: any, { kitVersion = JSON.parse(fs.readFil
 }
 
 /* ---- settings: the deploy check's derivation, read for this machine or for production ---- */
-export async function settingsChecks(root: any, site: any, modules: any, env: any, { production = false } = {}) {
+export async function settingsChecks(root: any, site: any, modules: any, env: NodeJS.ProcessEnv|undefined, { production = false } = {}) {
   const { surfaces, checkDeploy, DEPLOYMENT_ENV } = await import('./deploy-checks.mjs')
   const { deploymentShape } = await import('./site.mjs')
   const { loadSteps, needsOf } = await import('./steps.mjs')
@@ -134,7 +134,7 @@ export function tcpOpen(host: any, port: any, ms = 3000) {
 /* ---- online: one read-only call per service this knows how to ask ---- */
 export async function onlineChecks(site: any, env: any, { fetch: f = fetch as (url: string, init?: RequestInit) => Promise<{ status: number, ok: boolean, json?: () => Promise<any> }>, connect = tcpOpen } = {}) {
   const out = []
-  const ask = async (name: any, url: any, headers: any) => {
+  const ask = async (name: string, url: string, headers: any) => {
     try {
       const r = await f(url, { headers, signal: AbortSignal.timeout(8000) })
       if (r.status === 401 || r.status === 403) return fail(name, `the key was refused (${r.status})`, 'replace the key')
@@ -172,13 +172,13 @@ export async function runChecks({ root = process.cwd(), production = false, db =
 
 export function report(groups: any) {
   const all = groups.flatMap(([g, rs]: any) => rs.map((r: any) => ({ ...r, group: g })))
-  const fails = all.filter((r: any) => r.level === 'fail'), warns = all.filter((r: any) => r.level === 'warn')
+  const fails = all.filter((r: { level: string }) => r.level === 'fail'), warns = all.filter((r: { level: string }) => r.level === 'warn')
   /* a fix shared by a run of problems is printed once, after the last of them */
   const lines = []
   const list = [...fails, ...warns]
   list.forEach((r, i) => { lines.push(`${r.level === 'fail' ? '✖' : '⚠'} ${r.name} — ${r.detail}`); if (r.fix && list[i + 1]?.fix !== r.fix) lines.push(`    → ${r.fix}`) })
   if (lines.length) lines.push('')
-  for (const [g, rs] of groups) lines.push(`${g}: ${rs.filter((r: any) => r.level === 'pass').map((r: any) => '✔ ' + r.name).join(' · ') || '—'}`)
+  for (const [g, rs] of groups) lines.push(`${g}: ${rs.filter((r: { level: string }) => r.level === 'pass').map((r: { name: string }) => '✔ ' + r.name).join(' · ') || '—'}`)
   lines.push('', fails.length ? `${fails.length} problem${fails.length === 1 ? '' : 's'}${warns.length ? `, ${warns.length} warning${warns.length === 1 ? '' : 's'}` : ''}.` : warns.length ? `Ready, with ${warns.length} warning${warns.length === 1 ? '' : 's'}.` : 'Everything is ready.')
   return { text: lines.join('\n'), ok: !fails.length }
 }

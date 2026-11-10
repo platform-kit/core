@@ -22,7 +22,7 @@ const emit = defineEmits(['terms'])
 const O = us('library').coaching.offerings || {}
 /* the booker's word for a session that costs nothing, so the two surfaces never disagree about it */
 const FREE = (us('library').coaching.booker || {}).free
-const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (t: any, m: { [x: string]: string }) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const open = ref(false), loading = ref(true), error = ref(''), saving = ref(false), saved = ref(false)
 const rows = ref<any>([]), standing = ref<any>(null), editing = ref<any>(null), draft = ref<any>(null)
@@ -91,7 +91,7 @@ async function save() {
   } catch (e) { error.value = (e as any).message || O.error } finally { saving.value = false }
 }
 
-async function move(r: any, state: any) {
+async function move(r: any, state: string) {
   if (state === 'retired' && !window.confirm(O['retire-ask'])) return
   error.value = ''
   try { const { error: e } = await (supabase as any).from('provider_offerings').update({ state }).eq('id', r.id); if (e) throw e; await load() }

@@ -18,7 +18,7 @@ function fromQuery() {
   } catch (e) { /* no window */ }
   return out
 }
-function toQuery(f: any) {
+function toQuery(f: { [x: string]: string }) {
   try {
     const q = new URLSearchParams(location.search)
     for (const k of KEYS) { if (f[k]) q.set(k, f[k]); else q.delete(k) }
@@ -35,14 +35,14 @@ export function useFilters(words: any = {}) {
     shared = f
   }
   const f = shared
-  const set = (key: any, value: any) => { if (!KEYS.includes(key)) return; if (value == null || value === '') delete f[key]; else f[key] = String(value) }
+  const set = (key: string, value: string|null) => { if (!KEYS.includes(key)) return; if (value == null || value === '') delete f[key]; else f[key] = String(value) }
   const toggle = (key: any, value: any) => { if (f[key] === String(value)) delete f[key]; else set(key, value) }
-  const remove = (key: any) => { delete f[key] }
+  const remove = (key: string|number) => { delete f[key] }
   const clear = () => { for (const k of FILTER_KEYS) delete f[k] }
   /* the chips: every filter but the source, with its word */
   const chips = computed(() => FILTER_KEYS.filter((k) => f[k]).map((k) => ({ key: k, value: f[k], label: words[k] || k })))
   /* what the reads take: the chips and the source */
   const forRead = computed(() => { const o: any = {}; for (const k of KEYS) if (f[k]) o[k] = f[k]; return o })
-  const has = (key: any, value: any) => f[key] === String(value)
+  const has = (key: string|number, value: any) => f[key] === String(value)
   return { filters: f, set, toggle, remove, clear, chips, forRead, has }
 }

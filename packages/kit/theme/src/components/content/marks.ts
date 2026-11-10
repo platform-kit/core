@@ -10,15 +10,15 @@ import './marks.css'
 
 export const MARK_COLORS = ['sun', 'leaf', 'sky', 'ocean', 'ember']
 export const MARK_RE = /==(?=\S)([\s\S]*?\S)==(?:\{([a-z]+)\})?/g
-export const markColor = (c: any) => (MARK_COLORS.includes(c) ? c : 'sun')
+export const markColor = (c: string) => (MARK_COLORS.includes(c) ? c : 'sun')
 
 /* the marked extension: a mark is inline, and its words keep their own markdown */
 export const sysmark = {
   extensions: [{
     name: 'sysmark',
     level: 'inline',
-    start(src: any) { const i = src.indexOf('=='); return i < 0 ? undefined : i },
-    tokenizer(src: any) {
+    start(src: string|string[]) { const i = src.indexOf('=='); return i < 0 ? undefined : i },
+    tokenizer(src: string) {
       const m = /^==(?=\S)([\s\S]*?\S)==(?:\{([a-z]+)\})?/.exec(src)
       if (!m) return
       return { type: 'sysmark', raw: m[0], color: markColor(m[2]), tokens: (this as any).lexer.inlineTokens(m[1]) }

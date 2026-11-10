@@ -50,7 +50,7 @@ const veliteConfig = (await import(pathToFileURL(siteFile(process.cwd(), 'velite
 
 const MIME: any = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml', avif: 'image/avif' }
 const ROOT = process.cwd()   /* the site: the kit's scripts run in the site's root */
-const KIT = (f: any) => fileURLToPath(new URL('./' + f, import.meta.url))   /* a sibling script of this one, wherever the kit is installed */
+const KIT = (f: string) => fileURLToPath(new URL('./' + f, import.meta.url))   /* a sibling script of this one, wherever the kit is installed */
 /* the registry, read fresh on every request so a model saved in the builder shows on the reload */
 const SITE = await loadSite(ROOT)
 const STORE = gitStore(ROOT)   /* the dev server edits the checkout, whatever the mode */
@@ -108,19 +108,19 @@ async function preview({ col, name, data, content }: any, models: any) {
 /* what the pipe is given here: the checkout, velite's preview, the registry read fresh */
 const ENV = { root: ROOT, store: STORE, site: SITE, models, describe, validateSections, preview, by: '' }
 
-const send = (res: any, code: any, obj: any) => {
+const send = (res: any, code: number, obj: any) => {
   res.statusCode = code
   res.setHeader('content-type', 'application/json')
   res.end(JSON.stringify(obj))
 }
 const body = (req: any) => new Promise((resolve, reject) => {
   let s = ''
-  req.on('data', (c: any) => { s += c; if (s.length > 8e6) reject(new Error('too large')) })
+  req.on('data', (c: string) => { s += c; if (s.length > 8e6) reject(new Error('too large')) })
   req.on('end', () => { try { resolve(s ? JSON.parse(s) : {}) } catch (e) { reject(e) } })
   req.on('error', reject)
 })
 const modelOf = async (col: any) => { const m = byKey(await models(), String(col || '')); if (!m) throw new Refusal(400, 'unknown collection'); return m }
-const resolveFile = async (col: any, name: any) => { const m = await modelOf(col); const { fileOf } = await import('./models/index.mjs'); return fileOf(m, name, ROOT) }
+const resolveFile = async (col: string, name: any) => { const m = await modelOf(col); const { fileOf } = await import('./models/index.mjs'); return fileOf(m, name, ROOT) }
 
 /* ---- the enrichment scripts, run from the Books grid ----
    One child process at a time (each call costs money, and two runs on one book
@@ -139,8 +139,8 @@ async function startJob({ script, books, force }: any) {
   for (const b of books) { try { await fs.access(await resolveFile('books', b)) } catch { throw Object.assign(new Error('no such book: ' + b), { code: 404 }) } }
   if (jobs.some((j: any) => j.running)) throw Object.assign(new Error('a run is already going — stop it or wait for it to finish'), { code: 409 })
   const job: any = { id: Date.now().toString(36), script, books, force: !!force, running: true, code: null, log: '', started: new Date().toISOString(), ended: null, child: null, stopped: false }
-  const push = (c: any) => { job.log += String(c); if (job.log.length > 200000) job.log = job.log.slice(-150000) }
-  const done = (code: any) => { if (!job.running) return; job.running = false; job.code = code; job.ended = new Date().toISOString() }
+  const push = (c: string) => { job.log += String(c); if (job.log.length > 200000) job.log = job.log.slice(-150000) }
+  const done = (code: number) => { if (!job.running) return; job.running = false; job.code = code; job.ended = new Date().toISOString() }
   const queue = [...SCRIPTS[script]]
   const next = () => {
     const [file, ...extra] = queue.shift()
@@ -150,8 +150,8 @@ async function startJob({ script, books, force }: any) {
     try {
       job.child = spawn(process.execPath, args, { cwd: ROOT, env: { ...process.env, FORCE_COLOR: '0' } })
       job.child.stdout.on('data', push); job.child.stderr.on('data', push)
-      job.child.on('close', (code: any) => { if (code === 0 && queue.length && !job.stopped) next(); else done(code) })
-      job.child.on('error', (e: any) => { push('\n' + e.message + '\n'); done(-1) })
+      job.child.on('close', (code: number) => { if (code === 0 && queue.length && !job.stopped) next(); else done(code) })
+      job.child.on('error', (e: { message: string }) => { push('\n' + e.message + '\n'); done(-1) })
     } catch (e: any) { push(e.message); done(-1) }
   }
   next()
@@ -184,7 +184,7 @@ export function adminServer(): Plugin {
         const seg = url.pathname.replace(/^\//, '')
         const q = url.searchParams
         try {
-          if (seg === 'run' && req.method === 'GET') { const id = q.get('id'); return send(res, 200, { jobs: jobs.filter((j: any) => !id || j.id === id).map(jobView) }) }
+          if (seg === 'run' && req.method === 'GET') { const id = q.get('id'); return send(res, 200, { jobs: jobs.filter((j: { id: string }) => !id || j.id === id).map(jobView) }) }
           if (seg === 'run' && req.method === 'POST') { try { return send(res, 200, { job: jobView(await startJob(await body(req))) }) } catch (e: any) { return send(res, e.code || 500, { error: e.message }) } }
           if (seg === 'run/stop' && req.method === 'POST') {
             const { id }: any = await body(req)

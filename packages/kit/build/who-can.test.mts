@@ -29,12 +29,12 @@ import { statusOf, leave, moduleOn, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
-const note = (s: any) => console.log('  ' + s)
+const ok = (name: string, cond: boolean, detail: string) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const note = (s: string) => console.log('  ' + s)
 
 console.log('\nWHO CAN DO WHAT\n')
 
-const skip = (why: any) => { console.log('  ⚠ SKIPPED — ' + why + '\n    What each kind of person may DO is NOT covered by this run.\n'); leave(0) }
+const skip = (why: string) => { console.log('  ⚠ SKIPPED — ' + why + '\n    What each kind of person may DO is NOT covered by this run.\n'); leave(0) }
 let cfg: any = null
 try { cfg = statusOf(); if (!cfg) throw new Error('no stack') }
 catch { skip('no local stack is up (npx supabase start)') }
@@ -66,7 +66,7 @@ for (const [who, email] of Object.entries(WHO)) {
   SESSION[who] = await client(email)
   if (email && !SESSION[who]) note(`⚠ ${who} (${email}) does not sign in — every cell for them is skipped`)
 }
-const me = async (who: any) => (WHO[who] ? (await admin.from('profiles').select('id').eq('email', WHO[who]).maybeSingle()).data?.id : null)
+const me = async (who: string) => (WHO[who] ? (await admin.from('profiles').select('id').eq('email', WHO[who]).maybeSingle()).data?.id : null)
 const STORE = await moduleOn('store')
 const ID = Object.fromEntries(await Promise.all(Object.keys(WHO).map(async (w) => [w, await me(w)])))
 
@@ -118,7 +118,7 @@ const ACTIONS = [
     name: 'be told correctly what they hold',
     can: ['guest', 'free', 'member', 'buyer', 'provider', 'editor', 'analyst', 'support', 'admin'],
     why: 'everybody is entitled to a true answer about themselves',
-    run: async (c: any, who: any) => {
+    run: async (c: any, who: string) => {
       const r = await c.rpc('get_my_entitlements', {})
       if (r.error || !r.data) return false
       const cls = r.data.class
@@ -132,7 +132,7 @@ const ACTIONS = [
     module: 'coaching',
     can: ['member', 'admin', 'provider'],
     why: 'the chat is the membership’s; a provider is one of the two ends of it',
-    run: async (c: any, who: any) => {
+    run: async (c: any, who: string|number) => {
       const peer = ID.provider
       if (!peer || ID[who] === peer) return null           /* not applicable to themselves */
       const r = await c.rpc('chat_open', { peer })
@@ -143,7 +143,7 @@ const ACTIONS = [
     name: 'grant themselves a role',
     can: [],
     why: 'NOBODY — the column is the app’s, and a person who could set it could become anything',
-    run: async (c: any, who: any) => {
+    run: async (c: any, who: string|number) => {
       if (!ID[who]) return null
       const before = (await admin.from('profiles').select('roles').eq('id', ID[who]).maybeSingle()).data?.roles || []
       await c.from('profiles').update({ roles: ['admin'] }).eq('id', ID[who])
@@ -158,7 +158,7 @@ const ACTIONS = [
     module: 'store',
     can: ['admin'],
     why: 'what a person bought is theirs; a buyer sees their own and nobody else’s',
-    run: async (c: any, who: any) => {
+    run: async (c: any, who: string|number) => {
       const r = await c.from('purchases').select('user_id').limit(20)
       if (r.error) return false
       const rows = r.data || []

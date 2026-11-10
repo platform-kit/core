@@ -94,7 +94,7 @@ const previousDocument = g.document
 g.window = { Hyper: null }
 g.document = {
   createElement: () => ({}),
-  head: { append: (script: any) => { sdkScript = script; (globalThis.window as any).Hyper = loadedHyperFactory; script.onload() } },
+  head: { append: (script: { onload: () => void }) => { sdkScript = script; (globalThis.window as any).Hyper = loadedHyperFactory; script.onload() } },
 }
 assert.equal(
   await loadHyperswitchSdk('https://beta.hyperswitch.io/v2'),

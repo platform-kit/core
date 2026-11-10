@@ -23,7 +23,7 @@ sources:
     packages/kit/theme/src/components/admin/PeopleAdmin.vue,
     packages/kit/build/dev-account.mts,
   ]
-reviewed: 2026-11-09
+reviewed: 2026-11-10
 ---
 
 Use **People → People** to find an account, review its purchases and bookings, and assign staff roles. A reader's access to paid content is separate from staff permissions; do not grant a staff role just to unlock a purchase.

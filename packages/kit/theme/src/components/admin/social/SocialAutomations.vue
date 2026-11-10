@@ -51,20 +51,20 @@ const eventById = computed(() => new Map(events.value.map((event: any) => [(even
 const eventForResponse = computed<any>(() =>
   selectedResponse.value ? eventById.value.get((selectedResponse.value as any).event_id) || null : null,
 )
-const responseStatus = (response: any) => {
+const responseStatus = (response: { mode: string; status: string }) => {
   if (response.mode === 'automatic' && response.status === 'draft') return W['queued-status']
   return W[`${response.status}-status`] || response.status
 }
-const destinationLabel = (destination: any) =>
+const destinationLabel = (destination: string) =>
   destination === 'public_reply' ? W['public-label'] : W['private-label']
-const visibilityText = (destination: any) =>
+const visibilityText = (destination: string) =>
   destination === 'public_reply' ? W['public-visibility'] : W['private-visibility']
-const eventLabel = (kind: any) =>
+const eventLabel = (kind: string) =>
   kind === 'comment' ? W['comment-event'] : kind === 'dm' ? W['dm-event'] : ''
 const eventExcerpt = (eventId: any) => (eventById.value.get(eventId) as any)?.body || W['empty-text']
-const dateLabel = (value: any) => (value ? new Date(value).toLocaleString() : '')
+const dateLabel = (value: string|number|Date) => (value ? new Date(value).toLocaleString() : '')
 
-async function call(action: any, fields = {}) {
+async function call(action: string, fields = {}) {
   const { data, error } = await (supabase as any).functions.invoke('social', {
     body: { action, ...fields },
   })
@@ -106,7 +106,7 @@ function editRule(rule: any) {
   notice.value = ''
 }
 
-function chooseEvent(eventKind: any) {
+function chooseEvent(eventKind: string) {
   form.eventKind = eventKind
   const route = routes.value.find((item: any) => (item as any).eventKind === eventKind)
   form.destinations =
@@ -119,7 +119,7 @@ function chooseEvent(eventKind: any) {
         : []
 }
 
-async function loadAccount(id: any) {
+async function loadAccount(id: string) {
   if (!id) return
   loading.value = true
   loadError.value = ''
@@ -181,7 +181,7 @@ async function saveRule() {
   }
 }
 
-async function reviewResponse(decision: any) {
+async function reviewResponse(decision: string) {
   if (!selectedResponse.value) return
   busy.value = true
   actionError.value = ''

@@ -41,7 +41,7 @@ const tree = docTree(props.collection)
    sidebar can fold sections — only the open page's section stands open by default, the rest fold to
    their headings, and any heading toggles; a page with no heading above it is always shown */
 const flat: any = []
-const walk = (node: any, depth: any, sec: any) => {
+const walk = (node: any, depth: number, sec: string) => {
   node.docs.forEach((d: any) => flat.push({ ...d, depth, sec }))
   node.dirs.forEach((dir: any) => { const key = (sec ? sec + '/' : '') + dir.slug; flat.push({ heading: dir.title, depth, key, sec }); walk(dir, depth + 1, key) })
 }
@@ -107,7 +107,7 @@ watch(currentId, show, { immediate: true })
 watch(currentId, (id) => { const e: any = flat.find((x: any) => x.id === id); if (e && e.sec) openSecs.value = new Set([...openSecs.value, ...chain(e.sec)]) }, { immediate: true })
 if (preview) watch(preview, () => show(currentId.value))
 /* inside the preview the tree is for looking at, not leaving the editor by */
-const open = (id: any) => { navOpen.value = false; if (!preview) navigate(base + '/' + id) }
+const open = (id: string) => { navOpen.value = false; if (!preview) navigate(base + '/' + id) }
 /* the in-page search opens the full-site palette, pre-narrowed to this collection */
 const openSearch = () => { if ((window as any).DLsearch) (window as any).DLsearch({ kind: props.collection === 'wiki' ? 'wiki' : 'doc' }) }
 
@@ -117,11 +117,11 @@ const heroStyle = computed(() => {
   const c = (fm.value as any).cover
   return c && c.src ? { backgroundImage: `url("${c.src}")` } : {}
 })
-function fmtDate(iso: any) {
+function fmtDate(iso: string|number|Date) {
   if (!iso) return ''
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 }
-function agoText(iso: any) {
+function agoText(iso: string|number|Date) {
   if (!iso) return ''
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
   if (days < 1) return SH.today
@@ -155,7 +155,7 @@ const next = computed(() => (curIndex.value >= 0 && curIndex.value < pages.lengt
 /* ---- on this page ---- */
 const tocFlat: any = computed(() => {
   const out: any = []
-  const wk = (items: any, lvl: any) => (items || []).forEach((it: any) => { out.push({ title: it.title, url: it.url, lvl }); wk(it.items, lvl + 1) })
+  const wk = (items: any, lvl: number) => (items || []).forEach((it: any) => { out.push({ title: it.title, url: it.url, lvl }); wk(it.items, lvl + 1) })
   wk(doc.value && doc.value.toc, 0)
   return out
 })

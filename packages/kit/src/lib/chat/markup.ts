@@ -69,7 +69,7 @@ export function inlineParts(text: string|null, marks: string[] = []): InlinePart
 }
 
 /* an address is a part of its own, so the surface can make it a link without ever writing html */
-function linkParts(s: string, marks: any) {
+function linkParts(s: string, marks: string[]) {
   const out = []
   let last = 0
   const spans = []
@@ -100,7 +100,7 @@ export function messageBlocks(body: string|null, inline: (line: string) => any[]
   const lines = whole.split('\n')
   const out = []
   let prose: any = []
-  const flush = () => { if (prose.length) { out.push({ kind: 'p', lines: prose.map((l: any) => inline(l)) }); prose = [] } }
+  const flush = () => { if (prose.length) { out.push({ kind: 'p', lines: prose.map((l: string) => inline(l)) }); prose = [] } }
   for (const line of lines) {
     const bullet = /^\s*[-*]\s+(.*)$/.exec(line)
     const quote = /^\s*>\s?(.*)$/.exec(line)

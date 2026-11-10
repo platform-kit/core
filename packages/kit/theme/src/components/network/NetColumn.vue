@@ -42,7 +42,7 @@ const N = computed(() => us('network').notes.main)
 const H = computed(() => us('network').thread.main)
 const P = computed(() => us('network').post.main)
 const S = computed(() => us('network').shell.main)
-const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: { [x: string]: string }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const view = computed(() => {
   const p = route.value || ''
@@ -64,9 +64,9 @@ const FOLLOWING = showsFollowing((site.community || {}).hide)
 /* Explore is the For You grid where the site turned it on */
 const FOR_YOU = !!(site.community || {}).forYou && !!(site.network)
 const tab = ref(!FOLLOWING ? 'discover' : (() => { try { return sessionStorage.getItem('dl.feed.tab') || 'following' } catch { return 'following' } })())
-function setTab(t: any) { tab.value = t; try { sessionStorage.setItem('dl.feed.tab', t) } catch { /* private window */ } ; if (t === 'discover' && !ds.st.items.length) ds.refresh(); window.scrollTo({ top: 0 }) }
+function setTab(t: string) { tab.value = t; try { sessionStorage.setItem('dl.feed.tab', t) } catch { /* private window */ } ; if (t === 'discover' && !ds.st.items.length) ds.refresh(); window.scrollTo({ top: 0 }) }
 const source = computed(() => (view.value === 'explore' || tab.value === 'discover' ? ds : tl))
-const items = computed(() => source.value.st.items.map((it: any) => ({ ...it, post: it.post_id ? net.posts[it.post_id] : net.messages[it.message_id] })).filter((it: any) => it.post))
+const items = computed(() => source.value.st.items.map((it: { post_id: string|number; message_id: string|number }) => ({ ...it, post: it.post_id ? net.posts[it.post_id] : net.messages[it.message_id] })).filter((it: any) => it.post))
 
 /* ---------------------------------------------------------------- explore: people by name */
 const q = ref('')
@@ -96,7 +96,7 @@ const notesErr = ref(false)
 const notesDone = ref(false)
 const seenAt = ref<any>(null)
 const noteFilter = ref('all')
-const fetchNotes = (before: any) => (SPACES ? communityNotes(before) : notifications(before).then((r) => r.map((n: any) => ({ ...n, source: 'network' }))))
+const fetchNotes = (before: null|undefined) => (SPACES ? communityNotes(before) : notifications(before).then((r) => r.map((n: any) => ({ ...n, source: 'network' }))))
 async function loadNotes() {
   notesBusy.value = true; notesErr.value = false
   try {
@@ -118,14 +118,14 @@ async function moreNotes() {
    only where the reader may read it */
 const noteFilters = computed(() => (!SPACES && !net.access.read ? [] : NOTE_FILTERS.filter((f) => f === 'all' || f === 'replies'
   || (f === 'mentions' && SPACES) || (f === 'events' && EVENTS) || ((f === 'reactions' || f === 'follows') && net.access.read))))
-function setNoteFilter(f: any) { noteFilter.value = f; window.scrollTo({ top: 0 }) }
+function setNoteFilter(f: string) { noteFilter.value = f; window.scrollTo({ top: 0 }) }
 const grouped = computed(() => groupNotes(notes.value, seenAt.value))
 const shownNotes = computed(() => (noteFilter.value === 'all' ? grouped.value : grouped.value.filter((g) => g.kind === noteFilter.value)))
 const nameOf = (p: any) => (p && (p.name || p.username)) || P.value.someone
-const nameOfId = (id: any) => nameOf(net.people[id])
+const nameOfId = (id: string|number) => nameOf(net.people[id])
 const names = computed(() => Object.fromEntries(Object.entries(net.people).map(([k, v]) => [k, nameOf(v)])))
 /* a line's words as runs, the names and the room in bold — the words are the file's, whole */
-function runs(tpl: any, map: any, bold: any) {
+function runs(tpl: any, map: any, bold: string|string[]) {
   const out: any = []
   String(tpl || '').split(/(\{\w+\})/).forEach((bit) => {
     const m = bit.match(/^\{(\w+)\}$/)
@@ -166,7 +166,7 @@ const noteHref = (g: any) => {
   if (g.source === 'event') return ROUTES.spaces || ''
   return ROUTES.spaces || ''
 }
-function openNote(g: any, e: any) {
+function openNote(g: any, e: { preventDefault: () => void }) {
   if (g.source === 'network') return
   e.preventDefault()
   if (g.source === 'event') emit('open-event', (g.item || {}).slug)
@@ -177,7 +177,7 @@ function openNote(g: any, e: any) {
 const thread = ref<any>(null)
 const threadBusy = ref(false)
 const replying = ref(false)
-async function openThread(id: any) {
+async function openThread(id: string) {
   threadBusy.value = true; thread.value = null
   try { thread.value = await loadThread(id) } finally { threadBusy.value = false }
   replying.value = wantReply.value === id
@@ -185,7 +185,7 @@ async function openThread(id: any) {
 }
 /* where a press on Reply came from: the thread opens with the box ready under that post */
 const wantReply = ref('')
-const rows = computed(() => (thread.value ? threadOf(thread.value.root, thread.value.replies.map((r: any) => net.posts[r.id] || r)) : []))
+const rows = computed(() => (thread.value ? threadOf(thread.value.root, thread.value.replies.map((r: { id: string|number }) => net.posts[r.id] || r)) : []))
 const focusPost = computed(() => (thread.value ? net.posts[thread.value.focus] : null))
 
 /* ---------------------------------------------------------------- what drives each view */
@@ -203,7 +203,7 @@ onMounted(show)
 watch([view, threadId, isSignedIn], show)
 
 /* answering from a card: open its thread with the reply box ready */
-function replyTo(post: any) { wantReply.value = post.id; navigate(ROUTES.feed + '/post/' + post.id) }
+function replyTo(post: { id: string }) { wantReply.value = post.id; navigate(ROUTES.feed + '/post/' + post.id) }
 function back() { if (window.history.length > 1) window.history.back(); else navigate(ROUTES.feed) }
 async function posted(out?: any) {
   if (view.value === 'thread') openThread(threadId.value)
@@ -211,7 +211,7 @@ async function posted(out?: any) {
 }
 /* a report, over whatever view raised it */
 const reporting = ref<any>(null)
-const removed = (id: any) => { tl.st.items = tl.st.items.filter((it: any) => it.post_id !== id); if (view.value === 'thread' && id === threadId.value) navigate(ROUTES.feed) }
+const removed = (id: string) => { tl.st.items = tl.st.items.filter((it: any) => it.post_id !== id); if (view.value === 'thread' && id === threadId.value) navigate(ROUTES.feed) }
 
 const signIn = () => { if ((window as any).DLauth) (window as any).DLauth.open() }
 /* a post made elsewhere — the post window — lands in whatever this column is showing */

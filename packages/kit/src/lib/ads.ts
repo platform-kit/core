@@ -33,8 +33,8 @@ const CTA_KEY = 'dl.cta.v1'
 const MODAL_EVERY_MS = 60 * 60 * 1000
 const STAGES = ['circumstance', 'relationship', 'realization']
 
-const read = (k: any, d: any) => { try { const r = storeGet(k); return r ? JSON.parse(r) : d } catch (e) { return d } }
-const save = (k: any, v: any) => storeSet(k, JSON.stringify(v))
+const read = (k: string, d: any) => { try { const r = storeGet(k); return r ? JSON.parse(r) : d } catch (e) { return d } }
+const save = (k: string, v: any) => storeSet(k, JSON.stringify(v))
 
 /* ---- the rolling tally of topic slugs the reader has opened ---- */
 export function recordView(topics: any) {
@@ -51,9 +51,9 @@ async function signalSlugs() {
   const w: any = {}
   try {
     const { readerSignals, topicByKey } = await import('#site/recommendations')   /* the site's scorer, or the kit's defaults (nothing) */
-    const sig: any = readerSignals()
+    const sig = readerSignals()
     if (!sig || !sig.has) return w
-    const put = (t: any, score: any) => { if (t && t.slug) w[t.slug] = Math.max(w[t.slug] || 0, score) }
+    const put = (t: { slug: string }|null, score: number) => { if (t && t.slug) w[t.slug] = Math.max(w[t.slug] || 0, score) }
     if (sig.area && sig.stage) put(topicByKey('cell', sig.area + ':' + sig.stage), 4)
     if (sig.area) for (const st of STAGES) put(topicByKey('cell', sig.area + ':' + st), 3)
     if (sig.type) put(topicByKey('type', String(sig.type)), 2)
@@ -65,10 +65,10 @@ async function signalSlugs() {
 /* ---- frequency ---- */
 const freq = () => read(CTA_KEY, { lastModalAt: 0, shown: {}, dismissed: {} })
 export const canShowModalNow = () => Date.now() - (freq().lastModalAt || 0) > MODAL_EVERY_MS
-export function markShown(id: any, { modal }: any = {}) {
+export function markShown(id: string|number, { modal }: any = {}) {
   const f = freq(); f.shown[id] = Date.now(); if (modal) f.lastModalAt = Date.now(); save(CTA_KEY, f)
 }
-export function markDismissed(id: any) { const f = freq(); f.dismissed[id] = Date.now(); save(CTA_KEY, f) }
+export function markDismissed(id: string|number) { const f = freq(); f.dismissed[id] = Date.now(); save(CTA_KEY, f) }
 function onCooldown(b: any, f: any) {
   const hours = typeof b.cooldownHours === 'number' ? b.cooldownHours : 24
   const last = Math.max(f.shown[b.id] || 0, f.dismissed[b.id] || 0)

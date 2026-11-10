@@ -11,7 +11,7 @@ export default {
   grammar: {
     parse: (text: any) => { const model = parseForm(text); return { data: { title: model.title || '', published: model.kit.published !== false }, content: text, parsed: model } },
     /* the model as the builder holds it (raw parts kept, dirty parts composed), parsed again and refused with its errors */
-    serialise: (rec: any, ctx: any) => {
+    serialise: (rec: any, ctx: { current: string|null; }) => {
       if (!rec.parsed || typeof rec.parsed !== 'object') throw new Refusal(400, 'no model')
       const text = serialiseForm(rec.parsed, ctx.current)
       const back = parseForm(text)

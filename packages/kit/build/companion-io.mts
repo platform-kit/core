@@ -30,11 +30,11 @@ import { bookChapterTitles, parseCompanionBody, serialiseCompanionBody } from '.
 export { bookChapterTitles, parseCompanionBody }
 
 /* a chapter's source, hashed with the prompt version, so a rerun knows what changed */
-export function chapterHash(md: any, promptVersion = 'v1') {
+export function chapterHash(md: string, promptVersion = 'v1') {
   return createHash('sha1').update(promptVersion + '\n' + String(md || '').trim()).digest('hex').slice(0, 12)
 }
 
-export function parseCompanion(raw: any) {
+export function parseCompanion(raw: string) {
   const fm = matter(raw)
   const { chapters, issues } = parseCompanionBody(fm.content)
   return { data: fm.data, chapters, issues }

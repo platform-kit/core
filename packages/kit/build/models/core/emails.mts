@@ -11,7 +11,7 @@ const subjects = async (store: any) => { const raw = await store.read(SUBJECTS);
 export default {
   key: 'emails', name: 'Emails', dir: 'content/emails', ext: 'json', title: 'subject', module: 'emails', editor: 'EmailsAdmin', creates: true,
   names: () => KINDS,
-  read: async (name: any, ctx: any) => {
+  read: async (name: string, ctx: any) => {
     if (!KINDS.includes(name)) throw new Refusal(404, 'unknown email')
     let design = null
     try { const raw = await ctx.store.read('content/emails/' + name + '.json'); if (raw != null) design = JSON.parse(raw) } catch { /* not built yet */ }
@@ -21,15 +21,15 @@ export default {
     return { data: { subject }, content: '', parsed: design }
   },
   grammar: {
-    parse: (text: any) => ({ data: {}, content: '', parsed: JSON.parse(text) }),
-    serialise: (rec: any, ctx: any) => {
+    parse: (text: string) => ({ data: {}, content: '', parsed: JSON.parse(text) }),
+    serialise: (rec: any, ctx: { name: string }) => {
       if (!KINDS.includes(ctx.name)) throw new Refusal(400, 'unknown email')
       const d = rec.parsed
       if (!d || typeof d !== 'object' || !Array.isArray(d.blocks) || !d.settings) throw new Refusal(400, 'not a design')
       return JSON.stringify(d, null, 2) + '\n'
     },
   },
-  after: async (rec: any, ctx: any) => {
+  after: async (rec: { data: { subject: string } }, ctx: any) => {
     if (typeof rec.data.subject === 'string') {
       const sub = await subjects(ctx.store)
       sub.groups[ctx.name] = sub.groups[ctx.name] || {}; sub.groups[ctx.name].mail = { ...(sub.groups[ctx.name].mail || {}), subject: rec.data.subject.trim() }

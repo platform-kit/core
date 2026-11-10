@@ -11,11 +11,11 @@ import { ROUTES } from 'platformkit/lib/router.js'
    the social layout's sidebar used to hold, kept where search already is */
 const PEOPLE = moduleOn('network')
 const esc = (t: any) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as Record<string, string>)[c])
-async function peopleHits(text: any) {
+async function peopleHits(text: string) {
   if (!PEOPLE || !isSignedIn.value || !text.trim() || kind.value) return []
   const { findPeople, net } = await import('platformkit/lib/network/api.js')
   const ids = await findPeople(text.trim()).catch(() => [])
-  return ids.map((id: any) => net.people[id]).filter((p: any) => p && p.username && p.page).slice(0, 5)
+  return ids.map((id: string|number) => net.people[id]).filter((p: any) => p && p.username && p.page).slice(0, 5)
     .map((p: any) => ({ kind: 'person', href: ROUTES.people + '/' + p.username, titleHtml: esc(p.name || p.username), excerpt: '@' + esc(p.handle || p.username) }))
 }
 
@@ -39,7 +39,7 @@ const RANGES = [
 const range = ref('')
 const from = ref('')
 const to = ref('')
-const iso = (d: any) => d.toISOString().slice(0, 10)
+const iso = (d: Date) => d.toISOString().slice(0, 10)
 function rangeBounds() {
   if (range.value === 'custom') return { after: from.value || null, before: to.value || null }
   if (!range.value) return { after: null, before: null }
@@ -67,7 +67,7 @@ function closeMenus(e: any) { if (!e.target.closest || !e.target.closest('.ck-dd
 async function ensure() {
   if (!corpus) {
     corpus = await contentCorpus()
-    tagOptions.value = allTags(corpus.filter((r: any) => r.kind !== 'product'))
+    tagOptions.value = allTags(corpus.filter((r: { kind: string }) => r.kind !== 'product'))
     const have = new Set(corpus.map((r: any) => r.kind))
     kindsHere.value = KINDS.filter((k) => !k.v || have.has(k.v))
   }
@@ -77,13 +77,13 @@ let semTimer: any = null
 async function run() {
   await ensure()
   const { after, before } = rangeBounds()
-  const opts = { kind: kind.value || null, after, before, tags: tags.value.map((t: any) => t.toLowerCase()) }
+  const opts = { kind: kind.value || null, after, before, tags: tags.value.map((t: string) => t.toLowerCase()) }
   const kw = searchContent(corpus, q.value, opts)
   hits.value = kw
   sel.value = 0
   /* people come back from the database, a beat after the shelf's own results */
   const asked = q.value
-  peopleHits(asked).then((ppl) => { if (ppl.length && q.value === asked) hits.value = ppl.concat(hits.value.filter((h: any) => h.kind !== 'person')) })
+  peopleHits(asked).then((ppl) => { if (ppl.length && q.value === asked) hits.value = ppl.concat(hits.value.filter((h: { kind: string }) => h.kind !== 'person')) })
 
   /* the semantic pass only runs when there are real words to mean something */
   const words = parseQuery(q.value).toks
@@ -116,7 +116,7 @@ const grouped = computed(() => {
   return g
 })
 
-async function show(preset?: any) {
+async function show(preset?: { kind: string }|undefined) {
   open.value = true
   /* opened with a scope (e.g. from the wiki/docs search field): reset to a clean
      search narrowed to that kind */
@@ -130,7 +130,7 @@ async function show(preset?: any) {
   input.value && input.value.focus()
 }
 function hide() { open.value = false; q.value = '' }
-function go(h: any) { hide(); navigate(h.href) }
+function go(h: { href: string|URL }) { hide(); navigate(h.href) }
 
 function onKey(e: any) {
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); open.value ? hide() : show(); return }

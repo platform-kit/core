@@ -73,7 +73,7 @@ const menu = ref(false)
 function closeMenu(e: any) { if (!e.target.closest || !e.target.closest('.nc-aud')) { menu.value = false; document.removeEventListener('click', closeMenu, true) } }
 function openMenu() { if (narrowed.value) return; menu.value = !menu.value; if (menu.value) setTimeout(() => document.addEventListener('click', closeMenu, true)) }
 function choose(k: any) { audience.value = k; menu.value = false }
-const iconOf = (k: any) => (k === 'everyone' ? 'globe' : k === 'here' ? 'house' : 'space')
+const iconOf = (k: string) => (k === 'everyone' ? 'globe' : k === 'here' ? 'house' : 'space')
 const canPost = computed(() => !busy.value && left.value >= 0 && (text.value.trim().length > 0 || files.value.length > 0))
 
 /* the box grows with what is written, to a point */
@@ -89,7 +89,7 @@ function addPictures(e: any) {
   err.value = ''
   for (const f of list) files.value.push({ file: f, url: URL.createObjectURL(f), alt: '', kind: kindOfType(f.type) })
 }
-function dropPicture(i: any) { URL.revokeObjectURL(files.value[i].url); files.value.splice(i, 1) }
+function dropPicture(i: string|number) { URL.revokeObjectURL(files.value[i].url); files.value.splice(i, 1) }
 function clearPictures() { for (const f of files.value) URL.revokeObjectURL(f.url); files.value = [] }
 
 async function send() {

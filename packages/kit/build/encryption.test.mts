@@ -16,7 +16,7 @@ import { encryptedOf, sealedRooms, parseChannel, parseSpace, serialiseChannel, s
 import { kitConfig } from './velite.mjs'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 
 /* ---- the resolution ---- */
 
@@ -45,7 +45,7 @@ const objectIn = (s: any, depth = 0) => {
   if (s._def && s._def.innerType) return objectIn(s._def.innerType, depth + 1)
   return null
 }
-const field = (name: any, key: any) => {
+const field = (name: string, key: string) => {
   const c = cfg.collections && cfg.collections[name]
   const o = c && objectIn(c.schema)
   if (!o) return undefined
@@ -61,7 +61,7 @@ ok('the channels collection declares `encrypted`', !!field('channels', 'encrypte
    nothing when it is silent, so that encryptedOf can fall through to the space. A default on the
    channel would make every channel say "false" out loud and no space could ever seal anything. */
 const sp = field('spaces', 'encrypted'), ch = field('channels', 'encrypted')
-const parses = (f: any, v: any) => { try { return { ok: true, v: f.parse(v) } } catch { return { ok: false } } }
+const parses = (f: any, v: boolean|undefined) => { try { return { ok: true, v: f.parse(v) } } catch { return { ok: false } } }
 ok('a space that says nothing is not encrypted', sp && parses(sp, undefined).v === false)
 ok('a CHANNEL that says nothing says nothing — it does not default to false',
   ch && parses(ch, undefined).v === undefined,
@@ -77,7 +77,7 @@ ok('both take a real boolean', sp && parses(sp, true).v === true && ch && parses
  * compile — which is exactly what happened: the velite schema had `encrypted` while parseChannel
  * whitelisted the fields it carried and that was not one of them, so every channel compiled open.
  */
-const chan = (fm: any) => parseChannel(`---\nname: Lounge\n${fm}---\n\nhello\n`).data
+const chan = (fm: string) => parseChannel(`---\nname: Lounge\n${fm}---\n\nhello\n`).data
 ok('the channel grammar carries a seal', chan('encrypted: true\n').encrypted === true)
 ok('…and an explicit refusal of one', chan('encrypted: false\n').encrypted === false)
 ok('…and says nothing where the file said nothing', chan('').encrypted === undefined,
@@ -87,7 +87,7 @@ ok('…and is open by default', parseSpace('---\nname: Guild\n---\n').data.encry
 
 /* and the writer must not quietly drop it: the admin round-trips a record through these two, so a
    field the serialiser forgets is a seal somebody set and the next save took off */
-const back = (fm: any) => parseChannel(serialiseChannel(chan(fm))).data.encrypted
+const back = (fm: string) => parseChannel(serialiseChannel(chan(fm))).data.encrypted
 ok('a sealed room survives being written back', back('encrypted: true\n') === true)
 ok('an unsealed one survives too', back('encrypted: false\n') === false)
 ok('and a room that inherits keeps inheriting', back('') === undefined,

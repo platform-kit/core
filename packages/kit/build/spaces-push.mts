@@ -61,7 +61,7 @@ export async function pushSpaces({ check = false, seed = false, root = ROOT, dec
     declared = JSON.parse(readFileSync(file, 'utf8'))
   }
   /* and the environment only where nobody handed a database in */
-  let db: any = client
+  let db = client
   if (!db) {
     const { supabaseUrl, serviceKey } = await import('./tts/storage.mjs')
     const url = supabaseUrl(), key = serviceKey()

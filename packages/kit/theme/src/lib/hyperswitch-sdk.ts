@@ -29,13 +29,13 @@ export async function confirmPaymentMethodManagementSession(hyper: any, elements
   return result
 }
 
-function sdkUnavailable(message: any) {
+function sdkUnavailable(message: string|undefined) {
   const error: any = new Error(message)
   error.code = HYPERSWITCH_V2_BROWSER_UNAVAILABLE_CODE
   return error
 }
 
-function validSdkUrl(value: any) {
+function validSdkUrl(value: string|URL) {
   try {
     const url = new URL(value)
     const localHttp = url.protocol === 'http:' &&
@@ -97,7 +97,7 @@ function clientHeaders(publishableKey: any, clientSecret: any, profileId: any) {
   }
 }
 
-function paymentUrl(apiBaseUrl: any, paymentId: any, action: any) {
+function paymentUrl(apiBaseUrl: string|URL, paymentId: string|number|boolean, action: string) {
   let base
   try {
     base = new URL(apiBaseUrl)
@@ -112,7 +112,7 @@ function paymentUrl(apiBaseUrl: any, paymentId: any, action: any) {
   return base.href
 }
 
-function paymentStatus(result: any) {
+function paymentStatus(result: { status: string }) {
   return typeof result?.status === 'string' ? result.status.toLowerCase() : ''
 }
 

@@ -19,7 +19,7 @@
 
 export const STOP = new Set('a an and are as at be been but by for from has have how i if in into is it its just me my not of on or our so than that the their them then there these they this to too us very was we what when where which who why will with would you your'.split(' '))
 
-export const tokens = (s: any) => String(s || '').toLowerCase().replace(/[^a-z0-9' ]+/g, ' ').split(/\s+/)
+export const tokens = (s: string) => String(s || '').toLowerCase().replace(/[^a-z0-9' ]+/g, ' ').split(/\s+/)
   .map((w) => w.replace(/'s$/, '').replace(/(ies)$/, 'y').replace(/(sses|shes|ches|xes)$/, (m) => m.slice(0, -2)).replace(/([^s])s$/, '$1'))
   .filter((w) => w.length >= 3 && !STOP.has(w))
 
@@ -35,7 +35,7 @@ export function lexicalIndex(rows: any) {
   const avg = docs.reduce((s: any, d: any) => s + d.len, 0) / Math.max(docs.length, 1)
   return { docs, df, avg, n: docs.length }
 }
-export function bm25(index: any, query: any, k1 = 1.2, b = 0.75) {
+export function bm25(index: any, query: string, k1 = 1.2, b = 0.75) {
   const q = [...new Set(tokens(query))]
   const out: any = {}
   for (const d of index.docs) {
@@ -50,15 +50,15 @@ export function bm25(index: any, query: any, k1 = 1.2, b = 0.75) {
   return out
 }
 
-export const cosine = (a: any, b: any) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s }
+export const cosine = (a: any, b: number[]) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s }
 
 /* pieces: [{ book, key, vec }]; qvec: the sentence's embedding → { slug: score } */
-export function semantic(pieces: any, qvec: any) {
+export function semantic(pieces: { book: string; key: string; vec: number[]; }[], qvec: number[]) {
   const by: any = {}
   for (const p of pieces) (by[p.book] = by[p.book] || { head: 0, ch: [] })[p.key === 'insight' ? 'head' : 'ch'] = p.key === 'insight' ? cosine(p.vec, qvec) : (by[p.book].ch.push(cosine(p.vec, qvec)), by[p.book].ch)
   const out: any = {}
   for (const [slug, v] of Object.entries(by)) {
-    const ch = (v as any).ch.slice().sort((x: any, y: any) => y - x)
+    const ch = (v as any).ch.slice().sort((x: number, y: number) => y - x)
     const top = ch.length ? (ch[0] + (ch[1] ?? ch[0])) / 2 : (v as any).head
     out[slug] = 0.5 * (v as any).head + 0.5 * top
   }
@@ -74,17 +74,17 @@ export function normalise(scores: Record<string, number>) {
 }
 
 /* one sentence: meaning and words, each normalised, halved and summed → { slug: 0..1 } */
-export function sentenceScores(slugs: any, pieces: any, index: any, qvec: any, text: any) {
-  const sem = normalise(Object.fromEntries(slugs.map((s: any) => [s, semantic(pieces, qvec)[s] || 0])))
-  const lex = normalise(Object.fromEntries(slugs.map((s: any) => [s, bm25(index, text)[s] || 0])))
-  return Object.fromEntries(slugs.map((s: any) => [s, 0.5 * sem[s] + 0.5 * lex[s]]))
+export function sentenceScores(slugs: any, pieces: any, index: any, qvec: number[], text: string) {
+  const sem = normalise(Object.fromEntries(slugs.map((s: string|number) => [s, semantic(pieces, qvec)[s] || 0])))
+  const lex = normalise(Object.fromEntries(slugs.map((s: string|number) => [s, bm25(index, text)[s] || 0])))
+  return Object.fromEntries(slugs.map((s: string|number) => [s, 0.5 * sem[s] + 0.5 * lex[s]]))
 }
 
 /* several sentences, weighted → [{ slug, score }] best first */
 export function combine(slugs: any, perSentence: any, weights: any) {
   const total = weights.reduce((s: any, w: any) => s + w, 0) || 1
-  return slugs.map((slug: any) => ({ slug, score: perSentence.reduce((s: any, sc: any, i: any) => s + (weights[i] / total) * (sc[slug] || 0), 0) }))
-    .sort((a: any, b: any) => b.score - a.score)
+  return slugs.map((slug: string|number) => ({ slug, score: perSentence.reduce((s: number, sc: any, i: string|number) => s + (weights[i] / total) * (sc[slug] || 0), 0) }))
+    .sort((a: { score: number; }, b: { score: number; }) => b.score - a.score)
 }
 
 /* speed or depth: a lean of at most PACE toward the shorter books ('short') or the longer
@@ -92,9 +92,9 @@ export function combine(slugs: any, perSentence: any, weights: any) {
    shelf. Added to the sentences' score (itself 0..1), it reorders near-ties and never
    outweighs what was written. */
 export const PACE = 0.15
-export function paceLean(slugs: any, wordsOf: any, pref: any) {
+export function paceLean(slugs: any, wordsOf: any, pref: string|undefined) {
   if (pref !== 'short' && pref !== 'long') return Object.fromEntries(slugs.map((s: any) => [s, 0]))
-  const ln = Object.fromEntries(slugs.map((s: any) => [s, Math.log(Math.max(1, wordsOf[s] || 1))]))
+  const ln = Object.fromEntries(slugs.map((s: string|number) => [s, Math.log(Math.max(1, wordsOf[s] || 1))]))
   const pos = normalise(ln)
-  return Object.fromEntries(slugs.map((s: any) => [s, PACE * (pref === 'short' ? 1 - pos[s] : pos[s])]))
+  return Object.fromEntries(slugs.map((s: string|number) => [s, PACE * (pref === 'short' ? 1 - pos[s] : pos[s])]))
 }

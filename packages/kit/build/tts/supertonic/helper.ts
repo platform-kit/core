@@ -14,11 +14,11 @@ const AVAILABLE_LANGS = ["en", "ko", "ja", "ar", "bg", "cs", "da", "de", "el", "
  * Unicode text processor
  */
 class UnicodeProcessor {
-    constructor(unicodeIndexerJsonPath: any) {
+    constructor(unicodeIndexerJsonPath: fs.PathOrFileDescriptor) {
         ;(this as any).indexer = JSON.parse(fs.readFileSync(unicodeIndexerJsonPath, 'utf8'));
     }
 
-    _preprocessText(text: any, lang: any) {
+    _preprocessText(text: string, lang: string) {
         // TODO: Need advanced normalizer for better performance
         text = text.normalize('NFKD');
 
@@ -111,7 +111,7 @@ class UnicodeProcessor {
     }
 
     call(textList: any, langList: any) {
-        const processedTexts = textList.map((t: any, i: any) => this._preprocessText(t, langList[i]));
+        const processedTexts = textList.map((t: any, i: string|number) => this._preprocessText(t, langList[i]));
         const textIdsLengths = processedTexts.map((t: any) => t.length);
         const maxLen = Math.max(...textIdsLengths);
         
@@ -134,7 +134,7 @@ class UnicodeProcessor {
  * Style class
  */
 class Style {
-    constructor(styleTtlOnnx: any, styleDpOnnx: any) {
+    constructor(styleTtlOnnx: ort.TypedTensor<"float32">, styleDpOnnx: ort.TypedTensor<"float32">) {
         ;(this as any).ttl = styleTtlOnnx;
         ;(this as any).dp = styleDpOnnx;
     }
@@ -144,7 +144,7 @@ class Style {
  * TextToSpeech class
  */
 class TextToSpeech {
-    constructor(cfgs: any, textProcessor: any, dpOrt: any, textEncOrt: any, vectorEstOrt: any, vocoderOrt: any) {
+    constructor(cfgs: any, textProcessor: UnicodeProcessor, dpOrt: ort.InferenceSession, textEncOrt: ort.InferenceSession, vectorEstOrt: ort.InferenceSession, vocoderOrt: ort.InferenceSession) {
         ;(this as any).cfgs = cfgs;
         ;(this as any).textProcessor = textProcessor;
         ;(this as any).dpOrt = dpOrt;
@@ -159,7 +159,7 @@ class TextToSpeech {
 
     sampleNoisyLatent(duration: any) {
         const wavLenMax = Math.max(...duration) * (this as any).sampleRate;
-        const wavLengths = duration.map((d: any) => Math.floor(d * (this as any).sampleRate));
+        const wavLengths = duration.map((d: number) => Math.floor(d * (this as any).sampleRate));
         const chunkSize = (this as any).baseChunkSize * (this as any).chunkCompressFactor;
         const latentLen = Math.floor((wavLenMax + chunkSize - 1) / chunkSize);
         const latentDim = (this as any).ldim * (this as any).chunkCompressFactor;
@@ -198,7 +198,7 @@ class TextToSpeech {
         return { noisyLatent, latentMask };
     }
 
-    async _infer(textList: any, langList: any, style: any, totalStep: any, speed = 1.05) {
+    async _infer(textList: any, langList: any, style: any, totalStep: number, speed = 1.05) {
         if (textList.length !== style.ttl.dims[0]) {
             throw new Error('Number of texts must match number of style vectors');
         }
@@ -274,7 +274,7 @@ class TextToSpeech {
         return { wav, duration: durOnnx };
     }
 
-    async call(text: any, lang: any, style: any, totalStep: any, speed = 1.05, silenceDuration = 0.3) {
+    async call(text: any, lang: string, style: { ttl: { dims: number[]; }; }, totalStep: any, speed = 1.05, silenceDuration = 0.3) {
         if (style.ttl.dims[0] !== 1) {
             throw new Error('Single speaker text to speech only supports single style');
         }
@@ -324,9 +324,9 @@ function lengthToMask(lengths: any, maxLen: number | null = null) {
 /**
  * Get latent mask from wav lengths
  */
-function getLatentMask(wavLengths: any, baseChunkSize: any, chunkCompressFactor: any) {
+function getLatentMask(wavLengths: any, baseChunkSize: number, chunkCompressFactor: number) {
     const latentSize = baseChunkSize * chunkCompressFactor;
-    const latentLengths = wavLengths.map((len: any) => 
+    const latentLengths = wavLengths.map((len: number) => 
         Math.floor((len + latentSize - 1) / latentSize)
     );
     return lengthToMask(latentLengths);
@@ -335,14 +335,14 @@ function getLatentMask(wavLengths: any, baseChunkSize: any, chunkCompressFactor:
 /**
  * Load ONNX model
  */
-async function loadOnnx(onnxPath: any, opts: any) {
+async function loadOnnx(onnxPath: string, opts: ort.InferenceSession.SessionOptions|undefined) {
     return await ort.InferenceSession.create(onnxPath, opts);
 }
 
 /**
  * Load all ONNX models for TTS
  */
-async function loadOnnxAll(onnxDir: any, opts: any) {
+async function loadOnnxAll(onnxDir: string, opts: any) {
     const dpPath = path.join(onnxDir, 'duration_predictor.onnx');
     const textEncPath = path.join(onnxDir, 'text_encoder.onnx');
     const vectorEstPath = path.join(onnxDir, 'vector_estimator.onnx');
@@ -361,7 +361,7 @@ async function loadOnnxAll(onnxDir: any, opts: any) {
 /**
  * Load configuration
  */
-function loadCfgs(onnxDir: any) {
+function loadCfgs(onnxDir: string) {
     const cfgPath = path.join(onnxDir, 'tts.json');
     const cfgs = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
     return cfgs;
@@ -370,7 +370,7 @@ function loadCfgs(onnxDir: any) {
 /**
  * Load text processor
  */
-function loadTextProcessor(onnxDir: any) {
+function loadTextProcessor(onnxDir: string) {
     const unicodeIndexerPath = path.join(onnxDir, 'unicode_indexer.json');
     const textProcessor = new UnicodeProcessor(unicodeIndexerPath);
     return textProcessor;
@@ -454,13 +454,13 @@ function arrayToTensor(array: any, dims: any) {
  */
 function intArrayToTensor(array: any, dims: any) {
     const flat = array.flat(Infinity);
-    return new ort.Tensor('int64', BigInt64Array.from(flat.map((x: any) => BigInt(x))), dims);
+    return new ort.Tensor('int64', BigInt64Array.from(flat.map((x: string|number|bigint|boolean) => BigInt(x))), dims);
 }
 
 /**
  * Write WAV file
  */
-export function writeWavFile(filename: any, audioData: any, sampleRate: any) {
+export function writeWavFile(filename: fs.PathOrFileDescriptor, audioData: any, sampleRate: number) {
     const numChannels = 1;
     const bitsPerSample = 16;
     const byteRate = sampleRate * numChannels * bitsPerSample / 8;
@@ -513,7 +513,7 @@ export async function timer(name: any, fn: any) {
 /**
  * Sanitize filename by replacing non-alphanumeric characters with underscores (supports Unicode)
  */
-export function sanitizeFilename(text: any, maxLen: any) {
+export function sanitizeFilename(text: string, maxLen: any) {
     const prefix = text.substring(0, maxLen);
     // \p{L} matches any Unicode letter, \p{N} matches any Unicode number
     return prefix.replace(/[^\p{L}\p{N}_]/gu, '_');
@@ -522,7 +522,7 @@ export function sanitizeFilename(text: any, maxLen: any) {
 /**
  * Chunk text into manageable segments
  */
-export function chunkText(text: any, maxLen = 300) {
+export function chunkText(text: string, maxLen = 300) {
     if (typeof text !== 'string') {
         throw new Error(`chunkText expects a string, got ${typeof text}`);
     }

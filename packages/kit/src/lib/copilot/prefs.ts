@@ -48,8 +48,8 @@ export const DEFAULTS = Object.freeze({
   hold: false,          /* push and hold to talk, rather than a microphone that is always on */
 })
 
-const num = (v: any, list: any, fallback: any) => (list.includes(Number(v)) ? Number(v) : fallback)
-const one = (v: any, list: any, fallback: any) => (list.includes(String(v)) ? String(v) : fallback)
+const num = (v: any, list: number[], fallback: number) => (list.includes(Number(v)) ? Number(v) : fallback)
+const one = (v: any, list: string|string[], fallback: string) => (list.includes(String(v)) ? String(v) : fallback)
 
 /*
  * READ WHAT IS THERE AND TRUST NONE OF IT. These are in storage a person can edit, survive a
@@ -96,10 +96,10 @@ export function voiceSettings(prefs: any = {}, botVoice: any = {}) {
  * else's service and must not pretend to, and a list baked in here would be wrong the week the
  * provider adds one.
  */
-export function voicesFor(speakerId: any, botVoice: any = {}) {
+export function voicesFor(speakerId: string, botVoice: any = {}) {
   if (speakerId === 'endpoint') {
-    const named = Array.isArray(botVoice.voices) ? botVoice.voices.filter((v: any) => typeof v === 'string' && v.trim()) : []
-    return named.map((v: any) => v.trim())
+    const named = Array.isArray(botVoice.voices) ? botVoice.voices.filter((v: string) => typeof v === 'string' && v.trim()) : []
+    return named.map((v: string) => v.trim())
   }
   return OWN_VOICES.slice()
 }

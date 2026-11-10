@@ -20,7 +20,7 @@ const drafts = new Map()   /* the draft renders, by book, while the server runs 
  * this file can be part of the pipe the function carries: the module a bundler cannot follow is
  * only imported when nothing else was offered.
  */
-const editionsOf = async (ctx: any, slug: any, draft: any) => {
+const editionsOf = async (ctx: any, slug: string, draft: boolean|undefined) => {
   if (ctx.editions) return ctx.editions.render(slug, { draft })
   return render(ctx.root, slug, draft, ctx.store)
 }
@@ -29,7 +29,7 @@ const printIndex = async (store: any) => { try { const raw = await store.read('c
 /* a render is the machine's (typst, the printers): git mode only. The machine is reached by a name a bundler
    cannot follow, so the function's copy of the pipe carries none of it (the action is refused there first) */
 const MACHINE = '../../print' + '.mjs'
-async function render(root: any, slug: any, local = true, store = null) {
+async function render(root: string, slug: string, local = true, store = null) {
   const { printBook, writePrintIndex } = await import(MACHINE)
   const { asStore } = await import('../../store/index.mjs'); store = asStore(store || root)
   const t0 = Date.now()
@@ -46,7 +46,7 @@ async function render(root: any, slug: any, local = true, store = null) {
   for (const ed of fs.existsSync(dir) ? fs.readdirSync(dir) : []) if (!keep.has(ed)) fs.rmSync(path.join(dir, ed), { recursive: true, force: true })
   return draft
 }
-async function view(root: any, slug: any, store: any) { const { readBlock } = await import('../../print/block.mjs'); const { asStore } = await import('../../store/index.mjs'); store = asStore(store || root); const b = await readBlock(store, slug); return { slug, ...b, edition: (await printIndex(store))[slug] || null, draft: drafts.get(slug) || null } }
+async function view(root: any, slug: string, store: any) { const { readBlock } = await import('../../print/block.mjs'); const { asStore } = await import('../../store/index.mjs'); store = asStore(store || root); const b = await readBlock(store, slug); return { slug, ...b, edition: (await printIndex(store))[slug] || null, draft: drafts.get(slug) || null } }
 async function bookOf(payload: any, ctx: any) { const { bookSlugs } = await import('../../print/block.mjs'); const slug = String(payload.book || ''); if (!(await bookSlugs(ctx.store)).includes(slug)) throw new Refusal(404, 'no such book'); return slug }
 
 export default {

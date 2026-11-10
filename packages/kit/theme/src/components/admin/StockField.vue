@@ -48,7 +48,7 @@ async function load() {
 }
 watch(() => props.form.sku, load, { immediate: true })
 
-async function set(variant: any, value: any) {
+async function set(variant: string, value: any) {
   const n = Number(value)
   if (!Number.isInteger(n) || n < 0) { said.value = (W as any)['whole-number']; return }
   busy.value = variant; said.value = ''
@@ -60,7 +60,7 @@ async function set(variant: any, value: any) {
 }
 
 const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
-const when = (at: any) => { try { return new Date(at).toLocaleDateString() } catch { return '' } }
+const when = (at: string|number|Date) => { try { return new Date(at).toLocaleDateString() } catch { return '' } }
 </script>
 
 <template>

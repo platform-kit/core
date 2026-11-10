@@ -22,11 +22,11 @@ import { openapiFor } from '../supabase/functions/_shared/api/openapi.js'
 import { loadSite } from './site.mjs'
 import { leave, notHere } from './test-stack.mjs'
 
-const note = (m: any) => console.log('content-api: ' + m)
+const note = (m: string) => console.log('content-api: ' + m)
 if (process.env.CONTENT_API_TEST === '0') { note('skipped (CONTENT_API_TEST=0)'); process.exit(0) }
 const ROOT = process.cwd()
 let pass = 0, fail = 0
-const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
+const ok = async (name: string, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
 const c = await loadSite(ROOT)
 if (c.modules && c.modules.api === false) { notHere('content-api.test.mjs', 'the api module is off'); process.exit(0) }
 
@@ -38,25 +38,25 @@ await ok('every model with fields is a content type, every record of it in the i
   assert.ok(index.models.length >= 1 && index.types.length === index.models.length)
   for (const m of index.models) {
     const t = index.types.find((x: any) => x._model === m.key); assert.ok(t, m.key + ' typed')
-    assert.ok(t.fields.every((f: any) => ['Symbol', 'Text', 'RichText', 'Integer', 'Number', 'Date', 'Boolean', 'Object', 'Link', 'Array'].includes(f.type)), m.key + ' field types')
-    assert.ok(!t.fields.some((f: any) => f.id === 'published'), 'published is the status, never a field')
-    if (m.body) assert.ok(t.fields.some((f: any) => f.id === 'body' && f.type === 'RichText') && t.fields.some((f: any) => f.id === 'bodyMarkdown'), m.key + ' body')
+    assert.ok(t.fields.every((f: { type: string }) => ['Symbol', 'Text', 'RichText', 'Integer', 'Number', 'Date', 'Boolean', 'Object', 'Link', 'Array'].includes(f.type)), m.key + ' field types')
+    assert.ok(!t.fields.some((f: { id: string }) => f.id === 'published'), 'published is the status, never a field')
+    if (m.body) assert.ok(t.fields.some((f: { id: string; type: string }) => f.id === 'body' && f.type === 'RichText') && t.fields.some((f: { id: string }) => f.id === 'bodyMarkdown'), m.key + ' body')
   }
   for (const r of index.records) { assert.ok(r.typeId && r.path && r.updated && r.created, r.model + '/' + r.path); assert.equal(typeof r.published, 'boolean') }
   /* what the files say */
   const off: any = []
   for (const m of index.models) { const d = path.join(ROOT, m.dir); if (!fs.existsSync(d) || m.single) continue; const walk = (p: any) => { for (const f of fs.readdirSync(p, { withFileTypes: true })) { if (f.isDirectory()) { if (m.nested) walk(path.join(p, f.name)) } else if (f.name.endsWith('.md') && /^published:\s*false/m.test(fs.readFileSync(path.join(p, f.name), 'utf8'))) off.push([m.key, path.relative(d, path.join(p, f.name)).replace(/\.md$/, '')]) } }; walk(d) }
   for (const [k, p] of off) { const r = byModel(k).find((x: any) => x.path === p); assert.ok(r && r.published === false, k + '/' + p + ' unpublished in the index') }
-  assert.deepEqual(index.records.map((r: any) => r.model + '/' + r.path), two.records.map((r) => r.model + '/' + r.path), 'two builds, one index')
+  assert.deepEqual(index.records.map((r: { model: string; path: string }) => r.model + '/' + r.path), two.records.map((r) => r.model + '/' + r.path), 'two builds, one index')
 })
 await ok('the assets are the library\'s files with their sizes; the site, the space and the locales are there', () => {
   assert.ok(index.assets.every((a: any) => a.address && a.name && a.mime && (a.address.startsWith('/uploads/') || a.address.startsWith('/'))))
-  const pic = index.assets.find((a: any) => /^image\/(png|jpeg|webp)$/.test(a.mime)); if (pic) assert.ok(pic.width > 0 && pic.height > 0, 'a picture has its size')
+  const pic = index.assets.find((a: { mime: string }) => /^image\/(png|jpeg|webp)$/.test(a.mime)); if (pic) assert.ok(pic.width > 0 && pic.height > 0, 'a picture has its size')
   assert.ok(index.space && /^[a-z0-9-]+$/.test(index.space)); assert.ok(index.locales.length >= 1 && index.locales[0].default)
 })
 const custom = index.models.filter((m: any) => m.model)
 if (custom.length) await ok('a site\'s own model on the API: its fields in Contentful\'s types, a select\'s choices as a validation, a reference as a Link, a picture as an Asset link, markdown as Rich Text with its twin', () => {
-  const typeOf = (m: any, name: any) => index.types.find((t: any) => t._model === m.key).fields.filter((f: any) => f.id === name || f.id === name + 'Markdown')
+  const typeOf = (m: any, name: string) => index.types.find((t: any) => t._model === m.key).fields.filter((f: { id: string }) => f.id === name || f.id === name + 'Markdown')
   for (const m of custom) for (const f of m.fields) {
     const defs = typeOf(m, f.name); if (f.name === 'published') { assert.equal(defs.length, 0); continue }
     assert.ok(defs.length >= 1, m.key + '.' + f.name)
@@ -77,34 +77,34 @@ await ok('an entry: sys with a stable id, its fields exactly its type\'s, a mark
   const e = await entryOf(withBody, ctx)
   assert.equal(e.sys.id, entryId(withBody.typeId, withBody.path)); assert.equal(e.sys.type, 'Entry'); assert.equal((e.sys as any).contentType.sys.id, withBody.typeId); assert.ok(e.sys.createdAt && e.sys.updatedAt && e.sys.revision >= 1)
   assert.equal(e.fields.body.nodeType, 'document'); assert.equal(typeof e.fields.bodyMarkdown, 'string')
-  const type = index.types.find((t: any) => t._model === withBody.model); for (const k of Object.keys(e.fields)) assert.ok(type.fields.some((f: any) => f.id === k), k + ' is a field of ' + type.sys.id)
+  const type = index.types.find((t: any) => t._model === withBody.model); for (const k of Object.keys(e.fields)) assert.ok(type.fields.some((f: { id: string }) => f.id === k), k + ' is a field of ' + type.sys.id)
   const pictured = index.records.find((r: any) => r.published && Object.entries(r.data).some(([k, v]) => typeof v === 'string' && v.startsWith('/') && ctx.assetsByAddress.has(v)))
   if (pictured) { const pe = await entryOf(pictured, ctx); const link: any = Object.values(pe.fields).find((v: any) => v && v.sys && v.sys.linkType === 'Asset'); assert.ok(link, 'an Asset link'); const { includes } = await includesFor([pe], 1, ctx); assert.ok(includes.Asset && includes.Asset.some((a: any) => a.sys.id === link.sys.id), 'the asset included'); assert.ok(includes.Asset[0].fields.file.url.startsWith('//x.test/api/media/' + index.space + '/'), 'the images door') }
 })
 await ok('a link that cannot be resolved is listed under errors as notResolvable; a resolvable one lands in includes', async () => {
-  const isRef = (f: any) => f.kind === 'reference' || (f.widget === 'select' && f.options && index.models.some((x: any) => x.key === f.options || 'models/' + String(f.options).replace(/^model:/, '') === x.key))
+  const isRef = (f: any) => f.kind === 'reference' || (f.widget === 'select' && f.options && index.models.some((x: { key: string }) => x.key === f.options || 'models/' + String(f.options).replace(/^model:/, '') === x.key))
   const ref = index.models.find((m: any) => m.fields.some(isRef) && byModel(m.key).some((r: any) => r.published && r.data[m.fields.find(isRef).name]))
   if (!ref) { note('no record with a reference on this site — the link checks run on the demo'); return }
   const f = ref.fields.find(isRef)
-  const target = index.models.find((x: any) => x.key === f.of || x.key === f.options || 'models/' + String(f.options).replace(/^model:/, '') === x.key || 'models/' + f.of === x.key)
+  const target = index.models.find((x: { key: string }) => x.key === f.of || x.key === f.options || 'models/' + String(f.options).replace(/^model:/, '') === x.key || 'models/' + f.of === x.key)
   const real = byModel(ref.key).find((r: any) => r.published && r.data[f.name])
   const fake = { ...real, path: 'probe-unresolvable', data: { ...real.data, [f.name]: 'nobody-here' } }
   const [e1, e2] = [await entryOf(real, ctx), await entryOf(fake, ctx)]
-  const targetType = index.types.find((t: any) => t._model === (target && target.key)); const a = await includesFor([e1], 1, ctx); assert.ok(a.includes.Entry && a.includes.Entry.some((x: any) => x.sys.id === entryId(targetType.sys.id, String(real.data[f.name]))), 'the ' + (target ? target.key : '') + ' entry included')
+  const targetType = index.types.find((t: any) => t._model === (target && target.key)); const a = await includesFor([e1], 1, ctx); assert.ok(a.includes.Entry && a.includes.Entry.some((x: { sys: { id: string } }) => x.sys.id === entryId(targetType.sys.id, String(real.data[f.name]))), 'the ' + (target ? target.key : '') + ' entry included')
   const b = await includesFor([e2], 1, ctx); assert.deepEqual(b.errors, [{ sys: { id: 'notResolvable', type: 'error' }, details: { type: 'Link', linkType: 'Entry', id: entryId(targetType.sys.id, 'nobody-here') } }])
 })
 await ok('every operator, recomputed from the records', () => {
-  const t = index.types.find((x: any) => byModel(x._model).filter((r: any) => r.published).length >= 2 && index.models.find((m: any) => m.key === x._model).fields.some((f: any) => f.name === 'title'))
+  const t = index.types.find((x: any) => byModel(x._model).filter((r: any) => r.published).length >= 2 && index.models.find((m: any) => m.key === x._model).fields.some((f: { name: string }) => f.name === 'title'))
   const rows = byModel(t._model).filter((r: any) => r.published), m = index.models.find((x: any) => x.key === t._model)
   const q = (extra: any) => { const a = parse({ content_type: t.sys.id, ...extra }, { types: ctx.types, locales: index.locales }); assert.ok(!('error' in a), JSON.stringify(a.error)); return apply(ctx.records, a, ctx) }
   const word = rows[0].data.title.split(/\s+/).find((w: any) => w.length > 3) || rows[0].data.title
   assert.deepEqual(q({ 'fields.title[match]': word }).map((r: any) => r.path).sort(), rows.filter((r: any) => String(r.data.title).toLowerCase().includes(word.toLowerCase())).map((r: any) => r.path).sort())
   assert.deepEqual(q({ 'fields.title': rows[0].data.title }).map((r: any) => r.path), [rows[0].path])
   assert.deepEqual(q({ 'fields.title[ne]': rows[0].data.title }).length, rows.length - 1)
-  assert.deepEqual(q({ 'sys.id[in]': rows.slice(0, 2).map((r: any) => entryId(t.sys.id, r.path)).join(',') }).length, 2)
-  const tagged = m.fields.find((f: any) => f.name === 'tags') && rows.filter((r: any) => Array.isArray(r.data.tags) && r.data.tags.length)
+  assert.deepEqual(q({ 'sys.id[in]': rows.slice(0, 2).map((r: { path: string }) => entryId(t.sys.id, r.path)).join(',') }).length, 2)
+  const tagged = m.fields.find((f: { name: string }) => f.name === 'tags') && rows.filter((r: any) => Array.isArray(r.data.tags) && r.data.tags.length)
   if (tagged && tagged.length) { const tag = tagged[0].data.tags[0]; assert.deepEqual(q({ 'fields.tags[in]': tag }).map((r: any) => r.path).sort(), rows.filter((r: any) => (r.data.tags || []).includes(tag)).map((r: any) => r.path).sort()); assert.deepEqual(q({ 'fields.tags[all]': tagged[0].data.tags.join(',') }).map((r: any) => r.path).sort(), rows.filter((r: any) => tagged[0].data.tags.every((x: any) => (r.data.tags || []).includes(x))).map((r: any) => r.path).sort()); assert.deepEqual(q({ 'fields.tags[exists]': 'false' }).length, rows.filter((r: any) => !(r.data.tags || []).length).length) }
-  const dated = m.fields.find((f: any) => f.name === 'date') && rows.filter((r: any) => r.data.date)
+  const dated = m.fields.find((f: { name: string }) => f.name === 'date') && rows.filter((r: any) => r.data.date)
   if (dated && dated.length > 1) { const sorted = [...dated].sort((a, b) => new Date(a.data.date).getTime() - new Date(b.data.date).getTime()); assert.deepEqual(q({ 'fields.date[gte]': new Date(sorted[1].data.date).toISOString() }).length, dated.filter((r: { data: { date: string|number|Date } }) => new Date(r.data.date) >= new Date(sorted[1].data.date)).length); assert.deepEqual(q({ order: 'fields.date' }).filter((r: { data: { date: any } }) => r.data.date).map((r: { path: any }) => r.path), sorted.map((r) => r.path)) }
   assert.deepEqual(q({ order: '-sys.createdAt', limit: '2' }).length, rows.length, 'order alone never cuts (the page does)')
   const bad = parse({ content_type: t.sys.id, 'fields.title[near]': '1,2' }, { types: ctx.types, locales: index.locales }); assert.equal(bad.error.id, 'InvalidQuery')
@@ -113,7 +113,7 @@ await ok('every operator, recomputed from the records', () => {
   const over = parse({ limit: '5000' }, { types: ctx.types, locales: index.locales }); assert.equal(over.error.id, 'BadQuery')
 })
 await ok('Rich Text from markdown: Contentful\'s node types and marks, a library picture an embedded asset', () => {
-  const pic = index.assets.find((a: any) => /^image\//.test(a.mime))
+  const pic = index.assets.find((a: { mime: string }) => /^image\//.test(a.mime))
   const doc: any = richTextFromMarkdown(`# Head\n\nA **bold** *soft* \`code\` [link](https://x.y).\n\n- one\n- two\n\n1. first\n\n> quote\n\n---\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n![pic](${pic ? pic.address : '/nope.png'})\n`, ctx)
   const types = doc.content!.map((n: any) => n.nodeType)
   assert.deepEqual(types, ['heading-1', 'paragraph', 'unordered-list', 'ordered-list', 'blockquote', 'hr', 'table', pic ? 'embedded-asset-block' : 'paragraph'])
@@ -139,12 +139,12 @@ await ok('the OpenAPI document: valid 3.1, one schema per content type, content_
   const sessOn = c.modules.sessions !== false && fs.existsSync(path.join(ROOT, 'supabase/functions/_shared/catalog.json'))
   const sessions = sessOn ? (JSON.parse(fs.readFileSync(path.join(ROOT, 'supabase/functions/_shared/catalog.json'), 'utf8')).sessions || []) : null
   const storeOn = c.modules.store !== false, supportOn = c.modules.support !== false
-  const doc: any = openapiFor(index, { base: 'https://x.test', functions: 'http://stack.test', sources: ['other-site'], forms, sessions, store: storeOn, support: supportOn })
+  const doc = openapiFor(index, { base: 'https://x.test', functions: 'http://stack.test', sources: ['other-site'], forms, sessions, store: storeOn, support: supportOn })
   const v = await validate(doc); assert.ok(v.valid, 'validate: ' + JSON.stringify((v.errors || []).slice(0, 3)))
   assert.equal(doc.openapi, '3.1.0'); assert.ok(doc.info.title && doc.info.description.includes(index.space))
-  for (const t of index.types) { const s = doc.components.schemas[t.sys.id.replace(/^./, (c: any) => c.toUpperCase())]; assert.ok(s, 'a schema for ' + t.sys.id); assert.deepEqual(Object.keys(s.properties.fields.properties), t.fields.map((f: any) => f.id), 'the fields of ' + t.sys.id) }
+  for (const t of index.types) { const s = doc.components.schemas[t.sys.id.replace(/^./, (c: string) => c.toUpperCase())]; assert.ok(s, 'a schema for ' + t.sys.id); assert.deepEqual(Object.keys(s.properties.fields.properties), t.fields.map((f: any) => f.id), 'the fields of ' + t.sys.id) }
   const entries = doc.paths[`/api/content/spaces/${index.space}/environments/master/entries`].get
-  assert.deepEqual(entries.parameters.find((p: any) => p.name === 'content_type').schema.enum, index.types.map((t: any) => t.sys.id))
+  assert.deepEqual(entries.parameters.find((p: { name: string }) => p.name === 'content_type').schema.enum, index.types.map((t: any) => t.sys.id))
   const tags = (tag: string) => Object.values(doc.paths as Record<string, Record<string, any>>).flatMap((p) => Object.values(p)).filter((op: any) => op.tags.includes(tag)).length
   assert.deepEqual([tags('Content Delivery'), tags('Content Management'), tags('Content Sync'), tags('Content GraphQL'), tags('Content Images'), tags('Analytics Events'), tags('Analytics Capture')], [8, 19, 1, 2, 1, 1, 4], 'every door has its operations under its tag')
   /* the Management API's operations sit on the Delivery routes, under their own tag and key */
@@ -177,16 +177,16 @@ const service = createClient(url, serviceKey(), { auth: { persistSession: false,
 const API = url + '/functions/v1/content'
 const CF = (await import('contentful')).createClient
 const host = url.replace(/^https?:\/\//, '')
-const clientFor = (token: any) => CF({ space: index.space, accessToken: token, host, basePath: '/functions/v1/content', insecure: url.startsWith('http:'), retryOnError: false })
+const clientFor = (token: string) => CF({ space: index.space, accessToken: token, host, basePath: '/functions/v1/content', insecure: url.startsWith('http:'), retryOnError: false })
 /* the keys, made as the admin's page makes them: the random key kept by the site that uses it, its sha256 in api_keys */
-const sha256 = async (s: any) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
+const sha256 = async (s: string|undefined) => { const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join('') }
 const made: any = []
-const makeKey = async (kind: any, gated = false) => { const key = `pk_${kind}_probe${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`; const { data: admin } = await service.from('profiles').select('id').eq('email', 'admin@example.com').maybeSingle(); const { error } = await service.from('api_keys').insert({ name: 'content-api test', kind, gated, prefix: key.slice(0, 12), hash: await sha256(key), created_by: admin ? admin.id : null }); if (error) throw new Error(error.message); made.push(key); return key }
-const get = async (p: any, headers = {}) => { const r = await fetch(API + p, { headers }); return { status: r.status, headers: r.headers, body: await r.json().catch(() => null) } }
+const makeKey = async (kind: string, gated = false) => { const key = `pk_${kind}_probe${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`; const { data: admin } = await service.from('profiles').select('id').eq('email', 'admin@example.com').maybeSingle(); const { error } = await service.from('api_keys').insert({ name: 'content-api test', kind, gated, prefix: key.slice(0, 12), hash: await sha256(key), created_by: admin ? admin.id : null }); if (error) throw new Error(error.message); made.push(key); return key }
+const get = async (p: string, headers = {}) => { const r = await fetch(API + p, { headers }); return { status: r.status, headers: r.headers, body: await r.json().catch(() => null) } }
 try {
   const delivery = await makeKey('delivery'), previewKey = await makeKey('preview'), gatedKey = await makeKey('delivery', true)
   const client = clientFor(delivery)
-  const typeWithMany = index.types.find((t: any) => byModel(t._model).filter((r: any) => r.published).length >= 3 && index.models.find((m: any) => m.key === t._model).fields.some((f: any) => f.name === 'title'))
+  const typeWithMany = index.types.find((t: any) => byModel(t._model).filter((r: any) => r.published).length >= 3 && index.models.find((m: any) => m.key === t._model).fields.some((f: { name: string }) => f.name === 'title'))
   const T = typeWithMany.sys.id, TN = byModel(typeWithMany._model).filter((r: any) => r.published).length
   await ok('contentful.js, the host swapped: a page of entries with includes resolved by the client, a filter, a search, one entry, one asset, the types, the locales', async () => {
     const page = await client.getEntries({ content_type: T, include: 2, order: ['-sys.createdAt'] as any, limit: 2, skip: 1 })
@@ -216,8 +216,8 @@ try {
   await ok('the operators against the served door agree with the recomputation', async () => {
     const rows = byModel(typeWithMany._model).filter((r: any) => r.published)
     const m = index.models.find((x: any) => x.key === typeWithMany._model)
-    const tagged = m.fields.some((f: any) => f.name === 'tags') && rows.find((r: any) => Array.isArray(r.data.tags) && r.data.tags.length)
-    if (tagged) { const tag = tagged.data.tags[0]; const r = await client.getEntries({ content_type: T, 'fields.tags[in]': tag, limit: 100 }); assert.deepEqual(r.items.map((i) => i.sys.id).sort(), rows.filter((x: any) => (x.data.tags || []).includes(tag)).map((x: any) => entryId(T, x.path)).sort()) }
+    const tagged = m.fields.some((f: { name: string }) => f.name === 'tags') && rows.find((r: any) => Array.isArray(r.data.tags) && r.data.tags.length)
+    if (tagged) { const tag = tagged.data.tags[0]; const r = await client.getEntries({ content_type: T, 'fields.tags[in]': tag, limit: 100 }); assert.deepEqual(r.items.map((i) => i.sys.id).sort(), rows.filter((x: any) => (x.data.tags || []).includes(tag)).map((x: { path: string }) => entryId(T, x.path)).sort()) }
     const r2 = await client.getEntries({ content_type: T, 'fields.title[match]': rows[0].data.title.slice(0, 4), limit: 100 }); assert.ok(r2.items.some((i) => i.sys.id === entryId(T, rows[0].path)))
     const r3 = await client.getEntries({ content_type: T, 'fields.title[exists]': false }); assert.equal(r3.total, 0)
     const r4 = await client.getEntries({ content_type: T, select: ['sys.id', 'fields.title'] as any, limit: 1 }); assert.deepEqual(Object.keys(r4.items[0].fields), ['title'])
@@ -287,12 +287,12 @@ try {
     /* and the door: the headers are there, and the allowance goes down as it is spent */
     const one = await fetch(API + `/spaces/${index.space}/environments/master/locales`, { headers: { Authorization: 'Bearer ' + delivery } })
     const two = await fetch(API + `/spaces/${index.space}/environments/master/locales`, { headers: { Authorization: 'Bearer ' + delivery } })
-    const left = (r: any) => Number(r.headers.get('x-contentful-ratelimit-hour-remaining'))
+    const left = (r: Response) => Number(r.headers.get('x-contentful-ratelimit-hour-remaining'))
     assert.ok(left(one) > 0 && left(two) > 0, 'the door reports what is left')
     assert.ok(left(two) < left(one), `spending the allowance lowers it: ${left(one)} then ${left(two)}`)
   })
   await ok('GraphQL at Contentful\'s path: introspection, a query with a filter and an order, preview refused under a delivery key, a query over the ceiling refused', async () => {
-    const gql = async (query: any, token = delivery) => { const r = await fetch(API + `/content/v1/spaces/${index.space}/environments/master`, { method: 'POST', headers: { 'content-type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ query }) }); return { status: r.status, body: await r.json() } }
+    const gql = async (query: string, token = delivery) => { const r = await fetch(API + `/content/v1/spaces/${index.space}/environments/master`, { method: 'POST', headers: { 'content-type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ query }) }); return { status: r.status, body: await r.json() } }
     const Tn = T[0].toUpperCase() + T.slice(1)
     const intro = await gql('{ __schema { queryType { name } types { name } } }'); assert.equal(intro.status, 200); const names = intro.body.data.__schema.types.map((t: any) => t.name); for (const n of [Tn, Tn + 'Collection', Tn + 'Filter', Tn + 'Order', 'Asset', 'Sys', 'Entry']) assert.ok(names.includes(n), n)
     const q = await gql(`{ ${T}Collection(limit: 2, order: sys_publishedAt_DESC) { total items { sys { id publishedAt } title } } }`); assert.equal(q.status, 200, JSON.stringify(q.body)); assert.equal(q.body.data[T + 'Collection'].total, TN); assert.equal(q.body.data[T + 'Collection'].items.length, Math.min(2, TN))
@@ -303,7 +303,7 @@ try {
     const big = await gql(`{ ${T}Collection(limit: 1000) { items { linkedFrom { entryCollection(limit: 1000) { total } } } } }`); assert.equal(big.status, 400); assert.equal(big.body.errors[0].extensions.contentful.code, 'TOO_COMPLEX_QUERY')
     const bad = await gql('{ nothing }'); assert.equal(bad.status, 400); assert.equal(bad.body.errors[0].extensions.contentful.code, 'INVALID_QUERY')
     const viaGet = await fetch(API + `/content/v1/spaces/${index.space}/environments/master?query=` + encodeURIComponent(`{ ${T}Collection { total } }`), { headers: { Authorization: 'Bearer ' + delivery } }); assert.equal((await viaGet.json()).data[T + 'Collection'].total, TN)
-    const pic = index.assets.find((a: any) => /^image\//.test(a.mime)); if (pic) { const a = await gql(`{ asset(id: "${assetId(pic.address)}") { url(transform: { width: 200, format: WEBP }) width height } }`); assert.ok(a.body.data.asset.url.includes('w=200') && a.body.data.asset.url.includes('fm=webp')); assert.equal(a.body.data.asset.width, pic.width) }
+    const pic = index.assets.find((a: { mime: string }) => /^image\//.test(a.mime)); if (pic) { const a = await gql(`{ asset(id: "${assetId(pic.address)}") { url(transform: { width: 200, format: WEBP }) width height } }`); assert.ok(a.body.data.asset.url.includes('w=200') && a.body.data.asset.url.includes('fm=webp')); assert.equal(a.body.data.asset.width, pic.width) }
   })
   await ok('sync: initial pages every entry and asset with a nextSyncUrl; a token from before a deletion returns a DeletedEntry; a fresh token returns nothing', async () => {
     const s = await client.sync({ initial: true }); assert.equal(s.entries.length, index.records.filter((r: any) => r.published).length); assert.ok(s.nextSyncToken)
@@ -316,8 +316,8 @@ try {
      * url from after the asset pass to before it, and the number changed with nothing broken.
      */
     const ids = new Set(s.assets.map((a) => a.sys.id))
-    assert.ok(index.assets.every((a: any) => ids.has(assetId(a.address))), 'every asset of the library is in the sync')
-    const extra = s.assets.filter((a) => !index.assets.some((x: any) => assetId(x.address) === a.sys.id))
+    assert.ok(index.assets.every((a: { address: string }) => ids.has(assetId(a.address))), 'every asset of the library is in the sync')
+    const extra = s.assets.filter((a) => !index.assets.some((x: { address: string }) => assetId(x.address) === a.sys.id))
     /* sync answers a locale map per field where the delivery shapes do not: take either */
     const fileUrl = (a: any) => { const f = a.fields && a.fields.file; return String((f && (f.url ?? (f[Object.keys(f)[0]] || {}).url)) || '') }
     assert.ok(extra.every((x) => /^https?:\/\//i.test(fileUrl(x))), 'anything beyond the library is a url somewhere else: ' + extra.map((x) => fileUrl(x) || JSON.stringify(x.fields).slice(0, 120)).join(', '))
@@ -325,7 +325,7 @@ try {
     /* the functions serve the rows in cloud mode (npm run dev wrote CONTENT_STORE=cloud into .env.dev): the repository's deletions are the file index's alone */
     const cloud = fs.existsSync(path.join(ROOT, '.env.dev')) && /^CONTENT_STORE=cloud/m.test(fs.readFileSync(path.join(ROOT, '.env.dev'), 'utf8'))
     if (cloud) note('the functions run in cloud mode — the repository\'s deletions are not theirs; DeletedEntry is checked in git mode')
-    else if (index.deleted.length) { const old = btoa(JSON.stringify({ t: new Date(new Date(index.deleted[0].at).getTime() - 1000).toISOString(), type: 'all', ct: null })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); const r = (await get(`/spaces/${index.space}/environments/master/sync?sync_token=${old}`, { Authorization: 'Bearer ' + delivery })).body; assert.ok(r.items.some((i: any) => i.sys.type === 'DeletedEntry' && i.sys.id === entryId(index.types.find((t: any) => t._model === index.deleted[0].model).sys.id, index.deleted[0].path)), 'the deletion synced') }
+    else if (index.deleted.length) { const old = btoa(JSON.stringify({ t: new Date(new Date(index.deleted[0].at).getTime() - 1000).toISOString(), type: 'all', ct: null })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); const r = (await get(`/spaces/${index.space}/environments/master/sync?sync_token=${old}`, { Authorization: 'Bearer ' + delivery })).body; assert.ok(r.items.some((i: { sys: { type: string; id: string } }) => i.sys.type === 'DeletedEntry' && i.sys.id === entryId(index.types.find((t: any) => t._model === index.deleted[0].model).sys.id, index.deleted[0].path)), 'the deletion synced') }
     else note('no deletion in this site\'s history — DeletedEntry is checked on the demo')
   })
   await ok('the served document is the index\'s: /openapi.json validates and names the same paths and schemas, the site as its server', async () => {
@@ -335,15 +335,15 @@ try {
     const formsOn = c.modules.forms !== false && fs.existsSync(path.join(ROOT, 'supabase/functions/_shared/forms.json'))
     const sessOn = c.modules.sessions !== false && fs.existsSync(path.join(ROOT, 'supabase/functions/_shared/catalog.json'))
     const mine = openapiFor(index, { forms: formsOn ? JSON.parse(fs.readFileSync(path.join(ROOT, 'supabase/functions/_shared/forms.json'), 'utf8')) : null, sessions: sessOn ? (JSON.parse(fs.readFileSync(path.join(ROOT, 'supabase/functions/_shared/catalog.json'), 'utf8')).sessions || []) : null, store: c.modules.store !== false, support: c.modules.support !== false }); assert.deepEqual(Object.keys(r.body.paths).sort(), Object.keys(mine.paths).sort()); assert.deepEqual(Object.keys(r.body.components.schemas).sort(), Object.keys(mine.components.schemas).sort())
-    assert.ok(r.body.servers.length >= 1 && r.body.servers.some((x: any) => x.url.endsWith('/functions/v1/content')), 'the function names its own address')
+    assert.ok(r.body.servers.length >= 1 && r.body.servers.some((x: { url: string }) => x.url.endsWith('/functions/v1/content')), 'the function names its own address')
     const also = await get('/content/v1/openapi.json'); assert.equal(also.status, 200); assert.equal(also.body.info.title, r.body.info.title)
   })
   await ok('the Images API: a 400 × 300 WebP cut from the top, avif answered as webp, a padded jpg on a colour, a circle, out of range refused, the cache and the ETag', async () => {
-    const pic = index.assets.find((a: any) => /^image\/(png|jpeg|webp)$/.test(a.mime) && a.width > 300)
+    const pic = index.assets.find((a: { mime: string; width: number }) => /^image\/(png|jpeg|webp)$/.test(a.mime) && a.width > 300)
     if (!pic) { note('no picture in the library — the Images API is checked on the demo'); return }
     const a: any = await client.getAsset(assetId(pic.address)); const u = url + '/functions/v1/images' + a.fields.file.url.replace(/^\/\/[^/]+\/api\/media/, '')
     const sharp = (await import('sharp')).default
-    const dims = async (qs: any) => { const r = await fetch(u + qs); if (r.status !== 200) return { status: r.status }; const buf = Buffer.from(await r.arrayBuffer()); const m = await sharp(buf).metadata(); return { status: 200, format: m.format, width: m.width, height: m.height, type: r.headers.get('content-type'), etag: r.headers.get('etag'), cache: r.headers.get('cache-control') } }
+    const dims = async (qs: string) => { const r = await fetch(u + qs); if (r.status !== 200) return { status: r.status }; const buf = Buffer.from(await r.arrayBuffer()); const m = await sharp(buf).metadata(); return { status: 200, format: m.format, width: m.width, height: m.height, type: r.headers.get('content-type'), etag: r.headers.get('etag'), cache: r.headers.get('cache-control') } }
     const fill = await dims('?w=400&h=300&fit=fill&f=top&fm=webp&q=70'); assert.deepEqual([fill.status, fill.format, fill.width, fill.height], [200, 'webp', 400, 300]); assert.ok(fill.cache!.includes('immutable'))
     const avif = await dims('?w=200&fm=avif'); assert.equal(avif.format, 'webp'); assert.equal(avif.width, 200)
     const pad = await dims('?w=300&h=300&fit=pad&bg=rgb:ff0000&fm=jpg'); assert.deepEqual([pad.format, pad.width, pad.height], ['jpeg', 300, 300])
@@ -381,7 +381,7 @@ try {
   })
   else {
     const typeMany = index.types.find((t: any) => t.sys.id === T)
-    const TYPE = index.types.find((t: any) => t.sys.id === 'teacher') || typeMany
+    const TYPE = index.types.find((t: { sys: { id: string } }) => t.sys.id === 'teacher') || typeMany
     const model = index.models.find((m: any) => m.key === TYPE._model)
     const titleField = TYPE.displayField || 'title'
     const probe = 'probe-' + Date.now().toString(36)
@@ -391,7 +391,7 @@ try {
     const site = await (async () => { try { const raw = fs.readFileSync(path.join(ROOT, '.env.dev'), 'utf8'); const m = /^APP_URL=(.+)$/m.exec(raw); return m ? m[1].trim() : null } catch { return null } })()
     try {
       await ok('the life of an entry: created unpublished (preview sees it, delivery does not), updated with its version, a stale version refused (409), published and read by delivery and on the site\'s page, unpublished, deleted', async () => {
-        const fields = { [titleField]: { 'en-US': 'Probe ' + probe }, ...(TYPE.fields.some((f: any) => f.id === 'line') ? { line: { 'en-US': 'Made through the Management API.' } } : {}), ...(model.body ? { bodyMarkdown: { 'en-US': 'A **line** of body.\n\nAnd a second paragraph.' } } : {}) }
+        const fields = { [titleField]: { 'en-US': 'Probe ' + probe }, ...(TYPE.fields.some((f: { id: string }) => f.id === 'line') ? { line: { 'en-US': 'Made through the Management API.' } } : {}), ...(model.body ? { bodyMarkdown: { 'en-US': 'A **line** of body.\n\nAnd a second paragraph.' } } : {}) }
         entry = await env.createEntryWithId(TYPE.sys.id, ID, { fields })
         cleanup.push(async () => { try { await send('DELETE', `${ENV}/entries/${ID}`) } catch { /* gone */ } })
         assert.equal(entry.sys.id, ID); assert.equal(entry.sys.version % 2, 1, 'a fresh draft: the version odd (drafted)'); assert.ok(!entry.sys.publishedVersion, 'not published')
@@ -458,7 +458,7 @@ try {
         const viaDelivery: any = await clientFor(delivery).getAsset(AID); assert.equal(viaDelivery.fields.file.fileName, 'probe.png'); assert.equal(viaDelivery.fields.file.details.image.width, 24); assert.ok(viaDelivery.fields.file.url.includes('/api/media/' + index.space + '/'), 'the url uses the site media door')
         const gone = await send('GET', `/spaces/${index.space}/uploads/${upload.sys.id}`); assert.equal(gone.status, 404, 'the upload is consumed')
         /* an entry linking it */
-        const picField = TYPE.fields.find((x: any) => x.type === 'Link' && x.linkType === 'Asset')
+        const picField = TYPE.fields.find((x: { type: string; linkType: string }) => x.type === 'Link' && x.linkType === 'Asset')
         if (picField) {
           const EID = `${TYPE.sys.id}.probe-link-${probe}`
           const e = await env.createEntryWithId(TYPE.sys.id, EID, { fields: { [titleField]: { 'en-US': 'Probe link ' + probe }, [picField.id]: { 'en-US': { sys: { type: 'Link', linkType: 'Asset', id: AID } } } } })
@@ -499,7 +499,7 @@ try {
           await e.publish()
           for (let i = 0; i < 30 && !hits.length; i++) await new Promise((r) => setTimeout(r, 300))
           assert.ok(hits.length >= 1, 'the publish was delivered')
-          const h = hits.find((x: any) => x.headers['x-contentful-topic'] === 'ContentManagement.Entry.publish') || hits[0]
+          const h = hits.find((x: { headers: { [x: string]: string } }) => x.headers['x-contentful-topic'] === 'ContentManagement.Entry.publish') || hits[0]
           assert.equal(h.headers['x-contentful-topic'], 'ContentManagement.Entry.publish'); assert.equal(h.headers['x-contentful-webhook-name'], 'probe hook 2'); assert.equal(h.headers['x-probe'], 'yes')
           assert.equal(h.body.sys.id, EID); assert.equal(h.body.sys.type, 'Entry')
           const row = await send('GET', `/spaces/${index.space}/webhook_definitions/${def.body.sys.id}`); assert.ok(row.body.sys.lastAt || row.status === 200)
@@ -519,25 +519,25 @@ try {
                 await pg.waitForSelector('.ad-gate', { state: 'detached', timeout: 20000 }); await pg.reload({ waitUntil: 'networkidle' })   /* the admin loads its view as it mounts */
                 await pg.waitForSelector('.ad-drawer .ad-publish', { timeout: 30000 })
                 await pg.click('.ad-drawer .ad-publish')
-                for (let i = 0; i < 40 && !hits.some((h: any) => h.headers['x-contentful-topic'] === 'ContentManagement.Entry.publish'); i++) await new Promise((r) => setTimeout(r, 300))
-                const pub = hits.find((h: any) => h.headers['x-contentful-topic'] === 'ContentManagement.Entry.publish'); assert.ok(pub, 'the admin\'s publish was delivered'); assert.equal(pub.body.sys.id, entryId(rec.typeId, rec.path)); assert.equal(pub.headers['x-probe'], 'yes')
+                for (let i = 0; i < 40 && !hits.some((h: { headers: { [x: string]: string } }) => h.headers['x-contentful-topic'] === 'ContentManagement.Entry.publish'); i++) await new Promise((r) => setTimeout(r, 300))
+                const pub = hits.find((h: { headers: { [x: string]: string } }) => h.headers['x-contentful-topic'] === 'ContentManagement.Entry.publish'); assert.ok(pub, 'the admin\'s publish was delivered'); assert.equal(pub.body.sys.id, entryId(rec.typeId, rec.path)); assert.equal(pub.headers['x-probe'], 'yes')
                 /* off, and published again: unpublish then publish, each delivered under its topic */
                 const reopen = async () => { await pg.goto(`${site}/admin/${rec.model}/${rec.path}`, { waitUntil: 'networkidle', timeout: 30000 }); await pg.waitForSelector('.ad-drawer .ad-publish', { timeout: 30000 }) }   /* a publish closes the drawer */
                 const toggle = () => pg.locator('.ad-drawer .ad-f', { hasText: 'Published' }).locator('.p-toggleswitch').first()
                 await reopen(); await toggle().click(); await pg.click('.ad-drawer .ad-publish')
-                for (let i = 0; i < 40 && !hits.some((h: any) => h.headers['x-contentful-topic'] === 'ContentManagement.Entry.unpublish'); i++) await new Promise((r) => setTimeout(r, 300))
-                assert.ok(hits.some((h: any) => h.headers['x-contentful-topic'] === 'ContentManagement.Entry.unpublish'), 'the admin\'s unpublish was delivered')
+                for (let i = 0; i < 40 && !hits.some((h: { headers: { [x: string]: string } }) => h.headers['x-contentful-topic'] === 'ContentManagement.Entry.unpublish'); i++) await new Promise((r) => setTimeout(r, 300))
+                assert.ok(hits.some((h: { headers: { [x: string]: string } }) => h.headers['x-contentful-topic'] === 'ContentManagement.Entry.unpublish'), 'the admin\'s unpublish was delivered')
                 hits.length = 0
                 await reopen(); await toggle().click(); await pg.click('.ad-drawer .ad-publish')
-                for (let i = 0; i < 40 && !hits.some((h: any) => h.headers['x-contentful-topic'] === 'ContentManagement.Entry.publish'); i++) await new Promise((r) => setTimeout(r, 300))
-                assert.ok(hits.some((h: any) => h.headers['x-contentful-topic'] === 'ContentManagement.Entry.publish'), 'published again')
+                for (let i = 0; i < 40 && !hits.some((h: { headers: { [x: string]: string } }) => h.headers['x-contentful-topic'] === 'ContentManagement.Entry.publish'); i++) await new Promise((r) => setTimeout(r, 300))
+                assert.ok(hits.some((h: { headers: { [x: string]: string } }) => h.headers['x-contentful-topic'] === 'ContentManagement.Entry.publish'), 'published again')
                 assert.equal((await get(`${ENV}/entries/${entryId(rec.typeId, rec.path)}`, { Authorization: 'Bearer ' + delivery })).status, 200, 'the record is live again')
               } finally { await browser.close() }
             }
           }
           const del = await send('DELETE', `/spaces/${index.space}/webhook_definitions/${def.body.sys.id}`); assert.equal(del.status, 204)
           assert.equal((await send('GET', `/spaces/${index.space}/webhook_definitions/${def.body.sys.id}`)).status, 404)
-        } finally { server.close(); const left = await send('GET', `/spaces/${index.space}/webhook_definitions`); for (const d of ((left.body || {}).items || []).filter((x: any) => /^probe hook/.test(x.name))) await send('DELETE', `/spaces/${index.space}/webhook_definitions/${d.sys.id}`) }
+        } finally { server.close(); const left = await send('GET', `/spaces/${index.space}/webhook_definitions`); for (const d of ((left.body || {}).items || []).filter((x: { name: string }) => /^probe hook/.test(x.name))) await send('DELETE', `/spaces/${index.space}/webhook_definitions/${d.sys.id}`) }
       })
     } finally { for (const f of cleanup.reverse()) await f() }
   }

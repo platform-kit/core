@@ -180,7 +180,7 @@ function ranCommand(args: any) {
 }
 
 const picks = ref(false)
-function put(e: any) {
+function put(e: string) {
   const el = box.value
   const at = el ? el.selectionStart : body.value.length
   body.value = body.value.slice(0, at) + e + body.value.slice(at)
@@ -188,7 +188,7 @@ function put(e: any) {
   nextTick(() => el && el.focus())
 }
 /* a mark at the head of the line, for a list or a quotation */
-function lead(mark: any) {
+function lead(mark: string) {
   const el = box.value
   if (!el) return
   const at = body.value.lastIndexOf('\n', Math.max(0, el.selectionStart - 1)) + 1
@@ -234,13 +234,13 @@ function clear() {
 const timing = ref(false)
 const exact = ref('')
 const whens = computed(() => offers(Date.now()))
-const sayWhen = (when: any) => {
+const sayWhen = (when: string|number|Date) => {
   const d = when instanceof Date ? when : new Date(when)
   const today = new Date().toDateString() === d.toDateString()
   const at = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
   return today ? at : d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + at
 }
-function later(when: any) {
+function later(when: string|Date) {
   if (!ready.value || !usable(when)) return
   emit('later', { body: toTokens(body.value.trim(), picked.value), when })
   timing.value = false

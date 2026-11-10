@@ -67,20 +67,20 @@ const err = ref('')
 const note = ref('')
 const dirty = ref(false)
 
-const spaces = computed(() => files.value.filter((f: any) => f.kind === 'space'))
+const spaces = computed(() => files.value.filter((f: { kind: string }) => f.kind === 'space'))
 const space = computed(() => (doc.value ? doc.value.data : null))
 /* the words a sealed room is marked with, and the ONE reading of whether a room is one: the
    channel's own answer where it gives one, the space's otherwise — the same `encryptedOf` the
    build and the Matrix surface ask, so the admin cannot show a different answer from the room */
 const EN = computed(() => us('spaces').encryption)
 const sealed = (c: any) => encryptedOf((c && c.data) || {}, space.value || {})
-const row = computed(() => rows.value.find((r: any) => r.slug === slug.value) || null)
+const row = computed(() => rows.value.find((r: { slug: string }) => r.slug === slug.value) || null)
 const tiers = computed(() => [...new Set(products.filter((p: any) => p.kind === 'membership' && p.tier).map((p: any) => p.tier))])
 const offers = computed(() => products.filter((p: any) => p.sku).map((p: any) => ({ sku: p.sku, key: p.key, title: p.title || p.sku })))
 /* the booking types a room's rule may hang a window on — the only way in that looks FORWARD */
-const bookables = computed(() => (sessions || []).filter((s: any) => s.published !== false).map((s: any) => ({ slug: s.slug, title: s.title || s.slug })))
+const bookables = computed(() => (sessions || []).filter((s: { published: boolean }) => s.published !== false).map((s: any) => ({ slug: s.slug, title: s.title || s.slug })))
 
-const say = (m: any) => { note.value = m; setTimeout(() => { if (note.value === m) note.value = '' }, 2600) }
+const say = (m: string) => { note.value = m; setTimeout(() => { if (note.value === m) note.value = '' }, 2600) }
 async function run(fn: any, done?: any) {
   busy.value = true; err.value = ''
   try { await fn(); if (done) say(done) } catch (e) { err.value = (e as any).message || String(e) } finally { busy.value = false }
@@ -92,11 +92,11 @@ async function loadFiles() {
   files.value = await pipe.items('spaces')
   if (!slug.value && spaces.value.length) slug.value = spaces.value[0].name
 }
-async function openSpace(name: any) {
+async function openSpace(name: string|number|boolean) {
   if (!name) { doc.value = null; rooms.value = []; return }
   doc.value = await pipe.read('spaces', name)
   const mine = files.value.filter((f: any) => f.kind === 'channel' && f.space === name)
-  rooms.value = await Promise.all(mine.map((f: any) => pipe.read('spaces', f.name)))
+  rooms.value = await Promise.all(mine.map((f: { name: string|number|boolean }) => pipe.read('spaces', f.name)))
   rooms.value.sort((a: any, b: any) => ((a.data.order ?? 99) - (b.data.order ?? 99)) || a.name.localeCompare(b.name))
   dirty.value = false
 }
@@ -137,14 +137,14 @@ async function loadGrants() {
 }
 /* a name for every id on screen, asked once each — profiles are self-select, so this is the door */
 async function namesFor(ids: any) {
-  const want = [...new Set<string>(ids.filter((i: any) => i && !people.value[i]))]
+  const want = [...new Set<string>(ids.filter((i: string|number) => i && !people.value[i]))]
   if (!want.length) return
   for (const id of want) people.value[id] = { name: '…', email: '' }
   const { data } = await (supabase as any).rpc('space_people_named', { p_ids: want })
   for (const r of data || []) people.value[r.id] = { name: r.name, email: r.email }
   for (const id of want) if (people.value[id].name === '…') people.value[id] = { name: W.value.someone, email: '' }
 }
-const nameOf = (id: any) => (people.value[id] || {}).name || W.value.someone
+const nameOf = (id: string|number) => (people.value[id] || {}).name || W.value.someone
 
 async function loadAll() {
   await Promise.all([loadFiles(), loadRows(), loadGrants()])
@@ -156,7 +156,7 @@ watch(slug, async (s) => { await run(async () => { await openSpace(s); await Pro
 
 /* ------------------------------------------------------------------ the declaration */
 
-const slugged = (v: any) => String(v || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+const slugged = (v: string) => String(v || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 const touch = () => { dirty.value = true }
 
 /* the ways a space fills itself, said in words rather than as the rule's own shape */
@@ -201,7 +201,7 @@ function addFill() {
   const next = FILLS.value.find((f) => f.key !== 'none' && Object.keys(f.rule).length && !had.includes(f.key))
   writeFill([...fillRows.value.map((s) => ({ ...s })), { ...(next ? next.rule : {}) }])
 }
-const dropFill = (i: any) => writeFill(fillRows.value.filter((_, j) => j !== i).map((s) => ({ ...s })))
+const dropFill = (i: number) => writeFill(fillRows.value.filter((_, j) => j !== i).map((s) => ({ ...s })))
 
 /* ------------------------------------------------------------------ a room's own rule */
 
@@ -222,7 +222,7 @@ const canLookForward = (rule: any) => !!(rule && rule.booking)
 /* a span as the file writes it (`7d`) ↔ the two controls a person is given */
 const UNITS = ['m', 'h', 'd', 'w']
 const spanParts = (v: any) => { const m = /^(\d+)\s*([mhdw])$/.exec(String(v || '')); return m ? { n: Number(m[1]), unit: m[2] } : { n: 7, unit: 'd' } }
-const spanOf = (n: any, unit: any) => Math.max(1, Math.round(Number(n) || 1)) + (UNITS.includes(unit) ? unit : 'd')
+const spanOf = (n: any, unit: string) => Math.max(1, Math.round(Number(n) || 1)) + (UNITS.includes(unit) ? unit : 'd')
 
 const keyOfRoomRule = (rule: any) => {
   /* a window is a qualifier and not a way in, so it is not part of what the select is showing */
@@ -267,7 +267,7 @@ const roomWindow = (set: any) => {
   return dir ? { dir, ...spanParts(set[dir]) } : null
 }
 function addRoomFill(c: any) { writeRoomFill(c, [...roomRows(c).map((s) => ({ ...s })), { ...((ROOM_FILLS.value[1] || {}).rule || {}) }]) }
-const dropRoomFill = (c: any, i: any) => writeRoomFill(c, roomRows(c).filter((_, j) => j !== i).map((s) => ({ ...s })))
+const dropRoomFill = (c: any, i: number) => writeRoomFill(c, roomRows(c).filter((_, j) => j !== i).map((s) => ({ ...s })))
 
 /* a role is a row with a colour, a rank and what holding it lets somebody do */
 function addRole() {
@@ -387,8 +387,8 @@ async function addMember(p: any) {
 /* A role is given or taken away one at a time, because a person holds several. The names are the
    space's own — there is no list of them in this file — and 'member' is what being in the space
    means, so it is given with the membership and never taken off. */
-const givable = computed(() => dbRoles.value.filter((r: any) => r.slug !== 'member'))
-const holds = (m: any, role: any) => (held.value[m.user_id] || []).includes(role.id)
+const givable = computed(() => dbRoles.value.filter((r: { slug: string }) => r.slug !== 'member'))
+const holds = (m: { user_id: string|number }, role: any) => (held.value[m.user_id] || []).includes(role.id)
 async function toggleRole(m: any, role: any) {
   if (role.slug === 'member') return
   await run(async () => {
@@ -428,8 +428,8 @@ const roomName = (id: any) => (dbChannels.value.find((c: any) => c.id === id) ||
    read-only, with the file that gives it. What is left is the one-off: a capability given to ONE
    PERSON, which names somebody and is therefore an act — written through space_grant_person, which
    marks it 'hand' so the projection never touches it. */
-const declaredGrants = computed(() => grants.value.filter((g: any) => g.source === 'file'))
-const handGrants = computed(() => grants.value.filter((g: any) => g.source !== 'file'))
+const declaredGrants = computed(() => grants.value.filter((g: { source: string }) => g.source === 'file'))
+const handGrants = computed(() => grants.value.filter((g: { source: string }) => g.source !== 'file'))
 const newGrant = ref({ capability: 'voice', user_id: '', space_id: '', channel_id: '', days: '', note: '' })
 const grantFinding = ref('')
 const grantFound = ref<any>([])

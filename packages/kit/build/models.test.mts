@@ -24,8 +24,8 @@ import { describeSchema, collectionsFor } from './admin-schemas.mjs'
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const FIX = path.join(HERE, 'fixtures/models')
 let n = 0, bad = 0
-const t = (name: any, fn: any) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
-const ta = async (name: any, fn: any) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
+const t = (name: string, fn: any) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
+const ta = async (name: string, fn: any) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
 /* the theme's words, so the messages under test are the real ones */
 const scopeFile = path.join(HERE, '../theme/src/content/ui/models.md')
 const { parseGroups } = await import('./strings-io.mjs')
@@ -86,7 +86,7 @@ t('the fixture model reads clean and holds every kind', () => {
   const m = every.model
   assert.equal(m.title, 'title'); assert.equal(m.body, 'Notes'); assert.deepEqual(m.access, ['authenticated'])
   assert.deepEqual(m.order, { by: 'rank', dir: 'desc' }); assert.deepEqual(m.deliver, { data: true, pages: true, json: true, section: true })
-  const code = m.fields.find((f: any) => f.key === 'code')
+  const code = m.fields.find((f: { key: string }) => f.key === 'code')
   assert.deepEqual(code.shown, { field: 'live', is: 'is', value: true })
   assert.equal(code.rules.length, 6)
   const used = new Set(m.fields.flatMap((f: any) => (f.rules || []).map((r: any) => r.rule)).concat(m.fields.flatMap((f: any) => (f.fields || []).flatMap((g: any) => (g.rules || []).map((r: any) => r.rule)))))
@@ -110,20 +110,20 @@ await ta('what the reader refuses, naming the file, the field and the fault', as
   const want = { 'unknown-kind': /fields\[0\]: unknown kind "paragraph"/, 'unknown-rule': /fields\[0\]: unknown rule "confirmed"/, 'dup-keys': /two fields share the key "a"/, 'no-title': /the title field "name" is not one/, nested: /cannot hold a list/ }
   for (const [name, re] of Object.entries(want)) {
     const { errors } = readModel(readFileSync(path.join(FIX, 'refused', name + '.md'), 'utf8'), name)
-    assert.ok(errors.some((e: any) => re.test(e) && e.startsWith('content/models/' + name + '.md')), name + ': ' + errors.join(' | '))
+    assert.ok(errors.some((e: string) => re.test(e) && e.startsWith('content/models/' + name + '.md')), name + ': ' + errors.join(' | '))
   }
   const d = fresh(); cpSync(path.join(FIX, 'refused/no-model.md'), path.join(d, 'content/models/no-model.md'))
   const x: any = (await readModels(d)).find((m) => m.name === 'no-model')
-  assert.ok(x.errors.some((e: any) => /a reference to a model that is not there \("ghosts"\)/.test(e)), x.errors.join(' | '))
+  assert.ok(x.errors.some((e: string) => /a reference to a model that is not there \("ghosts"\)/.test(e)), x.errors.join(' | '))
   rmSync(d, { recursive: true, force: true })
 })
 t('a rule the kind does not take, and a bad parameter, are faults', () => {
   const bad = (fields: any) => readModel('---\n' + JSON.stringify({ key: 'x', name: 'X', title: 'a', fields }) + '\n---\n', 'x').errors
-  assert.ok(bad([{ key: 'a', kind: 'number', label: 'A', rules: [{ rule: 'regex', params: 'x' }] }]).some((e: any) => /does not apply to a number/.test(e)))
-  assert.ok(bad([{ key: 'a', kind: 'text', label: 'A', rules: [{ rule: 'min', params: 'lots' }] }]).some((e: any) => /min needs a number/.test(e)))
-  assert.ok(bad([{ key: 'a', kind: 'text', label: 'A', rules: [{ rule: 'regex', params: '(' }] }]).some((e: any) => /not a valid pattern/.test(e)))
-  assert.ok(bad([{ key: 'a', kind: 'select', label: 'A' }]).some((e: any) => /needs options/.test(e)))
-  assert.ok(bad([{ key: 'a', kind: 'markdown', label: 'A', unique: true }]).some((e: any) => /unique is for the text kinds/.test(e)))
+  assert.ok(bad([{ key: 'a', kind: 'number', label: 'A', rules: [{ rule: 'regex', params: 'x' }] }]).some((e: string) => /does not apply to a number/.test(e)))
+  assert.ok(bad([{ key: 'a', kind: 'text', label: 'A', rules: [{ rule: 'min', params: 'lots' }] }]).some((e: string) => /min needs a number/.test(e)))
+  assert.ok(bad([{ key: 'a', kind: 'text', label: 'A', rules: [{ rule: 'regex', params: '(' }] }]).some((e: string) => /not a valid pattern/.test(e)))
+  assert.ok(bad([{ key: 'a', kind: 'select', label: 'A' }]).some((e: string) => /needs options/.test(e)))
+  assert.ok(bad([{ key: 'a', kind: 'markdown', label: 'A', unique: true }]).some((e: string) => /unique is for the text kinds/.test(e)))
 })
 
 /* ---- the derivation and the check ---- */
@@ -209,7 +209,7 @@ await ta('checkAll over the fixture site is clean, and a hand-written entry that
 /* ---- the carry ---- */
 await ta('a field renamed in five entries: the one line, the rest byte for byte', async () => {
   const d = fresh()
-  const before = Object.fromEntries((await entryNames(d, 'people')).map((n: any) => [n, readFileSync(path.join(d, 'content/models/people', n + '.md'), 'utf8')]))
+  const before = Object.fromEntries((await entryNames(d, 'people')).map((n: string) => [n, readFileSync(path.join(d, 'content/models/people', n + '.md'), 'utf8')]))
   assert.equal(await renameField(d, 'people', 'role', 'part'), 5)
   for (const [name, was] of Object.entries(before)) {
     const now = readFileSync(path.join(d, 'content/models/people', name + '.md'), 'utf8')
@@ -219,7 +219,7 @@ await ta('a field renamed in five entries: the one line, the rest byte for byte'
   rmSync(d, { recursive: true, force: true })
 })
 await ta('a kind changed under entries: how many would fail, and which', async () => {
-  const m = { ...people, fields: people.fields.map((f: any) => (f.key === 'role' ? { ...f, kind: 'number', options: undefined } : f)) }
+  const m = { ...people, fields: people.fields.map((f: { key: string }) => (f.key === 'role' ? { ...f, kind: 'number', options: undefined } : f)) }
   const entries = await readEntries(site, 'people')
   const failing = entries.filter((e) => !validateEntry(m, e.data, { siblings: [], refs: {}, words }, z).ok).map((e) => e.slug)
   assert.deepEqual(failing, ['alice', 'bob', 'carol', 'dave', 'erin'])
@@ -230,7 +230,7 @@ await ta('a model renamed: the file, the folder, and every reference to it', asy
   assert.ok(existsSync(path.join(d, 'content/models/teachers.md')) && !existsSync(path.join(d, 'content/models/people.md')))
   assert.deepEqual(await entryNames(d, 'teachers'), ['alice', 'bob', 'carol', 'dave', 'erin'])
   const ek: any = readModel(readFileSync(path.join(d, 'content/models/every-kind.md'), 'utf8'), 'every-kind').model
-  assert.equal(ek.fields.find((f: any) => f.key === 'host').model, 'teachers')
+  assert.equal(ek.fields.find((f: { key: string }) => f.key === 'host').model, 'teachers')
   await assert.rejects(() => renameModel(d, 'teachers', 'every-kind'), /already there/)
   rmSync(d, { recursive: true, force: true })
 })

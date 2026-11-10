@@ -121,7 +121,7 @@ for (const f of siteSchemas) put('schemas/site/' + path.basename(f), f)
  */
 {
   const FN = /create\s+(?:or\s+replace\s+)?function\s+(?:"?public"?\.)?"?([a-z_][a-z0-9_]*)"?\s*\(/gi
-  const namesIn = (files: any) => { const m = new Map(); for (const f of files) for (const x of fs.readFileSync(f, 'utf8').matchAll(FN)) m.set(x[1].toLowerCase(), f); return m }
+  const namesIn = (files: string[]) => { const m = new Map(); for (const f of files) for (const x of fs.readFileSync(f, 'utf8').matchAll(FN)) m.set(x[1].toLowerCase(), f); return m }
   /* every function the kit declares, a module's that is off among them: switched on, it would be replaced */
   const kitFns = namesIn(walk(path.join(KIT, 'schemas')).filter((f: string) => f.endsWith('.sql')))
   const clash = [...namesIn(siteSchemas)].filter(([n]) => kitFns.has(n))

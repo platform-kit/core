@@ -609,7 +609,7 @@ ok('a row that says nothing about it is a no', mayMentionChannel({}) === false &
   const g = out.r && out.r[0]
   ok('the space carries its body, its kind and its roles', !!g && g.kind === 'server' && g.about === 'What this place is.' && g.roles.length === 1, out.said)
   ok('a role\'s `can` becomes a grant of scope role', !!g && g.grants.some((x: { capability: string; scope: string; role: string }) => x.capability === 'voice' && x.scope === 'role' && x.role === 'founder'))
-  ok('a space\'s `everyone` is scoped to the space', !!g && g.grants.some((x: any) => x.capability === 'voice' && x.scope === 'space' && x.channel === null))
+  ok('a space\'s `everyone` is scoped to the space', !!g && g.grants.some((x: { capability: string; scope: string; channel: null }) => x.capability === 'voice' && x.scope === 'space' && x.channel === null))
   ok('a channel\'s grant carries its channel', !!g && g.grants.some((x: { capability: string; channel: string }) => x.capability === 'mention-channel' && x.channel === 'lounge'))
   ok('what a room hears is on the room', !!g && eq(g.channels[0].hears, ['purchase.paid']))
   put('content/spaces/guild.md', '---\nname: The Guild\nsessions: [a-call]\n---\n')

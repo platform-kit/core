@@ -34,7 +34,7 @@ export const KIT_TABS = [
 ]
 /* the kit tabs' words and switches: `## tabs / ### <key>` in the sheet strings (label, card, published) */
 const W = ug('sheet', 'tabs')
-const rec = (k: any) => W[k] || {}
+const rec = (k: string|number) => W[k] || {}
 const published = (t: any) => !/^(false|no|off|0)$/i.test(String(rec(t.key).published ?? '').trim())
 /* a tab is drawn when its module is on, its own switch says so, and the words have not turned it
    off. the on hook used to REPLACE the published check rather than stand beside it, so a tab with a

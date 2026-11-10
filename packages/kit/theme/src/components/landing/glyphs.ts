@@ -30,4 +30,4 @@ export const GLYPHS: any = {
   leaf: '<path d="M4 16c0-7 4-11 12-12-1 8-5 12-12 12z"/><path d="M4 16c3-3 6-6 8.5-8.5"/>',
 }
 export const GLYPH_NAMES = Object.keys(GLYPHS)
-export const glyph = (name: any) => `<svg class="lpglyph" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GLYPHS[name] || GLYPHS.spark}</svg>`
+export const glyph = (name: string|number) => `<svg class="lpglyph" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${GLYPHS[name] || GLYPHS.spark}</svg>`

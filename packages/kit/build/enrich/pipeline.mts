@@ -65,10 +65,10 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
   const overBudget = () => spentUsd() - bookStart + dearest >= maxSpend
 
   /* ---- helpers ---- */
-  const wordsOf = (t: any) => String(t || '').split(/\s+/).filter(Boolean).length
+  const wordsOf = (t: string) => String(t || '').split(/\s+/).filter(Boolean).length
   const h = (...parts: any[]) => chapterHash(parts.map((p) => (typeof p === 'string' ? p : JSON.stringify(p))).join('\n '), 'enrich')
   const norm = (t: any) => String(t || '').toLowerCase().replace(/[’‘]/g, "'").replace(/[^a-z0-9' ]+/g, ' ').replace(/\s+/g, ' ').trim()
-  function extractJson(text: any) { const a = text.indexOf('{'), b = text.lastIndexOf('}'); if (a < 0 || b < a) throw new Error('no JSON in the reply'); return JSON.parse(text.slice(a, b + 1)) }
+  function extractJson(text: string) { const a = text.indexOf('{'), b = text.lastIndexOf('}'); if (a < 0 || b < a) throw new Error('no JSON in the reply'); return JSON.parse(text.slice(a, b + 1)) }
   async function loadBook(slug: any, store: any) {
     const raw = await store.read(`${BOOKS}/${slug}.md`)
     if (raw == null) throw new Error(`no book called ${slug}`)
@@ -82,7 +82,7 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
   /* the area keys as the store has them — the same files areaDefinitions reads, by their own `area` */
   async function areaKeysFrom(store: any) {
     const dir = 'content/app/tests/diagnostics'
-    const names = (await store.list(dir)).filter((n: any) => n !== 'results')
+    const names = (await store.list(dir)).filter((n: string) => n !== 'results')
     const keys: any = []
     for (const n of names) {
       const d = matter((await store.read(`${dir}/${n}.md`)) || '').data
@@ -93,7 +93,7 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
 
   async function areaDefinitions(store: any) {
     const dir = 'content/app/tests/diagnostics'
-    const names = (await store.list(dir)).filter((n: any) => n !== 'results')
+    const names = (await store.list(dir)).filter((n: string) => n !== 'results')
     const each = await Promise.all(names.map(async (n: any) => {
       const d = matter((await store.read(`${dir}/${n}.md`)) || '').data
       const levels = Object.entries(d.levels || {}).map(([k, v]) => `${k} ${(v as any).name}: ${(v as any).plain || ''}`).join('; ')
@@ -168,7 +168,7 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
   /* what wrote this, for the record: the model that answered the stage, else the one it was asked
      of — a stage read back from the cache was not answered in this run, and the cache does not keep
      the name, so the asked-for one is the most that can honestly be said */
-  const wrote = (label: any) => answeredBy[label] || writeModel || MODEL
+  const wrote = (label: string) => answeredBy[label] || writeModel || MODEL
   const tok = (u: any) => `${u.input_tokens}→${u.output_tokens}`
 
   /* ---- the mechanical checks on a written chapter: null, or the reason to send it back ---- */
@@ -184,7 +184,7 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
     const src = norm(source)
     for (const m of d.summary.matchAll(/==([^=\n]+)==\{/g)) { const w = norm(m[1]).split(' '); if (w.length >= 8 && src.includes(w.slice(0, 8).join(' '))) return `a highlight quotes the original ("${m[1].slice(0, 50)}…") — a highlight is one of your own sentences in today's words` }
     if (d.essence.length >= 4 && !/\n\s*\n/.test(d.summary.trim())) return 'the summary is one unbroken block — set it in paragraphs, one thought each'
-    const leaning = d.essence.filter((e: any) => /^(this|that|it|these|those|the (method|rule|practice|technique|process|principle|above)|as (we|you) (saw|said)|in (this|that) case)\b/i.test(e.trim()))
+    const leaning = d.essence.filter((e: string) => /^(this|that|it|these|those|the (method|rule|practice|technique|process|principle|above)|as (we|you) (saw|said)|in (this|that) case)\b/i.test(e.trim()))
     return leaning.length ? `these essence lines depend on context and must name their subject instead: ${leaning.map((e: any) => JSON.stringify(e.slice(0, 60))).join(', ')}` : null
   }
 
@@ -227,7 +227,7 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
     const r = await askJson({ system: UNDERSTAND, schema: Map_, maxTokens: 8000, label: 'understand', temperature: 0, think: 'low',
       user: `Book: ${book.title}${book.author ? ' by ' + book.author : ''}\n${book.description ? 'Description: ' + book.description + '\n' : ''}Chapters, in order: ${book.chapters.map((c: any) => JSON.stringify(c.title)).join(', ')}\n\n<book>\n${text}\n</book>\n\nReturn the JSON.` })
     const known = new Set(book.chapters.map((c: any) => c.title))
-    r.data.chapters = r.data.chapters.filter((c: any) => known.has(c.title.trim())).map((c: any) => ({ ...c, title: c.title.trim() }))
+    r.data.chapters = r.data.chapters.filter((c: { title: string }) => known.has(c.title.trim())).map((c: { title: string }) => ({ ...c, title: c.title.trim() }))
     for (const c of book.chapters) if (!r.data.chapters.find((x: any) => x.title === c.title)) r.data.chapters.push({ title: c.title, adds: '', role: 'teaching' })
     log(`  understand  ${Math.round((Date.now() - t0) / 1000)}s  ${tok(r.usage)}  ${r.data.kind}; stage ${r.data.stage}\n    thesis: ${r.data.thesis}`)
     cache.understand = { key, data: r.data }
@@ -235,7 +235,7 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
   }
   const adds = (map: any, title: any) => (map.chapters.find((c: any) => c.title === title) || {}).adds || ''
   const role = (map: any, title: any) => (map.chapters.find((c: any) => c.title === title) || {}).role || 'teaching'
-  const mapText = (map: any) => `Thesis: ${map.thesis}\nPremises:\n${map.premises.map((p: any) => '- ' + p).join('\n')}\nKind of text: ${map.kind}\nStage on the path: ${map.stage} — ${map.stageWhy}\nWhat each chapter adds:\n${map.chapters.map((c: any) => `- ${c.title} (${c.role}): ${c.adds}`).join('\n')}`
+  const mapText = (map: any) => `Thesis: ${map.thesis}\nPremises:\n${map.premises.map((p: string) => '- ' + p).join('\n')}\nKind of text: ${map.kind}\nStage on the path: ${map.stage} — ${map.stageWhy}\nWhat each chapter adds:\n${map.chapters.map((c: any) => `- ${c.title} (${c.role}): ${c.adds}`).join('\n')}`
 
   async function introduce(book: any, map: any, cache: any) {
     const key = h(P.introduce, mapText(map), book.text.slice(0, 900000))
@@ -268,10 +268,10 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
           user: `Book: ${book.title}${book.author ? ' by ' + book.author : ''}\n${note}\n` + pending.map((c) => `<chapter title=${JSON.stringify(c.title)} words="${c.words}">\n${c.md}\n</chapter>`).join('\n\n') + '\n\nReturn the JSON.' })
         const still = []
         for (const c of pending) {
-          const got = r.data.chapters.find((x: any) => x.title.trim() === c.title)
+          const got = r.data.chapters.find((x: { title: string }) => x.title.trim() === c.title)
           if (!got) { still.push(c); continue }
           const src = norm(c.md)
-          const ideas = got.ideas.filter((i: any) => src.includes(norm(i.anchor)))
+          const ideas = got.ideas.filter((i: string) => src.includes(norm(i.anchor)))
           const dropped = got.ideas.length - ideas.length
           /* a list where most anchors miss the text was not read carefully: once more */
           if (got.ideas.length && dropped > got.ideas.length / 2 && attempt === 0) { still.push(c); note = `Your previous list for ${JSON.stringify(c.title)} had ${dropped} of ${got.ideas.length} anchors that are not in the text; anchors are exact quotations.`; continue }
@@ -289,7 +289,7 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
         const r = await askJson({ system: EXTRACT, schema: Contracts, maxTokens: 30000, label: 'extract (remainder)', temperature: 0, think: 'low',
           user: `Book: ${book.title}${book.author ? ' by ' + book.author : ''}\n` + found.map((c) => `<chapter title=${JSON.stringify(c.title)} words="${c.words}">\n<already-listed>\n${contractText(cache.chapters[c.title].extract.ideas)}\n</already-listed>\n${c.md}\n</chapter>`).join('\n\n') + '\n\nReturn the JSON: only the ideas not yet listed.' })
         for (const c of found) {
-          const got = r.data.chapters.find((x: any) => x.title.trim() === c.title); if (!got) continue
+          const got = r.data.chapters.find((x: { title: string }) => x.title.trim() === c.title); if (!got) continue
           const src = norm(c.md), have = new Set(cache.chapters[c.title].extract.ideas.map((i: any) => norm(i.idea)))
           const more = got.ideas.filter((i: any) => src.includes(norm(i.anchor)) && !have.has(norm(i.idea)))
           if (more.length) { cache.chapters[c.title].extract.ideas.push(...more); log(`    extract+ ${c.title.slice(0, 44).padEnd(44)} +${more.length} → ${cache.chapters[c.title].extract.ideas.length} ideas`) }
@@ -299,13 +299,13 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
       await save(cache)
     }
   }
-  const contractText = (ideas: any) => ideas.map((i: any, n: any) => `${n + 1}. ${i.idea}${i.keep ? ' [keep]' : ''}`).join('\n')
+  const contractText = (ideas: any) => ideas.map((i: any, n: number) => `${n + 1}. ${i.idea}${i.keep ? ' [keep]' : ''}`).join('\n')
 
-  async function writeAndAudit(book: any, map: any, intro: any, chapters: any, cache: any, save: any) {
+  async function writeAndAudit(book: any, map: any, intro: string, chapters: any, cache: any, save: any) {
     const key = (c: any) => h(P.write, P.audit, writeModel || MODEL, THINKING_LEVEL, c.md, cache.chapters[c.title]?.extract?.ideas || [], intro, adds(map, c.title), role(map, c.title))
-    const todo = chapters.filter((c: any) => cache.chapters[c.title]?.extract && (force || cache.chapters[c.title]?.final?.key !== key(c)))
+    const todo = chapters.filter((c: { title: string|number }) => cache.chapters[c.title]?.extract && (force || cache.chapters[c.title]?.final?.key !== key(c)))
     const bookCtx = `Book: ${book.title}${book.author ? ' by ' + book.author : ''}\n<map>\n${mapText(map)}\n</map>\n${intro ? '\n<introduction>\n' + intro + '\n</introduction>\n' : ''}`
-    const block = (c: any, audit: any, previous: any) => {
+    const block = (c: any, audit: string, previous: any) => {
       const idx = book.chapters.indexOf(c)
       const note = `${role(map, c.title)}; ${idx === 0 && intro ? 'the first chapter — the introduction has set the table, open on what this chapter adds' : idx === 0 ? 'the first chapter' : 'chapter ' + (idx + 1) + ' of ' + book.chapters.length}; it adds: ${adds(map, c.title)}`
       return `<chapter title=${JSON.stringify(c.title)} words="${c.words}" note=${JSON.stringify(note)}>\n<contract>\n${contractText(cache.chapters[c.title].extract.ideas)}\n</contract>\n<text>\n${c.md}\n</text>\n${audit ? '<previous-draft>\n' + JSON.stringify(previous, null, 1) + '\n</previous-draft>\n<audit-of-previous-draft>\n' + audit + '\nRevise the previous draft to fix exactly these findings. Keep every sentence that was right; do not start over, and do not drop anything the audit did not name.\n</audit-of-previous-draft>\n' : ''}</chapter>`
@@ -337,7 +337,7 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
         const toAudit = []
         for (const c of pending) {
           const st = state.get(c.title); st.rounds++
-          const d = r.data.chapters.find((x: any) => x.title.trim() === c.title)
+          const d = r.data.chapters.find((x: { title: string }) => x.title.trim() === c.title)
           if (!d) { st.feedback = 'The previous reply did not include this chapter; return it.'; continue }
           st.draft = d
           const bad = issues(d, c.md)
@@ -351,7 +351,7 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
           log(`  audit ${round}     ${Math.round((Date.now() - t1) / 1000)}s  ${tok(a.usage)}`)
           for (const c of toAudit) {
             const st = state.get(c.title)
-            const v = a.data.chapters.find((x: any) => x.title.trim() === c.title) || { missing: [], wrong: [] }
+            const v = a.data.chapters.find((x: { title: string }) => x.title.trim() === c.title) || { missing: [], wrong: [] }
             const score = v.missing.length + v.wrong.length
             st.history.push(score)
             if (score < st.bestScore) { st.bestScore = score; st.best = st.draft; st.residual = v }
@@ -386,7 +386,7 @@ export function pipeline({ briefs, llm, log = () => {}, force = false, writeMode
        reads content as it loads is a module only a checkout can import */
     const areas = await areaDefinitions(store)
     const r = await askJson({ system: BOOK_LINES, schema: linesSchema(await areaKeysFrom(store)), maxTokens: 2000, label: 'lines', model: writeModel || undefined,
-      user: `Book: ${book.title}${book.author ? ' by ' + book.author : ''}\n\n<map>\n${mapText(map)}\n</map>\n\nThe seven areas of life and their levels:\n${areas}\n\n<summaries>\n${ordered.map((c: any) => `## ${c.title}\n${c.summaryMd}\n\nEssence:\n${c.essence.map((e: any) => '- ' + e).join('\n')}`).join('\n\n')}\n</summaries>\n\nReturn the JSON.` })
+      user: `Book: ${book.title}${book.author ? ' by ' + book.author : ''}\n\n<map>\n${mapText(map)}\n</map>\n\nThe seven areas of life and their levels:\n${areas}\n\n<summaries>\n${ordered.map((c: any) => `## ${c.title}\n${c.summaryMd}\n\nEssence:\n${c.essence.map((e: string) => '- ' + e).join('\n')}`).join('\n\n')}\n</summaries>\n\nReturn the JSON.` })
     log(`  lines       ${Math.round((Date.now() - t0) / 1000)}s  ${tok(r.usage)}\n    insight: ${r.data.insight}\n    statement (${r.data.statementArea} ${r.data.statementLevel}): ${r.data.statement}`)
     cache.lines = { key, data: r.data }
     return r.data

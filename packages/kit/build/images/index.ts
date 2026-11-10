@@ -59,7 +59,7 @@ export const missingFor = (key: string, env = (typeof process !== 'undefined' ? 
  * chosen twice is the same file rather than two, and so anybody looking at the library later can
  * see where a picture came from without a database.
  */
-export function assetName(sourceKey: string, result: any, type: string) {
+export function assetName(sourceKey: string, result: { id: string; alt: string }|{ id: string; alt?: undefined }, type: string) {
   const ext = /png/.test(type) ? 'png' : /webp/.test(type) ? 'webp' : /gif/.test(type) ? 'gif' : 'jpg'
   const slug = String(result.alt || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48)
   return `${sourceKey}-${slug ? slug + '-' : ''}${String(result.id).replace(/[^\w-]+/g, '')}.${ext}`

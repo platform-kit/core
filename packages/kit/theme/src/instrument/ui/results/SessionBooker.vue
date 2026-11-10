@@ -32,10 +32,10 @@ const C = us('library').coaching.page || {}
 const HW = us('library').coaching.host || {}
 /* the invitees, a host's rows of addresses */
 const invitees = ref([''])
-const emailOk = (e: any) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || '').trim())
+const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || '').trim())
 const cleanInvitees = computed(() => invitees.value.map((e) => String(e || '').trim().toLowerCase()).filter(Boolean))
 function addInvitee() { invitees.value = [...invitees.value, ''] }
-function dropInvitee(i: any) { invitees.value = invitees.value.filter((_, j) => j !== i); if (!invitees.value.length) invitees.value = [''] }
+function dropInvitee(i: number) { invitees.value = invitees.value.filter((_, j) => j !== i); if (!invitees.value.length) invitees.value = [''] }
 
 /* what: the chosen option; a single option, or a move, skips the splash */
 const picked = ref(props.moving ? (props.options.find((o) => o.event === props.moving.event) || null) : props.options.length === 1 ? props.options[0] : null)
@@ -66,7 +66,7 @@ const whereFact = computed(() => (option.value ? placeOf(option.value, B) : ''))
 const asksPhone = computed(() => !!option.value && option.value.where === 'phone' && !option.value.phone && !props.moving)
 const done = ref<any>(null)
 
-const ymd = (d: any) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const monthName = computed(() => new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(month.value))
 const weekdays = computed(() => { const base = new Date(2024, 0, 7); return [...Array(7)].map((_, i) => new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(new Date(base.getTime() + i * 864e5))) })
 const cells = computed(() => {
@@ -113,7 +113,7 @@ watch(option, (o) => { runCount.value = (o && o.repeat) ? o.repeat.count : 0 }, 
 watch(runCount, () => { if (step.value !== 'what') { day.value = ''; slot.value = ''; load() } })
 const runEvery = computed(() => { const e = (option.value && option.value.repeat && option.value.repeat.every) || 'week'; return B['run-every-' + e] || '' })
 const seatsLeft = ref<any>({})
-const leftAt = (iso: any) => seatsLeft.value[iso]
+const leftAt = (iso: string|number) => seatsLeft.value[iso]
 const anyOpen = computed(() => Object.values(open.value).some((l) => (l as any).length))
 /* WHY A MONTH IS EMPTY. An empty calendar with no word looks broken, and the reader's next move
    depends entirely on which of these it is: turn the page, come back later, or write and ask. The
@@ -128,11 +128,11 @@ const whyNone = computed(() => {
   const when = w.from || w.to
   return when ? said.replace('{date}', dayOf(when)) : said
 })
-const at = (iso: any, opts: any) => { try { return new Intl.DateTimeFormat(undefined, { timeZone: zone.value, ...opts }).format(new Date(iso)) } catch (e) { return iso } }
+const at = (iso: string|number|Date, opts: Intl.DateTimeFormatOptions|undefined) => { try { return new Intl.DateTimeFormat(undefined, { timeZone: zone.value, ...opts }).format(new Date(iso)) } catch (e) { return iso } }
 const timeOf = (iso: any) => at(iso, { hour: 'numeric', minute: '2-digit' })
 const whenOf = (iso: any) => at(iso, { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })
-const dayOf = (k: any) => at(k + 'T12:00:00', { weekday: 'long', day: 'numeric', month: 'long' })
-const soon = (iso: any) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date(iso)) } catch (e) { return '' } }
+const dayOf = (k: string) => at(k + 'T12:00:00', { weekday: 'long', day: 'numeric', month: 'long' })
+const soon = (iso: string|number|Date) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date(iso)) } catch (e) { return '' } }
 
 async function load() {
   if (!option.value) return
@@ -159,7 +159,7 @@ watch([month, zone], () => { if (step.value !== 'what') load() })
 
 function choose(o: any) { if (o.blocked) return; picked.value = o; day.value = ''; slot.value = ''; month.value = new Date(first); step.value = 'when'; load() }
 function change() { step.value = 'what'; picked.value = null; open.value = {}; day.value = ''; slot.value = ''; error.value = '' }
-function shift(n: any) { const m = new Date(month.value); m.setMonth(m.getMonth() + n); month.value = m }
+function shift(n: number) { const m = new Date(month.value); m.setMonth(m.getMonth() + n); month.value = m }
 /*
  * QUESTIONS ON THE WAY IN. A type may ask a form's questions between choosing a time and confirming
  * — and they are asked AFTER the time rather than before, because somebody who cannot find an hour
@@ -177,7 +177,7 @@ const asked = computed(() => {
 })
 const response = ref<any>(null)
 function answered(e: any) { response.value = (e && e.response) || null; step.value = 'confirm'; error.value = '' }
-function pick(iso: any) { slot.value = iso; response.value = null; step.value = asked.value ? 'questions' : 'confirm'; error.value = '' }
+function pick(iso: string) { slot.value = iso; response.value = null; step.value = asked.value ? 'questions' : 'confirm'; error.value = '' }
 
 const price = computed(() => option.value && option.value.paid ? money(option.value.unit_amount || 0, 'usd') : '')
 const paying = computed(() => !props.host && !!option.value && option.value.paid && !(option.value.credits > 0) && !props.moving)

@@ -109,7 +109,7 @@ const hearsOut = (rows: any) => (Array.isArray(rows) ? rows : []).map((r) => {
 
 const LIMIT_KEYS = ['steps', 'spend', 'minutes', 'tools']
 const PER_KEYS = ['minute', 'hour', 'day', 'week', 'month']
-const num = (v: any) => (v === '' || v == null ? null : Number(v))
+const num = (v: string|null) => (v === '' || v == null ? null : Number(v))
 
 export const agentGrammar = {
   parse: (text: any) => {
@@ -338,7 +338,7 @@ export const commands = {
 /* the same for the bots: a save on a checkout pushes, a save over rows is a draft */
 async function onBotWrite(ctx: any) {
   if (ctx.store && ctx.store.kind === 'rows') return
-  await ctx.script('bots-push.mjs').catch((e: any) => console.warn('bots: not projected — ' + e.message))
+  await ctx.script('bots-push.mjs').catch((e: { message: string }) => console.warn('bots: not projected — ' + e.message))
 }
 
 /* the bots' declaration, made real — the surface's half of it, which needs a database and not a
@@ -358,7 +358,7 @@ async function projectedBots(ctx: any) {
    nothing is projected until it is published — see `projected` below */
 async function onEventWrite(ctx: any) {
   if (ctx.store && ctx.store.kind === 'rows') return
-  await ctx.script('events-push.mjs').catch((e: any) => console.warn('events: not projected — ' + e.message))
+  await ctx.script('events-push.mjs').catch((e: { message: string }) => console.warn('events: not projected — ' + e.message))
 }
 
 export const events = {

@@ -106,7 +106,7 @@ const conceptBooks = computed(() => {
    never moves somebody who has, because a page that changes tab under you is worse than a page
    that opens on the wrong one. */
 let chose = false
-async function show(m: any, byHand = true) {
+async function show(m: string, byHand = true) {
   if (byHand) chose = true
   mode.value = m
   if (m === 'foryou') await rank()
@@ -137,9 +137,9 @@ async function rank() {
    offered, which is right — it is the piece they meant to come back to. A book is governed by its
    own rule instead, since a chapter's depth says nothing about the book: it is left in while there
    is progress to continue, and dropFinished takes it once there is not. */
-const unread = (r: any) => !mine.value.read.has(seenKey(r.kind, r.id)) ||
+const unread = (r: { kind: string; id: string }) => !mine.value.read.has(seenKey(r.kind, r.id)) ||
   (r.kind === 'book' && bookProgress(r.id).opened)
-const byKind = (k: any, n: any) => (ranked.value || []).filter((r: any) => (r as any).kind === k && unread(r)).slice(0, n)
+const byKind = (k: string, n: number) => (ranked.value || []).filter((r: any) => (r as any).kind === k && unread(r)).slice(0, n)
 /* the books lane is the ranking's own books, given back their shelf record — the cover as Book3D
    wants it, the author, and the reader's progress — since a corpus row carries none of those.
    Finished books drop out while enough unfinished remain, so the lane keeps offering something new. */
@@ -175,7 +175,7 @@ const offIdentity = onIdentity(async (id: any) => {
   show('foryou', false)
 })
 onBeforeUnmount(offIdentity)
-const badge = (a: any) => a.data.media ? (Array.isArray(a.data.media) ? 'Playlist' : (a.data.media.type === 'audio' ? 'Audio' : 'Video')) : null
+const badge = (a: { data: { media: { type: string } } }) => a.data.media ? (Array.isArray(a.data.media) ? 'Playlist' : (a.data.media.type === 'audio' ? 'Audio' : 'Video')) : null
 /* an article's cover: its own hero image, or the poster off its media */
 const img = (a: any) => a.data.image || (Array.isArray(a.data.media) ? a.data.media.find((m: any) => m.poster)?.poster : a.data.media?.poster) || null
 </script>

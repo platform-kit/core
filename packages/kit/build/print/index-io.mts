@@ -70,4 +70,4 @@ export function mergeRegistry(reg: { titles: any }, fromBucket: { titles: any })
 export const withTitles = (idx: any, slug: string|number, titles: any) => ({ ...(idx || {}), [slug]: { ...((idx || {})[slug] || { editions: {} }), titles } })
 
 /* what a title is filed under: one per contents and format, per printer */
-export const titleKey = (contents: any, format: string) => `${contents}-${format}`
+export const titleKey = (contents: string, format: string) => `${contents}-${format}`

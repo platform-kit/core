@@ -77,7 +77,7 @@ ok('when: older is a date', /\d/.test(whenOf(at(9, 0, -30), now, W, 'en-GB')))
 
 /* --- merging --- */
 const optimistic = [msg('a', me, at(9), { pending: true })]
-const merged: any = mergeMessages(optimistic, [msg('a', me, at(9)), msg('b', you, at(9, 1))])
+const merged = mergeMessages(optimistic, [msg('a', me, at(9)), msg('b', you, at(9, 1))])
 ok('the echo lands on the optimistic row', merged.length === 2 && merged[0].id === 'a' && merged[0].pending === false)
 const older = mergeMessages(merged, [msg('z', you, at(8))])
 ok('an older page slots in before', older[0].id === 'z' && older.length === 3)

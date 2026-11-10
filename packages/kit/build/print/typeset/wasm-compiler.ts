@@ -79,6 +79,6 @@ export async function create({ files = {}, fonts = [], wasm }: any = {}) {
     /* and BYTES, for what is not text: a paperback's front is the e-book's own picture, and on a
        machine Typst reads it off the disk. Here there is no disk, so it is mapped in as a shadow
        file under the path the source names. */
-    bytes(p: any, data: any) { c.map_shadow(main(p), new Uint8Array(data)) },
+    bytes(p: string, data: any) { c.map_shadow(main(p), new Uint8Array(data)) },
   }
 }

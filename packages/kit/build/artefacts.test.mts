@@ -25,7 +25,7 @@ const FN = join(process.cwd(), 'supabase', 'functions', '_shared')
 const ROOT = process.cwd()
 const SITE = await loadSite(ROOT)
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? '\n          ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail: string) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? '\n          ' + detail : '')) } }
 
 console.log('\nARTEFACTS\n')
 
@@ -40,7 +40,7 @@ const walk = (dir: any, rel = '') => {
   }
 }
 walk(FN)
-const named = (at: any) => {
+const named = (at: string) => {
   const base = at.replace(/\.json$/, '')
   if ((PUBLISHED as any)[base] || (PUBLISHED as any)[base.replace(/^emails\//, '')] && base.startsWith('emails/')) return true
   if (base === 'emails/compiled' && PUBLISHED.emails) return true
@@ -87,7 +87,7 @@ if (SITE.deployment.backend) {
   const blind = { ...git, read: async (at: any) => (String(at).startsWith('content/') ? git.read(at) : null) }
   const themeAt = join(ROOT, 'supabase/functions/_shared/pipe/theme-strings.json')
   const theme = existsSync(themeAt) ? JSON.parse(readFileSync(themeAt, 'utf8')) : null
-  const both = async (name: any, make: any) => {
+  const both = async (name: string, make: any) => {
     let a = null, b = null
     try { a = await make(git, null) } catch (e: any) { ok(name + ' compiles for the build', false, e.message); return }
     try { b = await make(blind, theme) } catch (e: any) { ok(name + ' compiles from content alone', false, e.message); return }
@@ -97,7 +97,7 @@ if (SITE.deployment.backend) {
     }
   }
   await both('catalog', async (store: any, theme: any) => (await import('./catalog.mjs')).compileCatalog({ store, theme, root: ROOT }))
-  await both('forms', async (store: any) => (await (await import('./forms.mjs')).compileForms(store)).forms)
+  await both('forms', async (store: string|undefined) => (await (await import('./forms.mjs')).compileForms(store)).forms)
   await both('funnels', async (store: any) => (await import('./funnels.mts')).compileFunnels({ store, write: false, offers: (() => { try { return JSON.parse(readFileSync(join(ROOT, 'supabase/functions/_shared/catalog.json'), 'utf8')).offers } catch { return null } })() }))
 }
 

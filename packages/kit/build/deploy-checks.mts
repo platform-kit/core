@@ -50,15 +50,15 @@ import {
   STRIPE_PAYMENT_PROVIDER_REGISTRATION,
 } from './payment-provider-registry.mjs'
 
-const has = (env: any, k: any) => !!String(env[k] ?? '').trim()
+const has = (env: any, k: string) => !!String(env[k] ?? '').trim()
 const toolOnPath = (t: string) => { try { execSync('command -v ' + t, { stdio: 'ignore' }); return true } catch { return false } }
-const packageHere = (p: any, root: any) => { const from = path.resolve(root || process.cwd(), 'package.json'); try { createRequire(from).resolve(p + '/package.json'); return true } catch { try { createRequire(from).resolve(p); return true } catch { return false } } }
+const packageHere = (p: string, root: any) => { const from = path.resolve(root || process.cwd(), 'package.json'); try { createRequire(from).resolve(p + '/package.json'); return true } catch { try { createRequire(from).resolve(p); return true } catch { return false } } }
 const on = (v: any) => /^(1|true|yes|on)$/i.test(String(v || ''))
 const off = (v: any) => /^(0|false|no|off)$/i.test(String(v || '').trim())
 
 export const PRINTER_KEYS: any = { lulu: ['LULU_CLIENT_KEY', 'LULU_CLIENT_SECRET'], mixam: ['MIXAM_USER', 'MIXAM_PASS'], bookvault: ['BOOKVAULT_API_KEY'] }
-const configured = (env: any, p: any) => (PRINTER_KEYS[p] || []).every((k: any) => has(env, k))
-export function conditionalPaymentSecrets(providerId: any, siteSurface: any) {
+const configured = (env: any, p: string) => (PRINTER_KEYS[p] || []).every((k: any) => has(env, k))
+export function conditionalPaymentSecrets(providerId: string, siteSurface: any) {
   return providerId === 'stripe' &&
     siteSurface.offers.some((offer: any) => Number(offer.usage?.incrementalCharge) > 0)
     ? ['STRIPE_PUBLISHABLE_KEY']
@@ -67,7 +67,7 @@ export function conditionalPaymentSecrets(providerId: any, siteSurface: any) {
 
 /* what the content switches on, read from the files (never the compiled output, which a deploy has not made yet) */
 export function surfaces(root = '.') {
-  const md = (dir: any) => existsSync(`${root}/${dir}`) ? readdirSync(`${root}/${dir}`).filter((n) => n.endsWith('.md')).map((n) => ({ file: n.slice(0, -3), ...matter(readFileSync(`${root}/${dir}/${n}`, 'utf8')).data })) : []
+  const md = (dir: string) => existsSync(`${root}/${dir}`) ? readdirSync(`${root}/${dir}`).filter((n) => n.endsWith('.md')).map((n) => ({ file: n.slice(0, -3), ...matter(readFileSync(`${root}/${dir}/${n}`, 'utf8')).data })) : []
   const live = (d: any) => d.published !== false
   const offers = md('content/store/products').filter((d: any) => live(d) && d.sku &&
     (Number(d.price) > 0 || (d.billing === 'subscription' && d.usage?.meter)))
@@ -136,7 +136,7 @@ export function surfaces(root = '.') {
  * check is that it asks for nothing a site does not actually use. So the manifests say what a
  * module CAN ask for, and the judgement of when each is really owed stays here.
  */
-const asksFor = (manifests: any, key: any) => {
+const asksFor = (manifests: Modules, key: string) => {
   const out = new Set<string>()
   for (const m of (manifests || KIT_MANIFESTS).values()) for (const v of m.owns.env || []) if (v === key) out.add(m.key)
   return [...out]
@@ -176,8 +176,8 @@ export function checkDeploy(env: any, s: any, modules: any = {}, stepNeeds: Arra
     for (const t of (n as any).tools || []) if (!toolOnPath(t)) wrong.push(`${t} is not on the path — ${(n as any).step.title} (a build step) runs it`)
     for (const p of (n as any).packages || []) if (!packageHere(p, s.root)) wrong.push(`${p} is not installed — ${(n as any).step.title} (a build step) imports it; npm install ${p} in the site`)
   }
-  const mod = (m: any) => modules[m] !== false   /* a module off in platformkit.config.js asks for nothing of its own */
-  const need = (k: any, why: any) => { if (!has(env, k)) missing.push({ key: k, why }) }
+  const mod = (m: string) => modules[m] !== false   /* a module off in platformkit.config.js asks for nothing of its own */
+  const need = (k: string, why: string) => { if (!has(env, k)) missing.push({ key: k, why }) }
 
   /* A site's provider declarations are its server-side billing authority. Validate them again at
      deploy time and require secrets only for providers the bounded fallback policy can reach. */
@@ -292,10 +292,10 @@ export function checkDeploy(env: any, s: any, modules: any = {}, stepNeeds: Arra
   if (selectedPaymentProvider === 'hyperswitch' && selectedPaymentRegistration) {
     const requiredCapabilities = new Set<string>()
     if (selling.length) {
-      if (s.offers.some((offer: any) => offer.billing !== 'subscription') || s.printed.length || s.pricingSkus.length) {
+      if (s.offers.some((offer: { billing: string }) => offer.billing !== 'subscription') || s.printed.length || s.pricingSkus.length) {
         requiredCapabilities.add('checkout.one-time')
       }
-      if (s.offers.some((offer: any) => offer.billing === 'subscription')) {
+      if (s.offers.some((offer: { billing: string }) => offer.billing === 'subscription')) {
         requiredCapabilities.add('checkout.subscription')
       }
     }
@@ -333,7 +333,7 @@ export function checkDeploy(env: any, s: any, modules: any = {}, stepNeeds: Arra
       need(secret, `payment provider "${selectedPaymentProvider}" requires this server-side secret; ${why}`)
     }
   }
-  const meteredOffers = s.offers.filter((offer: any) => offer.usage?.meter != null)
+  const meteredOffers = s.offers.filter((offer: { usage: { meter: null } }) => offer.usage?.meter != null)
   if (meteredOffers.length) {
     if (selectedPaymentRegistration && !selectedPaymentRegistration.capabilities.includes('usage.metered')) {
       wrong.push(`payment provider "${selectedPaymentProvider}" does not declare metered usage support`)
@@ -526,7 +526,7 @@ export function checkDeploy(env: any, s: any, modules: any = {}, stepNeeds: Arra
   if (has(env, 'SMTP_FROM') && !/^[^@\s]+@[^@\s]+$/.test(env.SMTP_FROM.replace(/^.*<([^>]+)>\s*$/, '$1'))) wrong.push(`SMTP_FROM "${env.SMTP_FROM}" is not an address or "Name <address>"`)
   if (has(env, 'SMTP_PORT') && !/^\d+$/.test(env.SMTP_PORT)) wrong.push(`SMTP_PORT "${env.SMTP_PORT}" is not a port`)
   /* a database's identity is its user, host and database — two projects share a pooler host and differ by user (postgres.<ref>) */
-  const host = (u: any) => { try { const x = new URL(u); return x.username + '@' + x.host + x.pathname } catch { return null } }
+  const host = (u: string|URL) => { try { const x = new URL(u); return x.username + '@' + x.host + x.pathname } catch { return null } }
   for (const k of ['SUPABASE_DB_URL', 'PLATFORMKIT_SHADOW_DB_URL']) {
     if (has(env, k) && !/^postgres(ql)?:\/\/[^\s]+@[^\s/]+\/\w+/.test(env[k])) wrong.push(`${k} is not a Postgres connection url (postgresql://user:password@host:port/database) — the password percent-encoded`)
     /* the direct connection (db.<ref>.supabase.co) is served over IPv6 alone, which a deploy box has no route to; the session pooler is IPv4 */
@@ -560,8 +560,8 @@ export function format(r: any, s: any) {
   ].filter(Boolean)
   lines.push(`› the content switches on: ${onList.length ? onList.join(', ') : 'nothing that sells or books'}`)
   if (r.missing.length) lines.push('✖ production needs these, and the deploy environment does not set them:\n' + r.missing.map((m: any) => `   ${m.key.padEnd(26)} ${m.why}`).join('\n'))
-  if (r.wrong.length) lines.push('✖ production settings that are set but wrong:\n' + r.wrong.map((w: any) => '   ' + w).join('\n'))
-  if (r.notes.length) lines.push('› notes:\n' + r.notes.map((n: any) => '   ' + n).join('\n'))
+  if (r.wrong.length) lines.push('✖ production settings that are set but wrong:\n' + r.wrong.map((w: string) => '   ' + w).join('\n'))
+  if (r.notes.length) lines.push('› notes:\n' + r.notes.map((n: string) => '   ' + n).join('\n'))
   if (r.ok) lines.push('✔ every setting the content needs is present')
   return lines.join('\n')
 }
@@ -622,25 +622,25 @@ if (isMain(import.meta.url)) {
     const keys = (r: any) => r.missing.map((m: any) => m.key)
     const wrongs = (r: any) => r.wrong
     let n = 0, bad = 0
-    const t = (name: any, cond: any) => { n++; if (!cond) { bad++; console.log('  FAIL', name) } }
+    const t = (name: string, cond: boolean) => { n++; if (!cond) { bad++; console.log('  FAIL', name) } }
     t('nothing on: the always-set alone', checkDeploy(base, none).ok)
     t('nothing on: stripe not asked for', !keys(checkDeploy(base, none)).includes('STRIPE_SECRET_KEY'))
     t('the inference fallback chain asks for every reachable provider secret',
       keys(checkDeploy(base, inferenceSale, {}, [], null, [], undefined, pricedInferenceSite))
-        .filter((key: any) => key === 'PRIMARY_KEY' || key === 'BACKUP_KEY').length === 2)
+        .filter((key: string) => key === 'PRIMARY_KEY' || key === 'BACKUP_KEY').length === 2)
     t('the inference site passes with every configured provider secret',
       checkDeploy({ ...base, ...stripe, PRIMARY_KEY: 'p', BACKUP_KEY: 'b' }, inferenceSale, {}, [], null, [], undefined, pricedInferenceSite).ok)
     t('a reader-billed operation without site tariffs is refused',
       wrongs(checkDeploy(base, inferenceSale, {}, [], null, [], undefined, { usage: pricedInferenceSite.usage }))
-        .some((message: any) => /require a site inference provider and tariff/.test(message)))
+        .some((message: string) => /require a site inference provider and tariff/.test(message)))
     t('an operation cannot refer to an unpublished or non-usage offer',
       wrongs(checkDeploy({ ...base, PRIMARY_KEY: 'p', BACKUP_KEY: 'b' }, none, {}, [], null, [], undefined, pricedInferenceSite))
-        .some((message: any) => /no published usage offer/.test(message)))
+        .some((message: string) => /no published usage offer/.test(message)))
     t('deploy rejects invalid provider references and fallback limits',
       wrongs(checkDeploy(base, inferenceSale, {}, [], null, [], undefined, {
         ...pricedInferenceSite,
         inference: { ...pricedInferenceSite.inference, fallback: { maxAttempts: 3 } },
-      })).some((message: any) => /inference\.fallback\.maxAttempts/.test(message)))
+      })).some((message: string) => /inference\.fallback\.maxAttempts/.test(message)))
     t('an offer for sale asks for stripe', keys(checkDeploy(base, { ...none, offers: [{ sku: 'x', kind: 'membership' }] })).includes('STRIPE_SECRET_KEY'))
     const hyperswitchSite = {
       payments: {
@@ -869,43 +869,43 @@ if (isMain(import.meta.url)) {
     t('…and passes with lulu', checkDeploy({ ...base, ...stripe, LULU_CLIENT_KEY: 'k', LULU_CLIENT_SECRET: 's' }, lulu).ok)
     t('premium goes to bookvault', keys(checkDeploy({ ...base, ...stripe, LULU_CLIENT_KEY: 'k', LULU_CLIENT_SECRET: 's' }, { ...none, printed: [{ slug: 'x', printers: { premium: 'bookvault' } }] })).includes('BOOKVAULT_API_KEY'))
     t('a type cal.com schedules asks for cal.com', keys(checkDeploy(base, { ...none, sessions: [{ file: 'group-call', cal: true }] })).includes('CAL_WEBHOOK_SECRET'))
-    t('a site whose every type is its own asks for nothing of cal.com', !keys(checkDeploy(base, { ...none, sessions: [{ file: 'one-on-one', cal: false }, { file: 'patron-hour', cal: false }] })).some((k: any) => /^CAL_/.test(k)))
-    t('one cal.com type beside native ones asks for both', keys(checkDeploy(base, { ...none, sessions: [{ file: 'one-on-one', cal: false }, { file: 'group-call', cal: true }] })).filter((k: any) => /^CAL_/.test(k)).length === 2)
+    t('a site whose every type is its own asks for nothing of cal.com', !keys(checkDeploy(base, { ...none, sessions: [{ file: 'one-on-one', cal: false }, { file: 'patron-hour', cal: false }] })).some((k: string) => /^CAL_/.test(k)))
+    t('one cal.com type beside native ones asks for both', keys(checkDeploy(base, { ...none, sessions: [{ file: 'one-on-one', cal: false }, { file: 'group-call', cal: true }] })).filter((k: string) => /^CAL_/.test(k)).length === 2)
     t('no session, no cal.com', !keys(checkDeploy(base, none)).includes('CAL_API_KEY'))
     const lk = { LIVEKIT_URL: 'wss://x.livekit.cloud', LIVEKIT_API_KEY: 'k', LIVEKIT_API_SECRET: 's' }
-    t('no room type, no LiveKit', !keys(checkDeploy(base, { ...none, sessions: [{ file: 'patron-hour', cal: false, room: false }] })).some((k: any) => /^LIVEKIT_/.test(k)))
+    t('no room type, no LiveKit', !keys(checkDeploy(base, { ...none, sessions: [{ file: 'patron-hour', cal: false, room: false }] })).some((k: string) => /^LIVEKIT_/.test(k)))
     /* a room needs no account: only what the mesh cannot do is refused for want of one */
-    t('a plain room type needs no account at all', !keys(checkDeploy(base, { ...none, sessions: [{ file: 'members-call', cal: false, room: true }] })).some((k: any) => /^LIVEKIT_/.test(k)))
+    t('a plain room type needs no account at all', !keys(checkDeploy(base, { ...none, sessions: [{ file: 'members-call', cal: false, room: true }] })).some((k: string) => /^LIVEKIT_/.test(k)))
     t('…and is told what it gives up', checkDeploy(base, { ...none, sessions: [{ file: 'members-call', cal: false, room: true }] }).notes.some((n) => /browser to browser/.test(n)))
-    t('a room type that records asks for the three', keys(checkDeploy(base, { ...none, sessions: [{ file: 'members-call', cal: false, room: true, record: true }] })).filter((k: any) => /^LIVEKIT_/.test(k)).length === 3)
-    t('a room seating more than the mesh carries asks for them too', keys(checkDeploy(base, { ...none, sessions: [{ file: 'big-call', cal: false, room: true, seats: MESH_MAX + 1 }] })).filter((k: any) => /^LIVEKIT_/.test(k)).length === 3)
-    t('a room seating what it carries does not', !keys(checkDeploy(base, { ...none, sessions: [{ file: 'small-call', cal: false, room: true, seats: MESH_MAX }] })).some((k: any) => /^LIVEKIT_/.test(k)))
-    t('half an account is refused, whatever the type', keys(checkDeploy({ ...base, LIVEKIT_URL: 'wss://x' }, { ...none, sessions: [{ file: 'members-call', cal: false, room: true }] })).filter((k: any) => /^LIVEKIT_/.test(k)).length === 2)
-    t('…and passes with them, asking for no storage key while it does not record', !keys(checkDeploy({ ...base, ...lk }, { ...none, sessions: [{ file: 'members-call', cal: false, room: true }] })).some((k: any) => /^(LIVEKIT|STORAGE)_/.test(k)))
-    t('a room type that records asks for the storage keys too', keys(checkDeploy({ ...base, ...lk }, { ...none, sessions: [{ file: 'members-call', cal: false, room: true, record: true }] })).filter((k: any) => /^STORAGE_S3_/.test(k)).length === 2)
+    t('a room type that records asks for the three', keys(checkDeploy(base, { ...none, sessions: [{ file: 'members-call', cal: false, room: true, record: true }] })).filter((k: string) => /^LIVEKIT_/.test(k)).length === 3)
+    t('a room seating more than the mesh carries asks for them too', keys(checkDeploy(base, { ...none, sessions: [{ file: 'big-call', cal: false, room: true, seats: MESH_MAX + 1 }] })).filter((k: string) => /^LIVEKIT_/.test(k)).length === 3)
+    t('a room seating what it carries does not', !keys(checkDeploy(base, { ...none, sessions: [{ file: 'small-call', cal: false, room: true, seats: MESH_MAX }] })).some((k: string) => /^LIVEKIT_/.test(k)))
+    t('half an account is refused, whatever the type', keys(checkDeploy({ ...base, LIVEKIT_URL: 'wss://x' }, { ...none, sessions: [{ file: 'members-call', cal: false, room: true }] })).filter((k: string) => /^LIVEKIT_/.test(k)).length === 2)
+    t('…and passes with them, asking for no storage key while it does not record', !keys(checkDeploy({ ...base, ...lk }, { ...none, sessions: [{ file: 'members-call', cal: false, room: true }] })).some((k: string) => /^(LIVEKIT|STORAGE)_/.test(k)))
+    t('a room type that records asks for the storage keys too', keys(checkDeploy({ ...base, ...lk }, { ...none, sessions: [{ file: 'members-call', cal: false, room: true, record: true }] })).filter((k: string) => /^STORAGE_S3_/.test(k)).length === 2)
     t('the LiveKit mock on is wrong', checkDeploy({ ...base, LIVEKIT_MOCK: '1' }, none).wrong.some((w) => /LIVEKIT_MOCK/.test(w)))
     t('a mock on is wrong', checkDeploy({ ...base, PRINT_MOCK: '1' }, none).wrong.length === 1)
     /* the provider policy: the two arrangements, the third refused by name, and the terms */
-    const prov = (p: any) => ({ ...none, providers: p })
+    const prov = (p: { offerings: string; connect: string; terms: string; delay?: string }) => ({ ...none, providers: p })
     t('providers off asks for nothing', checkDeploy(base, prov({ offerings: 'off', connect: 'managed', terms: 'v1' })).ok)
     t('providers on asks for stripe, saying why', (() => { const r = checkDeploy(base, prov({ offerings: 'on', connect: 'managed', terms: 'v1' })); return r.missing.some((m) => m.key === 'STRIPE_SECRET_KEY' && /paid through it/.test(m.why)) })())
     t('…and passes with it, noting the arrangement', (() => { const r = checkDeploy({ ...base, ...stripe }, prov({ offerings: 'on', connect: 'managed', terms: 'v1' })); return r.ok && r.notes.some((x) => /Connect must be enabled/.test(x)) })())
     t('an account they already hold is the other arrangement', checkDeploy({ ...base, ...stripe }, prov({ offerings: 'on', connect: 'own', terms: 'v1' })).ok)
-    t('the facilitator arrangement is refused BY NAME', wrongs(checkDeploy({ ...base, ...stripe }, prov({ offerings: 'on', connect: 'platform', terms: 'v1' }))).some((w: any) => /payment facilitator/.test(w)))
-    t('…and refused whether providers are offering yet or not', wrongs(checkDeploy({ ...base, ...stripe }, prov({ offerings: 'off', connect: 'facilitator', terms: 'v1' }))).some((w: any) => /payment facilitator/.test(w)))
-    t('selling with no terms agreed is refused', wrongs(checkDeploy({ ...base, ...stripe }, prov({ offerings: 'on', connect: 'managed', terms: '' }))).some((w: any) => /nothing is agreed/.test(w)))
+    t('the facilitator arrangement is refused BY NAME', wrongs(checkDeploy({ ...base, ...stripe }, prov({ offerings: 'on', connect: 'platform', terms: 'v1' }))).some((w: string) => /payment facilitator/.test(w)))
+    t('…and refused whether providers are offering yet or not', wrongs(checkDeploy({ ...base, ...stripe }, prov({ offerings: 'off', connect: 'facilitator', terms: 'v1' }))).some((w: string) => /payment facilitator/.test(w)))
+    t('selling with no terms agreed is refused', wrongs(checkDeploy({ ...base, ...stripe }, prov({ offerings: 'on', connect: 'managed', terms: '' }))).some((w: string) => /nothing is agreed/.test(w)))
     t('no terms is fine while nobody may offer anything', checkDeploy(base, prov({ offerings: 'off', connect: 'managed', terms: '' })).ok)
-    t('a delay that is not a span is refused', wrongs(checkDeploy({ ...base, ...stripe }, prov({ offerings: 'on', connect: 'managed', terms: 'v1', delay: 'soon' }))).some((w: any) => /not a span/.test(w)))
+    t('a delay that is not a span is refused', wrongs(checkDeploy({ ...base, ...stripe }, prov({ offerings: 'on', connect: 'managed', terms: 'v1', delay: 'soon' }))).some((w: string) => /not a span/.test(w)))
     t('no delay at all is a note about refunds, not a refusal', (() => { const r = checkDeploy({ ...base, ...stripe }, prov({ offerings: 'on', connect: 'managed', terms: 'v1', delay: '0d' })); return r.ok && r.notes.some((x) => /asking a provider to send some back/.test(x)) })())
     t('sessions off asks nothing of the policy, since an offering is a bookable thing', checkDeploy(base, prov({ offerings: 'on', connect: 'platform', terms: '' }), { sessions: false }).ok)
-    t('the payouts mock on is wrong', wrongs(checkDeploy({ ...base, PAYOUTS_MOCK: '1' }, none)).some((w: any) => /PAYOUTS_MOCK/.test(w)))
+    t('the payouts mock on is wrong', wrongs(checkDeploy({ ...base, PAYOUTS_MOCK: '1' }, none)).some((w: string) => /PAYOUTS_MOCK/.test(w)))
     t('a site that mails is asked for the relay', keys(checkDeploy({ ...base, SMTP_HOST: '' }, none)).includes('SMTP_HOST'))
     t('a backed site is asked for the database', keys(checkDeploy({ ...base, SUPABASE_DB_URL: '' }, none)).includes('SUPABASE_DB_URL'))
     t('a backed site is asked for the shadow', keys(checkDeploy({ ...base, PLATFORMKIT_SHADOW_DB_URL: '' }, none)).includes('PLATFORMKIT_SHADOW_DB_URL'))
-    t('a shadow that is production itself is wrong', wrongs(checkDeploy({ ...base, PLATFORMKIT_SHADOW_DB_URL: base.SUPABASE_DB_URL }, none)).some((w: any) => /shadow/i.test(w)))
-    t('a database url that is not one is wrong', wrongs(checkDeploy({ ...base, SUPABASE_DB_URL: 'db.example.supabase.co' }, none)).some((w: any) => /SUPABASE_DB_URL/.test(w)))
-    t('the direct (IPv6-only) connection is wrong', wrongs(checkDeploy({ ...base, SUPABASE_DB_URL: 'postgresql://postgres:x@db.abcdefghijkl.supabase.co:5432/postgres' }, none)).some((w: any) => /session pooler/i.test(w)))
-    t('the session pooler is right', !wrongs(checkDeploy({ ...base, SUPABASE_DB_URL: 'postgresql://postgres.abcdefghijkl:x@aws-0-us-east-1.pooler.supabase.com:5432/postgres' }, none)).some((w: any) => /SUPABASE_DB_URL/.test(w)))
+    t('a shadow that is production itself is wrong', wrongs(checkDeploy({ ...base, PLATFORMKIT_SHADOW_DB_URL: base.SUPABASE_DB_URL }, none)).some((w: string) => /shadow/i.test(w)))
+    t('a database url that is not one is wrong', wrongs(checkDeploy({ ...base, SUPABASE_DB_URL: 'db.example.supabase.co' }, none)).some((w: string) => /SUPABASE_DB_URL/.test(w)))
+    t('the direct (IPv6-only) connection is wrong', wrongs(checkDeploy({ ...base, SUPABASE_DB_URL: 'postgresql://postgres:x@db.abcdefghijkl.supabase.co:5432/postgres' }, none)).some((w: string) => /session pooler/i.test(w)))
+    t('the session pooler is right', !wrongs(checkDeploy({ ...base, SUPABASE_DB_URL: 'postgresql://postgres.abcdefghijkl:x@aws-0-us-east-1.pooler.supabase.com:5432/postgres' }, none)).some((w: string) => /SUPABASE_DB_URL/.test(w)))
     t('a site with push on is asked for the pair', keys(checkDeploy({ ...base, VAPID_PRIVATE_KEY: '' }, none)).includes('VAPID_PRIVATE_KEY'))
     t('a path on the app url is wrong', checkDeploy({ ...base, VITE_APP_URL: 'https://example.com/' }, none).wrong.length === 1)
     t('support email is a note, never a refusal', checkDeploy(base, none).notes.some((x) => /SUPPORT_EMAIL/.test(x)))
@@ -914,7 +914,7 @@ if (isMain(import.meta.url)) {
     t('sessions off: no cal.com asked', !keys(checkDeploy(base, { ...none, sessions: ['group-call'] }, { sessions: false })).includes('CAL_WEBHOOK_SECRET'))
     t('print off: no printer asked, and a note', (() => { const r = checkDeploy({ ...base, ...stripe }, auto, { print: false }); return r.ok && r.notes.some((x) => /print module is off/.test(x)) })())
     t('store, memberships and sessions off: no stripe asked', !keys(checkDeploy(base, { ...none, offers: [{ sku: 'x', kind: 'book' }] }, { store: false, memberships: false, sessions: false })).includes('STRIPE_SECRET_KEY'))
-    t('a content store that is neither git nor cloud is refused', wrongs(checkDeploy({ ...base, CONTENT_STORE: 'disk' }, none)).some((w: any) => /CONTENT_STORE/.test(w)))
+    t('a content store that is neither git nor cloud is refused', wrongs(checkDeploy({ ...base, CONTENT_STORE: 'disk' }, none)).some((w: string) => /CONTENT_STORE/.test(w)))
     t('cloud mode passes with the service key and is noted', (() => { const r = checkDeploy({ ...base, CONTENT_STORE: 'cloud' }, none); return r.ok && r.notes.some((x) => /cloud/.test(x)) })())
     /* the coupling comes from the manifests now, so the case hands in what they say */
     const COUPLE = [{ module: 'instrument', needs: 'forms', why: 'the instrument runs on the forms runner' }]
@@ -960,20 +960,20 @@ if (isMain(import.meta.url)) {
       t(`…and not by a variable name`, !keys(checkDeploy(siteUrl, none, { ...OFF, [m]: true }, [], STATIC)).includes('SUPABASE_DB_URL'))
     }
     /* a declaration beside a stray key is a mistake, not an override */
-    t('a backend key set beside backend:false is wrong', wrongs(checkDeploy({ ...siteUrl, SUPABASE_DB_URL: 'x' }, none, OFF, [], STATIC)).some((w: any) => /declares no backend/.test(w)))
+    t('a backend key set beside backend:false is wrong', wrongs(checkDeploy({ ...siteUrl, SUPABASE_DB_URL: 'x' }, none, OFF, [], STATIC)).some((w: string) => /declares no backend/.test(w)))
     /* a backed site is exactly what it was */
     t('a backed site is asked for the database as before', keys(checkDeploy({ ...base, SUPABASE_DB_URL: '' }, none)).includes('SUPABASE_DB_URL'))
     const cmsSite = { admin: { models: './build/admin-models.mjs' } }
     const fileShape = { backend: true, content: 'files', repo: true, mode: 'git' }
     const rowsShape = { backend: true, content: 'rows', repo: true, mode: 'git' }
-    t('a CMS site cannot pass deploy checks with file-backed content', wrongs(checkDeploy(base, none, OFF, [], fileShape, [], undefined, cmsSite)).some((w: any) => /admin models/.test(w)))
-    t('a CMS site passes the content-shape check with Supabase rows', !wrongs(checkDeploy(base, none, OFF, [], rowsShape, [], undefined, cmsSite)).some((w: any) => /admin models/.test(w)))
+    t('a CMS site cannot pass deploy checks with file-backed content', wrongs(checkDeploy(base, none, OFF, [], fileShape, [], undefined, cmsSite)).some((w: string) => /admin models/.test(w)))
+    t('a CMS site passes the content-shape check with Supabase rows', !wrongs(checkDeploy(base, none, OFF, [], rowsShape, [], undefined, cmsSite)).some((w: string) => /admin models/.test(w)))
     /* the network: a handle domain whenever it is on, the rotation key only when it federates */
     t('the network on asks for the handle domain', keys(checkDeploy({ ...base, NETWORK_HANDLE_DOMAIN: '' }, none, { network: true })).includes('NETWORK_HANDLE_DOMAIN'))
     t('…and a closed network asks for no rotation key', !keys(checkDeploy(base, none, { network: true })).includes('NETWORK_PLC_ROTATION_KEY'))
     t('a federating network asks for the rotation key', keys(checkDeploy(base, { ...none, network: { federate: true } }, { network: true })).includes('NETWORK_PLC_ROTATION_KEY'))
     t('the federation test switch is wrong in production', checkDeploy({ ...base, NETWORK_FEDERATE: '1' }, none).wrong.some((w) => /NETWORK_FEDERATE/.test(w)))
-    t('the network off asks for neither', !keys(checkDeploy({ ...base, NETWORK_HANDLE_DOMAIN: '' }, { ...none, network: { federate: true } }, { network: false })).some((k: any) => /^NETWORK_/.test(k)))
+    t('the network off asks for neither', !keys(checkDeploy({ ...base, NETWORK_HANDLE_DOMAIN: '' }, { ...none, network: { federate: true } }, { network: false })).some((k: string) => /^NETWORK_/.test(k)))
     t('a backed site with nothing that mails is not asked for the relay', !keys(checkDeploy({ ...base, SMTP_HOST: '' }, none, OFF)).includes('SMTP_HOST'))
 
     /* the site as it is: its content reads without a fault, and what it switches on is reported */

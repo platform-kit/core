@@ -16,7 +16,7 @@ const W = () => us('spaces')['member-panels'].main
 
 /* a title is a function because it is about somebody: on your own card these are about YOU, and one string cannot say
    both without reading as a form letter */
-const say = (key: any) => ({ mine }: any) => W()[key + (mine ? '-title-own' : '-title')]
+const say = (key: string) => ({ mine }: any) => W()[key + (mine ? '-title-own' : '-title')]
 
 export const kitPanels = [
   { key: 'working', title: say('working'), component: MemberWorking },

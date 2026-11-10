@@ -37,7 +37,7 @@ export function player(ctx: any, { rate = 24000 } = {}) {
 
   const start = () => { const now = ctx.currentTime + 0.06; if (at < now) at = now; return at }
 
-  function schedule(buffer: any) {
+  function schedule(buffer: { duration: number }) {
     const src = ctx.createBufferSource()
     src.buffer = buffer
     src.connect(gain)

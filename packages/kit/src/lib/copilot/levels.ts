@@ -15,7 +15,7 @@
 
 /* the four, by their names. A surface with no visible state is the thing that feels broken. */
 export const STATES = ['connecting', 'listening', 'thinking', 'speaking']
-export const isState = (s: any) => STATES.includes(s)
+export const isState = (s: string) => STATES.includes(s)
 
 /*
  * HOW LOUD, 0..1 — FROM THE WAVEFORM, NOT FROM THE SPECTRUM.

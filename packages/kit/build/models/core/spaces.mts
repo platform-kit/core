@@ -15,14 +15,14 @@ const isChannel = (name: any) => String(name || '').includes('/')
 async function onSpaceWrite(ctx: any) {
   if (ctx.store && ctx.store.kind === 'rows') return
   await ctx.script('spaces.mjs')
-  await ctx.script('spaces-push.mjs').catch((e: any) => console.warn('spaces: not projected — ' + e.message))
+  await ctx.script('spaces-push.mjs').catch((e: { message: string }) => console.warn('spaces: not projected — ' + e.message))
 }
 
 export default {
   key: 'spaces', name: 'Spaces', dir: SPACES_DIR, title: 'name', module: 'spaces',
   editor: 'SpacesAdmin', creates: true, nested: true, body: true, bodyLabel: 'What this place is',
   grammar: {
-    parse: (text: any, ctx: any) => {
+    parse: (text: string, ctx: any) => {
       const f = isChannel(ctx.name) ? parseChannel(text) : parseSpace(text)
       return { data: f.data, content: f.content, parsed: { kind: isChannel(ctx.name) ? 'channel' : 'space' } }
     },
@@ -37,7 +37,7 @@ export default {
   checks: [
     (rec: any, ctx: any) => {
       const out: any = []
-      const at = (path: any, message: any) => out.push({ path, message })
+      const at = (path: string, message: string) => out.push({ path, message })
       const d = rec.data || {}
       if (!String(d.name || '').trim()) at('name', 'a name, as people will read it')
       if (isChannel(ctx.name)) {

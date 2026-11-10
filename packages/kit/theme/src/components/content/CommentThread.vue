@@ -106,7 +106,7 @@ const EMOJI = ['👍', '❤️', '🙏', '😂', '🤔']
    somebody else's. It is a global overlay of the shell, so the embed page has it too. */
 function signIn() { if (typeof window !== 'undefined' && (window as any).DLauth) (window as any).DLauth.open({ intent: 'comment' }) }
 
-const when = (v: any) => { const d = new Date(v); return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }
+const when = (v: string|number|Date) => { const d = new Date(v); return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }
 const fill = (s: any, m: { [x: string]: string }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const unfold = (id: any) => { opened.value = opened.value.includes(id) ? opened.value.filter((x: any) => x !== id) : [...opened.value, id] }
 
@@ -137,7 +137,7 @@ async function pressEmoji(row: { mine_re: any; id: any }, emoji: string|number) 
     re[emoji] = Math.max(0, (Number(re[emoji]) || 0) + (mine ? -1 : 1))
     if (!re[emoji]) delete re[emoji]
     held.re = re
-    held.mine_re = mine ? (held.mine_re || []).filter((e: any) => e !== emoji) : [...(held.mine_re || []), emoji]
+    held.mine_re = mine ? (held.mine_re || []).filter((e: string|number) => e !== emoji) : [...(held.mine_re || []), emoji]
   }
   const r = await react(row.id, emoji, !mine)
   if (r && r.error) await load()

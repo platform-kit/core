@@ -33,11 +33,11 @@ const due = ref<any>([]), live = ref(false)
 const openId = ref(''), person = ref<any>(null), editing = ref(false), draft = ref<any>(null)
 
 const money = (c: any, cur: any) => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: String(cur || 'usd').toUpperCase() }).format((Number(c) || 0) / 100) } catch (e) { return String(c) } }
-const when = (d: any) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date(d)) } catch (e) { return '' } }
-const forever = (d: any) => !d || new Date(d).getTime() > Date.now() + 100 * 365 * 864e5
-const TYPES = computed(() => (SESSIONS || []).filter((s: any) => s.published !== false).map((s: any) => s.slug))
+const when = (d: string|number|Date) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date(d)) } catch (e) { return '' } }
+const forever = (d: string|number|Date) => !d || new Date(d).getTime() > Date.now() + 100 * 365 * 864e5
+const TYPES = computed(() => (SESSIONS || []).filter((s: { published: boolean }) => s.published !== false).map((s: any) => s.slug))
 
-async function call(action: any, body?: any) {
+async function call(action: string, body?: any) {
   const { data, error: e } = await (supabase as any).functions.invoke('payouts', { body: { action, ...(body || {}) } })
   if (e) throw e
   if (data && data.error) throw new Error(data.error)
@@ -64,12 +64,12 @@ async function sendAll() {
   try { const r = await call('send'); note.value = r.sent === 1 ? W.value['sent-one'] : fill(W.value.sent, { n: r.sent || 0 }); await load() }
   catch (e) { error.value = (e as any).message || W.value.error } finally { busy.value = '' }
 }
-async function sendOne(d: any) {
+async function sendOne(d: { user_id: string }) {
   busy.value = d.user_id; error.value = ''; note.value = ''
   try { const r = await call('send', { user: d.user_id }); note.value = r.sent ? fill(W.value.sent, { n: 1 }) : (r.reason || ''); await load() }
   catch (e) { error.value = (e as any).message || W.value.error } finally { busy.value = '' }
 }
-async function openPerson(id: any, keep?: any) {
+async function openPerson(id: string, keep?: boolean) {
   if (!keep && openId.value === id) { openId.value = ''; person.value = null; return }
   openId.value = id; person.value = null; editing.value = false
   try { person.value = await call('status', { user: id }) } catch (e) { error.value = (e as any).message || W.value.error }

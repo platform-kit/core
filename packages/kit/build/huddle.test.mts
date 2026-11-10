@@ -18,9 +18,9 @@ import { shouldOffer, shouldAnswer, livePeers, roomFull, tiles, layoutOf, stateO
 import { context as browserContext, fillHeld } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
-const eq = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b)
-const envOf = (o: any) => (k: any) => (o[k] === undefined ? '' : o[k])
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }
+const eq = (a: any, b: string[][]) => JSON.stringify(a) === JSON.stringify(b)
+const envOf = (o: any) => (k: string|number) => (o[k] === undefined ? '' : o[k])
 
 console.log('\nHUDDLE\n')
 
@@ -117,7 +117,7 @@ console.log('\nHUDDLE\n')
   ok('and never neither', shouldOffer('x', 'y') || shouldOffer('y', 'x'))
 
   const now = Date.parse('2026-09-22T12:00:00.000Z')
-  const at = (mins: any) => new Date(now - mins * 60000).toISOString()
+  const at = (mins: number) => new Date(now - mins * 60000).toISOString()
   const heard = [
     { id: 'me', at: at(0) }, { id: 'a', at: at(0) }, { id: 'a', at: at(2) }, { id: 'b', at: at(0) }, { id: 'old', at: at(5) },
   ]
@@ -170,7 +170,7 @@ const ROOM = process.env.HUDDLE_ROOM || (() => {
   const dir = 'content/spaces'
   if (!fs.existsSync(dir)) return '/spaces/the-team/general'
   const spaces = fs.readdirSync(dir).filter((f) => f.endsWith('.md')).map((f) => f.slice(0, -3))
-  const kindOf = (sl: any) => (/^kind:\s*(\S+)/m.exec(fs.readFileSync(path.join(dir, sl + '.md'), 'utf8')) || [])[1] || ''
+  const kindOf = (sl: string) => (/^kind:\s*(\S+)/m.exec(fs.readFileSync(path.join(dir, sl + '.md'), 'utf8')) || [])[1] || ''
   const space = spaces.find((sl) => kindOf(sl) === 'staff') || spaces[0]
   if (!space) return '/spaces/the-team/general'
   const rooms = fs.existsSync(path.join(dir, space)) ? fs.readdirSync(path.join(dir, space)).filter((f) => f.endsWith('.md')).map((f) => f.slice(0, -3)).sort() : []
@@ -184,8 +184,8 @@ if (process.env.HUDDLE_LIVE === '0' || !appUp) {
   const { chromium } = await import('playwright')
   const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined, args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'] })
   const foreign: any = []
-  const sign = async (page: any, who: any) => {
-    page.on('request', (r: any) => { const u = new URL(r.url()); if (!['localhost', '127.0.0.1', 'host.docker.internal', dockerHost()].includes(u.hostname)) foreign.push(u.host) })
+  const sign = async (page: any, who: string) => {
+    page.on('request', (r: { url: () => string|URL }) => { const u = new URL(r.url()); if (!['localhost', '127.0.0.1', 'host.docker.internal', dockerHost()].includes(u.hostname)) foreign.push(u.host) })
     await page.goto(APP + '/', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(() => !!(window as any).DLauth, null, { timeout: 25000 })
     await page.evaluate(() => (window as any).DLauth.open({}))
@@ -231,7 +231,7 @@ if (process.env.HUDDLE_LIVE === '0' || !appUp) {
     await a.locator('.sq-ico').first().click()
     await a.waitForTimeout(400)
     const names = await a.locator('.sq-name').allInnerTexts()
-    ok('and each other by name once it is opened larger', names.some((n: any) => /Coach Person/.test(n)) && names.some((n: any) => /You/.test(n)), names.join(' / '))
+    ok('and each other by name once it is opened larger', names.some((n: string) => /Coach Person/.test(n)) && names.some((n: string) => /You/.test(n)), names.join(' / '))
     const live = await a.evaluate(() => [...document.querySelectorAll('.sq-tiles video')].map((v: any) => ({ on: !!v.srcObject, w: v.videoWidth })))
     ok('with media actually flowing between them', live.length === 2 && live.every((v: any) => v.on && v.w > 0), JSON.stringify(live))
     ok('and no trouble to report', (await a.locator('.sq-trouble').count()) === 0)

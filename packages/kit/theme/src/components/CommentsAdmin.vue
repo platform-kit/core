@@ -65,7 +65,7 @@ watch([isSignedIn, roleKnown], load)
 const kinds = computed(() => [...new Set<string>(rows.value.map((r: { kind: any }) => r.kind))].sort())
 const waiting = computed(() => rows.value.filter((r: { state: string }) => r.state === 'waiting').length)
 
-async function decide(row: any, yes: any) {
+async function decide(row: { id: string; state: string; body: null }, yes: any) {
   if (busy.value) return
   busy.value = row.id
   try {
@@ -90,7 +90,7 @@ async function answer(row: { id: string; kind: any; subject: any }) {
   } catch (e) { state.value = 'error' } finally { busy.value = '' }
 }
 
-const when = (v: any) => { const d = new Date(v); return isNaN(d.getTime()) ? '' : spanOf(Date.now() - d.getTime()) }
+const when = (v: string|number|Date) => { const d = new Date(v); return isNaN(d.getTime()) ? '' : spanOf(Date.now() - d.getTime()) }
 </script>
 
 <template>

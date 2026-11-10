@@ -43,14 +43,14 @@ export const REFUSED_SETTINGS = ['post-url', 'get-url', 'post-sheet-name']
 /* forms.md's theming settings: read (the file is theirs) and ignored (the site's design draws the form) */
 export const THEME_SETTINGS = ['accent', 'accent-foreground', 'backdrop-opacity', 'background-color', 'background-image', 'brand', 'color', 'color-scheme', 'color-scheme-scope', 'color-scheme-toggle', 'css-prefix', 'favicon', 'font-family', 'font-import-url', 'font-size', 'rounded', 'formsmd-branding', 'footer', 'header', 'cta']
 
-const bool = (v: any) => /^(true|yes|1|on)$/i.test(v) ? true : /^(false|no|0|off)$/i.test(v) ? false : null
-const isUrl = (v: any) => /^https?:\/\/[^\s]+$/.test(v)
+const bool = (v: string) => /^(true|yes|1|on)$/i.test(v) ? true : /^(false|no|0|off)$/i.test(v) ? false : null
+const isUrl = (v: string) => /^https?:\/\/[^\s]+$/.test(v)
 
 /* the kit's settings off the `#!` lines: parsed, validated, and the refused ones named */
 function kitSettings(lines: any) {
   const kit: any = { published: true, once: false, respond: 'anyone', embedOrigins: [], webhook: '', pass: null, score: {}, paid: '', ticket: '', ticketTitle: '', ticketPriority: '' }
   const errors: any = []
-  lines.forEach((raw: any, i: any) => {
+  lines.forEach((raw: string, i: number) => {
     const t = raw.trim()
     if (!t.startsWith('#!')) return
     const eq = t.indexOf('=')
@@ -73,7 +73,7 @@ function kitSettings(lines: any) {
     else if (key === 'ticket') kit.ticket = value === 'false' ? '' : (value === 'true' ? 'yes' : value)
     else if (key === 'ticket-title') kit.ticketTitle = value
     else if (key === 'ticket-priority') kit.ticketPriority = value
-    else if (key === 'embed-origins') { const list = value.split(',').map((s: any) => s.trim()).filter(Boolean); const bad = list.find((o: any) => !/^https?:\/\/[^\s/]+$/.test(o)); if (bad) errors.push({ line, message: `"embed-origins" lists origins (https://example.com), not "${bad}"` }); else kit.embedOrigins = list }
+    else if (key === 'embed-origins') { const list = value.split(',').map((s: string) => s.trim()).filter(Boolean); const bad = list.find((o: string) => !/^https?:\/\/[^\s/]+$/.test(o)); if (bad) errors.push({ line, message: `"embed-origins" lists origins (https://example.com), not "${bad}"` }); else kit.embedOrigins = list }
     else if (key === 'webhook') { if (!isUrl(value)) errors.push({ line, message: '"webhook" is a url' }); else kit.webhook = value }
     else if (key === 'pass') { if (!/^\d+$/.test(value)) errors.push({ line, message: '"pass" is a whole number of right answers' }); else kit.pass = Number(value) }
     else if (key === 'score') {
@@ -117,7 +117,7 @@ export function depsOf(text: any) {
   return [...out]
 }
 /* the attributes of a div or a block: `{$ a b $}` are its bindings, `#id`, `.class` and `k="v"` its attributes */
-export function splitAttrs(attrs: any) {
+export function splitAttrs(attrs: string) {
   let a = String(attrs || '').replace(/\s\s+/g, ' ')
   const deps: any = []
   a = a.replace(/\{\$(.*?)\$\}/g, (m, inner) => { for (const d of inner.trim().split(/\s+/)) if (d) deps.push(d); return '' }).trim()
@@ -128,10 +128,10 @@ export function splitAttrs(attrs: any) {
 }
 
 /* a slide's head: the directive lines, as parseSlide reads them; the rest is the content */
-function parseSlideHead(lines: any, startLine: any, isForm: any, warnings: any) {
+function parseSlideHead(lines: any, startLine: number, isForm: boolean, warnings: any) {
   const s = { type: 'body', jump: '', progress: '', align: '', post: false, disablePrev: false, button: '', redirect: '', head: [] as any[], content: [] as any[], contentLine: startLine }
   let inFence = false
-  lines.forEach((raw: any, i: any) => {
+  lines.forEach((raw: string, i: any) => {
     const line = unescape(raw)
     const t = line.trim()
     if (FENCE.test(raw)) inFence = !inFence
@@ -147,7 +147,7 @@ function parseSlideHead(lines: any, startLine: any, isForm: any, warnings: any) 
     if (!inFence && t.startsWith('|>')) {
       const v = t.slice(2).trim()
       if (/^[0-9.]+%$/.test(v)) s.progress = v
-      else if (/^[0-9]+\s*\/\s*[0-9]+$/.test(v)) { const [a, b] = v.split('/').map((x: any) => Number(x.trim())); s.progress = b ? (100 * a / b).toFixed(2).replace(/\.?0+$/, '') + '%' : '' }
+      else if (/^[0-9]+\s*\/\s*[0-9]+$/.test(v)) { const [a, b] = v.split('/').map((x: string) => Number(x.trim())); s.progress = b ? (100 * a / b).toFixed(2).replace(/\.?0+$/, '') + '%' : '' }
       else warnings.push({ line: startLine + i, message: `"${v}" is not a valid percentage or fraction (25%, 1/3)` })
       s.head.push(raw); return
     }
@@ -170,7 +170,7 @@ function parseBlocks(lines: any[], startLine: number, delimiter: string|undefine
   let i = 0
   let md: any = null   /* the open markdown block, extended by the next prose paragraph */
   const closeMd = () => { md = null }
-  const pushMd = (chunk: any, line: any) => {
+  const pushMd = (chunk: string, line: number) => {
     if (md) { md.md += '\n\n' + chunk; md.raw += '\n\n' + chunk; md.deps = depsOf(md.md) }
     else { md = { type: 'markdown', md: chunk, raw: chunk, line, deps: depsOf(chunk), condition: '' }; blocks.push(md) }
   }
@@ -266,7 +266,7 @@ function parseBlocks(lines: any[], startLine: number, delimiter: string|undefine
 const walk = (blocks: any, fn: any) => { for (const b of blocks) { fn(b); if (b.blocks) walk(b.blocks, fn) } }
 
 /* the document → the model */
-export function parseForm(text: any) {
+export function parseForm(text: string) {
   const src = String(text || '').replace(/\r\n?/g, '\n')
   const lines = src.split('\n')
   const out = { warnings: [] as ({ line: number; message: any; } | { line: number; message: string; })[], errors: [] as (any | { line: any; message: string; } | { line: number; message: string; })[] }

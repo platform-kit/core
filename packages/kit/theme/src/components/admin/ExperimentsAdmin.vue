@@ -38,14 +38,14 @@ async function loadNames() {
 onMounted(() => { loadResults(); loadNames() })
 watch(() => props.items, loadNames)
 
-const fmtDate = (ms: any) => (ms ? new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—')
+const fmtDate = (ms: string|number|Date) => (ms ? new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—')
 const fmtN = (n: any) => (n == null ? '—' : Number(n).toLocaleString())
 
 const cards = computed(() => props.items.map((it) => {
   const rec = { id: (it as any).name, ...(it as any).data, variants: (it as any).data.variants || [] }
   const state: any = results.value.find((r: any) => (r as any).experiment === (it as any).name) || null
   const rows = (state && state.variants) || []
-  const total = rec.variants.reduce((n: any, v: any) => n + (v.weight > 0 ? v.weight : 0), 0)
+  const total = rec.variants.reduce((n: any, v: { weight: number }) => n + (v.weight > 0 ? v.weight : 0), 0)
   const variants = rec.variants.map((v: any) => {
     const r: any = rows.find((x: any) => (x as any).variant === v.key) || { exposures: 0, conversions: 0 }
     const it2 = (names.value[rec.kind === 'ad' ? 'ad' : 'page'] || {})[v.item]
@@ -53,8 +53,8 @@ const cards = computed(() => props.items.map((it) => {
       exposures: r.exposures || 0, conversions: r.conversions || 0, rate: r.exposures ? r.conversions / r.exposures : 0,
       share: total ? Math.round(((v.weight > 0 ? v.weight : 0) / total) * 100) : 0 }
   })
-  const seen = variants.filter((v: any) => v.exposures > 0)
-  const leader = seen.slice().sort((a: any, b: any) => b.rate - a.rate)[0] || null
+  const seen = variants.filter((v: { exposures: number }) => v.exposures > 0)
+  const leader = seen.slice().sort((a: { rate: number }, b: { rate: number }) => b.rate - a.rate)[0] || null
   const others = leader ? seen.filter((v: any) => v !== leader) : []
   const runnerUp = others.length ? Math.max(...others.map((v: any) => v.rate)) : 0
   const lift = leader && runnerUp ? Math.round(((leader.rate - runnerUp) / runnerUp) * 100) : null
@@ -63,7 +63,7 @@ const cards = computed(() => props.items.map((it) => {
   const started = state && state.started_at ? Date.parse(state.started_at) : null
   const winnerKey = rec.winner || (status === 'ended' && leader ? leader.key : '')
   const goal = rec.kind === 'ad' && !rec.goal ? 'a click on the ad' : 'a visit to ' + (rec.goal || '/app')
-  const route = rec.kind === 'page' ? (variants.map((v: any) => ((names.value.page || {})[v.item] || {}).route).find(Boolean) || '') : ''
+  const route = rec.kind === 'page' ? (variants.map((v: { item: string|number }) => ((names.value.page || {})[v.item] || {}).route).find(Boolean) || '') : ''
   return { ...rec, variants, leader, lift, status, ends, started, winnerKey, goal, route,
     exposures: variants.reduce((n: any, v: any) => n + v.exposures, 0), maxRate: Math.max(0.0001, ...variants.map((v: any) => v.rate)),
     endsDefault: !rec.ends && !started }
@@ -71,14 +71,14 @@ const cards = computed(() => props.items.map((it) => {
 
 /* ---- actions ---- */
 const busy = ref('')
-async function act(name: any, label: any, change: any) {
+async function act(name: string, label: string, change: any) {
   busy.value = name + ':' + label
   try { await patchExperiment(name, change); emit('changed'); await loadResults() }
   catch (e) { alert((e as any).message) }
   finally { busy.value = '' }
 }
-const toggleActive = (c: any) => act(c.id, 'active', (d: any) => { d.active = c.active === false })
-const endNow = (c: any) => act(c.id, 'end', (d: any) => { d.ends = today() })
+const toggleActive = (c: any) => act(c.id, 'active', (d: { active: boolean }) => { d.active = c.active === false })
+const endNow = (c: any) => act(c.id, 'end', (d: { ends: string }) => { d.ends = today() })
 const extend = (c: any) => act(c.id, 'extend', (d: any) => { const from = d.ends && d.ends > today() ? d.ends : (c.ends ? new Date(Math.max(c.ends, Date.now())).toISOString().slice(0, 10) : today()); d.ends = plusDays(from, 14) })
 const reopen = (c: any) => act(c.id, 'reopen', (d: any) => { delete d.winner; d.ends = plusDays(today(), 14); d.active = true })
 function declare(c: any, key: any) {
@@ -98,8 +98,8 @@ async function addVariant(c: any) {
   } catch (e) { alert((e as any).message) }
   finally { busy.value = '' }
 }
-const edit = (c: any) => navigate(ROUTES.admin + '/experiments/' + c.id)
-const openItem = (c: any, v: any) => navigate(ROUTES.admin + '/' + colFor(c.kind) + '/' + v.item)
+const edit = (c: { id: string }) => navigate(ROUTES.admin + '/experiments/' + c.id)
+const openItem = (c: { kind: string }, v: { item: string }) => navigate(ROUTES.admin + '/' + colFor(c.kind) + '/' + v.item)
 const STATUS: any = { running: 'Running', paused: 'Paused', ended: 'Ended' }
 </script>
 

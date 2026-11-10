@@ -47,12 +47,12 @@ const num = (n: any) => new Intl.NumberFormat().format(Math.round(n || 0))
 const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0)
 const secs = (s: number) => (!s ? '—' : s >= 60 ? Math.floor(s / 60) + 'm ' + String(Math.round(s % 60)).padStart(2, '0') + 's' : Math.round(s) + 's')
 const dayKey = (d: any) => String(d || '').slice(0, 10)
-const day = (d: any) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t.getTime()) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+const day = (d: string) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t.getTime()) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
 const when = (d: string|number|Date) => { if (!d) return FM['last-none']; const t = new Date(d); return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' + t.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) }
 const rangeLabel = computed(() => H.range.replace('{days}', days.value))
 function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 const formOf = (slug: string) => (FORMS || []).find((x: { slug: any }) => x.slug === slug)
-const formTitle = (slug: any) => { const f = formOf(slug); return f ? f.title : slug }
+const formTitle = (slug: string) => { const f = formOf(slug); return f ? f.title : slug }
 const kindWord = (k: string|number) => FM['kind-' + (({ text: 'text', url: 'text', tel: 'text', password: 'text', email: 'email', number: 'number', select: 'choice', choice: 'choice', picture: 'choice', rating: 'scale', scale: 'scale', datetime: 'date', date: 'date', time: 'date', file: 'file' } as any)[k] || 'text')] || k
 /* a question as asked, a template's variable ({$ name $}) shown as an ellipsis */
 const plainQ = (q: { question: string; name: any }) => (q.question && q.question !== '...' ? q.question : q.name).replace(/\{\$[^}]*\$\}/g, '…')

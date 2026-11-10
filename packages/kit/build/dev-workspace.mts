@@ -16,7 +16,7 @@ import { platformkitRuntimePath } from './runtime-paths.mjs'
 
 const KIT = path.dirname(fileURLToPath(import.meta.url))
 const DEV = path.join(KIT, 'dev.mjs')
-const COMPOSE = (root: any) => path.join(root, 'deploy', 'nginx', 'docker-compose.yml')
+const COMPOSE = (root: string) => path.join(root, 'deploy', 'nginx', 'docker-compose.yml')
 const PORT_LINE = /^(\s*)(port|shadow_port|inspector_port)\s*=\s*(\d+)(\s*(?:#.*)?)$/gm
 const DNS_NAME = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)(?:\.(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))*$/i
 
@@ -25,18 +25,18 @@ function option(args: any, name: any, fallback: any) {
   return index >= 0 && args[index + 1] ? args[index + 1] : fallback
 }
 
-function say(message: any) {
+function say(message: string) {
   console.log(`\x1b[36m›\x1b[0m ${message}`)
 }
 
 /* something answers on the port: on this machine, or where Docker publishes when that is elsewhere (the end-to-end
    run's own daemon, SUPABASE_SERVICES_HOSTNAME) — a stack's port is taken there, not here */
-async function tcpConnects(port: any) {
+async function tcpConnects(port: number) {
   const elsewhere = (process.env.SUPABASE_SERVICES_HOSTNAME || '').trim()
   return await tcpConnectsAt('127.0.0.1', port) || (!!elsewhere && await tcpConnectsAt(elsewhere, port))
 }
 
-function tcpConnectsAt(host: any, port: any) {
+function tcpConnectsAt(host: string, port: any) {
   return new Promise((resolve) => {
     const socket = connect({ host, port })
     socket.setTimeout(250)
@@ -68,11 +68,11 @@ export async function findFreePort(start: any, reserved = new Set()) {
   throw new Error(`no free port remains at or above ${start}`)
 }
 
-function setAuthSiteUrl(config: any, url: any) {
+function setAuthSiteUrl(config: any, url: string) {
   let section = ''
   let siteUrlIndex = -1
   let hasRedirectUrl = false
-  const lines = config.split('\n').map((line: any, index: any) => {
+  const lines = config.split('\n').map((line: string, index: number) => {
     const header = line.match(/^\s*\[([^\]]+)\]\s*$/)
     if (header) section = header[1]
     if (section !== 'auth') return line
@@ -102,7 +102,7 @@ function setAuthSiteUrl(config: any, url: any) {
   return lines.join('\n')
 }
 
-export function runtimeSupabaseConfig(config: any, { siteName, projectId, domain, frontDoorPort, ports }: any) {
+export function runtimeSupabaseConfig(config: string, { siteName, projectId, domain, frontDoorPort, ports }: any) {
   if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(siteName)) throw new Error(`invalid runtime Supabase site name: ${siteName}`)
   if (!/^[a-z0-9][a-z0-9_-]{0,62}$/.test(projectId)) throw new Error(`invalid runtime Supabase project id: ${projectId}`)
   if (!DNS_NAME.test(domain)) throw new Error(`invalid workspace domain: ${domain}`)
@@ -150,7 +150,7 @@ export async function prepareRuntimeProject({ source, runtimeRoot, siteName, pro
   return { runtimeRoot, ports, projectId }
 }
 
-function runSync(command: any, args: any, { cwd, env }: any) {
+function runSync(command: string, args: any, { cwd, env }: any) {
   const result = spawnSync(command, args, { cwd, env, stdio: 'inherit' })
   if (result.error) throw result.error
   if (result.status !== 0) throw new Error(`${command} ${args.join(' ')} exited ${result.status ?? result.signal}`)
@@ -169,7 +169,7 @@ function createComposeFrontDoor({ root, projectName, env }: any) {
   }
 }
 
-function requestHost(port: any, host: any) {
+function requestHost(port: any, host: string) {
   return new Promise((resolve) => {
     const req = http.request({
       host: '127.0.0.1',
@@ -202,7 +202,7 @@ async function waitForSites(siteList: any, domain: any, frontDoorPort: any, chil
 function pipeOutput(child: any, name: any) {
   for (const stream of ['stdout', 'stderr']) {
     let buffer = ''
-    child[stream].on('data', (chunk: any) => {
+    child[stream].on('data', (chunk: string) => {
       buffer += chunk
       const lines = buffer.split('\n')
       buffer = lines.pop()!
@@ -227,7 +227,7 @@ async function stopChild(child: any) {
   }
 }
 
-function signalChild(child: any, signal: any) {
+function signalChild(child: any, signal: string|number|undefined) {
   if (process.platform !== 'win32' && child.pid) {
     try {
       process.kill(-child.pid, signal)
@@ -309,7 +309,7 @@ export async function runWorkspace({
     PLATFORMKIT_DEV_RUN_ID: runRecord.runId,
   }
   const portFlags = new Set(['--port', '--front-door-port', '--port:auto', '--front-door-port:auto'])
-  const passArgs = args.filter((arg: any, index: any) => !portFlags.has(arg) && !portFlags.has(args[index - 1]))
+  const passArgs = args.filter((arg: string, index: number) => !portFlags.has(arg) && !portFlags.has(args[index - 1]))
   let composeAttempted = false
   let shuttingDown = false
   const children: any = []
@@ -363,7 +363,7 @@ export async function runWorkspace({
     }
     runRecord.update({ supabaseWorkdirs: [...runtimeProjects.values()] })
 
-    const childFlags = passArgs.filter((arg: any) => ['--no-functions', '--no-start', '--no-stack'].includes(arg))
+    const childFlags = passArgs.filter((arg: string) => ['--no-functions', '--no-start', '--no-stack'].includes(arg))
     for (const site of preparedSites) {
       const childArgs = [
         devScript,
@@ -395,7 +395,7 @@ export async function runWorkspace({
        `supabase start` (image pulls, a restore from backup) can take minutes on its own. One that
        fails ends the child, which the loop reports; one that hangs is given up on at stackMs */
     const stackDeadline = Date.now() + startupLimits.stackMs
-    const minutes = (ms: any) => `${Math.round(ms / 6000) / 10} min`
+    const minutes = (ms: number) => `${Math.round(ms / 6000) / 10} min`
     for (const { site, child } of children) {
       const vitePort = vitePorts.get(site.name)
       const portFile = platformkitRuntimePath(root, 'dev', `${site.name}.port`)

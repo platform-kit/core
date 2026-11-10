@@ -35,7 +35,7 @@ function onScroll() {
   if (!el) return
   at.value = Math.round(el.scrollLeft / Math.max(1, el.clientWidth))
 }
-function go(i: any) {
+function go(i: number) {
   const el = track.value
   if (!el) return
   const n = Math.max(0, Math.min(items.value.length - 1, i))

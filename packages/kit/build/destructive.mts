@@ -38,7 +38,7 @@ import { createHash } from 'node:crypto'
 export function statements(sql: any) {
   const out: any = []
   let i = 0, line = 1, start = 0, startLine = 1, text = ''
-  const push = (end: any) => { const raw = sql.slice(start, end).trim(); if (raw.replace(/;$/, '').trim()) out.push({ line: startLine, raw, text: text.trim() }); text = '' }
+  const push = (end: number) => { const raw = sql.slice(start, end).trim(); if (raw.replace(/;$/, '').trim()) out.push({ line: startLine, raw, text: text.trim() }); text = '' }
   while (i < sql.length) {
     const ch = sql[i], nx = sql[i + 1]
     if (ch === '\n') line++
@@ -55,7 +55,7 @@ export function statements(sql: any) {
   return out
 }
 
-const ident = (s: any) => (s || '').replace(/"/g, '')
+const ident = (s: string) => (s || '').replace(/"/g, '')
 const SHAPES = [
   { kind: 'drop table', re: /\bdrop\s+table\s+(?:if\s+exists\s+)?(?:only\s+)?([\w."]+)/i },
   { kind: 'drop schema', re: /\bdrop\s+schema\s+(?:if\s+exists\s+)?([\w."]+)/i },
@@ -65,7 +65,7 @@ const SHAPES = [
 ]
 
 /* every destructive statement in the SQL: { kind, object, line, statement } */
-export function destructive(sql: any, { generated }: any = {}) {
+export function destructive(sql: string, { generated }: any = {}) {
   /* `schema.table.column`, lower-cased, of every column the target database computes for itself */
   const derived = generated instanceof Set ? generated
     : new Set((generated || []).map((x: any) => String(x).toLowerCase()))
@@ -111,7 +111,7 @@ export function digestOf(hits: any) {
  * a commit sha (matched against the commit being deployed), or `1` — a standing permission, kept
  * because a first declared deploy against years of drift is a real thing, and reported as what it is.
  */
-export function readAllowance(value: any, { digest, commit }: any = {}) {
+export function readAllowance(value: string|null|undefined, { digest, commit }: any = {}) {
   const raw = String(value == null ? '' : value).trim()
   if (!raw) return { kind: 'none' }
   if (/^(1|true|yes|on)$/i.test(raw)) return { kind: 'blanket', objects: null }
@@ -131,7 +131,7 @@ export function readAllowance(value: any, { digest, commit }: any = {}) {
  * Given neither, the answer is the one this guard always gave: a hit refuses unless the variable
  * says otherwise.
  */
-export function guard(sql: any, env = process.env, opts: any = {}) {
+export function guard(sql: string, env = process.env, opts: any = {}) {
   const hits = destructive(sql, opts).map((h) => ({ ...h, cost: costOf(h, opts.costs), loses: loses(h, opts.costs) }))
   const digest = digestOf(hits)
   const allowance = readAllowance(env.PLATFORMKIT_ALLOW_DESTRUCTIVE, { digest, commit: opts.commit })

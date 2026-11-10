@@ -171,7 +171,7 @@ try {
   /* an invitation is not a rule, and a rule must not take back what a person was invited to */
   await service.rpc('space_sync_members')
   ok('somebody who joined by invitation outlives a sweep', ((await out.sb.from('spaces').select('slug').eq('slug', COMM)).data || []).length === 1)
-  const rows: any = (await one.sb.rpc('space_invites_of', { p_space: comm.id })).data as any[] | null || []
+  const rows = (await one.sb.rpc('space_invites_of', { p_space: comm.id })).data as any[] | null || []
   ok('the invitations a space has out are listed for whoever may make one', rows.length === 2)
   ok('and the token is never among them', !JSON.stringify(rows).includes(t1) && !JSON.stringify(rows).includes('token'))
   ok('somebody who may not invite is shown none', !((await two.sb.rpc('space_invites_of', { p_space: comm.id })).data as any[] | null || []).length)
@@ -215,7 +215,7 @@ try {
   ok('a member may report a message they can read', !!r1)
   const r2 = (await out.sb.rpc('space_report', { p_message: said!.id, p_reason: 'spam' })).data
   ok('reporting it twice is one report, not two', r1 === r2)
-  const queue: any = (await one.sb.rpc('space_reports', { p_space: comm.id })).data as any[] | null || []
+  const queue = (await one.sb.rpc('space_reports', { p_space: comm.id })).data as any[] | null || []
   ok('the queue shows it once to whoever may moderate', queue.filter((q: { message: string }) => q.message === said!.id).length === 1, JSON.stringify(queue.map((q: { reason: any }) => q.reason)))
   ok('and carries what was said and who said it', queue.some((q: { body: string; about: any }) => q.body === 'Something worth reporting.' && !!q.about))
   ok('somebody who may not moderate is shown no queue', !((await two.sb.rpc('space_reports', { p_space: comm.id })).data as any[] | null || []).length)
@@ -225,12 +225,12 @@ try {
   ok('a moderator may remove a message', !!rem)
   const after: any = (await service.from('space_messages').select('deleted_at, body').eq('id', said!.id).single()).data
   ok('and it reads as withdrawn rather than vanishing', !!after.deleted_at && !!after.body)
-  const closed: any = (await one.sb.rpc('space_reports', { p_space: comm.id })).data as any[] | null || []
+  const closed = (await one.sb.rpc('space_reports', { p_space: comm.id })).data as any[] | null || []
   ok('the report about it is answered by the act', !closed.some((q: { message: string }) => q.message === said!.id))
 
   const mute = (await one.sb.rpc('space_moderate', { p_kind: 'mute', p_space: comm.id, p_user: two.id, p_reason: 'spam', p_minutes: 1440 })).data
   ok('a moderator may mute a member for a span', !!mute)
-  const mine: any = (await two.sb.rpc('space_my_record')).data as any[] | null || []
+  const mine = (await two.sb.rpc('space_my_record')).data as any[] | null || []
   ok('the member is told it was done and when it ends', mine.some((m: { kind: string; until: any }) => m.kind === 'mute' && !!m.until))
   ok('and is told nothing done to anybody else', mine.every((m: { kind: string }) => m.kind !== 'report'))
   ok('somebody it was not done to reads none of it', !((await nobody.sb.rpc('space_my_record')).data as any[] | null || []).length)
@@ -259,12 +259,12 @@ try {
   ok('and every word they wrote is still there', kept === before && before > 0, `${kept} of ${before}`)
 
   /* ---- the acts a space has had done in it ---- */
-  const record: any = (await one.sb.rpc('space_record', { p_space: comm.id })).data as any[] | null || []
+  const record = (await one.sb.rpc('space_record', { p_space: comm.id })).data as any[] | null || []
   ok('the acts are listed for whoever may moderate, with who did each and why', record.length >= 3 && record.every((m: { kind: string }) => m.kind !== 'report'), JSON.stringify(record.map((m: { kind: any }) => m.kind)))
   ok('and are not listed for anybody else', !((await nobody.sb.rpc('space_record', { p_space: comm.id })).data as any[] | null || []).length)
 
   /* ---- the directory says only what is already public ---- */
-  const people: any = (await one.sb.rpc('space_people', { p_space: comm.id })).data as any[] | null || []
+  const people = (await one.sb.rpc('space_people', { p_space: comm.id })).data as any[] | null || []
   ok('a member sees who else is in their space', people.length >= 1, JSON.stringify(people.map((p: { name: any }) => p.name)))
   const keys = new Set(people.flatMap((p: any) => Object.keys(p)))
   ok('and no address is disclosed', !keys.has('email'), [...keys].join(', '))
@@ -333,7 +333,7 @@ try {
   ok('a line past the limit is refused by the database, not only by the browser', !!long.error, long.error && long.error.message)
 
   /* ---- what a reader could be in ---- */
-  const could: any = (await nobody.sb.rpc('space_discover')).data as any[] | null || []
+  const could = (await nobody.sb.rpc('space_discover')).data as any[] | null || []
   ok('a reader is shown the spaces they could be in', could.some((s: { slug: string }) => s.slug === COMM) && could.some((s: { slug: string }) => s.slug === SERV), JSON.stringify(could.map((s: { slug: any }) => s.slug)))
   ok('and the staff space is never among them', !could.some((s: { slug: string }) => s.slug === 'the-team'))
   ok('each says what it would take', could.every((s: any[]) => s.fill && Object.keys(s.fill).length))

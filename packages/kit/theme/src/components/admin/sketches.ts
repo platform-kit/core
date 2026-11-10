@@ -4,15 +4,15 @@
  * so an editor recognises a section by its shape before reading its name. A section names its
  * sketch on its schema entry (`sketch`); one without gets the generic block.
  */
-const R = (x: any, y: any, w: any, h: any, o = '') => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" ${o}/>`
-const L = (x: any, y: any, w: any, o = '') => `<rect x="${x}" y="${y}" width="${w}" height="3" rx="1.5" ${o}/>`   /* a line of text */
+const R = (x: number, y: number, w: number, h: number, o = '') => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" ${o}/>`
+const L = (x: number, y: number, w: number, o = '') => `<rect x="${x}" y="${y}" width="${w}" height="3" rx="1.5" ${o}/>`   /* a line of text */
 const F = 'fill="currentColor" opacity=".18" stroke="none"'      /* a filled block */
 const D = 'fill="currentColor" opacity=".5" stroke="none"'       /* a dark filled block (a button, a heading) */
 const T = 'fill="currentColor" opacity=".32" stroke="none"'      /* text */
-const C = (cx: any, cy: any, r: any, o = F) => `<circle cx="${cx}" cy="${cy}" r="${r}" ${o}/>`
+const C = (cx: number, cy: number, r: number, o = F) => `<circle cx="${cx}" cy="${cy}" r="${r}" ${o}/>`
 const head = (x = 12, y = 12, w = 60) => L(x, y, w * 0.4, T) + L(x, y + 7, w, D) + L(x, y + 14, w * 0.8, D)
-const lines = (x: any, y: any, w: any, n = 3) => Array.from({ length: n }, (_, i) => L(x, y + i * 6, w - (i === n - 1 ? w * 0.35 : 0), T)).join('')
-const btn = (x: any, y: any) => R(x, y, 24, 8, D)
+const lines = (x: number, y: number, w: number, n = 3) => Array.from({ length: n }, (_, i) => L(x, y + i * 6, w - (i === n - 1 ? w * 0.35 : 0), T)).join('')
+const btn = (x: number, y: number) => R(x, y, 24, 8, D)
 
 export const SKETCHES: any = {
   Hero: head(12, 16, 50) + btn(12, 44) + R(72, 12, 40, 48, F),
@@ -59,4 +59,4 @@ export const SKETCHES: any = {
   Articles: [12, 46, 80].map((x) => R(x, 12, 28, 18, F) + L(x, 34, 8, T) + L(x, 40, 24, D) + L(x, 47, 20, T) + L(x, 53, 14, T)).join(''),
   generic: R(12, 12, 96, 48, F) + L(24, 30, 72, D) + L(34, 38, 52, T),
 }
-export const sketchOf = (key: any) => `<svg viewBox="0 0 120 72" aria-hidden="true">${SKETCHES[key] || SKETCHES.generic}</svg>`
+export const sketchOf = (key: string|number) => `<svg viewBox="0 0 120 72" aria-hidden="true">${SKETCHES[key] || SKETCHES.generic}</svg>`

@@ -29,15 +29,15 @@ let pass = 0, fail = 0
    counted apart and named at the end, because "7 passed" over a lane that did nothing is exactly
    the shape of the check this lane was built to replace. */
 const undone: any = []
-const ok = (name: any, cond: any, detail: any) => { if (cond) { pass++; console.log('  ✔ ' + name) } else { fail++; console.log('  ✖ ' + name + (detail ? ' — ' + detail : '')) } }
-const note = (s: any) => console.log('  ' + s)
-const cannot = (why: any) => { const e: any = new Error(why); e.undone = true; throw e }
+const ok = (name: string, cond: boolean, detail: string) => { if (cond) { pass++; console.log('  ✔ ' + name) } else { fail++; console.log('  ✖ ' + name + (detail ? ' — ' + detail : '')) } }
+const note = (s: string) => console.log('  ' + s)
+const cannot = (why: string|undefined) => { const e: any = new Error(why); e.undone = true; throw e }
 
 console.log('\nTHE INTERACTION LANE — a browser that uses the site\n')
 
 const args = process.argv.slice(2)
-const argOf = (n: any, d: any) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d }
-const skip = (why: any) => { console.log('  ⚠ SKIPPED — ' + why + '\n    Nothing that needs a hand on the site is covered by this run.\n'); leave(0) }
+const argOf = (n: string, d: string) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d }
+const skip = (why: string) => { console.log('  ⚠ SKIPPED — ' + why + '\n    Nothing that needs a hand on the site is covered by this run.\n'); leave(0) }
 
 let chromium: any
 try { ({ chromium } = await import('playwright')) } catch { skip('playwright is not installed') }
@@ -65,14 +65,14 @@ const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_C
  * the next one fail for a reason that has nothing to do with it — and a lane whose failures move
  * about is a lane nobody trusts.
  */
-async function act(name: any, fn: any, { theme = 'light', size = { width: 1280, height: 900 } } = {}) {
+async function act(name: string, fn: any, { theme = 'light', size = { width: 1280, height: 900 } } = {}) {
   const ctx = await browserContext(browser, { viewport: size, colorScheme: theme })
   const page = await ctx.newPage()
   const errs: any = []
   /* a resource that would not load names its address: the console's own line does not, and a failure that cannot say
      which request it was is one nobody can act on */
   page.on('console', (m: any) => { if (m.type() === 'error') errs.push((m.text() + (/Failed to load resource/.test(m.text()) && m.location()?.url ? ' — ' + m.location().url : '')).slice(0, 300)) })
-  const ours = () => errs.filter((e: any) => !(emptyBucket.length && /Failed to load resource/.test(e)))
+  const ours = () => errs.filter((e: string) => !(emptyBucket.length && /Failed to load resource/.test(e)))
   page.on('pageerror', (e: any) => errs.push('PAGEERROR ' + String(e.message || e).slice(0, 200)))
   /* A 429 from our own doors is a GUARD doing its job, not the surface being broken — the support
      function caps new guests and new threads per address per hour, so a lane run several times
@@ -113,7 +113,7 @@ async function act(name: any, fn: any, { theme = 'light', size = { width: 1280, 
     if (refused.length) { const why = 'the rate limit refused it (' + refused[0] + ') — the guard held, so this act did not run'; undone.push(name + ' — ' + why); console.log('  ⚠ ' + name + ' — NOT RUN: ' + why) }
     else if (e && e.undone) { undone.push(name + ' — ' + e.message); console.log('  ⚠ ' + name + ' — NOT RUN: ' + e.message) }
     else {
-      const at = e && e.stack && e.stack.split('\n').find((line: any) => line.includes('interaction.test.mts:'))
+      const at = e && e.stack && e.stack.split('\n').find((line: string|string[]) => line.includes('interaction.test.mts:'))
       ok(name, false, String(e.message || e).split('\n')[0].slice(0, 220) + (at ? ' (' + at.trim() + ')' : '') + (ours().length ? ' | console: ' + ours()[0] : ''))
     }
   } finally { if (!args.includes('--keep')) await ctx.close() }
@@ -124,7 +124,7 @@ async function act(name: any, fn: any, { theme = 'light', size = { width: 1280, 
  * machine and too short when the rest of the suite is loading it — which is how two acts of this
  * lane passed on their own and failed inside `npm test`, for no reason to do with the site.
  */
-const go = async (page: any, path: any, clear: any, ready?: any) => {
+const go = async (page: any, path: string, clear: any, ready?: string|undefined) => {
   /* the admin is by far the biggest chunk the site ships — ag-grid, TipTap, the editors — so it
      takes longer to mount than a reader page, and a budget that fits one does not fit the other */
   const budget = path.startsWith('/admin') ? WAIT * 2 : WAIT
@@ -136,7 +136,7 @@ const go = async (page: any, path: any, clear: any, ready?: any) => {
     .catch(() => { const e: any = new Error(`the page never drew ${ready}`); e.undone = true; throw e })
   await clear()
 }
-const signIn = async (page: any, clear: any, email: any, password = 'password123') => {
+const signIn = async (page: any, clear: any, email: string, password = 'password123') => {
   await page.evaluate(() => (window as any).DLauth && (window as any).DLauth.open({}))
   const emailField = page.locator('.au-form input[type="email"]').first()
   const passwordField = page.locator('.au-form input[type="password"]').first()
@@ -280,7 +280,7 @@ else await act('a word searched inside a book finds it', async ({ page, clear }:
   await box.waitFor({ state: 'visible', timeout: 15000 }).catch(() => { throw new Error('the search opened with nowhere to type') })
   await box.fill(FIRST.word)
   /* a word that IS in this book must find something — an empty answer is the failure that matters */
-  await page.waitForFunction((w: any) => new RegExp(w, 'i').test(document.body.innerText), FIRST.word, { timeout: WAIT })
+  await page.waitForFunction((w: string|RegExp) => new RegExp(w, 'i').test(document.body.innerText), FIRST.word, { timeout: WAIT })
 })
 
 /* ─── the diagnostic: a reader answers a screen ─── */

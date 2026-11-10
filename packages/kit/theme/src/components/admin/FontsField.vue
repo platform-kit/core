@@ -102,7 +102,7 @@ const SLOTS = Object.keys(SPEC).map((slot) => ({ slot, what: (us('pages').fonts?
 const defaultName = (slot: string|number) => DEFAULTS[slot]
 const defaultStack = (slot: string|number) => familyOf(DEFAULTS[slot]).stack
 const chosen = (slot: string) => value.value[slot] || DEFAULTS[slot]
-const stackOf = (slot: any) => (familyOf(chosen(slot)) || familyOf(DEFAULTS[slot])).stack
+const stackOf = (slot: string) => (familyOf(chosen(slot)) || familyOf(DEFAULTS[slot])).stack
 
 const found = (slot: string) => searchFamilies(slot, query.value)
 

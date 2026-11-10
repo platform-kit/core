@@ -62,12 +62,12 @@ export function gitStore(root = process.cwd()) {
         }
         return out.sort((x, y) => (x.type === y.type ? x.name.localeCompare(y.name) : x.type === 'dir' ? -1 : 1))
       },
-      async mkdir(dir: any) { const d = guard(dir); cleanName(d.split('/').pop()); await fs.mkdir(abs(d), { recursive: true }) },
-      async rename(from: any, name: string|undefined) { const f = guard(from); const to = f.split('/').slice(0, -1).concat(cleanName(name)).join('/'); if (fsSync.existsSync(abs(to))) throw refuse('a file with that name is there already', 409); await fs.rename(abs(f), abs(to)); return to },
-      async move(from: any, toDir: any) { const f = guard(from), d = guard(toDir); const to = d + '/' + f.split('/').pop(); if (to === f) return to; if (fsSync.existsSync(abs(to))) throw refuse('a file with that name is there already', 409); await fs.mkdir(abs(d), { recursive: true }); await fs.rename(abs(f), abs(to)); return to },
-      async copy(from: any, toDir: any) { const f = guard(from), d = guard(toDir); let to = d + '/' + f.split('/').pop(); if (fsSync.existsSync(abs(to))) { const n: any = f.split('/').pop(), i = n.lastIndexOf('.'); to = d + '/' + (i > 0 ? n.slice(0, i) + '-copy' + n.slice(i) : n + '-copy') } await fs.mkdir(abs(d), { recursive: true }); await fs.cp(abs(f), abs(to), { recursive: true }); return to },
-      async remove(rel: any) { const f = guard(rel); if (f === 'content/uploads' || f === 'public') throw refuse('a root is not removed'); await fs.rm(abs(f), { recursive: true, force: true }) },
-      async search(dir: any, q: any, deep = true) {
+      async mkdir(dir: string) { const d = guard(dir); cleanName(d.split('/').pop()); await fs.mkdir(abs(d), { recursive: true }) },
+      async rename(from: string, name: string|undefined) { const f = guard(from); const to = f.split('/').slice(0, -1).concat(cleanName(name)).join('/'); if (fsSync.existsSync(abs(to))) throw refuse('a file with that name is there already', 409); await fs.rename(abs(f), abs(to)); return to },
+      async move(from: string, toDir: string) { const f = guard(from), d = guard(toDir); const to = d + '/' + f.split('/').pop(); if (to === f) return to; if (fsSync.existsSync(abs(to))) throw refuse('a file with that name is there already', 409); await fs.mkdir(abs(d), { recursive: true }); await fs.rename(abs(f), abs(to)); return to },
+      async copy(from: string, toDir: string) { const f = guard(from), d = guard(toDir); let to = d + '/' + f.split('/').pop(); if (fsSync.existsSync(abs(to))) { const n: any = f.split('/').pop(), i = n.lastIndexOf('.'); to = d + '/' + (i > 0 ? n.slice(0, i) + '-copy' + n.slice(i) : n + '-copy') } await fs.mkdir(abs(d), { recursive: true }); await fs.cp(abs(f), abs(to), { recursive: true }); return to },
+      async remove(rel: string) { const f = guard(rel); if (f === 'content/uploads' || f === 'public') throw refuse('a root is not removed'); await fs.rm(abs(f), { recursive: true, force: true }) },
+      async search(dir: string, q: any, deep = true) {
         const d = guard(dir), needle = String(q || '').toLowerCase()
         const out: any = []
         const walk = async (rel: string) => { for (const e of await store.assets.list(rel)) { if (e.name.toLowerCase().includes(needle)) out.push(e); if (deep && e.type === 'dir') await walk(e.path) } }

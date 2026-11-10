@@ -26,7 +26,7 @@ export function voiceSupport(){
   var SR=(window as any).SpeechRecognition||(window as any).webkitSpeechRecognition;
   return {mic:!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia), words:!!SR};
 }
-export function normWords(t: any){
+export function normWords(t: string){
   return String(t||'').toLowerCase().replace(/[’']/g,"'")
     .replace(/[^a-z0-9\s']/g,' ').replace(/\s+/g,' ').trim().split(' ').filter(Boolean);
 }

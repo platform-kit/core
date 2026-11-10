@@ -99,7 +99,7 @@ const handleForMessage = (message: any) => {
   return handle.toLowerCase() === String(message.author || '').toLowerCase() ? '' : handle
 }
 const kindOf = (row: any) => W.value['kind-' + ((row.person && row.person.kind) || 'guest')] || ''
-const sourceOf = (row: any) => W.value['source-' + row.source] || ''
+const sourceOf = (row: { source: string }) => W.value['source-' + row.source] || ''
 /* where they wrote from, where a queue has such a thing: the support desk keeps the page they
    were on, and a client's conversation has nowhere to point */
 const whereOf = (row: any) => {
@@ -118,7 +118,7 @@ const queueRows = computed<any>(() => filterQueue(rows.value, props.queue, showD
 const queueDoneCount = computed(() => filterQueue(rows.value, props.queue, true).length)
 const queueStatus = computed(() => sourceStatus[queueStatusName.value] || {})
 const owed: any = (row: any) => owedOf(row, W.value, now.value)
-const audienceKey = (row: any) => row && row.source === 'social'
+const audienceKey = (row: { source: string; conversationKind: string }) => row && row.source === 'social'
   ? row.conversationKind === 'comment' ? 'public-reply' : 'private-dm'
   : ''
 const profileIncomplete = computed(() => thread.row && thread.row.source === 'social'
@@ -207,7 +207,7 @@ const preview = (row: any) => (row.last
     + previewOf({ ...row.last, body: plainBody(row.last.body, props.names, { someone: W.value.someone }), sender_id: null },
       { deleted: W.value.withdrawn, 'voice-label': W.value.voice, 'file-label': W.value.file })
   : '')
-const unreadOf = (row: any) => (row.unread === 1 ? W.value['unread-one'] : (W.value['unread-many'] || '').replace('{n}', row.unread))
+const unreadOf = (row: { unread: number }) => (row.unread === 1 ? W.value['unread-one'] : (W.value['unread-many'] || '').replace('{n}', row.unread))
 const count = computed(() => queueRows.value.filter((r: any) => (r as any).waiting_since && !(r as any).resolved).length)
 const assigning = ref(false)
 const assignedTo = computed(() => {
@@ -215,14 +215,14 @@ const assignedTo = computed(() => {
   const a: any = id && agents.value.find((x: any) => (x as any).id === id)
   return a ? a.name : ''
 })
-async function finish(row: any, done: any) { await resolve(row, done); if (done) closeRow() }
+async function finish(row: any, done: boolean|undefined) { await resolve(row, done); if (done) closeRow() }
 
 /* A HELD COMMENT IS NOT FINISHED WITH, IT IS DECIDED — and the two ways of deciding are not one
    control with two meanings. Publishing it and refusing it are named, side by side, because a tick
    that means "publish" on the way down and "refuse" on the way back is a tick somebody will press
    by accident on somebody else's words. */
-const held = (row: any) => !!row && row.source === 'comments' && row.state === 'waiting'
-async function decide(row: any, yes: any) {
+const held = (row: { source: string; state: string }) => !!row && row.source === 'comments' && row.state === 'waiting'
+async function decide(row: any, yes: boolean|undefined) {
   await resolve(row, yes)
   closeRow()
 }
@@ -234,7 +234,7 @@ const heldWhy = (row: any) => (row && row.flagged
 const placeholder = computed(() => (thread.row ? (W.value.placeholder || '').replace('{name}', nameOf(thread.row)) : W.value['placeholder-plain']))
 
 
-const when = (v: any) => {
+const when = (v: string|number|Date) => {
   const d = new Date(v)
   if (isNaN(d.getTime())) return ''
   const mins = Math.max(1, Math.round((now.value - d.getTime()) / 60000))

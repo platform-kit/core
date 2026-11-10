@@ -13,7 +13,7 @@ sources:
     packages/kit/theme/src/components/forms/FormRun.vue,
     packages/kit/theme/src/content/ui/forms.md,
   ]
-reviewed: 2026-11-09
+reviewed: 2026-11-10
 ---
 
 A form is a few questions on slides — a contact form, a survey, an application, a quiz — that somebody answers one slide at a time, in the site's design. Every answer lands in the site's own database the moment a slide is finished, so a form left half-done is picked up where it was left, on any device; a finished response can be sent on to another system; and the admin shows every response and the numbers. Module: `forms`.

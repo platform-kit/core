@@ -22,10 +22,10 @@ const esc = (s: any) => unmd(s)
 export const str = (s: any) => '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n') + '"'
 
 /* inline: marks, strong, emphasis, links, images, hard breaks → Typst markup */
-export function inline(md: any, marks: any) {
+export function inline(md: string, marks: { text: string; colour: string }[]) {
   let out = '', i = 0
   const src = String(md || '')
-  const push = (text: any) => { out += esc(text) }
+  const push = (text: string) => { out += esc(text) }
   while (i < src.length) {
     const rest = src.slice(i)
     let m
@@ -58,12 +58,12 @@ export function typedChapter(md: any) {
   if (broken.length < 6) return false
   return broken.reduce((n, l) => n + l.trim().length, 0) / broken.length > 50
 }
-function hardBreaks(p: any, typed = false) {
+function hardBreaks(p: string, typed = false) {
   const lines = p.split('\n')
-  const broken = lines.filter((l: any) => /(\\| {2,})$/.test(l))
+  const broken = lines.filter((l: string) => /(\\| {2,})$/.test(l))
   if (!broken.length) return p
   const avg = broken.reduce((n: any, l: any) => n + l.trim().length, 0) / broken.length
-  const midSentence = broken.filter((l: any) => !/[.!?;:,"”'’)\]]\s*(\\| {2,})$/.test(l)).length
+  const midSentence = broken.filter((l: string) => !/[.!?;:,"”'’)\]]\s*(\\| {2,})$/.test(l)).length
   /* verse is short-lined whatever its punctuation: a stanza of seven lines of thirty characters
      stays a stanza however many run on mid-sentence */
   const flow = typed ? avg >= 40 : (avg > 50 && midSentence >= broken.length / 3) || (avg > 45 && midSentence > broken.length / 2 && broken.length >= 4)
@@ -73,12 +73,12 @@ function hardBreaks(p: any, typed = false) {
 
 /* the same reading of a chapter's hard breaks, as markdown again — for a setting that is not
    Typst (the EPUB): a typed line-end flows, verse keeps its lines */
-export function flow(md: any) {
+export function flow(md: string) {
   const typed = typedChapter(md)
   return String(md || '').replace(/\r\n/g, '\n').split(/\n{2,}/).map((p) => hardBreaks(p.replace(/^\n+|\n+$/g, ''), typed)).join('\n\n')
 }
 /* a chapter's body: blocks → Typst */
-export function blocks(md: any, marks: any, { typed = null } = {}) {
+export function blocks(md: string, marks: any, { typed = null } = {}) {
   const out = []
   const isTyped = typed == null ? typedChapter(md) : typed
   const paras = String(md || '').replace(/\r\n/g, '\n').split(/\n{2,}/)
@@ -93,9 +93,9 @@ export function blocks(md: any, marks: any, { typed = null } = {}) {
     /* a row of asterisks is a section break: a centred dinkus */
     if (/^\s*(?:\\?\*\s*){3,}$/.test(p)) { out.push('#dinkus'); continue }
     if (/^#{2,}\s/.test(p)) { out.push(`#subhead[${inline(titleCase(p.replace(/^#+\s*/, '').replace(/\s*#+$/, '')), marks)}]`); continue }
-    if (/^>\s?/m.test(p) && p.split('\n').every((l: any) => /^>\s?/.test(l) || !l.trim())) { out.push(`#quote[${inline(p.split('\n').map((l: any) => l.replace(/^>\s?/, '')).join('\n'), marks)}]`); continue }
-    if (p.split('\n').every((l: any) => /^\d+\.\s/.test(l))) { out.push('#enum(' + p.split('\n').map((l: any) => `[${inline(l.replace(/^\d+\.\s*/, ''), marks)}]`).join(', ') + ')'); continue }
-    if (p.split('\n').every((l: any) => /^[-*]\s/.test(l))) { out.push('#list(' + p.split('\n').map((l: any) => `[${inline(l.replace(/^[-*]\s*/, ''), marks)}]`).join(', ') + ')'); continue }
+    if (/^>\s?/m.test(p) && p.split('\n').every((l: string) => /^>\s?/.test(l) || !l.trim())) { out.push(`#quote[${inline(p.split('\n').map((l: string) => l.replace(/^>\s?/, '')).join('\n'), marks)}]`); continue }
+    if (p.split('\n').every((l: string) => /^\d+\.\s/.test(l))) { out.push('#enum(' + p.split('\n').map((l: string) => `[${inline(l.replace(/^\d+\.\s*/, ''), marks)}]`).join(', ') + ')'); continue }
+    if (p.split('\n').every((l: string) => /^[-*]\s/.test(l))) { out.push('#list(' + p.split('\n').map((l: string) => `[${inline(l.replace(/^[-*]\s*/, ''), marks)}]`).join(', ') + ')'); continue }
     if (/ {2,}\n/.test(p)) { out.push(`#verse[${inline(p, marks)}]`); continue }
     /* a paragraph with a numbered list inside it: the prose, then the list, then the prose */
     if (/^\d+\.\s/m.test(p)) {
@@ -112,8 +112,8 @@ export function blocks(md: any, marks: any, { typed = null } = {}) {
   const short = (p: any) => !p.startsWith('#') && p.split(/\s+/).length <= 8
   /* lines of verse seldom end in a full stop; a run of short sentences that do (a glossary's
      entries, two one-line remarks) is prose */
-  const unstopped = (run: any) => run.filter(short).filter((p: any) => !/[.!?…]\s*$/.test(p) || /^[—–]/.test(p)).length * 2 >= run.filter(short).length
-  const versy = (p: any) => short(p) || p.startsWith('#verse[')
+  const unstopped = (run: string[]) => run.filter(short).filter((p: string) => !/[.!?…]\s*$/.test(p) || /^[—–]/.test(p)).length * 2 >= run.filter(short).length
+  const versy = (p: string) => short(p) || p.startsWith('#verse[')
   for (let i = 0; i < out.length; i++) {
     if (!versy(out[i])) continue
     let j = i
@@ -136,10 +136,10 @@ export function blocks(md: any, marks: any, { typed = null } = {}) {
 }
 /* a paragraph kept with what follows it (a block is its own container, so the indent a
    following paragraph would have is put back by hand) */
-const keep = (p: any, indented: any, breakable = true) => `#block(sticky: true, breakable: ${breakable})[${indented ? '#h(1.4em);' : ''}${p}]`
+const keep = (p: string, indented: boolean, breakable = true) => `#block(sticky: true, breakable: ${breakable})[${indented ? '#h(1.4em);' : ''}${p}]`
 /* a short last paragraph moves with its companion rather than leaving the key insights alone at
    the head of a page; a long one flows, since carrying it whole would empty most of a page */
-const keepLast = (body: any) => {
+const keepLast = (body: string) => {
   const ps = body.split('\n\n'), i = ps.length - 1
   if (i < 0 || ps[i].startsWith('#') || ps[i].split(/\s+/).length > 45) return body
   ps[i] = keep(ps[i], i > 0)
@@ -156,22 +156,22 @@ const keepLast = (body: any) => {
    introduction) has no number; in a book whose titles are not, the count is the number. */
 /* a chapter's own number, written into its title: "3. Desire", "Chapter 3. Desire" */
 const OWN = /^(?:chapter\s+)?(\d+)[.:)]\s+/i
-const numbering = (titles: any) => titles.some((t: any) => OWN.test(t))
+const numbering = (titles: any) => titles.some((t: string) => OWN.test(t))
 /* a title typed in capitals (THE LAW OF PROSPERITY) is set in title case: the page's heading and
    the contents are not the place for a shout, and the running head makes its own capitals */
 const SMALL = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'in', 'nor', 'of', 'on', 'or', 'the', 'to', 'up'])
-const titleCase = (t: any) => {
+const titleCase = (t: string) => {
   if (/^[IVXLCDM]+$/.test(t.trim())) return t
-  const big = t.split(/\s+/).filter((w: any) => !SMALL.has(w.toLowerCase()))
-  if (!big.length || !big.every((w: any) => /[A-Z]/.test(w) && w === w.toUpperCase())) return t
-  return t.toLowerCase().split(/(\s+|-)/).map((w: any, i: any, all: any) => {
+  const big = t.split(/\s+/).filter((w: string) => !SMALL.has(w.toLowerCase()))
+  if (!big.length || !big.every((w: string) => /[A-Z]/.test(w) && w === w.toUpperCase())) return t
+  return t.toLowerCase().split(/(\s+|-)/).map((w: string, i: any, all: any) => {
     if (/^\s+$|^-$/.test(w)) return w
-    const first = all.slice(0, i).every((x: any) => /^\s*$/.test(x))
+    const first = all.slice(0, i).every((x: string) => /^\s*$/.test(x))
     return !first && SMALL.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)
   }).join('')
 }
-const untitle = (t: any) => titleCase(String(t).replace(OWN, ''))
-const numberOf = (t: any, i: any, numbered: any) => { const m = OWN.exec(t); return m ? Number(m[1]) : numbered ? null : i + 1 }
+const untitle = (t: string) => titleCase(String(t).replace(OWN, ''))
+const numberOf = (t: string, i: number, numbered: any) => { const m = OWN.exec(t); return m ? Number(m[1]) : numbered ? null : i + 1 }
 /* the book's shape for another setting (the EPUB): the chapters with their numbers and titles as
    the print has them, each with its text, its summary and its key insights as markdown, and
    whether the edition is in two parts */
@@ -223,8 +223,8 @@ export function typeset({ book, companion, trim = '6x9', contents = 'both', note
   })
   /* the second part: the same chapters in brief — the summary as the text, the key insights after */
   const briefSrc = twoParts ? chapterSrc.map((ch, i) => ({ ...ch, ...briefFirst[i], summary: null, long: briefFirst[i].essence.length > 3 })).filter((c) => c.body.trim() || c.essence.length) : []
-  const w = (k: any, d: any) => str(words[k] || d)
-  const entry = (c: any) => `(title: ${str(c.n == null ? c.title : c.n + '. ' + c.title)})`
+  const w = (k: string, d: string) => str(words[k] || d)
+  const entry = (c: { n: string|null; title: string }) => `(title: ${str(c.n == null ? c.title : c.n + '. ' + c.title)})`
   /* a book whose chapters are bare numerals lists its parts alone: a page of "1. I … 7" tells a
      reader nothing */
   const tuple = (list: any) => bare ? '()' : `(${list.map(entry).join(', ')}${list.length === 1 ? ',' : ''})`
@@ -244,7 +244,7 @@ export function typeset({ book, companion, trim = '6x9', contents = 'both', note
      next page either side in a book of short ones (verses, a page or less each) */
   const avgWords = chapters.reduce((n, ch) => n + String(ch.md || '').split(/\s+/).length, 0) / Math.max(chapters.length, 1)
   const rectoChapters = avgWords > 500
-  const chapterOut = (c: any, lab: any, odd = true) => {
+  const chapterOut = (c: any, lab: string, odd = true) => {
     parts.push(`#opener(${c.n == null ? 'none' : c.n}, [${inline(c.title, [])}], ${str(c.title)}, label(${str(lab)}), word: ${w('chapter', 'Chapter')}, odd: ${odd ? 'true' : 'false'})\n\n${c.summary || c.essence.length ? keepLast(c.body) : c.body}`)
     if (c.summary || c.essence.length) parts.push(`#companion(summary: ${c.summary ? `[${c.summary}]` : 'none'}, essence: (${c.essence.map((e: any) => `[${e}]`).join(', ')}${c.essence.length === 1 ? ',' : ''}), brief: ${w('brief', 'In brief')}, insights: ${w('insights', 'Key insights')}, long: ${c.long ? 'true' : 'false'})`)
   }
@@ -262,7 +262,7 @@ export function typeset({ book, companion, trim = '6x9', contents = 'both', note
     const lists = twoParts
       ? [{ title: words['marks-from-edition'] || 'From the Modern Edition', marks: marksOf(briefSrc) }, { title: words['marks-from-text'] || 'From the original full text', marks: marksOf(chapterSrc) }]
       : [{ title: words['marks-from-book'] || 'From the book', marks: marksOf(chapterSrc) }]
-    const data = lists.map((l) => `(title: ${str(l.title)}, marks: (${l.marks.map((m: any) => `(n: ${m.n}, colour: ${str(m.colour || 'sun')}, text: [${inline(m.text.replace(/^[a-z]/, (ch: any) => ch.toUpperCase()), [])}])`).join(', ')}${l.marks.length === 1 ? ',' : ''}))`).join(', ')
+    const data = lists.map((l) => `(title: ${str(l.title)}, marks: (${l.marks.map((m: any) => `(n: ${m.n}, colour: ${str(m.colour || 'sun')}, text: [${inline(m.text.replace(/^[a-z]/, (ch: string) => ch.toUpperCase()), [])}])`).join(', ')}${l.marks.length === 1 ? ',' : ''}))`).join(', ')
     parts.push(`#marks-page(lists: (${data}${lists.length === 1 ? ',' : ''}), eye: ${w('marks-eyebrow', 'The Highlights')}, title: ${w('marks', 'The lines worth noticing')}, page-word: ${w('page', 'p.')})`)
   }
   return { source: parts.join('\n\n') + '\n', chapters: chapters.length, marks: marks.length }

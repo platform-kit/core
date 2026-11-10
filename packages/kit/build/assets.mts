@@ -23,14 +23,14 @@ import { platformkitRuntimePath } from './runtime-paths.mjs'
 const warned = new Set<string>()
 const BUCKET_RE = /\/storage\/v1\/object\/(?:public\/)?content-assets\/(.+)$/
 
-export function addressOf(rel: any) {
+export function addressOf(rel: string) {
   const p = String(rel || '').replace(/\\/g, '/').replace(/^\.?\//, '')
   if (p.startsWith('content/uploads/')) return '/uploads/' + p.slice('content/uploads/'.length)
   if (p.startsWith('public/')) return '/' + p.slice('public/'.length)
   return null
 }
 /* the site-root-relative path an address names, or null for one that is not the site's (another host's url) */
-export function pathOfAddress(ref: any) {
+export function pathOfAddress(ref: string) {
   const s = String(ref || '').trim()
   if (!s) return null
   const m = BUCKET_RE.exec(s)
@@ -40,7 +40,7 @@ export function pathOfAddress(ref: any) {
   if (s.startsWith('/')) return 'public' + s
   return null
 }
-export async function resolveAsset(ref: any, { root = process.cwd(), fromFile = null as string | null, fetchFn = globalThis.fetch as (url: string) => Promise<{ ok: boolean, status?: number, arrayBuffer?: () => Promise<ArrayBuffer> }>, log = console.warn } = {}) {
+export async function resolveAsset(ref: string, { root = process.cwd(), fromFile = null as string | null, fetchFn = globalThis.fetch as (url: string) => Promise<{ ok: boolean, status?: number, arrayBuffer?: () => Promise<ArrayBuffer> }>, log = console.warn } = {}) {
   const s = String(ref || '').trim()
   if (!s) return null
   const rel = pathOfAddress(s)
@@ -80,7 +80,7 @@ export async function resolveAsset(ref: any, { root = process.cwd(), fromFile = 
    and the live version both count, since either may still show the file. A folder's paths expand to the files under
    it. Answers { [path]: [{ file, collection, title }] } for the paths in use alone. */
 const esc = (s: any) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-const titleOf = (text: any, file: any) => { const m = /^title:\s*(.+?)\s*$/m.exec(text.split(/^---\s*$/m)[1] || ''); const t = m ? m[1].replace(/^(['"])(.*)\1$/, '$2') : ''; return t || file.split('/').pop().replace(/\.[a-z0-9]+$/, '') }
+const titleOf = (text: string, file: any) => { const m = /^title:\s*(.+?)\s*$/m.exec(text.split(/^---\s*$/m)[1] || ''); const t = m ? m[1].replace(/^(['"])(.*)\1$/, '$2') : ''; return t || file.split('/').pop().replace(/\.[a-z0-9]+$/, '') }
 export async function assetUsage(store: any, paths: any) {
   const list = [].concat(paths || []).map((p) => String(p).replace(/\\/g, '/').replace(/^\.?\//, '')).filter(Boolean)
   if (!list.length) return {}
@@ -89,14 +89,14 @@ export async function assetUsage(store: any, paths: any) {
   for (const p of list) {
     const A = store.assets
     let isDir = false
-    if (A && A.list) { const parent = p.split('/').slice(0, -1).join('/'); try { isDir = (await A.list(parent)).some((e: any) => e.path === p && e.type === 'dir') } catch { isDir = false } }
+    if (A && A.list) { const parent = p.split('/').slice(0, -1).join('/'); try { isDir = (await A.list(parent)).some((e: { path: string; type: string }) => e.path === p && e.type === 'dir') } catch { isDir = false } }
     if (isDir) { const under = await A.search(p, '', true); for (const e of under) if (e.type === 'file') files.push({ file: e.path, of: p }) }
     else files.push({ file: p, of: p })
   }
   const forms = files.map(({ file, of }) => { const a = addressOf(file); const alts = [a, 'content-assets/' + file].filter(Boolean); return { file, of, re: new RegExp('(?:' + alts.map(esc).join('|') + ')(?![\\w\\-./])') } })
   /* the records, read once: every markdown under content/ but the library, and the emails' designs — the store's
      texts() where it has one (the rows in one query, the draft's text and the live version's both), else file by file */
-  const wanted = (file: any) => (file.endsWith('.md') && !file.startsWith('content/uploads/')) || (file.endsWith('.json') && file.startsWith('content/emails/'))
+  const wanted = (file: string) => (file.endsWith('.md') && !file.startsWith('content/uploads/')) || (file.endsWith('.json') && file.startsWith('content/emails/'))
   let found
   if (store.texts) found = (await store.texts('content')).filter((r: any) => wanted(r.file))
   else {

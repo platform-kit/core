@@ -75,19 +75,19 @@ function makePosthog() {
   ph.unregister_for_session = function (property: any) { run(() => core.unregister(property)) }
   ph.get_distinct_id = function () { return ready() ? (core.distinctId() || core.anonId()) : '' }
   ph.get_session_id = function () { return ready() ? core.session() : '' }
-  ph.get_property = function (property: any) { return ready() ? core.superProps()[property] : undefined }
+  ph.get_property = function (property: string|number) { return ready() ? core.superProps()[property] : undefined }
   ph.getSessionProperty = function (property: any) { return undefined }
   ph.setPersonProperties = function (set: any, set_once: any) { ph.identify(undefined, set, set_once) }
   ph.unsetPersonProperties = function (props: any) { run(() => core.capture('$set', { ...pageProps(), $unset: Array.isArray(props) ? props : [props] }, { noStart: true })) }
   ph.setIdentity = function (distinct_id: any, set: any, set_once: any) { ph.identify(distinct_id, set, set_once) }
   ph.clearIdentity = function () { ph.reset() }
   ph.createPersonProfile = function () { run(() => core.capture('$set', { ...pageProps(), $set: {} }, { noStart: true })) }
-  ph.people = { set: (props: any, to: any, cb: any) => { ph.setPersonProperties(typeof props === 'string' ? { [props]: to } : props); if (typeof cb === 'function') cb() }, set_once: (props: any, to: any, cb: any) => { ph.setPersonProperties(undefined, typeof props === 'string' ? { [props]: to } : props); if (typeof cb === 'function') cb() } }
+  ph.people = { set: (props: any, to: any, cb: () => void) => { ph.setPersonProperties(typeof props === 'string' ? { [props]: to } : props); if (typeof cb === 'function') cb() }, set_once: (props: any, to: any, cb: () => void) => { ph.setPersonProperties(undefined, typeof props === 'string' ? { [props]: to } : props); if (typeof cb === 'function') cb() } }
   ph.group = function (group_type: any, group_key: any, group_properties: any) { run(() => { const groups = { ...(core.superProps().$groups || {}), [group_type]: group_key }; core.register({ $groups: groups }); if (group_properties) core.capture('$groupidentify', { ...pageProps(), $group_type: group_type, $group_key: group_key, $group_set: group_properties }, { noStart: true }) }) }
   ph.resetGroups = function () { run(() => core.unregister('$groups')) }
   ph.getGroups = function () { return ready() ? (core.superProps().$groups || {}) : {} }
   ph.opt_out_capturing = function () { run(() => core.optOut()) }
-  ph.opt_in_capturing = function (options: any) { run(() => { core.optIn(); if (options && options.captureEventName !== false && options.captureEventName !== undefined) ph.capture(typeof options.captureEventName === 'string' ? options.captureEventName : '$opt_in') }) }
+  ph.opt_in_capturing = function (options: { captureEventName: boolean|undefined }) { run(() => { core.optIn(); if (options && options.captureEventName !== false && options.captureEventName !== undefined) ph.capture(typeof options.captureEventName === 'string' ? options.captureEventName : '$opt_in') }) }
   ph.has_opted_out_capturing = function () { return ready() ? core.optedOut() : false }
   ph.has_opted_in_capturing = function () { return ready() ? !core.optedOut() : false }
   ph.clear_opt_in_out_capturing = function () { run(() => core.optIn()) }
@@ -100,7 +100,7 @@ function makePosthog() {
   ph.captureTraceMetric = function (trace_id: any, metric_name: any, metric_value: any) { ph.capture('$ai_metric', { $ai_trace_id: trace_id, $ai_metric_name: metric_name, $ai_metric_value: metric_value }) }
   ph.calculateEventProperties = function (event_name: any, event_properties: any) { return { ...pageProps(), ...(ready() ? core.superProps() : {}), ...(event_properties || {}) } }
   ph.set_config = function (options: any) { config = { ...config, ...(options || {}) }; if (options && 'debug' in options && core) core.debug = !!options.debug }
-  ph.debug = function (debug: any) { config.debug = debug !== false; try { localStorage.setItem('ph_debug', config.debug ? 'true' : 'false') } catch (e) { /* none */ } }
+  ph.debug = function (debug: boolean) { config.debug = debug !== false; try { localStorage.setItem('ph_debug', config.debug ? 'true' : 'false') } catch (e) { /* none */ } }
   ph.push = function (item: any) { if (Array.isArray(item) && typeof ph[item[0]] === 'function') ph[item[0]](...item.slice(1)) }
   ph.getPageViewId = function () { return ready() ? core.session() : undefined }
   ph.on = function (event: any, cb: any) { return noop }

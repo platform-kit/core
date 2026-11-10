@@ -28,7 +28,7 @@ const sections = computed(() => ((page.value && page.value.sections) || []).map(
   if (!SECTIONS[s.component] && import.meta.env.DEV) console.warn('[pages] unknown section', s.component)
   /* a section's tone and anchor are the page's to set and the ground's to draw: stamped on the section's root, never handed to it as props */
   const { tone, anchor, glow, ground, spacing, width, reveal, ...props } = s.props || {}
-  const or = (v: any, none: string) => (v && v !== none ? v : undefined)
+  const or = (v: string, none: string) => (v && v !== none ? v : undefined)
   return comp ? { key: look.value + ':' + i + ':' + s.component, comp, props, tone: or(tone, 'paper'), anchor: anchor || undefined, glow: or(glow, 'none'), ground: or(ground, 'none'), spacing: or(spacing, 'normal'), width: or(width, 'normal'), reveal: or(reveal, 'none') } : null
 }).filter(Boolean))
 

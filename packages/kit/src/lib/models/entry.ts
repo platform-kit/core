@@ -32,14 +32,14 @@ export function shownHolds(shown: ShownWhen, data: Record<string, unknown>): boo
   const same = Array.isArray(v) ? v.map(String).includes(String(shown.value)) : String(v === undefined || v === null ? '' : v) === String(shown.value === undefined ? '' : shown.value)
   return shown.is === 'is-not' ? !same : same
 }
-const word = (words: any, key: any, ctx: any) => fill((words && words.rules && words.rules[key] && words.rules[key].message) || `{field}: ${key}`, ctx)
+const word = (words: any, key: string, ctx: any) => fill((words && words.rules && words.rules[key] && words.rules[key].message) || `{field}: ${key}`, ctx)
 
 /* the checks the parse does not do: required, the rules, unique, a reference that exists — each skipped while
    the field is hidden. ctx.siblings: the other entries' frontmatter (for unique); ctx.refs: { model: Set(slugs) } */
 export function checkEntry(model: any, data: any, ctx: any = {}) {
   const words = ctx.words || {}
   const out: any = []
-  const check = (fields: any, obj: any, prefix: any) => {
+  const check = (fields: any, obj: any, prefix: string) => {
     for (const f of fields) {
       if (!prefix && !shownHolds(f.shown, obj)) continue
       const v = obj ? obj[f.key] : undefined

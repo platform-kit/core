@@ -20,7 +20,7 @@ import os from 'node:os'
 import { fileCache, runCache, EMPTY } from './enrich-cache.mjs'
 
 let pass = 0, fail = 0
-const ok = async (name: any, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
+const ok = async (name: string, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
 
 console.log('\nTHE ENRICHMENT CACHE\n')
 
@@ -75,7 +75,7 @@ function fakeDb(initial = {}) {
       /* update() is called before eq() in the chain this module writes */
       const outer = {
         select: () => api,
-        update: (patch: any) => ({ eq: async (_c: any, v: any) => { rows.set(v, { ...(rows.get(v) || {}), ...patch }); return { error: null } } }),
+        update: (patch: any) => ({ eq: async (_c: any, v: string) => { rows.set(v, { ...(rows.get(v) || {}), ...patch }); return { error: null } } }),
       }
       return outer
     },
@@ -160,7 +160,7 @@ A first chapter, with enough words in it to be worth a summary and a line or two
 A second chapter, also with words, so that the run has more than one call to make and can go over.
 `
 /* the least each stage's schema will accept, keyed by the label the pipeline asks under */
-const REPLIES = (area: any) => ({
+const REPLIES = (area: string) => ({
   understand: { thesis: 'The thesis of this book, stated at length.', premises: ['A premise of it.'], kind: 'teaching', stage: 'L1', chapters: [{ title: 'One', adds: 'a first thing', role: 'teaching' }, { title: 'Two', adds: 'a second thing', role: 'teaching' }] },
   /* 280 to 480 words, no headings, no list, and nothing that refers to itself — the stage has
      its own mechanical checks past the schema, and this is the least that passes them */
@@ -175,10 +175,10 @@ const REPLIES = (area: any) => ({
 function memStore(files: any) {
   const m = new Map(Object.entries(files))
   return { kind: 'rows', root: '',
-    read: async (p: any) => (m.has(p) ? m.get(p) : null),
-    write: async (p: any, t: any) => { m.set(p, t) },
-    exists: async (p: any) => m.has(p),
-    remove: async (p: any) => { m.delete(p) },
+    read: async (p: string) => (m.has(p) ? m.get(p) : null),
+    write: async (p: string, t: any) => { m.set(p, t) },
+    exists: async (p: string) => m.has(p),
+    remove: async (p: string) => { m.delete(p) },
     list: async (d: any) => [...m.keys()].filter((p) => p.startsWith(d + '/')).map((p) => p.slice(d.length + 1).replace(/\.md$/, '')),
     dirs: async () => [], files: m }
 }
@@ -262,14 +262,14 @@ await ok('an empty list of areas never becomes an enum', async () => {
  * called, which is the point: a test of the cache that spent money would be a poor cache.
  */
 await ok('a stage whose inputs have not moved is read back rather than bought again', async () => {
-  const h = (p: any, x: any) => crypto.createHash('sha1').update(p + '\n' + x).digest('hex').slice(0, 16)
+  const h = (p: string, x: string) => crypto.createHash('sha1').update(p + '\n' + x).digest('hex').slice(0, 16)
   const P = { understand: 'v3', extract: 'v2' }
   const cache: any = EMPTY()
   cache.understand = { key: h(P.understand, 'the whole book'), data: { thesis: 'x' } }
   cache.chapters = { One: { extract: { key: h(P.extract, 'chapter one'), data: ['an idea'] } } }
 
   /* the test every stage makes before it spends anything */
-  const fresh = (stage: any, prompt: any, input: any) => {
+  const fresh = (stage: string, prompt: string, input: string) => {
     const e = stage === 'understand' ? cache.understand : cache.chapters.One?.extract
     return !!e && e.key === h(prompt, input)
   }

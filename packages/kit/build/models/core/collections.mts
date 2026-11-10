@@ -21,7 +21,7 @@ const dropNulls = (v: unknown): unknown => (Array.isArray(v) ? v.map(dropNulls) 
 
 /* an experiment against the things it names: every variant a unique key and an existing page or ad; page
    variants on one route; the winner one of the keys. [{ path, message }], empty when fine. */
-async function validateExperiment(data: any, field: any, store: any) {
+async function validateExperiment(data: any, field: string, store: any) {
   const issues: any = []
   const vs = data[field]
   if (vs == null) return issues
@@ -93,7 +93,7 @@ const COMMENTS = z.any().meta({
   ],
 }).optional()
 
-const CHAPTERS = (label: any) => z.number().int().min(0).meta({ label, half: true, help: 'before the paywall; blank = all' }).optional()
+const CHAPTERS = (label: string) => z.number().int().min(0).meta({ label, half: true, help: 'before the paywall; blank = all' }).optional()
 
 /* the front page's switches and the features, in one place: the parse fills a default for each and
    the fields below draw one control each. Adding a switch means adding it here and there, which is
@@ -114,7 +114,7 @@ const COMMUNITY_FEATURES = ['events', 'huddles', 'polls', 'voice', 'files', 'tic
  */
 async function onAwardWrite(ctx: any) {
   if (ctx.store && ctx.store.kind === 'rows') return
-  await ctx.script('achievements-push.mjs').catch((e: any) => console.warn('achievements: not projected — ' + e.message))
+  await ctx.script('achievements-push.mjs').catch((e: { message: string }) => console.warn('achievements: not projected — ' + e.message))
 }
 async function projectedAwards(ctx: any) {
   const db = ctx.store && ctx.store.kind === 'rows' ? ctx.store.client : null
@@ -839,10 +839,10 @@ export const COLLECTIONS: any = {
       'nav-links': async (ctx: any) => {
         const out: any = []
         const at = new Set()
-        const add = (value: any, label: any, group: any) => { if (at.has(value)) return; at.add(value); out.push({ value, label, group }) }
+        const add = (value: any, label: string, group: string) => { if (at.has(value)) return; at.add(value); out.push({ value, label, group }) }
         const { default: SITE } = await import('#site').catch(() => ({ default: null })).then((m) => ({ default: m.default ?? m }))
         const M = (SITE && (SITE as any).modules) || {}
-        const on = (k: any) => M[k] !== false
+        const on = (k: string) => M[k] !== false
         add('/', 'Home', 'The site')
         if (on('articles') || on('books') || on('wiki') || on('docs')) add('/content', 'Library', 'The site')
         if (on('articles')) add('/content/articles', 'Articles', 'The site')
@@ -995,7 +995,7 @@ COLLECTIONS.products.checks = [async (rec: any, ctx: any) => {
   return wrong ? [{ path: 'options', message: wrong }] : []
 }]
 
-COLLECTIONS.products.prepare = async (rec: any, ctx: any) => { if (!HEX8.test(String(rec.data.key || ''))) rec.data.key = await giveKey(ctx.store); return rec }
+COLLECTIONS.products.prepare = async (rec: { data: { key: string } }, ctx: any) => { if (!HEX8.test(String(rec.data.key || ''))) rec.data.key = await giveKey(ctx.store); return rec }
 
 /*
  * REFRESH THE AXES FROM THE SUPPLIER'S CATALOGUE.
@@ -1093,7 +1093,7 @@ async (rec: any, ctx: any) => {
   /* a site with no diagnostics at all has nothing to check against, and "not one of none" would be
      a worse thing to say to somebody than nothing */
   if (!areas.length) return []
-  if (areas.some((a2: any) => a2.key === area)) return []
+  if (areas.some((a2: { key: string }) => a2.key === area)) return []
   return [{ path: 'statementArea', message: '"' + area + '" is not an area any topic declares — ' + areas.map((a2: any) => a2.key).join(', ') }]
 }]
 /* a page's sections, against the schemas that drew the builder's forms (the theme's, the site's merged) */

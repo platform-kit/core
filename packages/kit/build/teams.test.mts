@@ -42,7 +42,7 @@ const catalog = (sessions: { slug: string; team: string; }[] = [], tiers: string
   writeFileSync(join(dir, 'supabase/functions/_shared/catalog.json'), JSON.stringify({ sessions, offers: Object.fromEntries(tiers.map((t) => [t, { sku: t, key: t, kind: 'membership', tier: t }])) }))
 }
 const quiet = async (fn: { (): Promise<{ slug: string; name: string; about: string|null; thumb: string|null; position: number; published: boolean; fill: any }[]>; (): Promise<{ slug: string; name: string; about: string|null; thumb: string|null; position: number; published: boolean; fill: any }[]>; (): Promise<{ slug: string; name: string; about: string|null; thumb: string|null; position: number; published: boolean; fill: any }[]>; (): any }) => { const e = console.error; console.error = () => {}; try { return await fn() } finally { console.error = e } }
-const refuses = async (why?: any) => { try { await quiet(() => compileTeams({ store: gitStore(dir), write: false })); return false } catch (e: any) { return /fault/.test(e.message) } }
+const refuses = async (why?: undefined) => { try { await quiet(() => compileTeams({ store: gitStore(dir), write: false })); return false } catch (e: any) { return /fault/.test(e.message) } }
 
 catalog()
 write('a-team', '---\nname: A team\n---\n')

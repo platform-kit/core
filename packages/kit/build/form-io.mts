@@ -22,7 +22,7 @@ export const DIR = 'content/forms'
 export const slugOk = (s: any) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(s || ''))
 /* the files through the store (or a root, the checkout), async */
 export const formNames = (store: any) => asStore(store).list(DIR)
-export async function readForm(store: any, name: any) { const raw = await asStore(store).read(DIR + '/' + name + '.md'); return { raw, model: parseForm(raw) } }
+export async function readForm(store: any, name: string) { const raw = await asStore(store).read(DIR + '/' + name + '.md'); return { raw, model: parseForm(raw) } }
 
 /* the parser's lower-case parameter names → the Composer's camelCase ones */
 const CAMEL: any = { labelstyle: 'labelStyle', fieldsize: 'fieldSize', hidelabels: 'hideLabels', hideformtext: 'hideFormText', labelstart: 'labelStart', labelend: 'labelEnd', hidelabelstart: 'hideLabelStart', hidelabelend: 'hideLabelEnd', startat: 'startAt', outof: 'outOf', unitend: 'unitEnd', imageonly: 'imageOnly', sizelimit: 'sizeLimit', currentfile: 'currentFile', availablecountries: 'availableCountries' }
@@ -51,7 +51,7 @@ function composerParams(block: any) {
   const a = block.attrs || {}
   if (a.id) out.id = a.id
   if (a.classes && a.classes.length) out.classNames = a.classes
-  if (a.other && a.other.length) out.attrs = a.other.map((x: any) => { const m = /^([^=]+)=["']?(.*?)["']?$/.exec(x); return m ? { name: m[1], value: m[2] } : { name: x, value: '' } })
+  if (a.other && a.other.length) out.attrs = a.other.map((x: string) => { const m = /^([^=]+)=["']?(.*?)["']?$/.exec(x); return m ? { name: m[1], value: m[2] } : { name: x, value: '' } })
   if (block.condition) out.displayCondition = { dependencies: block.deps && block.deps.length ? block.deps : depsIn(block.condition), condition: block.condition }
   return out
 }
@@ -117,14 +117,14 @@ export function formsmdSettingLines(settings: any) {
   return out
 }
 
-const blockText = (b: any, delim: any) => {
+const blockText = (b: any, delim: string|undefined) => {
   if (b.type === 'field') return b.dirty || b.raw == null ? composeField(b, delim) : b.raw
   return b.raw != null ? b.raw : b.type === 'markdown' ? String(b.md || '').trim() : ''
 }
 /* a block with a condition of its own that the builder set (no raw): wrapped as the Composer wraps a field */
 const wrapCondition = (b: any, text: any) => (b.type !== 'field' && b.condition && b.dirty ? `::: [{$ ${(b.deps && b.deps.length ? b.deps : depsIn(b.condition)).join(' ')} $}]\n{% if ${b.condition} %}\n${text}\n{% endif %}\n:::` : text)
 
-export function serialiseForm(model: any, raw: any) {
+export function serialiseForm(model: any, raw: string|null) {
   const dirty = model.dirty || model.settingsChanges || model.slides.some((s: any) => s.dirty || s.headDirty || (s.blocks || []).some((b: any) => b.dirty || b.raw == null))
   if (!dirty && raw != null && !model.slidesChanged) return raw
   const delim = (model.settings && model.settings['form-delimiter']) || '|'
@@ -132,7 +132,7 @@ export function serialiseForm(model: any, raw: any) {
   const settings = composeSettings((model.head && model.head.settingsLines) || [], model.settingsChanges)
   if (settings.length) parts.push(settings.join('\n'))
   for (const d of (model.head && model.head.dataBlocks) || []) parts.push(d)
-  model.slides.forEach((s: any, i: any) => {
+  model.slides.forEach((s: any, i: number) => {
     const head = s.headDirty || !s.head ? composeHead(s) : s.head
     const body = (s.blocks || []).map((b: any) => wrapCondition(b, blockText(b, delim))).filter(Boolean)
     const chunk = [head.join('\n'), body.join('\n\n')].filter(Boolean).join('\n\n')
@@ -141,7 +141,7 @@ export function serialiseForm(model: any, raw: any) {
   return parts.join('\n\n').replace(/\n{3,}/g, '\n\n').replace(/\s+$/, '') + '\n'
 }
 
-export async function writeForm(store: any, name: any, model: any, raw: any) {
+export async function writeForm(store: any, name: string, model: any, raw: any) {
   if (!slugOk(name)) throw new Error('the name is lower-case words joined by hyphens')
   const doc = serialiseForm(model, raw)
   const check = parseForm(doc)

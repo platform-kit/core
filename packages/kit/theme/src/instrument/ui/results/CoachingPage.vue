@@ -54,7 +54,7 @@ const hostOf = (b: any) => !!user.value && b.provider === "native" && (b.host_id
    cancel-session and book-session ask (_shared/sessions/page.js). A button that refuses when it is
    pressed is worse than no button; a host is not held to the reader's switches, because they cancel
    a session they are giving whenever they need to. */
-function may(b: any, what: any) {
+function may(b: any, what: string) {
   if (!(mine(b) || hostOf(b))) return false
   if (hostOf(b)) return true
   const type = (options.value || []).find((o) => o.event === b.event) || null
@@ -63,7 +63,7 @@ function may(b: any, what: any) {
 /* THE HOST'S WORD. Saying yes is the booking being made — the invitation, the room and the week of
    chat all follow from it — so it goes through the same function a booking goes through. */
 const answering = ref('')
-async function answer(b: any, yes: any) {
+async function answer(b: { uid: string; }, yes: any) {
   answering.value = b.uid
   try { await answerBooking(b.uid, yes); await load() }
   catch (e) { cancelErr.value = (e as any).message || String(e) }
@@ -71,16 +71,16 @@ async function answer(b: any, yes: any) {
 }
 const canNoShow = (b: any) => hostOf(b) && !b.no_show && b.end_at && new Date(b.end_at).getTime() < Date.now() && (b.status === "accepted" || b.status === "ended");
 const noShowing = ref("");
-async function doNoShow(b: any) { noShowing.value = b.uid; try { await markNoShow(b.uid); await load(); } catch (e) { cancelErr.value = (e as any).message; } finally { noShowing.value = ""; } }
+async function doNoShow(b: { uid: string; }) { noShowing.value = b.uid; try { await markNoShow(b.uid); await load(); } catch (e) { cancelErr.value = (e as any).message; } finally { noShowing.value = ""; } }
 const placeLine = (b: any) => placeOf(b.where, B);
 /* a host books for people: every published type, offered whatever the host's own tier */
 const HW = us("library").coaching.host || {};
 const forOthers = ref(false);
-const hostOptions = computed(() => (ALL_SESSIONS || []).filter((s: any) => s.published !== false).sort((a: any, b: any) => (a.order || 99) - (b.order || 99)).map((s: any) => ({ ...s, event: eventOfType(s), scheduler: schedulerOf(s), blocked: false, paid: false, credits: 0 })));
+const hostOptions = computed(() => (ALL_SESSIONS || []).filter((s: { published: boolean; }) => s.published !== false).sort((a: any, b: any) => (a.order || 99) - (b.order || 99)).map((s: any) => ({ ...s, event: eventOfType(s), scheduler: schedulerOf(s), blocked: false, paid: false, credits: 0 })));
 function onBookedFor() { load(); }
 const madeBy = (b: any) => (b.made_by_name ? fill(HW["made-by"], { name: b.made_by_name }) : "");
 /* a room on this site opens in this tab (the router takes the click); a link elsewhere opens a new one */
-const ours = (u: any) => !!u && (u.startsWith('/') || (typeof location !== 'undefined' && u.startsWith(location.origin + '/')));
+const ours = (u: string) => !!u && (u.startsWith('/') || (typeof location !== 'undefined' && u.startsWith(location.origin + '/')));
 function onBooked() { moving.value = null; load(); }
 /* the chat is a member's or a coach's (src/pages/ChatPage.vue decides the same way) */
 
@@ -102,18 +102,18 @@ async function load() {
    the state while it is on its way, or after the keep took it — never a cal.com link */
 const watching = ref<any>(null), media = ref<any>({}), mediaBusy = ref("");
 const fill = (t: any, m: any) => String(t || "").replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? "" : m[k]));
-async function watch_(b: any) {
+async function watch_(b: { uid: string; }) {
   if (watching.value === b.uid) { watching.value = null; return; }
   if (!media.value[b.uid]) { mediaBusy.value = b.uid; try { media.value = { ...media.value, [b.uid]: await recordingFor(b.uid) }; } catch (e) { media.value = { ...media.value, [b.uid]: { error: (e as any).message } }; } finally { mediaBusy.value = ""; } }
   watching.value = b.uid;
 }
-async function transcript(b: any) { const m = media.value[b.uid] || (await recordingFor(b.uid)); media.value = { ...media.value, [b.uid]: m }; if (m && m.transcript) window.open(m.transcript, "_blank", "noopener"); }
+async function transcript(b: { uid: string|number; }) { const m = media.value[b.uid] || (await recordingFor(b.uid)); media.value = { ...media.value, [b.uid]: m }; if (m && m.transcript) window.open(m.transcript, "_blank", "noopener"); }
 let channel: any = null;
 function listen() {
   if (channel || !configured || !isSignedIn.value) return;
   channel = (supabase as any).channel("bookings:mine")
     .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, load)
-    .subscribe((status: any) => { if (status === "SUBSCRIBED") load(); });
+    .subscribe((status: string) => { if (status === "SUBSCRIBED") load(); });
 }
 function unlisten() { if (channel) { try { (supabase as any).removeChannel(channel); } catch (e) { /* gone */ } channel = null; } }
 onMounted(() => { load(); listen(); });
@@ -123,8 +123,8 @@ const now = () => Date.now();
 /* a booking the reader gives rather than attends */
 const asCoach = (b: any) => !!user.value && (b.provider_id === user.value.id || (!!b.provider_email && !!user.value.email && b.provider_email.toLowerCase() === user.value.email.toLowerCase()) ) && b.user_id !== user.value.id;
 const attending = computed(() => rows.value.filter((b: any) => !asCoach(b)));
-const live = (b: any) => (b.status === "accepted" || b.status === "pending") && b.end_at && new Date(b.end_at).getTime() > now();
-const upcoming = computed(() => rows.value.filter(live).sort((a: any, b: any) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()));
+const live = (b: { status: string; end_at: string|number|Date; }) => (b.status === "accepted" || b.status === "pending") && b.end_at && new Date(b.end_at).getTime() > now();
+const upcoming = computed(() => rows.value.filter(live).sort((a: { start_at: string|number|Date; }, b: { start_at: string|number|Date; }) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime()));
 /* HOW MANY SESSIONS THE RUN HOLDS, for the row that says "One of 6". Counted from the rows in hand
    rather than asked for: they are all the reader's own, so they are all here already. */
 const runOf = computed(() => {
@@ -166,7 +166,7 @@ const tabs = computed(() => [
 let picked = false
 watch(upcoming, (u) => { if (!picked && !props.framed) tab.value = u.length ? 'upcoming' : 'book' }, { immediate: true })
 watch(tab, () => { picked = true })
-const when = (iso: any) => { try { return new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)); } catch (e) { return iso || ""; } };
+const when = (iso: string|number|Date) => { try { return new Intl.DateTimeFormat(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)); } catch (e) { return iso || ""; } };
 </script>
 
 <template>

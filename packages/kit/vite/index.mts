@@ -59,12 +59,12 @@ declare global {
  * address must answer them, as the host's rewrites do in production (deploy/_redirects). The dev
  * server proxies the same three paths to the atproto function, telling it the host it was asked on.
  */
-function networkProxy(c: any, mode: any) {
+function networkProxy(c: any, mode: string) {
   if ((c.modules || {}).network === false) return undefined
   const env = loadEnv(mode || 'development', c.root, '')
   const target = String(process.env.VITE_SUPABASE_URL || env.VITE_SUPABASE_URL || '').replace(/\/+$/, '')
   if (!target) return undefined
-  const door = { target, changeOrigin: true, xfwd: true, rewrite: (p: any) => '/functions/v1/atproto' + p }
+  const door = { target, changeOrigin: true, xfwd: true, rewrite: (p: string) => '/functions/v1/atproto' + p }
   return { '/xrpc': door, '/.well-known/atproto-did': door, '/.well-known/did.json': door }
 }
 
@@ -74,18 +74,18 @@ function site(c: any, theme: any, keys: string[] = []): Plugin {
   const overrideFiles = new Set(Object.values(overrides))
   /* a virtual id must not hold a '#': the browser would read it as a fragment */
   const V = Object.fromEntries(['site', 'site/looks', 'site/landing', 'site/app', 'site/routes', 'site/nav', 'site/analytics', 'site/instrument', 'site/recommendations', 'site/admin', 'site/courses', 'site/member', 'site/permissions', 'site/desk', 'site/strings-default'].map((k) => ['#' + k, '\0platformkit:' + k.replace('/', '-')]))
-  const abs = (p: any) => path.resolve(c.root, p)
+  const abs = (p: string) => path.resolve(c.root, p)
   const J = JSON.stringify
   /* where the generated modules are written (see writeFiles below), and how one imports a site's file from there:
      relatively, because Vite's dependency scan takes an import whose specifier is already its resolved path for an
      external one and follows it no further */
   const dir = path.join(c.root, '.platformkit', 'site')
   /* a site's file, relative to the generated module; a package path (the kit's own place) as it is */
-  const from = (p: any) => { if (/^platformkit\//.test(p)) return p; const r = path.relative(dir, path.resolve(c.root, p)).split(path.sep).join('/'); return r.startsWith('.') ? r : './' + r }
+  const from = (p: string) => { if (/^platformkit\//.test(p)) return p; const r = path.relative(dir, path.resolve(c.root, p)).split(path.sep).join('/'); return r.startsWith('.') ? r : './' + r }
   /* a contract module: every name the kit and the theme may import, from the site's module when it exports it, else the default */
   const contract = (mod: any, names: any) => (mod ? `import * as M from ${J(from(mod))}\n` : '') + Object.entries(names).map(([k, d]) => `export const ${k} = ${mod ? `M.${k} !== undefined ? M.${k} : (${d})` : d}`).join('\n') + '\n'
   /* what each virtual module is: the code its id is answered with, generated from the config */
-  const generate = async (id: any) => {
+  const generate = async (id: string) => {
     if (id === V['#site']) return `export default ${JSON.stringify(publicSite(c))}\n/* the community's registered places, each page fetched when it is first opened */\nexport const places = [${communityOf(c).places.map((x) => `{ ...${J({ ...x, component: undefined })}, load: () => import(${J(from(x.component))}) }`).join(', ')}]\nexport const modules = ${JSON.stringify(c.modules)}\nexport const moduleKeys = ${JSON.stringify(keys)}\nexport const api = ${JSON.stringify(publicSite(c).api)}\n`
     if (id === V['#site/looks']) {
       /*
@@ -140,7 +140,7 @@ function site(c: any, theme: any, keys: string[] = []): Plugin {
        */
       const strange = (c.routes || []).filter((r: { module: any }) => r.module && !keys.includes(r.module))
       if (strange.length) throw new Error('a route is gated on a module no manifest declares: ' + strange.map((r: any) => `${r.path} → ${r.module}`).join(', '))
-      const routes = (c.routes || []).filter((r: any) => !r.module || (c.modules || {})[r.module] !== false)
+      const routes = (c.routes || []).filter((r: { module: string|number }) => !r.module || (c.modules || {})[r.module] !== false)
       return routes.map((r: any, i: any) => `import R${i} from ${J(from(r.component))}`).join('\n') + `\nexport const routes = [${routes.map((r: any, i: any) => `{ ...${J({ path: r.path, prefix: !!r.prefix })}, component: R${i} }`).join(', ')}]\n`
     }
     if (id === V['#site/nav']) {
@@ -246,9 +246,9 @@ function site(c: any, theme: any, keys: string[] = []): Plugin {
     configureServer(server: any) {
       const cfg = siteFile(abs('.')), vcfg = siteFile(abs('.'), 'velite.config')
       const modelsDir = abs('content/models')
-      const isModel = (f: any) => f.startsWith(modelsDir + path.sep) && f.endsWith('.md') && !f.slice(modelsDir.length + 1).includes(path.sep)
+      const isModel = (f: string) => f.startsWith(modelsDir + path.sep) && f.endsWith('.md') && !f.slice(modelsDir.length + 1).includes(path.sep)
       server.watcher.add(cfg)
-      const changed = (f: any) => {
+      const changed = (f: string) => {
         if (f === cfg) { server.config.logger.info('platformkit.config.js changed, restarting server...', { timestamp: true }); server.restart(); return }
         if (isModel(f) && fs.existsSync(vcfg)) { server.config.logger.info('a content model changed, velite starts over...', { timestamp: true }); const now = new Date(); fs.utimesSync(vcfg, now, now) }
       }
@@ -276,15 +276,15 @@ function site(c: any, theme: any, keys: string[] = []): Plugin {
 /* velite over the site's content, then the build steps of the prepare phase (build/steps/: the search index, the
    sales report, the funnels — and a site's own); in dev, a prepare step whose inputs match a changed file runs again
    once velite has rebuilt what it reads */
-async function prepare(c: any, changed: null = null, dev = false) {
+async function prepare(c: any, changed: any = null, dev = false) {
   const { runPhase } = await import('../build/steps.mjs')
-  await runPhase('prepare', { site: c, changed, dev, log: (m: any) => console.log('  ' + m) })
+  await runPhase('prepare', { site: c, changed, dev, log: (m: string) => console.log('  ' + m) })
 }
 async function refresh(c: any, changed: unknown[] | null = null, projectLocal = true) {
   const { refreshContent } = await import('../build/content-refresh.mjs')
   await refreshContent({
     site: c, changed, projectLocal,
-    log: (m: any) => console.log('  ' + m),
+    log: (m: string) => console.log('  ' + m),
   })
 }
 function velite(c: any): Plugin {
@@ -340,7 +340,7 @@ function velite(c: any): Plugin {
           return
         }
         try {
-          const readCollection = (name: any, fallback: any) => {
+          const readCollection = (name: string, fallback: any) => {
             try { return JSON.parse(fs.readFileSync(path.join(c.root, '.velite', name + '.json'), 'utf8')) }
             catch (error: any) { if (error.code === 'ENOENT') return fallback; throw error }
           }
@@ -407,8 +407,8 @@ function velite(c: any): Plugin {
         const list = [...pending]; pending = new Set()
         try { await refresh(c, list) } catch (e: any) { server.config.logger.error(String(e && e.message || e), { timestamp: true }) }
       }
-      const changed = (f: any) => { if (!f.startsWith(content)) return; pending.add(path.relative(c.root, f)); clearTimeout(timer); timer = setTimeout(flush, 2500) }
-      const settled = async (f: any) => {
+      const changed = (f: string) => { if (!f.startsWith(content)) return; pending.add(path.relative(c.root, f)); clearTimeout(timer); timer = setTimeout(flush, 2500) }
+      const settled = async (f: string) => {
         if (f !== index || !globalThis.__prepareReady) return
         if (!fs.existsSync(search)) {
           const list = [...pending]
@@ -442,7 +442,7 @@ function velite(c: any): Plugin {
  * A family the kit does not serve stops the build naming it. Quietly falling back would leave
  * somebody staring at a page that did not change.
  */
-function fonts(root: any): Plugin {
+function fonts(root: string|undefined): Plugin {
   let head = ''
   return {
     name: 'platformkit-fonts',

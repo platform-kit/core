@@ -3,7 +3,7 @@ title: The spec workflow
 description: How PlatformKit requirements are proposed, implemented, verified and recorded with OpenSpec.
 order: 53
 sources: [openspec/config.yaml, packages/kit/build/proposal-trace.test.mts]
-reviewed: 2026-11-09
+reviewed: 2026-11-10
 ---
 
 ## Specifications describe behavior

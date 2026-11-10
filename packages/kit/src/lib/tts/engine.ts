@@ -19,7 +19,7 @@ const AVAILABLE_LANGS = ['en', 'ko', 'ja', 'ar', 'bg', 'cs', 'da', 'de', 'el', '
 class UnicodeProcessor {
   constructor(indexer: any) { (this as any).indexer = indexer }
 
-  _preprocessText(text: any, lang: any) {
+  _preprocessText(text: string, lang: string) {
     text = text.normalize('NFKD')
     const emojiPattern = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]+/gu
     text = text.replace(emojiPattern, '')
@@ -50,7 +50,7 @@ class UnicodeProcessor {
   }
 }
 
-class Style { constructor(ttl: any, dp: any) { (this as any).ttl = ttl; (this as any).dp = dp } }
+class Style { constructor(ttl: ort.TypedTensor<"float32">, dp: ort.TypedTensor<"float32">) { (this as any).ttl = ttl; (this as any).dp = dp } }
 
 /* a voice, from its parsed style JSON */
 export function loadVoiceStyle(style: any) {
@@ -62,7 +62,7 @@ export function loadVoiceStyle(style: any) {
 
 /* ---- the engine ---- */
 export class TextToSpeech {
-  constructor(cfgs: any, textProcessor: any, dpOrt: any, textEncOrt: any, vectorEstOrt: any, vocoderOrt: any) {
+  constructor(cfgs: any, textProcessor: UnicodeProcessor, dpOrt: ort.InferenceSession, textEncOrt: ort.InferenceSession, vectorEstOrt: ort.InferenceSession, vocoderOrt: ort.InferenceSession) {
     ;(this as any).cfgs = cfgs; (this as any).textProcessor = textProcessor
     ;(this as any).dpOrt = dpOrt; (this as any).textEncOrt = textEncOrt; (this as any).vectorEstOrt = vectorEstOrt; (this as any).vocoderOrt = vocoderOrt
     ;(this as any).sampleRate = cfgs.ae.sample_rate
@@ -73,7 +73,7 @@ export class TextToSpeech {
 
   /* Gaussian noise the shape of the latent, masked to the predicted length —
      the Node example's sampleNoisyLatent, on flat typed arrays */
-  sampleNoisyLatent(duration: any) {
+  sampleNoisyLatent(duration: number) {
     const wavLen = Math.floor(duration * (this as any).sampleRate)
     const chunkSize = (this as any).baseChunkSize * (this as any).chunkCompressFactor
     const latentLen = Math.floor((wavLen + chunkSize - 1) / chunkSize)
@@ -91,7 +91,7 @@ export class TextToSpeech {
   }
 
   /* one piece: the Node example's _infer for a batch of one */
-  async _infer(text: any, lang: any, style: any, totalStep: any, speed: any) {
+  async _infer(text: string, lang: any, style: any, totalStep: number, speed: number) {
     const { ids, mask, T } = (this as any).textProcessor.call(text, lang)
     const textIds = new ort.Tensor('int64', ids, [1, T])
     const textMask = new ort.Tensor('float32', mask, [1, 1, T])
@@ -122,7 +122,7 @@ export class TextToSpeech {
    * conversation can make its OPENING piece short and cheap — the only piece anybody waits for —
    * while a chapter keeps one setting throughout. Both default to what the chapter did.
    */
-  async call(text: any, lang: any, style: any, totalStep: any, speed: any, silenceDuration: any, onPiece: any, cancelled: any, { cut = null, stepsAt = null }: { cut?: ((text: string, max: number) => string[]) | null, stepsAt?: ((i: number) => number) | null } = {}) {
+  async call(text: string, lang: string, style: any, totalStep: any, speed: any, silenceDuration: any, onPiece: any, cancelled: any, { cut = null, stepsAt = null }: { cut?: ((text: string, max: number) => string[]) | null, stepsAt?: ((i: number) => number) | null } = {}) {
     const maxLen = (lang === 'ko' || lang === 'ja') ? 120 : 300
     const pieces = cut ? cut(text, maxLen) : chunkText(text, maxLen)
     let total = 0
@@ -145,8 +145,8 @@ export async function loadTextToSpeech({ buffers, cfgs, indexer, providers }: an
 }
 
 /* the Node example's chunkText, verbatim */
-export function chunkText(text: any, maxLen = 300) {
-  const paragraphs = text.trim().split(/\n\s*\n+/).filter((p: any) => p.trim())
+export function chunkText(text: string, maxLen = 300) {
+  const paragraphs = text.trim().split(/\n\s*\n+/).filter((p: string) => p.trim())
   const chunks = []
   for (let paragraph of paragraphs) {
     paragraph = paragraph.trim()

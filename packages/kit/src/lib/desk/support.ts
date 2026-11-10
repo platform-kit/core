@@ -57,7 +57,7 @@ export async function list(supabase: any) {
    should be. The bucket is private, so a path in it is signed for an hour and the signature is
    kept for the session; a prompt's picture is a path on this site and is passed as it is. */
 const signed = new Map()
-async function urlOf(supabase: any, path: any) {
+async function urlOf(supabase: any, path: string) {
   if (!path) return null
   if (/^(https?:)?\//.test(path)) return path
   if (!signed.has(path)) {
@@ -85,7 +85,7 @@ export async function messages(supabase: any, id: any) {
 
 /* an agent's line under the desk's own guards — the insert the inbox makes, and the same courtesy
    email after it, so a contact who has gone away is told whichever surface the reply came from */
-export async function send(supabase: any, id: any, body: any, me: any) {
+export async function send(supabase: any, id: any, body: string, me: string) {
   const mid = newId()
   const { error } = await supabase.from('support_messages').insert({ id: mid, conversation_id: id, author: 'agent', agent_id: me, body })
   if (error) throw error
@@ -103,7 +103,7 @@ export const FILE_TYPES: any = {
 }
 export const FILE_MAX = 10 * 1024 * 1024
 
-export async function sendFile(supabase: any, id: any, file: any, me: any, { kind = 'file', seconds = 0, said = '' } = {}) {
+export async function sendFile(supabase: any, id: string, file: any, me: any, { kind = 'file', seconds = 0, said = '' } = {}) {
   const type = kind === 'voice' ? 'audio/mpeg' : String((file && file.type) || '').toLowerCase()
   const ext = FILE_TYPES[type]
   if (!ext) throw new Error('kind')

@@ -39,7 +39,7 @@ const emit = defineEmits(['reply', 'report', 'removed'])
 const P = computed(() => us('network').post.main)
 const S = computed(() => us('network').shell.main)
 const T = computed(() => us('network').timeline.main)
-const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: { [x: string]: string }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 const live = computed(() => (props.post.kind === 'space' ? net.messages[props.post.id] || props.post : net.posts[props.post.id] || props.post))
 const author = computed(() => net.people[live.value.author_id] || null)
@@ -77,7 +77,7 @@ const whenFull = computed(() => { try { return new Date(live.value.created_at).t
 const busy = ref(false)
 const err = ref('')
 const needSignIn = () => { if ((window as any).DLauth) (window as any).DLauth.open() }
-async function toggle(which: any) {
+async function toggle(which: string) {
   if (!isSignedIn.value) return needSignIn()
   if (busy.value) return
   if (live.value.kind === 'space' && which !== 'like') return

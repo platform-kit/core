@@ -10,10 +10,10 @@ const said = (e: any) => { if (e.issues) e.message = e.issues.map((i: any) => i.
 const post = ({ col, name, data, content, create }: any) => pipe.save(col, name, { data, content }, { create }).catch(said)
 
 /* the collection a kind of experiment draws its variants from */
-export const colFor = (kind: any) => (kind === 'ad' ? 'ads' : 'pages')
+export const colFor = (kind: string) => (kind === 'ad' ? 'ads' : 'pages')
 
 /* the candidate items: [{ name, title, route? }] */
-export async function listItems(kind: any) {
+export async function listItems(kind: string) {
   const items = await pipe.items(colFor(kind))
   return items.map((i: any) => ({ name: i.name, title: i.data.title || i.name, route: i.data.route || (kind === 'ad' ? '' : '/') }))
 }
@@ -27,7 +27,7 @@ export function nextKey(variants: any) {
 
 /* copy a page or ad into a new file for a variant — "home" + "B" → "home-b" —
    with its title marked; returns the new file's name */
-export async function duplicateItem(kind: any, item: any, key: any) {
+export async function duplicateItem(kind: any, item: string, key: string) {
   const col = colFor(kind)
   const f = await pipe.read(col, item)
   const base = item.replace(/-[a-z]$/, '')
@@ -51,5 +51,5 @@ export async function patchExperiment(name: any, change: any) {
   return data
 }
 
-export const today = () => { const d = new Date(), p = (n: any) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}` }
-export const plusDays = (ymd: any, n: any) => { const d = new Date(ymd + 'T00:00:00'); d.setDate(d.getDate() + n); const p = (x: any) => String(x).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}` }
+export const today = () => { const d = new Date(), p = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}` }
+export const plusDays = (ymd: string, n: number) => { const d = new Date(ymd + 'T00:00:00'); d.setDate(d.getDate() + n); const p = (x: number) => String(x).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}` }

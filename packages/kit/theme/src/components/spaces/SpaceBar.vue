@@ -97,7 +97,7 @@ const MINE = computed(() => [
   ...(props.unreads ? [{ key: 'unreads', icon: 'unread', word: 'unreads', count: props.unreads }] : []),
 ])
 const QUEUE_ICON: any = { support: 'head', tickets: 'ticket', clients: 'people', comments: 'thread', 'social-comments': 'thread', 'social-dms': 'dm' }
-const count = (n: any) => n > 99 ? '99+' : n || ''
+const count = (n: number) => n > 99 ? '99+' : n || ''
 const wordOf = (m: any) => {
   if (m.key === 'index') return W.value.home
   if (m.key === 'net') return W.value.home
@@ -117,8 +117,8 @@ const MORE = computed(() => [
 ])
 /* THE INBOX (the queues, then Direct Messages) unfolds by hand, or while one of its rows is open */
 const INBOX = computed(() => NAV.value.first.find((m) => m.group) || null)
-const readSet = (k: any) => { try { return JSON.parse(localStorage.getItem(k) || '[]') } catch { return [] } }
-const writeSet = (k: any, v: any) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* private window */ } }
+const readSet = (k: string) => { try { return JSON.parse(localStorage.getItem(k) || '[]') } catch { return [] } }
+const writeSet = (k: string, v: number[]) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* private window */ } }
 const inboxPinned = ref(readSet('pk.nav.inbox').length > 0)
 const inboxOpen = computed(() => inboxPinned.value || !!(INBOX.value && INBOX.value.rows.some((r: any) => r.key === props.view)))
 function toggleInbox() { inboxPinned.value = !inboxOpen.value; writeSet('pk.nav.inbox', inboxPinned.value ? [1] : []) }

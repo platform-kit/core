@@ -34,7 +34,7 @@ const entry = (e: any) => {
   const path = toVf(e.path), [storage] = path.split('://'), dir = path.slice(0, path.lastIndexOf('/') + 1).replace(/\/$/, '') || storage + '://'
   return { storage, dir: dir.endsWith('://') ? dir : dir, basename: e.name, extension: e.type === 'file' ? (e.name.includes('.') ? e.name.split('.').pop() : '') : '', path, type: e.type, file_size: e.size ?? null, last_modified: e.modified ? Math.round(e.modified / 1000) : 0, mime_type: e.mime || null, visibility: 'public', url: e.url || null, previewUrl: e.url || null }
 }
-const toBase64 = (blob: any) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = rej; r.readAsDataURL(blob) })
+const toBase64 = (blob: Blob) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = rej; r.readAsDataURL(blob) })
 
 /* the uploader: every queued file posted through the pipe, its entry answered */
 class PipeUploader extends BasePlugin<any, any, any> {
@@ -57,11 +57,11 @@ class PipeUploader extends BasePlugin<any, any, any> {
 export class MediaDriver {
   constructor() { (this as any).storages = Object.keys(STORAGES) }
   configureUploader(uppy: any, ctx: any) { uppy.use(PipeUploader, { getTargetPath: ctx.getTargetPath }) }
-  async result(dirVf: any) { const dir = toStore(dirVf); const r = await media('list', { dir }); return { storages: (this as any).storages, dirname: toVf(dir), files: r.files.map(entry), read_only: false } }
+  async result(dirVf: string) { const dir = toStore(dirVf); const r = await media('list', { dir }); return { storages: (this as any).storages, dirname: toVf(dir), files: r.files.map(entry), read_only: false } }
   async list(params: any = {}) { return this.result(params.path || 'uploads://') }
   /* a file in use is kept: the pipe refuses (409, the records that name it) and the refusal is worded from the media
      scope for VueFinder's toast — the name, the records' titles (three at most, and the rest counted) */
-  refusal(e: any, what: any) {
+  refusal(e: any, what: string) {
     if (!e || e.status !== 409 || !e.used) throw e
     const F = us('media').page.file, fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
     const [path, records] = Object.entries(e.used)[0]

@@ -53,7 +53,7 @@ const matrix = computed(() => variantsOf(props.offer, options.value, { sold: { n
  * ever; one that has run out says so and may come back. One boolean would make the page say
  * "no longer made" about a jumper on a lorry.
  */
-const holds = (v: { gone?: any; variant?: any; chosen: any; sku?: any; lookup?: any; label?: string; sold?: boolean }, optName: any, value: any) => v.chosen.every((c: { option: string|number; value: any }) => (c.option === optName ? c.value === value : (!props.modelValue[c.option] || props.modelValue[c.option] === c.value)))
+const holds = (v: { gone?: any; variant?: any; chosen: any; sku?: any; lookup?: any; label?: string; sold?: boolean }, optName: string|number, value: any) => v.chosen.every((c: { option: string|number; value: any }) => (c.option === optName ? c.value === value : (!props.modelValue[c.option] || props.modelValue[c.option] === c.value)))
 function made(optName: any, value: any) { return matrix.value.some((v) => v.sold && holds(v, optName, value)) }
 function had(optName: any, value: any) { return matrix.value.some((v) => v.sold && holds(v, optName, value) && buyable(props.offer, v.variant, props.stock)) }
 /* pressable: it is made AND there is one. The two are separate only in what is SAID. */

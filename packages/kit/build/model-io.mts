@@ -32,7 +32,7 @@ export const modelNames = async (store: string) => asStore(store).list(DIR)
 export const entryNames = async (store: string, key: string) => asStore(store).list(DIR + '/' + key)
 
 /* ---- reading ---- */
-const str = (v: any, d = '') => (v === undefined || v === null ? d : String(v))
+const str = (v: null|undefined, d = '') => (v === undefined || v === null ? d : String(v))
 const bool = (v: string|boolean|null|undefined, d = false) => (v === undefined || v === null ? d : v === true || v === 'true')
 const options = (raw: any) => (Array.isArray(raw) ? raw : []).map((o) => (o && typeof o === 'object' ? { value: str(o.value), label: str(o.label, str(o.value)) } : { value: str(o), label: str(o) }))
 

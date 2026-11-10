@@ -24,11 +24,11 @@ export function platformKitWorkspaceRoot(start = process.cwd()) {
     : null
 }
 
-function validateName(name: any, where: any) {
+function validateName(name: string, where: string) {
   if (!DNS_LABEL.test(name)) throw new Error(`${where}: "${name}" is not a legal DNS label (use lowercase letters, digits, and interior hyphens; at most 63 characters)`)
 }
 
-function validateRemote(remote: any, where = 'site remote') {
+function validateRemote(remote: string|URL, where = 'site remote') {
   if (typeof remote !== 'string' || !remote.trim() || /[\s\u0000-\u001f]/.test(remote)) {
     throw new Error(`${where} must be an HTTPS, SSH, or local file Git URL`)
   }
@@ -42,25 +42,25 @@ function validateRemote(remote: any, where = 'site remote') {
   return remote
 }
 
-function validateCommit(ref: any, where = 'site revision') {
+function validateCommit(ref: string, where = 'site revision') {
   if (typeof ref !== 'string' || !COMMIT.test(ref)) throw new Error(`${where} must be a full 40-character commit SHA`)
   return ref.toLowerCase()
 }
 
-export function managedSitesRoot(root: any) {
+export function managedSitesRoot(root: string) {
   return path.join(path.resolve(root), 'sites', 'external')
 }
 
-export function managedSitesRegistry(root: any) {
+export function managedSitesRegistry(root: string) {
   return path.join(path.resolve(root), 'platformkit.sites.json')
 }
 
-function within(parent: any, candidate: any) {
+function within(parent: string, candidate: string) {
   const relative = path.relative(path.resolve(parent), path.resolve(candidate))
   return relative !== '' && !relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative)
 }
 
-function validateRegistry(registry: any, file: any) {
+function validateRegistry(registry: any, file: string) {
   if (!registry || typeof registry !== 'object' || Array.isArray(registry) || registry.version !== 1 || !Array.isArray(registry.sites)) {
     throw new Error(`site registry ${file} must be an object with version 1 and a sites array`)
   }
@@ -76,7 +76,7 @@ function validateRegistry(registry: any, file: any) {
   return registry
 }
 
-export function readSiteRegistry(root: any) {
+export function readSiteRegistry(root: string) {
   const file = managedSitesRegistry(root)
   if (!fs.existsSync(file)) return { version: 1, sites: [] }
   let registry
@@ -108,11 +108,11 @@ function git(args: any, { cwd, operation, env = process.env }: any) {
   return result.stdout.trim()
 }
 
-function checkoutPath(root: any, name: any) {
+function checkoutPath(root: string, name: string) {
   return path.join(managedSitesRoot(root), name)
 }
 
-function assertManagedPath(root: any, destination: any) {
+function assertManagedPath(root: string, destination: string) {
   const sitesRoot = path.join(path.resolve(root), 'sites')
   const managedRoot = managedSitesRoot(root)
   if (!within(root, managedRoot) || !within(managedRoot, destination)) {
@@ -126,7 +126,7 @@ function assertManagedPath(root: any, destination: any) {
   }
 }
 
-function ensureNoTrackedCollision(root: any, name: any) {
+function ensureNoTrackedCollision(root: string, name: any) {
   const local = path.join(path.resolve(root), 'sites', name)
   if (fs.existsSync(local)) throw new Error(`site "${name}" already exists in the workspace at ${local}; choose a different managed name`)
   if (process.env.PLATFORMKIT_ROOT_SITE === name && fs.existsSync(siteFile(path.resolve(root)))) {
@@ -134,12 +134,12 @@ function ensureNoTrackedCollision(root: any, name: any) {
   }
 }
 
-function siteEntry(root: any, name: any, remote: any, ref: any) {
+function siteEntry(root: string, name: any, remote: any, ref: any) {
   const directory = checkoutPath(root, name)
   return { name, remote, ref, directory, dist: path.join(directory, 'dist'), root: false, managed: true, fetched: true }
 }
 
-export function siteGitUrlVariable(name: any) {
+export function siteGitUrlVariable(name: string) {
   validateName(name, 'site name')
   return `PLATFORMKIT_SITE_${siteEnvSuffix(name)}_GIT_URL`
 }
@@ -170,7 +170,7 @@ export function gitEnvironmentForRemote(remote: any, env = process.env) {
 }
 
 /* is `older` the commit itself or one `newer` was built on? (git merge-base --is-ancestor: 0 yes, 1 no) */
-function isAncestor(directory: any, older: any, newer: any) {
+function isAncestor(directory: string, older: string, newer: string) {
   const r = spawnSync('git', ['merge-base', '--is-ancestor', older, newer], { cwd: directory, encoding: 'utf8', stdio: 'ignore' })
   return r.status === 0
 }
@@ -180,7 +180,7 @@ function isAncestor(directory: any, older: any, newer: any) {
  * on the pinned commit with local commits on top, and that is allowed — the listing says how many. A checkout anywhere
  * else (behind the pin, or on another line) is refused, because nothing then says what the workspace is running.
  */
-function verifyManagedCheckout(root: any, registration: any) {
+function verifyManagedCheckout(root: string, registration: any) {
   const { name, remote, ref } = registration
   const directory = checkoutPath(root, name)
   if (fs.lstatSync(directory).isSymbolicLink()) throw new Error(`managed site checkout must not be a symbolic link: ${directory}`)
@@ -196,7 +196,7 @@ function verifyManagedCheckout(root: any, registration: any) {
   return { ...siteEntry(root, name, remote, ref), dirty, ahead, head: actual }
 }
 
-export function fetchSite(root: any, { name, remote, ref, env = process.env }: any) {
+export function fetchSite(root: string, { name, remote, ref, env = process.env }: any) {
   root = path.resolve(root)
   validateName(name, 'site name')
   const registry = readSiteRegistry(root)
@@ -232,7 +232,7 @@ export function fetchSite(root: any, { name, remote, ref, env = process.env }: a
   return siteEntry(root, name, remote, ref)
 }
 
-export function updateSite(root: any, { name, ref, env = process.env }: any) {
+export function updateSite(root: string, { name, ref, env = process.env }: any) {
   root = path.resolve(root)
   validateName(name, 'site name')
   ref = validateCommit(ref)
@@ -379,7 +379,7 @@ export function defaultSite(root = process.cwd(), env = process.env) {
   return selected
 }
 
-export function siteNameFor(root: any, directory = process.cwd(), env = process.env) {
+export function siteNameFor(root: string, directory = process.cwd(), env = process.env) {
   root = path.resolve(root)
   directory = path.resolve(directory)
   const relative = path.relative(root, directory)
@@ -391,7 +391,7 @@ export function siteNameFor(root: any, directory = process.cwd(), env = process.
   return null
 }
 
-export function siteEnvSuffix(name: any) {
+export function siteEnvSuffix(name: string) {
   return name.toUpperCase().replace(/-/g, '_')
 }
 
@@ -400,7 +400,7 @@ if (isMain(import.meta.url)) {
     const root = workspaceRoot(process.cwd())
     const args = process.argv.slice(2)
     const [action, name, ...options] = args
-    const parseOptions = (allowed: any) => {
+    const parseOptions = (allowed: string|string[]) => {
       const parsed: any = {}
       for (let index = 0; index < options.length; index += 2) {
         const key = options[index]
@@ -418,7 +418,7 @@ if (isMain(import.meta.url)) {
       }
       const parsed = parseOptions(['--url', '--ref'])
       const registry = readSiteRegistry(root)
-      const registered = registry.sites.find((site: any) => site.name === name)
+      const registered = registry.sites.find((site: { name: string }) => site.name === name)
       const ref = parsed['--ref'] || registered?.ref
       if (!ref) throw new Error(`site "${name}" needs --ref <40-character-commit> unless it already has a registered pin`)
       const fetched = fetchSite(root, { name, remote: parsed['--url'], ref })

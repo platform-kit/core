@@ -28,7 +28,7 @@ const spanOf = (mins: any) => {
    and nothing is projected until it is published — see `projected` below */
 async function onWrite(ctx: any) {
   if (ctx.store && ctx.store.kind === 'rows') return
-  await ctx.script('providers-push.mjs').catch((e: any) => console.warn('providers: not projected — ' + e.message))
+  await ctx.script('providers-push.mjs').catch((e: { message: string }) => console.warn('providers: not projected — ' + e.message))
 }
 
 export default {

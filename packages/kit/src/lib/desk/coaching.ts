@@ -85,7 +85,7 @@ async function urlOf(supabase: any, path: any) {
   return signed.get(path)
 }
 
-export async function messages(supabase: any, id: any, me: any) {
+export async function messages(supabase: any, id: any, me: string) {
   const { data, error } = await supabase.from('messages').select('*')
     .eq('conversation_id', id).order('created_at', { ascending: true }).limit(500)
   if (error) throw error
@@ -103,7 +103,7 @@ export async function messages(supabase: any, id: any, me: any) {
   return out
 }
 
-export async function send(supabase: any, id: any, body: any, me: any) {
+export async function send(supabase: any, id: any, body: string, me: string) {
   const mid = newId()
   const { error } = await supabase.from('messages').insert({ id: mid, conversation_id: id, sender_id: me, kind: 'text', body })
   if (error) throw error
@@ -120,7 +120,7 @@ export const FILE_TYPES: any = {
 }
 export const FILE_MAX = 20 * 1024 * 1024
 
-export async function sendFile(supabase: any, id: any, file: any, me: any, { kind = 'file', seconds = 0, said = '' } = {}) {
+export async function sendFile(supabase: any, id: string, file: any, me: any, { kind = 'file', seconds = 0, said = '' } = {}) {
   const type = kind === 'voice' ? 'audio/mpeg' : String((file && file.type) || '').toLowerCase()
   const ext = FILE_TYPES[type]
   if (!ext) throw new Error('kind')

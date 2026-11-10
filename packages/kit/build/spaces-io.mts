@@ -156,8 +156,8 @@ export function fillOut(fill: any) {
   return sets.length === 1 ? sets[0] : sets
 }
 
-export const slugOk = (s: any) => /^[a-z0-9][a-z0-9-]{0,48}$/.test(String(s || '')) && !/--/.test(String(s))
-export const roleSlugOk = (s: any) => /^[a-z0-9][a-z0-9-]{0,38}$/.test(String(s || '')) && !/--/.test(String(s))
+export const slugOk = (s: string) => /^[a-z0-9][a-z0-9-]{0,48}$/.test(String(s || '')) && !/--/.test(String(s))
+export const roleSlugOk = (s: string) => /^[a-z0-9][a-z0-9-]{0,38}$/.test(String(s || '')) && !/--/.test(String(s))
 
 /* ---- a grant's target, the one bit of grammar in the file ---- */
 /* 'everyone' | 'tier:inner' | 'role:founder' | 'bought:guild-pass' → { scope, tier, role, sku } */
@@ -213,7 +213,7 @@ export function joinOf(j: any) {
   return out
 }
 
-export function parseSpace(text: any) {
+export function parseSpace(text: string) {
   const f = matter(String(text || ''))
   const d = f.data || {}
   return {
@@ -319,7 +319,7 @@ export function serialiseSpace(data: any, content = '') {
   return matter.stringify('\n' + String(content || '').trim() + '\n', out, DUMP)
 }
 
-export function parseChannel(text: any) {
+export function parseChannel(text: string) {
   const f = matter(String(text || ''))
   const d = f.data || {}
   return {
@@ -402,12 +402,12 @@ const normGrant = (g: any) => ({
 /* the space slugs: every .md directly under content/spaces */
 export async function spaceNames(store: any) {
   const st = asStore(store)
-  return (await st.list(SPACES_DIR, { ext: 'md' })).filter((n: any) => !n.includes('/'))
+  return (await st.list(SPACES_DIR, { ext: 'md' })).filter((n: string|string[]) => !n.includes('/'))
 }
 /* the channel slugs of one space: every .md under its folder */
 export async function channelNames(store: any, space: any) {
   const st = asStore(store)
-  return (await st.list(`${SPACES_DIR}/${space}`, { ext: 'md' })).filter((n: any) => !n.includes('/'))
+  return (await st.list(`${SPACES_DIR}/${space}`, { ext: 'md' })).filter((n: string|string[]) => !n.includes('/'))
 }
 export async function readSpace(store: any, name: any) {
   const st = asStore(store)

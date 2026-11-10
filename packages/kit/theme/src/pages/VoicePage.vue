@@ -169,7 +169,7 @@ function setPrefs(next: { aloud: any; voice: any; visual?: any; lang: any; speed
   if (next.lang !== was.lang && recog) { try { recog.lang = next.lang || document.documentElement.lang || 'en-GB' } catch { /* going */ } }
 }
 const flipAloud = () => setPrefs({ ...prefs.value, aloud: !prefs.value.aloud })
-const said_when = (at: any) => whenOf(at, WHEN.value)
+const said_when = (at: string|number|Date) => whenOf(at, WHEN.value)
 
 /*
  * EVERY LINE IS KEPT AS IT IS SAID, not at the end: a conversation has no end — the tab is

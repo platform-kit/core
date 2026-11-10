@@ -21,7 +21,7 @@ import { sites } from './sites.mjs'
 import { processStart, stopStack } from './dev-runtime.mjs'
 import { platformkitRuntimePath } from './runtime-paths.mjs'
 
-export function processCommand(pid: any) {
+export function processCommand(pid: number) {
   try {
     return execFileSync('ps', ['eww', '-p', String(pid), '-o', 'command='], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
   } catch {
@@ -29,7 +29,7 @@ export function processCommand(pid: any) {
   }
 }
 
-export function processCwd(pid: any) {
+export function processCwd(pid: number) {
   try {
     const output = execFileSync('lsof', ['-a', '-p', String(pid), '-d', 'cwd', '-Fn'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
     return output.split('\n').find((line) => line.startsWith('n'))?.slice(1) || ''
@@ -43,13 +43,13 @@ export function parentPid(pid: any) {
   return result.status === 0 ? Number(result.stdout.trim()) : 0
 }
 
-export function alive(pid: any) {
+export function alive(pid: number) {
   try { process.kill(pid, 0); return true }
   catch (error: any) { return error.code === 'EPERM' }
 }
 
 /* the pids listening on a port; null when the port could not be inspected */
-export function listeningPids(port: any, report: any) {
+export function listeningPids(port: number, report: { error: (arg0: string) => void }) {
   const result = spawnSync('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-t'], { encoding: 'utf8' })
   if (result.error) {
     report.error(`Cannot inspect legacy dev port ${port}: ${result.error.message}`)
@@ -64,21 +64,21 @@ export function listeningPids(port: any, report: any) {
 }
 
 /* the pid and its ancestors, nearest first, as far as eight levels */
-function ancestry(pid: any) {
+function ancestry(pid: number) {
   const chain = []
   let current = pid
   for (let depth = 0; depth < 8 && current > 1; depth++) { chain.push(current); current = parentPid(current) }
   return chain
 }
 
-export function managedDevAncestor(pid: any, siteDirectory: any) {
+export function managedDevAncestor(pid: number, siteDirectory: string) {
   for (const current of ancestry(pid)) {
     if (processCommand(current).includes('packages/kit/build/dev.mjs') && path.resolve(processCwd(current)) === path.resolve(siteDirectory)) return current
   }
   return 0
 }
 
-export function waitForExit(pid: any, timeout = 8000) {
+export function waitForExit(pid: number, timeout = 8000) {
   const until = Date.now() + timeout
   return new Promise((resolve) => {
     const check = () => {
@@ -90,17 +90,17 @@ export function waitForExit(pid: any, timeout = 8000) {
   })
 }
 
-export const composeName = (root: any) => `platformkit-dev-${createHash('sha256').update(root).digest('hex').slice(0, 10)}`
+export const composeName = (root: string|NodeJS.ArrayBufferView<ArrayBufferLike>) => `platformkit-dev-${createHash('sha256').update(root).digest('hex').slice(0, 10)}`
 
 /* is the checkout's front door up? the published port, or '' when it is not */
-export function composeRunning(root: any, projectName: any) {
+export function composeRunning(root: string, projectName: string) {
   if (!fs.existsSync(path.join(root, 'deploy', 'nginx', 'docker-compose.yml'))) return null
   const result = spawnSync('docker', ['ps', '--filter', `label=com.docker.compose.project=${projectName}`, '--format', '{{.Ports}}'], { encoding: 'utf8' })
   if (result.status !== 0 || !result.stdout.trim()) return null
   return (result.stdout.match(/:(\d+)->/) || [])[1] || ''
 }
 
-export function stopCompose(root: any, projectName: any, report: any) {
+export function stopCompose(root: string, projectName: string, report: any) {
   const composeFile = path.join(root, 'deploy', 'nginx', 'docker-compose.yml')
   if (!fs.existsSync(composeFile)) return true
   const result = spawnSync('docker', ['compose', '-f', composeFile, '--project-name', projectName, '--profile', 'dev', 'down', '--remove-orphans'], {
@@ -113,7 +113,7 @@ export function stopCompose(root: any, projectName: any, report: any) {
   return false
 }
 
-export function stopSupabase(root: any, workdir: any, report: any) {
+export function stopSupabase(root: any, workdir: string, report: any) {
   if (!fs.existsSync(path.join(workdir, 'supabase', 'config.toml'))) return true
   const result = stopStack(workdir, root)
   if (result.status === 0) {
@@ -126,7 +126,7 @@ export function stopSupabase(root: any, workdir: any, report: any) {
 }
 
 /* the records of this checkout's runs; an unreadable or foreign one is reported and skipped */
-export function readRuns(root: any, report: any) {
+export function readRuns(root: string, report: any) {
   const runsDir = platformkitRuntimePath(root, 'dev', 'runs')
   if (!fs.existsSync(runsDir)) return []
   const runs = []
@@ -180,7 +180,7 @@ export function runChildren(runId: any) {
 }
 
 /* signal them (a server already stopping ignores a second signal) and wait for each to finish */
-export async function stopChildren(runId: any, report: any, { patience = 120000 } = {}) {
+export async function stopChildren(runId: any, report: { log: (arg0: string) => void; error: (arg0: string) => void }, { patience = 120000 } = {}) {
   const pids = runChildren(runId)
   if (!pids.length) return 0
   report.log(`Waiting for ${pids.length} server(s) of an earlier run to finish stopping`)
@@ -195,7 +195,7 @@ export async function stopChildren(runId: any, report: any, { patience = 120000 
 }
 
 /* stop a run's own process (when it is the run) and everything its record names */
-export async function stopRun(root: any, { file, record }: any, report: any, { signal = true } = {}) {
+export async function stopRun(root: string, { file, record }: any, report: any, { signal = true } = {}) {
   let ok = true
   const state = runState(record)
   if (state === 'live' || state === 'abandoned') {
@@ -320,9 +320,9 @@ function runResources(root: any, record: any) {
  * everything under it is left alone (the port guard then refuses a second, as it always has).
  * Returns what was stopped, for one line, and the living runs.
  */
-export async function takeOver(root: any, report: any) {
+export async function takeOver(root: string, report: any) {
   /* only the wait is said while it happens — it can take a minute — and the rest in one line after */
-  const quiet = { log: (message: any) => { if (message.startsWith('Waiting for')) report.say?.(message) }, out() {}, warn() {}, error: report.error }
+  const quiet = { log: (message: string) => { if (message.startsWith('Waiting for')) report.say?.(message) }, out() {}, warn() {}, error: report.error }
   const stopped = []
   const live = []
   for (const run of readRuns(root, quiet)) {

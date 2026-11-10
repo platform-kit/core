@@ -63,7 +63,7 @@ async function revoke(k: { id: any }) {
   await load()
 }
 async function copy() { try { await navigator.clipboard.writeText(reveal.value.key); copied.value = true; setTimeout(() => { copied.value = false }, 1600) } catch { /* the field is selectable */ } }
-const when = (iso: any) => { if (!iso) return K.never; const d = new Date(iso); return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
+const when = (iso: string|number|Date) => { if (!iso) return K.never; const d = new Date(iso); return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
 function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 </script>
 

@@ -18,14 +18,14 @@ export const SIZES: Record<string, number> = { 'onnx/duration_predictor.onnx': 3
 export const TOTAL_BYTES = Object.values(SIZES).reduce((a, b) => a + b, 0)
 
 export const MODEL_CACHE = 'dl-tts-model-' + REV.slice(0, 12)
-const KEY = (file: any) => '/__tts/' + REV + '/' + file
+const KEY = (file: string) => '/__tts/' + REV + '/' + file
 export const hfUrl = (file: any) => `https://huggingface.co/${REPO}/resolve/${REV}/${file}`
-export const bucketUrl = (file: any) => String(import.meta.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '') + '/storage/v1/object/public/models/supertonic-3/' + REV + '/' + file
+export const bucketUrl = (file: string) => String(import.meta.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '') + '/storage/v1/object/public/models/supertonic-3/' + REV + '/' + file
 
 const cacheOpen = () => (typeof caches !== 'undefined' ? caches.open(MODEL_CACHE) : Promise.resolve(null))
 
 /* read a response's body, reporting bytes as they come */
-async function readAll(res: any, file: any, onProgress: any) {
+async function readAll(res: Response, file: string|number, onProgress: any) {
   const total = Number(res.headers.get('content-length')) || SIZES[file] || 0
   if (!res.body || !onProgress) return new Uint8Array(await res.arrayBuffer())
   const reader = res.body.getReader()
@@ -44,7 +44,7 @@ async function readAll(res: any, file: any, onProgress: any) {
 }
 
 /* one file, as bytes: from the cache, else fetched (Hugging Face, then the bucket) and cached */
-export async function fetchWeight(file: any, onProgress?: any) {
+export async function fetchWeight(file: string, onProgress?: any) {
   const cache = await cacheOpen()
   if (cache) {
     const hit = await cache.match(KEY(file))

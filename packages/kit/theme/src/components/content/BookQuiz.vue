@@ -41,7 +41,7 @@ const screens = computed(() => {
     headline: q.q, options: q.order.map((o: any) => ({ v: o.i, label: o.v })), meta: { n: q.n } }))
   return [intro, ...qs]
 })
-function onAnswer(screen: any, value: any) {
+function onAnswer(screen: { meta: { n: string|number } }, value: any) {
   if (screen.meta && typeof screen.meta.n === 'number') answers.value[screen.meta.n] = value
 }
 function onComplete() {

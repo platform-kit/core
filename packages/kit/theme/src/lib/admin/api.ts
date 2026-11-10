@@ -16,7 +16,7 @@ import { CLOUD } from 'platformkit/lib/router.js'
 const API = '/__admin'
 /* the dev server's middleware, or — built for cloud mode — the `admin` Edge Function, called through the signed-in
    client (its JWT rides along): one call shaped as the middleware's request, { seg, method, q, body } */
-async function call(path: any, opts: any = {}) {
+async function call(path: string|URL, opts: any = {}) {
   if (CLOUD) {
     const { supabase } = await import('platformkit/lib/supabase.js')
     const u = new URL(path, 'http://x')
@@ -34,15 +34,15 @@ async function call(path: any, opts: any = {}) {
   if (!r.ok) { const e: any = new Error(j.error || r.statusText); Object.assign(e, j); e.status = r.status; throw e }
   return j
 }
-const post = (path: any, body: any) => call(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+const post = (path: string, body: any) => call(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
 const enc = encodeURIComponent
 
 export const collections = () => call('/collections').then((j) => j.collections)
-export const list = (col: any) => call('/list?col=' + enc(col))
+export const list = (col: string|number|boolean) => call('/list?col=' + enc(col))
 export const items = (col: any) => list(col).then((j) => j.items || [])
-export const read = (col: any, name: any) => call(`/file?col=${enc(col)}&name=${enc(name)}`)
+export const read = (col: string|number|boolean, name: string|number|boolean) => call(`/file?col=${enc(col)}&name=${enc(name)}`)
 export const save = (col: any, name: any, rec: any, opts: any = {}) => post('/file', { col, name, ...rec, ...(opts.create ? { create: true } : {}), ...(opts.check ? { check: true } : {}) })
-export const remove = (col: any, name: any) => call(`/file?col=${enc(col)}&name=${enc(name)}`, { method: 'DELETE' })
+export const remove = (col: string|number|boolean, name: string|number|boolean) => call(`/file?col=${enc(col)}&name=${enc(name)}`, { method: 'DELETE' })
 export const rename = (col: any, name: any, to: any) => post('/file', { col, name, rename: to })
 export const action = (col: any, action: any, payload = {}) => post('/action', { col, action, ...payload })
 /* the address of an action that streams a file: the dev server's own. There is none in cloud mode
@@ -59,7 +59,7 @@ export const actionUrl = (col: any, action: any, payload = {}) => (CLOUD ? '' : 
  * them, and the page that opens them calls it as it unmounts.
  */
 const blobs = new Map()
-export async function fileUrl(col: any, act: any, payload = {}) {
+export async function fileUrl(col: string, act: string, payload = {}) {
   if (!CLOUD) return actionUrl(col, act, payload)
   const key = col + ':' + act + ':' + JSON.stringify(payload)
   if (blobs.has(key)) return blobs.get(key)
@@ -73,7 +73,7 @@ export async function fileUrl(col: any, act: any, payload = {}) {
   return u
 }
 export function forgetFiles() { for (const u of blobs.values()) { try { URL.revokeObjectURL(u) } catch (e) { /* gone */ } } blobs.clear() }
-export const options = (key: any) => call('/options?key=' + enc(key)).then((j) => j.options || [])
+export const options = (key: string|number|boolean) => call('/options?key=' + enc(key)).then((j) => j.options || [])
 /* the dev server compiles a draft through velite; in cloud mode the draft goes through the site's own adapter here, no call */
 export const preview = async (col: any, name: any, rec: any) => (CLOUD ? (await import('platformkit/lib/content-live.js')).previewEntry(col, name, rec) : post('/preview', { col, name, ...rec }))
 /* a bucket address as the browser reaches it — the kit's one definition, since the store's own
@@ -90,12 +90,12 @@ export const uploadImage = async (file: any) => {
   return post('/upload-image', { filename: file.name, dataBase64 }).then(addressed)
 }
 /* an asset's address for the preview: the dev server serves it from the checkout; in cloud mode an upload's path is the bucket's own url, so a relative name is one written before the move and has no address here */
-export const assetUrl = (col: any, file: any) => (CLOUD ? '' : `${API}/asset?col=${enc(col)}&file=${enc(file)}`)
-export const media = (op: any, params = {}) => post('/media', { op, ...params }).then(addressed)
+export const assetUrl = (col: string|number|boolean, file: string|number|boolean) => (CLOUD ? '' : `${API}/asset?col=${enc(col)}&file=${enc(file)}`)
+export const media = (op: string, params = {}) => post('/media', { op, ...params }).then(addressed)
 /* where else a picture can come from (build/images): the sources this deployment has, a search,
    and taking one — which puts it in the library and answers with an ordinary address */
 export const images = (op: any, params = {}) => post('/images', { op, ...params }).then(addressed)
-export const mediaFileUrl = (path: any) => (CLOUD ? '' : `${API}/media-file?path=${enc(path)}`)
+export const mediaFileUrl = (path: string|number|boolean) => (CLOUD ? '' : `${API}/media-file?path=${enc(path)}`)
 export const drafts = () => call('/drafts')
 export const publish = (col: any, name: any, message = '') => post('/publish', { ...(col ? { col, name } : {}), message })
 export const keep = (path: any) => post('/keep', { path })

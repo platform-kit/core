@@ -68,4 +68,4 @@ For the built capabilities and their sub-features, see [FEATURES.md](./FEATURES.
 
 **Sources:** `openspec/specs/kit-principles/spec.md`, `packages/kit/build/modules/kit.mts`, `packages/kit/build/site.mts`
 
-**Reviewed:** 2026-11-08
+**Reviewed:** 2026-11-10

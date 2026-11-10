@@ -33,5 +33,5 @@ export const insightFor = (slug: any) => (companionFor(slug) || {}).insight || '
 export const coreIdeas = (slug: any) => ((companionFor(slug) || {}).chapters || []).flatMap((ch: { essence: any; }) => ch.essence || [])
 /* the chapters that carry a quiz — what mastery is measured over; a locked chapter says
    whether it has one without carrying the questions */
-export const quizChapters = (slug: any) => ((companionFor(slug) || {}).chapters || []).filter((ch: { quiz: string|any[]; hasQuiz: any; }) => (ch.quiz && ch.quiz.length) || ch.hasQuiz).map((ch: { title: any; }) => ch.title)
+export const quizChapters = (slug: string) => ((companionFor(slug) || {}).chapters || []).filter((ch: { quiz: string|any[]; hasQuiz: any; }) => (ch.quiz && ch.quiz.length) || ch.hasQuiz).map((ch: { title: any; }) => ch.title)
 export const summaryTime = (slug: any) => (companionFor(slug) || {}).summaryReadingTime || 0

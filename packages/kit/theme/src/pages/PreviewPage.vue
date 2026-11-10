@@ -35,7 +35,7 @@ const key = computed(() => col.value + ':' + (entry.value ? (entry.value.id || e
 /* the tree views take the same landing title + subtitle the site gives them */
 const TREE = { wiki: { title: 'Wiki', subtitle: 'The canon, page by page.' }, docs: { title: 'Docs', subtitle: 'How everything works, in order.' } }
 
-const say = (msg: any) => { if (window.parent !== window) window.parent.postMessage(msg, window.location.origin) }
+const say = (msg: { type: string; index?: number }) => { if (window.parent !== window) window.parent.postMessage(msg, window.location.origin) }
 function onMessage(e: any) {
   if (e.origin !== window.location.origin || !e.data) return
   /* the admin's look switch: the frame wears the look it names, unsaved */

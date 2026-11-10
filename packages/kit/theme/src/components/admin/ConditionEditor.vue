@@ -12,10 +12,10 @@ const W = (us('forms').admin || {}).condition || {}
 const rows = computed<any>(() => rowsOf(props.modelValue))
 const custom = computed(() => rows.value === null)
 function set(list: any) { emit('update:modelValue', exprOf(list)) }
-function change(i: any, k: any, v: any) { const list = (rows as any).value.map((r: any) => ({ ...r })); (list as any)[i][k] = v; if (k === 'op' && (v === 'set' || v === 'unset')) list[i].value = ''; set(list) }
+function change(i: string|number, k: string, v: string) { const list = (rows as any).value.map((r: any) => ({ ...r })); (list as any)[i][k] = v; if (k === 'op' && (v === 'set' || v === 'unset')) list[i].value = ''; set(list) }
 function add() { set([...(rows.value || []), { field: (props.fields[0] && (props.fields[0] as any).name) || '', op: 'is', value: '' }]) }
 function remove(i: any) { const list = (rows as any).value.slice(); list.splice(i, 1); set(list) }
-const needsValue = (op: any) => op !== 'set' && op !== 'unset'
+const needsValue = (op: string) => op !== 'set' && op !== 'unset'
 /* a field by its question (a block's params, or a compiled field's own), else its name */
 const label_ = (f: any) => { const q = f.question || (f.params && f.params.question); return q && q !== '...' ? q : f.name }
 </script>

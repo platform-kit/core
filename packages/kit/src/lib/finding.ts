@@ -46,7 +46,7 @@ export async function rankBooks(answers: any, words = {}) {
   /* then the lean toward short or long reads, from the books' own lengths */
   const wordsOf = Object.fromEntries((BOOKS || []).map((b: any) => [b.slug, (b.metadata && b.metadata.wordCount) || 0]))
   const lean = paceLean(FIND_BOOKS, wordsOf, answers.pace)
-  return combine(FIND_BOOKS, per, asked.map((p) => p.weight)).map((r: any) => ({ slug: r.slug, score: r.score + lean[r.slug] })).sort((a: any, b: any) => b.score - a.score)
+  return combine(FIND_BOOKS, per, asked.map((p) => p.weight)).map((r: any) => ({ slug: r.slug, score: r.score + lean[r.slug] })).sort((a: { score: number }, b: { score: number }) => b.score - a.score)
 }
 
 /* the round's rows — what was written and what was found — are read by finding-rows.js */

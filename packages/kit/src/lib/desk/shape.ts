@@ -102,7 +102,7 @@ export function owedOf(row: DeskRow | undefined, words: any = {}, now = Date.now
    under every row that is, however recent it is. */
 export function sortDesk(rows: DeskRow[] = []) {
   const at = (r: any) => new Date(r?.at || 0).getTime() || 0
-  const w = (r: any) => (r?.waiting_since ? new Date(r.waiting_since).getTime() || null : null)
+  const w = (r: DeskRow) => (r?.waiting_since ? new Date(r.waiting_since).getTime() || null : null)
   return rows.slice().sort((a: any, b: any) => {
     const wa = w(a), wb = w(b)
     if (wa != null && wb != null) return wa - wb || String(a.key).localeCompare(String(b.key))
@@ -206,7 +206,7 @@ const RANK: any = { urgent: 0, high: 0, normal: 1, low: 2 }
 /* a ticket as the desk sorts and filters it: its id, its state and its clocks; the rest rides along */
 export interface TicketRow { id: string, status?: string, priority?: string, last_at?: string | null, created_at?: string | null, waiting_since?: string | null, due_at?: string | null, [k: string]: any }
 export function sortTickets(list: TicketRow[] | null = [], mode = 'busy') {
-  const at = (t: any) => new Date(t.last_at || t.created_at || 0).getTime()
+  const at = (t: TicketRow) => new Date(t.last_at || t.created_at || 0).getTime()
   const rows = [...(list || [])]
   if (mode === 'new') return rows.sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
   if (mode === 'waiting') {
@@ -252,7 +252,7 @@ export function tally(list: TicketRow[] = [], me: string | null = null) {
   return {
     live: rows.filter(isLive).length,
     owed: rows.filter(isOwed).length,
-    mine: rows.filter((t: any) => isLive(t) && (t.assignees || []).some((a: any) => a.id === me)).length,
+    mine: rows.filter((t: any) => isLive(t) && (t.assignees || []).some((a: { id: string|null }) => a.id === me)).length,
     unassigned: rows.filter((t: any) => isLive(t) && !(t.assignees || []).length).length,
   }
 }
@@ -271,7 +271,7 @@ export function narrow(list: TicketRow[] | null = [], { status = 'open', assigne
        "the billing ones", "the urgent ones", "the ones about the reader". It is the whole of what
        makes a form worth asking before a ticket is raised. */
     if (answer && (answer as any).field) { const v = (t.answers || {})[(answer as any).field]; if (String(v == null ? '' : v) !== String((answer as any).value)) return false }
-    if (assignee === 'mine' && !(t.assignees || []).some((a: any) => a.id === me)) return false
+    if (assignee === 'mine' && !(t.assignees || []).some((a: { id: string|null }) => a.id === me)) return false
     if (assignee === 'nobody' && (t.assignees || []).length) return false
     if (assignee && assignee !== 'mine' && assignee !== 'nobody' && !(t.assignees || []).some((a: { id: any }) => a.id === assignee)) return false
     if (!want) return true

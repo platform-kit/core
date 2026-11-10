@@ -55,18 +55,18 @@ onMounted(() => { const mo = new MutationObserver(() => chartKey.value++); mo.ob
 
 /* ---- helpers ---- */
 const num = (n: any) => new Intl.NumberFormat().format(Math.round(n || 0))
-const pct = (a: any, b: any) => (b ? Math.round((a / b) * 100) : 0)
+const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0)
 const money = (n: any, c: any) => new Intl.NumberFormat(undefined, { style: 'currency', currency: (c || 'usd').toUpperCase(), maximumFractionDigits: 0 }).format((n || 0) / 100)
-const secs = (s: any) => (!s ? '—' : s >= 60 ? Math.floor(s / 60) + 'm ' + String(Math.round(s % 60)).padStart(2, '0') + 's' : Math.round(s) + 's')
-const delta = (now: any, before: any) => { if (!before) return null; const d = Math.round(((now - before) / before) * 100); return { dir: d > 0 ? 'up' : d < 0 ? 'down' : 'flat', text: (d > 0 ? '+' : '') + d + '%' } }
+const secs = (s: number) => (!s ? '—' : s >= 60 ? Math.floor(s / 60) + 'm ' + String(Math.round(s % 60)).padStart(2, '0') + 's' : Math.round(s) + 's')
+const delta = (now: number, before: number) => { if (!before) return null; const d = Math.round(((now - before) / before) * 100); return { dir: d > 0 ? 'up' : d < 0 ? 'down' : 'flat', text: (d > 0 ? '+' : '') + d + '%' } }
 const dayKey = (d: any) => String(d || '').slice(0, 10)
 const day = (d: any) => { const t = new Date(dayKey(d) + 'T00:00:00'); return isNaN(t.getTime()) ? '' : t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }
-const dateOnly = (d: any) => { if (!d) return ''; const t = new Date(d); return isNaN(t.getTime()) ? '' : t.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) }
+const dateOnly = (d: string|number|Date) => { if (!d) return ''; const t = new Date(d); return isNaN(t.getTime()) ? '' : t.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) }
 const rangeLabel = computed(() => H.range.replace('{days}', days.value))
 const audienceLine = computed(() => (audience.value === 'all' ? '' : String(H['audience-line'] || '').replace('{audience}', H['audience-' + audience.value] || audience.value)))
-const kindName = (k: any) => KN[k] || k
-const channelName = (c: any) => AQ['channel-' + c] || c
-const bars = (list: any, key: any) => { const rows = list || []; const max = Math.max(1, ...rows.map((x: any) => x[key] || 0)); return rows.map((x: any) => ({ ...x, w: ((x[key] || 0) / max) * 100 })) }
+const kindName = (k: string|number) => KN[k] || k
+const channelName = (c: string) => AQ['channel-' + c] || c
+const bars = (list: any, key: string|number) => { const rows = list || []; const max = Math.max(1, ...rows.map((x: any) => x[key] || 0)); return rows.map((x: any) => ({ ...x, w: ((x[key] || 0) / max) * 100 })) }
 function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 
 const now = computed(() => (data.value && data.value.now) || {})
@@ -97,7 +97,7 @@ const seriesOption = computed(() => {
 const newShare = computed(() => pct(data.value && data.value.new, ((data.value && data.value.new) || 0) + ((data.value && data.value.returning) || 0)))
 /* where reads ended: ten bands, 0–9% to 90–100% */
 const depth = computed(() => { const by: any = {}; for (const b of (data.value && data.value.depth) || []) by[(b as any).band] = (b as any).n; const rows = Array.from({ length: 10 }, (_, i) => ({ band: i, n: by[i] || 0 })); const max = Math.max(1, ...rows.map((r) => r.n)); const total = rows.reduce((s, r) => s + r.n, 0); return rows.map((r) => ({ ...r, w: (r.n / max) * 100, p: pct(r.n, total), label: i10(r.band) })) })
-const i10 = (b: any) => (b === 9 ? '90–100%' : b * 10 + '–' + (b * 10 + 9) + '%')
+const i10 = (b: number) => (b === 9 ? '90–100%' : b * 10 + '–' + (b * 10 + 9) + '%')
 const led = computed(() => (data.value && data.value.conversions) || {})
 const ledTotal = computed(() => ((led.value as any).signups || 0) + ((led.value as any).subscriptions || 0) + ((led.value as any).purchases || 0))
 </script>

@@ -11,7 +11,7 @@ import { GridComponent, TooltipComponent, LegendComponent, DataZoomComponent } f
 
 use([CanvasRenderer, LineChart, BarChart, PieChart, GridComponent, TooltipComponent, LegendComponent, DataZoomComponent])
 
-const cssVar = (name: any, fallback: any) => {
+const cssVar = (name: string, fallback: string) => {
   try { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback } catch (e) { return fallback }
 }
 export function tokens() {

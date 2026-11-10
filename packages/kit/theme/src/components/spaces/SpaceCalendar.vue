@@ -41,7 +41,7 @@ const words = computed(() => ({ today: W.value.today, tomorrow: W.value.tomorrow
 const untilWords = computed(() => ({ now: W.value['on-now'], mins: W.value['in-mins'], hours: W.value['in-hours'], days: W.value['in-days'] }))
 
 const when = (o: any) => whenWord(o.starts_at, now.value, words.value)
-const at = (o: any) => clockOf(o.starts_at)
+const at = (o: { starts_at: string|number|Date }) => clockOf(o.starts_at)
 const until = (o: { starts_at: string|number|Date }) => untilWord(new Date(o.starts_at).getTime(), now.value, untilWords.value)
 const live = (o: { starts_at?: any; ends_at?: any }|null) => isOn(o, now.value)
 const noRoom = (o: { capacity: any; going: any; mine: string }) => !!o.capacity && Number(o.going) >= Number(o.capacity) && o.mine !== 'going'

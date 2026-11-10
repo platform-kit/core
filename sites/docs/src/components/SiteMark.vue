@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 /*
  * THE PLATFORMKIT MARK — three cubes in isometric, one resting on two.
  *

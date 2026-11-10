@@ -22,7 +22,7 @@ import { spacesOf } from './site.mjs'
 import { navLinks, navSource, seen } from '../src/lib/nav.js'
 
 let pass = 0
-const eq = (what: any, got: any, want: any) => {
+const eq = (what: string, got: any, want: any) => {
   const a = JSON.stringify(got), b = JSON.stringify(want)
   if (a !== b) { console.error(`  ✖ ${what}\n      got  ${a}\n      want ${b}`); process.exitCode = 1 } else pass++
 }
@@ -41,15 +41,15 @@ eq('link: nonsense', spacesOf({ spaces: { link: 'sometimes' } }), { nav: undefin
 eq('both', spacesOf({ spaces: { nav: 'icon', link: 'members' } }), { nav: 'icon', link: 'members' })
 
 /* the rule SiteLayout applies over that, kept here beside the config it reads */
-const shows = (cfg: any, rooms: any, signedIn: any, inRoom: any) => {
+const shows = (cfg: { spaces?: { link: string }|{ link: string } }, rooms: any, signedIn: boolean, inRoom: boolean) => {
   const s = spacesOf(cfg)
-  const open = rooms.some((r: any) => r.discoverable !== false)
+  const open = rooms.some((r: { discoverable: boolean }) => r.discoverable !== false)
   return (s.link === 'always' && open) || (signedIn && inRoom)
 }
-const word = (cfg: any, rooms: any) => {
+const word = (cfg: { spaces?: { nav: string }|{ nav: string } }, rooms: any) => {
   const s = spacesOf(cfg)
   if (s.nav) return s.nav === 'word'
-  return s.link === 'always' && rooms.some((r: any) => r.discoverable !== false)
+  return s.link === 'always' && rooms.some((r: { discoverable: boolean }) => r.discoverable !== false)
 }
 const OPEN = [{ discoverable: true }]
 const PRIVATE = [{ discoverable: false }]
@@ -105,7 +105,7 @@ eq('source: content', navSource({ content: CONTENT, config: CONFIG }), 'content'
 
 /* WHO SEES IT — the ladder is a minimum and monotonic, guest is the one exact state */
 const item = (see: any) => ({ label: 'x', href: '/x', see })
-const who = (see: any, cls: any, extra?: any) => seen(item(see), { cls, ...(extra || {}) })
+const who = (see: string|undefined, cls: string, extra?: any) => seen(item(see), { cls, ...(extra || {}) })
 
 eq('no audience: everyone', who(undefined, 'guest'), true)
 eq('paid hides from a guest', who('paid', 'guest'), false)
@@ -123,7 +123,7 @@ eq('guest hides from a subscriber', who('guest', 'subscribed'), false)
 eq('staff hides from a member', who('staff', 'subscribed', { staff: false }), false)
 eq('staff shows to staff', who('staff', 'guest', { staff: true }), true)
 /* a tier, and a higher rank clearing a lower bar */
-const rank = (t: any) => (({ member: 1, patron: 2 } as any)[t] || 0)
+const rank = (t: string|number) => (({ member: 1, patron: 2 } as any)[t] || 0)
 eq('a tier shows to its own', who('tier:member', 'subscribed', { tiers: ['member'], rank }), true)
 eq('a tier shows to a higher rank', who('tier:member', 'subscribed', { tiers: ['patron'], rank }), true)
 eq('a tier hides from a lower rank', who('tier:patron', 'subscribed', { tiers: ['member'], rank }), false)
@@ -142,7 +142,7 @@ eq('an empty tier is nothing', who('tier:', 'guest'), true)
 {
   const { registry, optionList } = await import('./models/index.mjs')
   const models = await registry(process.cwd())
-  const records = (dir: any) => {
+  const records = (dir: string) => {
     const root = path.join(process.cwd(), dir)
     if (!fs.existsSync(root)) return []
     return fs.readdirSync(root).filter((file) => file.endsWith('.md'))
@@ -152,13 +152,13 @@ eq('an empty tier is nothing', who('tier:', 'guest'), true)
   const links = await optionList(models, 'nav-links', process.cwd())
   eq('the link list is not empty', links.length > 0, true)
   eq('every link has a value, a label and a group', links.every((o: any) => o.value && o.label && o.group), true)
-  eq('home is offered', links.some((o: any) => o.value === '/'), true)
+  eq('home is offered', links.some((o: { value: string }) => o.value === '/'), true)
   /* the sections, never every entry — a select holding every article is not a select */
-  eq('no entry page is offered', links.every((o: any) => !/^\/content\/(articles|books|wiki|docs)\/.+/.test(o.value)), true)
+  eq('no entry page is offered', links.every((o: { value: string }) => !/^\/content\/(articles|books|wiki|docs)\/.+/.test(o.value)), true)
   eq('a path is offered once', new Set(links.map((o: any) => o.value)).size === links.length, true)
   /* the site's own pages come through, so a header may point at one; an empty docs fixture has none */
   const pageRoutes = records('content/pages').filter((page) => page.route).map((page) => page.route)
-  const offeredPageRoutes = links.filter((o: any) => o.group === 'Your pages').map((o: any) => o.value)
+  const offeredPageRoutes = links.filter((o: { group: string }) => o.group === 'Your pages').map((o: any) => o.value)
   eq('the site\'s declared pages are offered', pageRoutes.every((route) => links.some((o: any) => o.value === route)), true)
   eq('no undeclared site page is offered', offeredPageRoutes.every((route: any) => pageRoutes.includes(route)), true)
 
@@ -166,7 +166,7 @@ eq('an empty tier is nothing', who('tier:', 'guest'), true)
   eq('everyone is first, and is the empty value', sees[0] && sees[0].value === '' && !!sees[0].label, true)
   /* every rung of the one ladder, said in words rather than in its slug */
   for (const rung of ['guest', 'authenticated', 'paid', 'subscribed', 'staff']) {
-    eq('the ladder offers ' + rung, sees.some((o: any) => o.value === rung), true)
+    eq('the ladder offers ' + rung, sees.some((o: { value: string }) => o.value === rung), true)
   }
   eq('no label is a bare slug', sees.every((o: any) => o.label !== o.value), true)
   /* a tier is offered by its real name, so nobody has to know it is written tier:<slug> */

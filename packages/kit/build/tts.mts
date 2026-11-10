@@ -84,8 +84,8 @@ try {
 } catch { /* no .env */ }
 
 const args = process.argv.slice(2)
-const flag = (k: any) => args.includes(k)
-const val = (k: any, d: any) => { const i = args.indexOf(k); return i >= 0 && args[i + 1] != null ? args[i + 1] : d }
+const flag = (k: string) => args.includes(k)
+const val = (k: string, d: number|null) => { const i = args.indexOf(k); return i >= 0 && args[i + 1] != null ? args[i + 1] : d }
 const ALL = flag('--all'), DRY = flag('--dry'), LOCAL = flag('--local'), SHOW = flag('--show'), PULL = flag('--pull')
 /* the store: the repository's own copy of every recording */
 const STORE = path.join(ROOT, 'audio/books')
@@ -109,7 +109,7 @@ function sizeEngines() {
 const SIZE = sizeEngines()
 const WORKERS = SIZE.n
 const THREADS = Number(process.env.TTS_THREADS || 1)
-const log = (m: any) => console.log('[tts] ' + m)
+const log = (m: string) => console.log('[tts] ' + m)
 
 /* a book's audio index: chapter → section → its recording */
 type AudioManifest = { chapters?: Record<string, Record<string, { file?: string } | null>> }
@@ -138,14 +138,14 @@ async function getStorage() {
 }
 
 /* ---- the store: what the repository holds for a book ---- */
-const storeDir = (slug: any) => path.join(STORE, slug)
+const storeDir = (slug: string) => path.join(STORE, slug)
 const LFS_POINTER = 'version https://git-lfs.github.com/spec/v1'
 /* an LFS pointer stands in for a blob that was not fetched: small, and it says so */
 function isPointer(file: any) {
   try { const st = fs.statSync(file); if (st.size > 1024) return false; return fs.readFileSync(file, 'utf8').startsWith(LFS_POINTER) } catch { return false }
 }
 /* the recordings the store holds: real blobs, or pointers to be fetched */
-function storeHas(slug: any) {
+function storeHas(slug: string) {
   const d = storeDir(slug), out = new Map()
   if (fs.existsSync(d)) for (const f of fs.readdirSync(d)) if (f.endsWith('.mp3')) out.set(f, isPointer(path.join(d, f)) ? 'pointer' : 'blob')
   return out
@@ -172,12 +172,12 @@ function remote() {
   const m = /github\.com[:/]([^/\s]+\/[^/\s]+?)(?:\.git)?\/?$/.exec(url)
   return m ? `https://x-access-token:${TOKEN}@github.com/${m[1]}.git` : 'origin'
 }
-function lfsPull(slug: any, names: any) {
+function lfsPull(slug: string, names: any) {
   if (!names.length) return
-  const include = names.map((n: any) => 'audio/books/' + slug + '/' + n).join(',')
+  const include = names.map((n: string) => 'audio/books/' + slug + '/' + n).join(',')
   try { execFileSync('git', ['lfs', 'version'], { stdio: 'ignore' }) } catch { throw new Error('git-lfs is not installed here, and ' + names.length + ' recording(s) for ' + slug + ' are LFS pointers; install git-lfs on this machine') }
   log(`${slug}: fetching ${names.length} recording${names.length > 1 ? 's' : ''} from LFS`)
-  const paths = names.map((n: any) => 'audio/books/' + slug + '/' + n)
+  const paths = names.map((n: string) => 'audio/books/' + slug + '/' + n)
   /* the objects: from this clone's own LFS cache when it has them, else fetched
      from the remote — only these, never the whole store */
   try { execFileSync('git', ['lfs', 'fetch', remote(), '--include', include, '--exclude', ''], { cwd: ROOT, stdio: ['ignore', 'ignore', 'ignore'] }) } catch { /* no remote, or offline: the cache may still have them */ }
@@ -187,11 +187,11 @@ function lfsPull(slug: any, names: any) {
 }
 
 /* ---- the bucket: what readers are served from ---- */
-async function listBucket(slug: any) {
+async function listBucket(slug: string) {
   const st = await getStorage()
   return st ? listAll(st, 'books/' + slug) : new Set()
 }
-async function put(slug: any, name: any, buf: any, type: any) {
+async function put(slug: string, name: string, buf: NonSharedBuffer, type: string) {
   const st = await getStorage()
   if (!st) return
   const { error } = await st.upload('books/' + slug + '/' + name, buf, { contentType: type, upsert: true, cacheControl: '31536000' })
@@ -230,7 +230,7 @@ async function pullBook(slug: any) {
    writes engine, format and length there) or, failing that, from its size:
    both sides write constant 128 kbps mono. */
 const adoptedSeconds = new Map()
-async function adoptFromBucket(slug: any, names: any, held: any) {
+async function adoptFromBucket(slug: string, names: any, held: any) {
   const st = await getStorage()
   if (!st) return 0
   const wanted = names.filter((n: any) => !held.has(n))
@@ -255,11 +255,11 @@ async function adoptFromBucket(slug: any, names: any, held: any) {
 }
 
 /* ---- the repository: commit what the run put in the store, and push ---- */
-function git(args: any, opts = {}) {
+function git(args: readonly string[], opts = {}) {
   try { return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim() }
   catch (e: any) { throw new Error(blank((e.stderr || e.message || String(e)).toString().trim().split('\n').pop())) }
 }
-function commitStore(what: any) {
+function commitStore(what: string) {
   const mode = String(process.env.TTS_COMMIT || '').trim().toLowerCase()
   if (!mode || mode === '0' || mode === 'false') return
   let changed
@@ -367,7 +367,7 @@ async function ffmpeg(): Promise<string | null> {
   return null
 }
 const FFMPEG = await ffmpeg()
-function encode(wav: any, out: any) {
+function encode(wav: string, out: string) {
   if (!FFMPEG) throw new Error('no ffmpeg: install it, or npm i -D ffmpeg-static')
   execFileSync(FFMPEG, ['-y', '-loglevel', 'error', '-i', wav, '-ac', '1', '-b:a', BITRATE, out])
 }
@@ -376,7 +376,7 @@ function encode(wav: any, out: any) {
 const hashOf = (text: string) => createHash('sha1').update(hashInput(text, ENGINE as typeof DEFAULTS)).digest('hex').slice(0, 16)
 const stats = { spoken: 0, kept: 0, uploaded: 0, pulled: 0, chars: 0, seconds: 0, t0: Date.now() }
 
-function chaptersOf(bookRaw: any) {
+function chaptersOf(bookRaw: string) {
   const { content, data } = matter(bookRaw)
   /* the book's introduction (frontmatter) is its own page in the reader, ahead
      of chapter one and the same in either mode: one recording of its own */
@@ -385,7 +385,7 @@ function chaptersOf(bookRaw: any) {
 
 /* one recording: named by its text, kept when the store has it, else spoken,
    encoded into the store, and counted */
-async function speakOne(pool: any, slug: any, held: any, text: any, label: any) {
+async function speakOne(pool: any, slug: string, held: any, text: any, label: string) {
   const hash = hashOf(text), name = hash + '.mp3'
   stats.chars += text.length
   if (held.has(name)) { stats.kept++; return { file: name, chars: text.length, cached: true, seconds: adoptedSeconds.get(name) } }
@@ -404,7 +404,7 @@ async function speakOne(pool: any, slug: any, held: any, text: any, label: any) 
   return { file: name, chars: text.length, seconds }
 }
 
-async function doBook(pool: any, slug: any) {
+async function doBook(pool: Pool|null, slug: any) {
   const bookFile = path.join(ROOT, 'content/books', slug + '.md')
   if (!fs.existsSync(bookFile)) { log(slug + ': no such book'); return }
   const bookText = fs.readFileSync(bookFile, 'utf8')
@@ -443,7 +443,7 @@ async function doBook(pool: any, slug: any) {
   const writeManifest = () => { fs.mkdirSync(storeDir(slug), { recursive: true }); fs.writeFileSync(path.join(storeDir(slug), 'index.json'), JSON.stringify(manifest, null, 2) + '\n') }
   if (!DRY) { uploaded += (await syncBook(slug, manifest)).uploaded }
   let publishing = Promise.resolve()
-  const publish = (file: any) => (publishing = publishing.then(async () => {
+  const publish = (file: string) => (publishing = publishing.then(async () => {
     writeManifest()
     if (LOCAL) return
     await put(slug, file, fs.readFileSync(path.join(storeDir(slug), file)), 'audio/mpeg')

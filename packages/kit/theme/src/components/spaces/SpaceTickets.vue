@@ -67,13 +67,13 @@ const assignees = computed(() => (tickets.open && (tickets.open as any).assignee
 const chats = computed<any>(() => (tickets.open && (tickets.open as any).chats) || [])
 
 const owed: any = (t: any) => owedOn(t, W.value, now.value)
-const stateWord = (s: any) => W.value['state-' + s] || s
-const priorityWord = (p: any) => W.value['priority-' + p] || p
+const stateWord = (s: string) => W.value['state-' + s] || s
+const priorityWord = (p: string) => W.value['priority-' + p] || p
 /* a ticket written before the shape was two states still reads: shape.js carries what each old
    word means now, and every surface asks it rather than comparing a string of its own */
 const stateOf = (t: any) => statusOfTicket(t)
 const urgencyOf = (t: any) => priorityOf(t)
-const viaWord = (v: any) => W.value['via-' + v] || ''
+const viaWord = (v: string) => W.value['via-' + v] || ''
 const nameOf = (id: any) => (props.agents.find((a) => (a as any).id === id) || {}).name || W.value.someone
 const said = (e: any) => {
   const d = e.data || {}

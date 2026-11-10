@@ -74,7 +74,7 @@ export function planRuns(chapters: any, { budget = PAGES_PER_RUN } = {}) {
  * need setting again — which is the difference between re-compiling a book and re-compiling the
  * tail of one.
  */
-export function reoffset(runs: any, counts: any) {
+export function reoffset(runs: any, counts: number[]) {
   let page = 1
   return runs.map((r: any, i: any) => {
     const from = page
@@ -125,4 +125,4 @@ export function bindingFor(spec: any, formats: any, candidates: any, { trim, pap
 }
 
 /* the count a printer will actually bind, which is what everything downstream should quote on */
-export const boundPages = (pages: any, opts: any) => (Number(pages) || 0) + padFor(pages, opts)
+export const boundPages = (pages: any, opts: { min?: number|undefined; step?: number|undefined }|undefined) => (Number(pages) || 0) + padFor(pages, opts)

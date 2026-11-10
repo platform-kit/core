@@ -15,7 +15,7 @@ import { holds } from './logic.js'
 const walkFields = (blocks: any, out: any[] = []) => { for (const b of blocks || []) { if (b.type === 'field') out.push(b); if (b.blocks) walkFields(b.blocks, out) } return out }
 
 /* the slide's progress, as forms.md says it: its own `|>`, else 0% on the first and 100% on the end */
-function progressOf(slide: any, i: any, n: any) {
+function progressOf(slide: { progress: string; type: string; }, i: number, n: number) {
   if (slide.progress) return parseFloat(slide.progress)
   if (i === 0) return 0
   if (slide.type === 'end') return 100
@@ -33,7 +33,7 @@ export function formScreens(model: any, ctx: any) {
     return [{ kind: 'form', id: 'single', index: 0, type: 'single', blocks, fields: walkFields(blocks), isForm: false, post: false, end: true, single: true, progress: 100, align: settings['button-alignment'] || '' }]
   }
   const slides = model.slides
-  const hasEnd = slides.some((s: any) => s.type === 'end')
+  const hasEnd = slides.some((s: { type: string; }) => s.type === 'end')
   const list = hasEnd ? slides : [...slides, { type: 'end', blocks: [], head: [], jump: '', progress: '', align: '', post: false, disablePrev: false, button: '', redirect: '', defaultEnd: true }]
   const n = list.length
   return list.map((s: any, i: any) => {

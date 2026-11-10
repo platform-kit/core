@@ -45,7 +45,7 @@ if (fs.existsSync(ENV)) { console.log(`e2e-runner: ${path.relative(ROOT, ENV)} e
 const docker = (...a: any[]) => spawnSync('docker', a, { encoding: 'utf8', timeout: 120000 })
 const e2eContainers = (id: string) => docker('ps', '-a', '--filter', `name=_${id}`, '--format', '{{.Names}}').stdout.split('\n').filter(Boolean)
 const runner = (a: string[], env = {}) => spawnSync(process.execPath, [path.join(HERE, 'e2e.mjs'), ...a], { cwd: ROOT, env: { ...process.env, ...env }, encoding: 'utf8', timeout: 1800000, maxBuffer: 1 << 26 })
-const probes = (out: any) => [...String(out).matchAll(/PROBE (\{.*\})/g)].map((m) => JSON.parse(m[1]))
+const probes = (out: string) => [...String(out).matchAll(/PROBE (\{.*\})/g)].map((m) => JSON.parse(m[1]))
 const out = (r: SpawnSyncReturns<string>) => (r.stdout || '') + (r.stderr || '')
 
 /* ─── the dev side, as it is before any run ─── */

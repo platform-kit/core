@@ -13,7 +13,7 @@
 export function readResults(results: ArrayLike<any> = [], from = 0) {
   let done = '', saying = ''
   for (let i = from; i < results.length; i++) {
-    const r: any = results[i]
+    const r = results[i]
     const said = (r && r[0] && r[0].transcript) || ''
     if (r && r.isFinal) done += said
     else saying += said

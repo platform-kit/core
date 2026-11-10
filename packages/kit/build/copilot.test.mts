@@ -579,7 +579,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
  * be measured, not assumed.
  */
 {
-  const room = (leak: any, text = 'Begin with the introduction.') => {
+  const room = (leak: number, text = 'Begin with the introduction.') => {
     const g = echoGuard()
     let t = 0
     g.speaking(text)

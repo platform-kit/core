@@ -97,7 +97,7 @@ export function lists() {
       }
     } else base.prices.push({ sku: d.sku, variant: '', amount: Math.round(Number(d.price) * 100), currency: (d.currency || 'usd').toLowerCase() })
   }
-  const further = (PRICE_LISTS || []).filter((r: any) => r && r.published !== false).map((r: any) => ({
+  const further = (PRICE_LISTS || []).filter((r: { published: boolean }) => r && r.published !== false).map((r: any) => ({
     name: r.path || r.title, kind: r.kind, rules: r.rules || [], priority: Number(r.priority) || 0,
     starts: r.starts || null, ends: r.ends || null,
     prices: (r.prices || []).map((x: any) => ({
@@ -115,7 +115,7 @@ export function lists() {
 /* the discounts, as the resolver wants them — money in pence, everything else as written. The
    same shape catalog.mjs builds for the function, from the same records. */
 export function promotions() {
-  return (PROMOS || []).filter((r: any) => r && r.published !== false).map((r: any) => ({
+  return (PROMOS || []).filter((r: { published: boolean }) => r && r.published !== false).map((r: any) => ({
     name: r.path || r.title, title: r.title || r.path, kind: r.kind || 'standard', status: r.status || 'active',
     method: r.method || 'percentage', value: Number(r.value) || 0,
     target: r.target || 'items', allocation: r.allocation || 'each',
@@ -134,7 +134,7 @@ export function priceContext() {
   return { customer: { class: isSignedIn.value ? (memberTiers.value.length ? 'subscribed' : 'authenticated') : 'guest', tiers: memberTiers.value }, item_total: bag }
 }
 
-export const ships = (p: any) => p && (p.kind === 'good' || p.kind === 'print')
+export const ships = (p: { kind: string }) => p && (p.kind === 'good' || p.kind === 'print')
 
 /* kept for the pages that awaited the catalog: there is nothing to load now */
 export const ready = ref(true)
@@ -173,12 +173,12 @@ export function resolveProduct(p: any) {
 
 /* the editions build/print.mjs has set (content/store/print.json), by book: pages and quotes by contents; none is fine */
 import { editionsOf } from './print-index.js'
-export const editionOf = (slug: any) => editionsOf(slug)
+export const editionOf = (slug: string|number) => editionsOf(slug)
 /* a book's printed self, for a Book3D: its main offer's cover art and that binding's
    dimensions, from the edition of its first contents — null while nothing is set */
 /* a book's page in the store: the unlock's when it has one (every format is on it), else its print
    page — and the print page first when the book online is off */
-export const bookHref = (slug: any) => { const p = products.value.find((x: any) => x.book === slug && x.kind === (ONLINE ? 'book' : 'print')) || products.value.find((x: any) => x.book === slug && (x.kind === 'book' || x.kind === 'print')); return p ? p.href : '/store/products/' + slug }
+export const bookHref = (slug: string) => { const p = products.value.find((x: any) => x.book === slug && x.kind === (ONLINE ? 'book' : 'print')) || products.value.find((x: any) => x.book === slug && (x.kind === 'book' || x.kind === 'print')); return p ? p.href : '/store/products/' + slug }
 /* a book with no printed edition, as an object anyway: its own cover, a paperback, and a thickness
    read off how much text it holds — which is also what orders the hero's trio by length */
 function plainArt(b: any) {
@@ -189,7 +189,7 @@ function plainArt(b: any) {
     jacket: false, cloth: '', foil: '', foilArt: '', edges: null, sheets: [], trim: '6x9',
     pages: Math.max(24, Math.round(chars / 1800)) }
 }
-export function bookArtOf(slug: any) {
+export function bookArtOf(slug: string|number) {
   const b = BOOKS.find((x: any) => x.slug === slug); const spec = b && printSpec(b.print, b)
   const ed = spec && editionsOf(slug); const e = ed && ed.editions && ed.editions[spec.contents[0]]
   /*
@@ -216,7 +216,7 @@ const HARDCOVERS = () => { const w = (us('store').product || {}).print || {}; re
   .map((o: any) => { const unlock = PRODUCTS.find((p: any) => p.kind === 'book' && p.book === o.book); return { ...o, hidden: !!unlock && ONLINE, ebook: o.ebook && ONLINE, body: ((unlock || {}).body || '').split(/<h2\b/)[0] } }) }
 /* the best seller's badge, on the book's visible page alone; a product's own badge field says anything else ("New") */
 const badged = (p: any) => (p.book && p.book === BESTSELLER && !p.hidden ? { ...p, badge: (us('store').product.ui || {}).bestseller || p.badge } : p)
-export const products = computed(() => PRODUCTS.map((p: any) => (p.kind === 'book' && !ONLINE ? { ...p, hidden: true } : p)).concat(HARDCOVERS()).sort((a: any, b: any) => a.order - b.order || a.title.localeCompare(b.title)).map(badged).map(resolveProduct))
+export const products = computed(() => PRODUCTS.map((p: { kind: string }) => (p.kind === 'book' && !ONLINE ? { ...p, hidden: true } : p)).concat(HARDCOVERS()).sort((a: { order: number; title: string }, b: any) => a.order - b.order || a.title.localeCompare(b.title)).map(badged).map(resolveProduct))
 export const product = (id: any) => products.value.find((p: any) => p.id === id) || null
 export const byBook = (slug: any) => products.value.find((p: any) => p.kind === 'book' && p.book === slug) || null
 /* a book's page in print, when something of it is for sale */
@@ -234,7 +234,7 @@ export function resolveCollection(c: any) {
   const items = curated.concat(rest)
   return { ...c, items, href: '/store/collections/' + c.id, image: c.image || null, covers: items.filter((p: any) => p.image).slice(0, 3).map((p: any) => p.image) }
 }
-export const collections = computed(() => COLLECTIONS.slice().sort((a: any, b: any) => a.order - b.order).map(resolveCollection))
+export const collections = computed(() => COLLECTIONS.slice().sort((a: { order: number }, b: { order: number }) => a.order - b.order).map(resolveCollection))
 export const collection = (id: any) => collections.value.find((c: any) => c.id === id) || null
 export const featured = computed(() => products.value.filter((p: any) => p.featured && p.kind !== 'membership' && p.kind !== 'session' && !p.hidden))
 /* the memberships, lowest tier first; `membership` is the first of them, for anything
@@ -248,9 +248,9 @@ export const tiers = computed(() => {
     const t = by.get(p.tier) || { tier: p.tier, rank: p.rank || 0, title: p.title, subtitle: p.subtitle || '', id: p.id, href: p.href, offers: [] }
     t.offers.push(p); by.set(p.tier, t)
   }
-  return [...by.values()].sort((a, b) => a.rank - b.rank).map((t) => ({ ...t, offers: t.offers.sort((a: any, b: any) => (PERIOD_ORDER[a.period] ?? 9) - (PERIOD_ORDER[b.period] ?? 9)) }))
+  return [...by.values()].sort((a, b) => a.rank - b.rank).map((t) => ({ ...t, offers: t.offers.sort((a: { period: string|number }, b: { period: string|number }) => (PERIOD_ORDER[a.period] ?? 9) - (PERIOD_ORDER[b.period] ?? 9)) }))
 })
-export const memberships = computed(() => products.value.filter((p: any) => p.kind === 'membership').sort((a: any, b: any) => (a.rank || 99) - (b.rank || 99) || a.order - b.order))
+export const memberships = computed(() => products.value.filter((p: { kind: string }) => p.kind === 'membership').sort((a: any, b: any) => (a.rank || 99) - (b.rank || 99) || a.order - b.order))
 export const membership = computed(() => memberships.value[0] || null)
 /* a tier's rank, by its slug; unknown = 0 */
 export const tierRank = (slug: any) => { const p = memberships.value.find((m: any) => m.tier === slug); return p ? (p.rank || 0) : 0 }

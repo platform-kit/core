@@ -57,19 +57,19 @@ export const POLICY: CommentPolicy = { allow: 'off', approval: 'none', votes: fa
 
 const ALLOW = ['off', 'everyone', 'members', 'hosts']
 const APPROVAL = ['none', 'all', 'trusted']
-const word = (v: any, list: any, fallback: any) => {
+const word = (v: string|null, list: string|string[], fallback: string) => {
   const s = String(v == null ? '' : v).trim().toLowerCase()
   return list.includes(s) ? s : fallback
 }
-const flag = (v: any, fallback: any) => (v === true || v === false ? v : typeof v === 'string' ? /^(true|yes|on)$/i.test(v.trim()) : fallback)
-const num = (v: any, fallback: any, lo: any, hi: any) => {
+const flag = (v: string|boolean, fallback: boolean) => (v === true || v === false ? v : typeof v === 'string' ? /^(true|yes|on)$/i.test(v.trim()) : fallback)
+const num = (v: any, fallback: number, lo: number, hi: number) => {
   const n = Math.round(Number(v))
   return isFinite(n) && n >= lo && n <= hi ? n : fallback
 }
 
 /* the words a site will not have appearing unread. One list for the whole site, never one the
    platform ships: what a community will not have said is that community's business. */
-export const wordsOf = (v: any) => (Array.isArray(v) ? v : String(v || '').split(/[\n,]/))
+export const wordsOf = (v: string|string[]) => (Array.isArray(v) ? v : String(v || '').split(/[\n,]/))
   .map((w) => String(w || '').trim()).filter(Boolean)
 
 /* the five fields a row carries beside its access and its channel: the resolved answer */
@@ -184,7 +184,7 @@ export async function pushComments({ root = process.cwd(), store, log = console.
     if (!Array.isArray(c)) throw new Error('comments: could not read channels: expected a row list')
     spaceRows = s; chanRows = c
   }
-  const channelId = (space: any, channel: any) => {
+  const channelId = (space: string, channel: string) => {
     if (!channel) return null
     const sid = (spaceRows || []).find((s) => s.slug === space)?.id
     return (chanRows || []).find((c) => c.slug === channel && (!sid || c.space_id === sid))?.id || null

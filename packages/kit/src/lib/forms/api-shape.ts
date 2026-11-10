@@ -12,7 +12,7 @@ import { rowsOf } from './condition.js'
  * @param {string} name   the form's slug
  * @param {object} [times] { updated, created } ISO strings, or nothing (a form with no file)
  */
-export function apiShape(model: any, name: any, times: any = {}) {
+export function apiShape(model: any, name: string, times: any = {}) {
   const walk = (blocks: any, fn: any) => { for (const b of blocks || []) { fn(b); if (b.blocks) walk(b.blocks, fn) } }
   const field = (b: any) => { const p = b.params || {}; return { name: b.name, kind: b.kind, required: !!b.required, question: p.question || '', description: p.description || '', placeholder: p.placeholder || '', multiple: !!p.multiple,
     choices: (p.choices || p.options || []).map((c: any) => ({ value: c.value, label: c.label || c.value, image: c.image || '' })), outof: p.outof || null, startat: p.startat ?? null, labelstart: p.labelstart || '', labelend: p.labelend || '', min: p.min ?? null, max: p.max ?? null, step: p.step ?? null, multiline: !!p.multiline } }

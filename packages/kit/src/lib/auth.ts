@@ -112,7 +112,7 @@ function settle(s: any) {
   return true
 }
 function setRoles(held: any) {
-  const has = (r: any) => held.includes(r)
+  const has = (r: string) => held.includes(r)
   roles.value = held
   isAdmin.value = has('admin')
   isStaff.value = held.length > 0
@@ -181,7 +181,7 @@ export async function refreshEntitlements() {
 
 /* the rung the user stands on; a signed-in user with no grants is 'authenticated' */
 export const userClass = computed(() => classOf(entitlements.value, !!user.value))
-export const canAccess = (required: any) => hasClass(userClass.value, required || 'guest')
+export const canAccess = (required: string) => hasClass(userClass.value, required || 'guest')
 
 /*
  * WHAT THIS PERSON MAY DO, as one ability rather than four vocabularies.
@@ -204,8 +204,8 @@ export const identity = computed(() => identityOf({
 }))
 export const ability = computed(() => abilityFor(identity.value, siteRules))
 /* the one question the rest of the app asks: `can('read', entrySubject(entry))` */
-export const can = (action: any, subject: any) => ability.value.can(action, subject)
-export const cannot = (action: any, subject: any) => ability.value.cannot(action, subject)
+export const can = (action: string, subject: any) => ability.value.can(action, subject)
+export const cannot = (action: string, subject: any) => ability.value.cannot(action, subject)
 /* the membership tiers the account holds (the Stripe price's `tier`, kept by the
    webhook); a subscriber with no tier on the price holds none, and still counts as
    subscribed for the class ladder */
@@ -349,7 +349,7 @@ export async function initAuth() {
   /* the work is deferred a tick: supabase-js holds its auth lock while it calls this,
      and a call that needs the lock from inside (any request, which asks for the
      session) can deadlock — the documented pattern is to leave the callback first */
-  ;(supabase as any).auth.onAuthStateChange((event: any, s: any) => {
+  ;(supabase as any).auth.onAuthStateChange((event: string, s: any) => {
     session.value = s
     /* back from the password-reset email: the link signed them in for the one purpose of
        choosing a new password, and the modal opens on that form (AuthModal watches this) */

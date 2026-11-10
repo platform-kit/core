@@ -35,7 +35,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue'])
 const W = computed(() => us('models').tokens || {})
-const say = (k: any, fallback: any) => (W.value.main || {})[k] || fallback
+const say = (k: string, fallback: string) => (W.value.main || {})[k] || fallback
 
 const chosen = computed(() => props.modelValue || {})
 const open = ref<any>({})
@@ -48,7 +48,7 @@ const groups = computed(() => {
     const g = (def as any).scope || 'site'
     ;(by[g] || (by[g] = [])).push({ key, ...def })
   }
-  for (const list of Object.values(by)) (list as any).sort((a: any, b: any) => a.token.localeCompare(b.token))
+  for (const list of Object.values(by)) (list as any).sort((a: { token: string }, b: any) => a.token.localeCompare(b.token))
   const names = Object.keys(by).sort((a, b) => {
     const i = ORDER.indexOf(a), j = ORDER.indexOf(b)
     return (i < 0 ? 99 : i) - (j < 0 ? 99 : j) || a.localeCompare(b)
@@ -57,7 +57,7 @@ const groups = computed(() => {
 })
 
 /* what this field shows: what they chose, or the look's own behind it */
-const valueOf = (row: any, mode: any) => {
+const valueOf = (row: { key: string|number }, mode: string) => {
   const v = chosen.value[row.key]
   const own = typeof v === 'string' ? (mode === 'light' ? v : '') : (v && v[mode]) || ''
   return own || ''
@@ -65,7 +65,7 @@ const valueOf = (row: any, mode: any) => {
 const shownOf = (row: any, mode: any) => valueOf(row, mode) || row[mode] || ''
 const changed = (row: any) => !!(valueOf(row, 'light') || valueOf(row, 'dark'))
 
-function set(row: any, mode: any, value: any) {
+function set(row: { key: string|number }, mode: string|number, value: any) {
   const next = { ...chosen.value }
   const was = next[row.key]
   const pair: any = typeof was === 'string' ? { light: was, dark: '' } : { light: (was && was.light) || '', dark: (was && was.dark) || '' }
@@ -76,7 +76,7 @@ function set(row: any, mode: any, value: any) {
   emit('update:modelValue', next)
 }
 /* PUT BACK DELETES THE KEY. It does not write the default in, for the reason at the top. */
-function putBack(row: any) {
+function putBack(row: { key: string|number }) {
   const next = { ...chosen.value }
   delete next[row.key]
   emit('update:modelValue', next)

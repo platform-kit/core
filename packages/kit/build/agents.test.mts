@@ -16,7 +16,7 @@ import { SURFACES } from './bots.mjs'
 import { socialAutomationPrompt } from '../supabase/functions/_shared/social/automation-rules.mjs'
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
+const ok = (msg: string, cond: boolean|null, detail?: string|null|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 const t0 = Date.parse('2026-06-10T12:00:00Z')
 
 {
@@ -49,12 +49,12 @@ const t0 = Date.parse('2026-06-10T12:00:00Z')
 const bot = { slug: 'helper', prompt: 'You help.', limits: { steps: 4, spend: 0.25, minutes: 5, tools: 3 } }
 const run = { id: 'r1', status: 'running', bot: 'helper', state: { messages: [{ role: 'user', content: 'where is my order?' }] } }
 /* a model step as an OpenAI-shaped provider returns one */
-const saidStep = (text: any) => ({ kind: 'model', response: { message: { role: 'assistant', content: text } } })
-const askedStep = (name: any, args: any, call = 'c1') => ({
+const saidStep = (text: string) => ({ kind: 'model', response: { message: { role: 'assistant', content: text } } })
+const askedStep = (name: string, args: { ref?: string }, call = 'c1') => ({
   kind: 'model',
   response: { message: { role: 'assistant', content: null, tool_calls: [{ id: call, type: 'function', function: { name, arguments: JSON.stringify(args) } }] } },
 })
-const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name, response: { call, result } });
+const toolStep = (name: string, result: any, call = 'c1') => ({ kind: 'tool', name, response: { call, result } });
 
 /* ---- the first thing a run does is think ---- */
 {
@@ -211,7 +211,7 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
   const day = 86400000
   /* the rule, as the worker applies it: every occurrence since the last firing, of which the LAST
      is what is owed */
-  const owed = (since: any, now: any) => {
+  const owed = (since: number, now: number) => {
     const missed = occurrences(daily, { from: since + 1, to: now, limit: 400 })
     return missed.length ? missed[missed.length - 1].start : null
   }
@@ -408,7 +408,7 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
              { name: 'open-to-all', description: 'anybody may read this' }],
   }
   const opened = new Set(['refunds', 'open-to-all'])
-  const names = (allowed: any) => toolsFor({ bot, surface: 'support', opened, allowed }).map((t) => t.name)
+  const names = (allowed: Set<string>|null) => toolsFor({ bot, surface: 'support', opened, allowed }).map((t) => t.name)
 
   ok('with no gating, everything the bot names is offered',
     names(null).includes('raise_ticket') && names(null).includes('search_site'))
@@ -427,7 +427,7 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
 
   /* the whole system message, end to end */
   const run = { allowed: new Set(['open-to-all']), state: { messages: [{ role: 'user', content: 'hi' }] } }
-  const sys = (messagesFor({ run, bot, steps: [] }) as any).find((x: any) => x.role === 'system').content
+  const sys = (messagesFor({ run, bot, steps: [] }) as any).find((x: { role: string }) => x.role === 'system').content
   ok('the run\u2019s own permissions reach the prompt', !sys.includes('refunds') && sys.includes('open-to-all'), sys)
 }
 
@@ -472,7 +472,7 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
   /* and the one that was wrong in a way "does not throw" would not have caught */
   const prices = await BUILTINS.catalog.run({ admin, args: { what: 'membership' }, catalog })
   ok('catalog finds the memberships by the word people use', prices.length >= 1, JSON.stringify(prices).slice(0, 120))
-  ok('\u2026in money rather than cents', prices.every((o: any) => o.price > 0 && o.price < 10000), JSON.stringify(prices.map((o: any) => o.price)))
+  ok('\u2026in money rather than cents', prices.every((o: { price: number }) => o.price > 0 && o.price < 10000), JSON.stringify(prices.map((o: any) => o.price)))
   /* A question's own words must not match a thing's title — and the words that are a question's
      rather than a thing's are the THEME's, so they are read here the way the function reads them:
      out of the built bots.json, which bots.mjs fills from the spaces scope. A kit that compiled
@@ -502,14 +502,14 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
     const fld = describeSchema(m.fields).find((x) => x.name === 'for')
     ok('\u2026over the audience options', !!fld && fld.widget === 'multiselect' && fld.options === 'audience', key + ' ' + JSON.stringify(fld && { w: fld.widget, o: fld.options }))
   }
-  const store = { read: async (p: any) => readFileSync(join(SITE, p), 'utf8') }
+  const store = { read: async (p: string) => readFileSync(join(SITE, p), 'utf8') }
   const opts = await models.bots.options.audience({ root: SITE, store })
   const values = opts.map((o: any) => o.value)
   ok('the classes anybody may be in are offered', ['anyone', 'authenticated', 'customer', 'subscribed'].every((v) => values.includes(v)))
   ok('\u2026and every role that runs the site', values.includes('role:admin') && values.includes('role:support'))
-  ok('\u2026and this site\u2019s own tiers, from its catalog', values.some((v: any) => v.startsWith('tier:')), values.filter((v: any) => v.startsWith('tier:')).join(' '))
-  ok('\u2026and the things it sells', values.some((v: any) => v.startsWith('bought:')), String(values.filter((v: any) => v.startsWith('bought:')).length))
-  ok('and nothing is offered that is not one of those', values.every((v: any) => ['anyone', 'authenticated', 'customer', 'subscribed'].includes(v) || /^(role|tier|bought):/.test(v)))
+  ok('\u2026and this site\u2019s own tiers, from its catalog', values.some((v: string) => v.startsWith('tier:')), values.filter((v: string) => v.startsWith('tier:')).join(' '))
+  ok('\u2026and the things it sells', values.some((v: string) => v.startsWith('bought:')), String(values.filter((v: string) => v.startsWith('bought:')).length))
+  ok('and nothing is offered that is not one of those', values.every((v: string) => ['anyone', 'authenticated', 'customer', 'subscribed'].includes(v) || /^(role|tier|bought):/.test(v)))
 }
 
 /*
@@ -522,13 +522,13 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
   const voice = describeSchema(bots.fields).find((field) => field.name === 'voice')
   const sub = Object.fromEntries((voice && voice.fields || []).map((field: any) => [field.key, field]))
   ok('the bot voice block is drawn as a structured group', !!voice && voice.widget === 'group' && voice.kind === 'group')
-  ok('the endpoint voice is chosen from named options and remains visible for implicit endpoint selection', sub.say && sub.say.kind === 'select' && !sub.say.shown && sub.say.choices.some((choice: any) => choice.value === 'alloy'))
+  ok('the endpoint voice is chosen from named options and remains visible for implicit endpoint selection', sub.say && sub.say.kind === 'select' && !sub.say.shown && sub.say.choices.some((choice: { value: string }) => choice.value === 'alloy'))
   ok('all five named visualizers are selectable', sub.visual && sub.visual.choices.map((choice: any) => choice.value).join(',') === 'aura,wave,radial,grid,bar')
   ok('the greeting is a sentence field and timing values are numeric controls', sub.greeting && sub.greeting.kind === 'text' && sub.wait && sub.wait.kind === 'number' && sub.gap && sub.gap.kind === 'number')
   const { checkEntry } = await import('../src/lib/models/entry.js')
   const fields = describeSchema(bots.fields).map((field) => ({ ...field, key: field.name }))
   const errors = checkEntry({ fields }, { name: 'Voice test', voice: { by: 'endpoint', say: 'alloy', visual: 'wave', wait: 11 } })
-  ok('voice number bounds are enforced by the model', errors.some((error: any) => error.field === 'voice.wait'), JSON.stringify(errors))
+  ok('voice number bounds are enforced by the model', errors.some((error: { field: string }) => error.field === 'voice.wait'), JSON.stringify(errors))
 }
 
 {
@@ -540,7 +540,7 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
   ok('bot authoring offers the Social automation surface', surfaceField?.options === 'surfaces' &&
     surfaceChoices.some((choice) => choice.value === 'social' && choice.label === 'Social automations'))
   ok('general bot commands still cannot target the Social surface',
-    !commandSurfaces?.choices?.some((choice: any) => choice.value === 'social'))
+    !commandSurfaces?.choices?.some((choice: { value: string }) => choice.value === 'social'))
 }
 
 /*
@@ -585,7 +585,7 @@ const toolStep = (name: any, result: any, call = 'c1') => ({ kind: 'tool', name,
   ok('\u2026and all still meaning all', back.data['skills-mode'] === 'all')
 
   /* the three answers to "which skills", each written as the file writes it */
-  const modeOf = (src: any) => agentGrammar.serialise(agentGrammar.parse('---\nname: X\n' + src + '\n---\n\nbody\n'))
+  const modeOf = (src: string) => agentGrammar.serialise(agentGrammar.parse('---\nname: X\n' + src + '\n---\n\nbody\n'))
   ok('some skills are a list', /skills:\n\s+- refunds/.test(modeOf('skills:\n  - refunds-and-returns')), modeOf('skills:\n  - refunds-and-returns'))
   ok('no skills is no line at all', !/skills/.test(modeOf('')), modeOf(''))
 }

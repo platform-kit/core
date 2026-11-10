@@ -31,7 +31,7 @@ export function migrateIds(){
   if(!S||!S.resp||S.idsMigrated||!BANK.length) return;
   var byText: any={}; BANK.forEach(function(x: any){ byText[x.t]=x.id; });
   var moved=0;
-  (S.resp.domain||[]).forEach(function(r: any){
+  (S.resp.domain||[]).forEach(function(r: { id: string|number; }){
     if(r.id&&byText[r.id]){ r.id=byText[r.id]; moved++; } });
   var led=S.ledger&&S.ledger.domain;
   if(led){ var next: any={};
@@ -65,21 +65,21 @@ export let SIT_GAP=90*60*1000;
 export function sittings(){
   var all=S.resp.domain||[], old: any=[], ts: any=[];
   all.forEach(function(r: any){ (r.ts?ts:old).push(r); });
-  ts.sort(function(a: any,b: any){return a.ts-b.ts;});
+  ts.sort(function(a: { ts: number; },b: { ts: number; }){return a.ts-b.ts;});
   var out=[];
   if(old.length) out.push({at:null,rows:old});
   var cur: any=null;
-  ts.forEach(function(r: any){
+  ts.forEach(function(r: { ts: number; }){
     if(!cur||r.ts-cur.last>SIT_GAP){ cur={at:r.ts,last:r.ts,rows:[]}; out.push(cur); }
     cur.last=r.ts; cur.rows.push(r); });
   return out;
 }
-export function seen(corpus: any,k: any){ return S.ledger[corpus][k]||0; }
-export function mark(corpus: any,k: any){ S.ledger[corpus][k]=(S.ledger[corpus][k]||0)+1; }
+export function seen(corpus: string|number,k: string|number){ return S.ledger[corpus][k]||0; }
+export function mark(corpus: string|number,k: string|number){ S.ledger[corpus][k]=(S.ledger[corpus][k]||0)+1; }
 
 /* least-seen-first draw: the whole corpus cycles before anything repeats */
 export function shuffle(a: any){var b=a.slice();for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t;}return b;}
-export function draw(corpus: any,pool: any,keyFn: any,n: any){
+export function draw(corpus: any,pool: any,keyFn: any,n: number){
   if(!pool.length||n<=0) return [];
   var counts=pool.map(function(x: any){return seen(corpus,keyFn(x));});
   var lvl=Math.min.apply(null,counts), out: any=[], guard=0;

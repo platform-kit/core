@@ -63,7 +63,7 @@ export function hasComments(doc: any) {
  * FIELD and not the value that happened to be in it, so it is lifted off the old value and put on
  * the new one. `commentBefore` and `spaceBefore` sit on the key and survive by themselves.
  */
-function setValue(doc: any, node: any, key: any, value: any) {
+function setValue(doc: any, node: any, key: string, value: any) {
   const pair = node.items.find((p: any) => String(p.key?.value ?? p.key) === key)
   if (!pair) { node.set(doc.createNode(key), doc.createNode(value)); return }
   const keep = { comment: pair.value?.comment, spaceBefore: pair.value?.spaceBefore }
@@ -104,12 +104,12 @@ function mergeMap(doc: any, node: any, data: any) {
  * file this was written for, and it has one. The alternative is each of them keeping a copy of
  * this decision, which is how two of them end up disagreeing.
  */
-export function writeKeeping(current: any, data: any, body: any, stringify: any) {
+export function writeKeeping(current: any, data: object, body: string|{ content: string }, stringify: any) {
   const kept = current ? keepComments(current, data) : null
   return kept == null ? stringify() : '---\n' + kept + '\n---\n' + body
 }
 
-export function keepComments(current: any, data: any) {
+export function keepComments(current: string, data: any) {
   const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(String(current || ''))
   if (!m) return null
   let doc
@@ -139,8 +139,8 @@ export function keepComments(current: any, data: any) {
  * The split is on the LAST ` #`, and both halves must match for a line to be restored — so a `#`
  * inside a quoted value can only ever fail to match, never restore the wrong line.
  */
-function realign(out: any, src: any) {
-  const cut = (line: any) => { const i = line.lastIndexOf(' #'); return i < 0 ? null : [line.slice(0, i).replace(/\s+$/, ''), line.slice(i + 1)] }
+function realign(out: string, src: string) {
+  const cut = (line: string) => { const i = line.lastIndexOf(' #'); return i < 0 ? null : [line.slice(0, i).replace(/\s+$/, ''), line.slice(i + 1)] }
   const was = new Map()
   for (const line of src.split('\n')) { const c = cut(line); if (c) was.set(c[0] + '\u0000' + c[1], line) }
   const lines = out.split('\n').map((line: any) => {
@@ -151,7 +151,7 @@ function realign(out: any, src: any) {
   })
   /* and the blank lines the front matter opens with, which the library also tidies away. A file
      that begins with air begins with air after a save too: that is a line of somebody's diff. */
-  const blanks = (t: any) => { let i = 0; const l = t.split('\n'); while (i < l.length && l[i].trim() === '') i++; return i }
+  const blanks = (t: string) => { let i = 0; const l = t.split('\n'); while (i < l.length && l[i].trim() === '') i++; return i }
   const owed = blanks(src) - blanks(lines.join('\n'))
   return (owed > 0 ? '\n'.repeat(owed) : '') + lines.join('\n')
 }

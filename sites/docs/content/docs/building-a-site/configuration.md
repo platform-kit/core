@@ -22,7 +22,7 @@ sources:
     packages/kit/build/source-install.mts,
     packages/kit/build/admin-cms-mode.test.mts,
   ]
-reviewed: 2026-11-09
+reviewed: 2026-11-10
 ---
 
 `platformkit.config.js` is the one place the kit and the theme learn about a site. It exports a plain object. A change to it restarts the dev server. While it runs, the Vite plugin also watches Markdown edits and refreshes only the build steps whose declared inputs match the changed path.

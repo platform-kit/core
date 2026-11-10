@@ -19,8 +19,8 @@ import { STEPS } from './steps/index.mjs'
 const NM = (() => { const { existsSync } = fsMod; let d = path.dirname(new URL(import.meta.url).pathname); while (!existsSync(path.join(d, 'node_modules', 'platformkit')) && d !== path.dirname(d)) d = path.dirname(d); return path.join(d, 'node_modules') })()
 
 let n = 0, bad = 0
-const t = (name: any, fn: any) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
-const ta = async (name: any, fn: any) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
+const t = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void }) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
+const ta = async (name: string, fn: any) => { n++; try { await fn() } catch (e: any) { bad++; console.log('  FAIL', name, '\n   ', String(e.message || e).split('\n').slice(0, 3).join('\n    ')) } }
 const norm = (s: any) => ({ title: s.key, after: [], inputs: [], needs: { env: [], tools: [], packages: [] }, ...s })
 const site = { root: process.cwd(), modules: {} }
 
@@ -31,7 +31,7 @@ t('the kit declares every step it should, keys unique, phases valid, run a funct
   assert.equal(STEPS.length, KIT_STEPS)
   assert.equal(new Set(STEPS.map((s) => s.key)).size, KIT_STEPS)
   for (const s of STEPS) { assert.ok(PHASES.includes(s.phase), s.key); assert.equal(typeof s.run, 'function', s.key); assert.ok(s.title, s.key) }
-  assert.ok((STEPS as any).find((s: any) => s.key === 'tts').needs.packages.includes('onnxruntime-node'))
+  assert.ok((STEPS as any).find((s: { key: string }) => s.key === 'tts').needs.packages.includes('onnxruntime-node'))
 })
 t('every phase of the kit orders, and the order respects every after', () => {
   const all = STEPS.map(norm)
@@ -52,7 +52,7 @@ t('a cycle, an unknown after, one in another phase, are refused naming the steps
   assert.throws(() => order([{ key: 'a', phase: 'site', after: ['b'] }, { key: 'b', phase: 'after' }].map(norm), 'site'), /another phase/)
 })
 t('module and when switch a step off, with the reason', () => {
-  const s = norm({ key: 'x', phase: 'site', module: 'tts', when: (env: any) => env.TTS === '1', whenText: 'TTS is not 1' })
+  const s = norm({ key: 'x', phase: 'site', module: 'tts', when: (env: { TTS: string }) => env.TTS === '1', whenText: 'TTS is not 1' })
   assert.equal(whyOff(s, { modules: { tts: false } }, { TTS: '1' }), 'the tts module is off')
   assert.equal(whyOff(s, { modules: {} }, {}), 'TTS is not 1')
   assert.equal(whyOff(s, { modules: {} }, { TTS: '1' }), null)
@@ -105,20 +105,20 @@ await ta('a site step from a config is merged and ordered among the kit\'s; a du
   assert.equal(steps.length, KIT_STEPS + 1)
   const o = order(steps, 'site').map((s: any) => s.key)
   assert.ok(o.indexOf('form-embed') < o.indexOf('mine') && o.includes('prerender'))
-  assert.equal(steps.find((s: any) => s.key === 'mine').from, 'the site (./build/mine.mjs)')
+  assert.equal(steps.find((s: { key: string }) => s.key === 'mine').from, 'the site (./build/mine.mjs)')
   const providerFixture: any = {
     ...cfg,
     payments: { provider: 'site-mock' },
     build: { modules: [path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures/site-payment-provider/module.mjs')] },
   }
   await loadSteps(providerFixture)
-  assert.ok(providerFixture._paymentProviderRegistrations.some((provider: any) => provider.id === 'site-mock'))
+  assert.ok(providerFixture._paymentProviderRegistrations.some((provider: { id: string }) => provider.id === 'site-mock'))
   await assert.rejects(() => loadSteps({ ...cfg, build: { steps: ['./build/dup.mjs'] } }), /step prerender is already declared by the kit/)
   rmSync(d, { recursive: true, force: true })
 })
 await ta('a failing step stops the phase naming itself; a change list runs the matching steps only', async () => {
   const log = []
-  const mk = (key: any, fn: any, inputs = []) => norm({ key, phase: 'site', inputs, run: fn })
+  const mk = (key: string, fn: any, inputs = []) => norm({ key, phase: 'site', inputs, run: fn })
   const ran = []
   const steps = [mk('one', () => ran.push('one')), mk('two', () => { throw new Error('boom') }), mk('three', () => ran.push('three'))]
   /* runPhase loads the kit's steps itself; the fixture goes through the same order/run path via a stub site with these as its own */

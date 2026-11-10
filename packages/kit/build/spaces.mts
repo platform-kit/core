@@ -38,16 +38,16 @@ export const SITE_OUT = '.velite/spaces.json'
 /* a sku → the offer's key, and the tiers a site actually sells, from the catalog the functions read.
    A fill or a grant naming a tier no membership declares fills nobody and grants nobody — silently,
    which is the worst way for a room to be empty — so it is a fault like an unknown sku. */
-export function catalogOf(root: any, given: { offers: any; sessions?: any; } | null = null) {
+export function catalogOf(root: string, given: { offers: any; sessions?: any; } | null = null) {
   /* the catalog as DATA. On a machine the caller reads it off the disk (build/spaces-disk.mjs); in an
      Edge Function there is no file, and an absent catalog means the sku and tier checks below simply
      find nothing to contradict — which is what they did before, when the read threw and was caught. */
   const cat = given || { offers: {}, sessions: [] }
-  const offers: any = cat.offers || {}
+  const offers = cat.offers || {}
   const list = Object.values(offers)
   const types = cat.sessions || []
   return {
-    keyOf: (sku: any) => { const o = offers[sku] || list.find((x: any) => x.sku === sku); return o && o.key ? o.key : null },
+    keyOf: (sku: string|number) => { const o = offers[sku] || list.find((x: any) => x.sku === sku); return o && o.key ? o.key : null },
     tiers: new Set(list.filter((o: any) => o.kind === 'membership' && o.tier).map((o: any) => o.tier)),
     sessions: new Set(types.map((s: any) => s.slug)),
     /* a site with no store at all cannot be told it has the wrong tier */
@@ -67,7 +67,7 @@ export function catalogOf(root: any, given: { offers: any; sessions?: any; } | n
 function contradicts(spaceFill: any, roomFill: any) {
   const a = fillSets(spaceFill), b = fillSets(roomFill)
   if (!a.length || !b.length) return null
-  const one = (sets: any, key: any) => {
+  const one = (sets: any, key: string) => {
     const vals = []
     for (const s of sets) {
       const v = s[key]
@@ -173,7 +173,7 @@ export async function compileSpaces({ check = false, store, write = true, catalo
   cat = catalogOf(root, cat)
   const forms = new Set(names || [])
   const keyOf = cat.keyOf
-  const tierOk = (tier: any) => !cat.sells || cat.tiers.has(tier)
+  const tierOk = (tier: string|undefined) => !cat.sells || cat.tiers.has(tier)
   /* a site with no booking types at all cannot be told it named the wrong one */
   const sessionOk = (slug: any) => !cat.books || cat.sessions.has(slug)
   const errors: any = []
@@ -182,7 +182,7 @@ export async function compileSpaces({ check = false, store, write = true, catalo
 
   for (const s of declared) {
     const at = `content/spaces/${s.slug}.md`
-    const bad = (m: any) => errors.push(`${at}: ${m}`)
+    const bad = (m: string) => errors.push(`${at}: ${m}`)
     if (!slugOk(s.slug)) bad('the name is lower-case words joined by hyphens')
     if (!String(s.data.name || '').trim()) bad('a space needs a name')
     if (!KINDS.includes(s.data.kind)) bad(`kind is one of ${KINDS.join(', ')} (got "${s.data.kind}")`)
@@ -192,7 +192,7 @@ export async function compileSpaces({ check = false, store, write = true, catalo
        tier X is not one any membership declares" is no use when there are three alternatives. */
     const fillCtx = { bad, keyOf, tierOk, sessionOk, sells: cat.sells, books: cat.books }
     const spaceSets = fillSets(s.data.fill)
-    const fill = buildFill(s.data.fill, { ...fillCtx, where: (i: any) => (spaceSets.length > 1 ? `fill[${i + 1}]` : 'fill') })
+    const fill = buildFill(s.data.fill, { ...fillCtx, where: (i: number) => (spaceSets.length > 1 ? `fill[${i + 1}]` : 'fill') })
 
     const roles = []
     const seenRole = new Set()
@@ -208,7 +208,7 @@ export async function compileSpaces({ check = false, store, write = true, catalo
     const seenChannel = new Set()
     for (const c of s.channels) {
       const cat = `content/spaces/${s.slug}/${c.slug}.md`
-      const cbad = (m: any) => errors.push(`${cat}: ${m}`)
+      const cbad = (m: string) => errors.push(`${cat}: ${m}`)
       if (!slugOk(c.slug)) cbad('the name is lower-case words joined by hyphens')
       if (seenChannel.has(c.slug)) { cbad('two channels of this space have that name'); continue }
       seenChannel.add(c.slug)
@@ -224,7 +224,7 @@ export async function compileSpaces({ check = false, store, write = true, catalo
       /* A ROOM'S OWN RULE, in the space's own grammar and through the same builder — so a fault in
          one is worded exactly as a fault in the other. */
       const cSets = fillSets(c.data.fill)
-      const cFill = buildFill(c.data.fill, { ...fillCtx, bad: cbad, where: (i: any) => (cSets.length > 1 ? `fill[${i + 1}]` : 'fill') })
+      const cFill = buildFill(c.data.fill, { ...fillCtx, bad: cbad, where: (i: number) => (cSets.length > 1 ? `fill[${i + 1}]` : 'fill') })
       /* NARROWER, NEVER WIDER. A room's rule cannot let anybody in who is not in the space, so a
          rule no member of the space could pass is a room nobody can ever enter — which is the worst
          way to find out you made a mistake, because nothing tells you. Only a plain contradiction is
@@ -252,9 +252,9 @@ export async function compileSpaces({ check = false, store, write = true, catalo
 
     /* every grant, at the scope its file declared it at */
     const grants: any = []
-    const take = (g: any, where: any, channel: any) => {
+    const take = (g: any, where: string, channel: any) => {
       const cat: any = channel ? `content/spaces/${s.slug}/${channel}.md` : at
-      const gbad = (m: any) => errors.push(`${cat}: ${m}`)
+      const gbad = (m: string) => errors.push(`${cat}: ${m}`)
       if (!CAPABILITIES.includes(g.capability)) { gbad(`grants: "${g.capability}" is not one of ${CAPABILITIES.join(', ')}`); return }
       const t = parseTarget(g.to)
       if (!t.scope) { gbad(`grants: "${t.bad}" is not a target — everyone, tier:<slug>, role:<slug> or bought:<sku>`); return }

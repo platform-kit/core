@@ -5,11 +5,11 @@
  * on a button whose label is the whole control is a control nobody can see or press.
  */
 let pass = 0, fail = 0
-const ok = (m: any, c: any, d?: any) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
+const ok = (m: string, c: boolean, d?: string|undefined) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
 console.log('\nTHE THEME\'S WORDS ARE THE FLOOR\n')
 
 /* the merge, lifted exactly as strings.js defines it */
-const under = (over: any, base: any) => {
+const under = (over: object|undefined, base: any) => {
   if (!base) return over || {}
   if (!over) return base
   const out = { ...base }

@@ -15,9 +15,9 @@ import nunjucks from 'nunjucks'
 /* one environment, never the global configure: nothing else on the page shares it */
 const env = new nunjucks.Environment(null, { autoescape: false, throwOnUndefined: false })
 
-export function context(data: any, answers: any) { return { ...(data || {}), ...(answers || {}) } }
+export function context(data: { brand: string }, answers: { name: string }) { return { ...(data || {}), ...(answers || {}) } }
 
-export function holds(condition: any, ctx: any) {
+export function holds(condition: string, ctx: Record<string, unknown>) {
   const c = String(condition || '').trim()
   if (!c) return true
   try { return env.renderString(`{% if ${c} %}true{% endif %}`, ctx || {}) === 'true' }
@@ -25,7 +25,7 @@ export function holds(condition: any, ctx: any) {
 }
 
 /* `{$ name $}` is forms.md's binding; nunjucks's own `{{ name }}` is left as it is (the same thing) */
-export function renderCopy(md: any, ctx: any) {
+export function renderCopy(md: string, ctx: { name?: string; many?: string[] }) {
   const src = String(md || '').replace(/\{\$\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\$\}/g, '{{ $1 }}')
   try { return env.renderString(src, bindable(ctx || {})) }
   catch (e: any) { if (typeof console !== 'undefined') console.warn(`[forms] the copy could not be rendered: ${e.message || e}`); return src }
@@ -41,7 +41,7 @@ export function valueOf(v: any) {
 const bindable = (ctx: any) => Object.fromEntries(Object.entries(ctx).map(([k, v]) => [k, Array.isArray(v) || (v && typeof v === 'object' && (v as any).name && !Array.isArray(v)) ? valueOf(v) : v]))
 
 /* the next slide from `from` going forward (or back): the first whose jump condition holds, or has none — forms.md's getNextSlide */
-export function nextSlide(slides: any, from: any, ctx: any, dir = 1) {
+export function nextSlide(slides: any, from: number, ctx: { plan: string }, dir = 1) {
   for (let i = from + dir; i >= 0 && i < slides.length; i += dir) {
     const s = slides[i]
     if (!s.jump || holds(s.jump, ctx)) return i

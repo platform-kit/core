@@ -37,7 +37,7 @@ import { planDrop, applyDrop } from './module-drop.mjs'
 
 const ROOT = process.cwd()
 const ASSEMBLE = fileURLToPath(new URL('./assemble.mjs', import.meta.url))
-const note = (m: any) => console.log('modules off: ' + m)
+const note = (m: string) => console.log('modules off: ' + m)
 const SITE = (process.env.PLATFORMKIT_TEST_SITE || '').toLowerCase()
 /* the demo site has every module on, so its run covers every switch; on another site this is not the site's question */
 if (process.env.PLATFORMKIT_E2E === '1' && SITE && SITE !== 'demo') { console.log(`  — modules off: not on this site (${SITE}; the demo site, which has every module on, runs it)`); process.exit(0) }
@@ -53,15 +53,15 @@ const DOCKER_AT = (process.env.SUPABASE_SERVICES_HOSTNAME || '').trim() || '127.
 const TARGET = `postgresql://postgres:postgres@${DOCKER_AT}:${PORT}/postgres?sslmode=disable`
 
 let pass = 0, fail = 0
-const ok = (msg: any, cond: any, detail?: any) => { if (cond) { pass++; return true } else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).split('\n').slice(0, 8).join('\n        ') : '')); return false } }
-const sb = (args: any) => spawnSync('npx', ['supabase', '--workdir', SCR, ...args], { cwd: SCR, encoding: 'utf8', env: process.env })
+const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) { pass++; return true } else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + String(detail).split('\n').slice(0, 8).join('\n        ') : '')); return false } }
+const sb = (args: string[]) => spawnSync('npx', ['supabase', '--workdir', SCR, ...args], { cwd: SCR, encoding: 'utf8', env: process.env })
 
 const site = await loadSite(ROOT)
 const modules = await moduleSet(site)
 const own = ownership(modules)
 const switches = site.modules || {}
 /* a module off takes everything that requires it with it */
-const closure = (key: any) => {
+const closure = (key: string) => {
   const off = new Set([key])
   for (let grew = true; grew;) { grew = false; for (const m of modules.values()) if (!off.has(m.key) && m.requires.some((r) => off.has(r.module))) { off.add(m.key); grew = true } }
   return [...off]
@@ -154,7 +154,7 @@ try {
   const KEY = 'courses'
   if (modules.has(KEY)) {
     const count = () => withDb(async (db: any) => (await db.query("select count(*)::int as n from public.courses where slug like 'modules-off-%'")).rows[0].n)
-    const has = (fn: any) => withDb(async (db: any) => (await db.query("select to_regproc('public.' || $1) is not null as y", [fn])).rows[0].y)
+    const has = (fn: string) => withDb(async (db: any) => (await db.query("select to_regproc('public.' || $1) is not null as y", [fn])).rows[0].y)
     assemble([])
     await applyTree()
     await withDb((db: any) => db.query("insert into public.courses (slug, title) values ('modules-off-one', 'One'), ('modules-off-two', 'Two')"))

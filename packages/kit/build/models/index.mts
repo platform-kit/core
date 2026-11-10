@@ -53,7 +53,7 @@ let SITE_MODELS: any = null
 export async function registry(root = process.cwd(), { site, siteModels, store }: any = {}) {
   const c = site || await loadSite(root)
   const out: any = [], seen = new Map()
-  const add = (m: any, from: any) => { const r = normalise(m, from); if (seen.has(r.key)) throw new Error(`${from}: model ${r.key} is already declared by ${seen.get(r.key)}`); if (r.module && c.modules && c.modules[r.module] === false) return; seen.set(r.key, from); out.push(r) }
+  const add = (m: any, from: string) => { const r = normalise(m, from); if (seen.has(r.key)) throw new Error(`${from}: model ${r.key} is already declared by ${seen.get(r.key)}`); if (r.module && c.modules && c.modules[r.module] === false) return; seen.set(r.key, from); out.push(r) }
   for (const m of CORE) add(m, 'the kit')
   if (siteModels) for (const m of siteModels) add(m, 'the site')
   else if (c.admin && c.admin.models) {
@@ -63,18 +63,18 @@ export async function registry(root = process.cwd(), { site, siteModels, store }
   for (const m of await customModels(store || gitStore(c.root))) add(m, 'a custom model')
   return out
 }
-export const byKey = (models: any, key: any) => models.find((m: any) => m.key === key) || null
+export const byKey = (models: any, key: string) => models.find((m: any) => m.key === key) || null
 
 /* ---- the pipe ---- */
 /* a record's file, relative to the root: <dir>/<name>.<ext>, the name kept under its dir */
-export function fileOf(model: any, name: any, root: any) {
+export function fileOf(model: any, name: string, root: string) {
   if (model.file) return model.file(name, { root })
   if (!name || !NAME_RE.test(name)) throw new Refusal(400, 'bad name')
   const file = path.posix.join(model.dir, name + '.' + model.ext)
   if (!file.startsWith(model.dir + '/')) throw new Refusal(400, 'bad path')
   return file
 }
-export async function namesOf(model: any, root: any, store?: any) {
+export async function namesOf(model: any, root: string|undefined, store?: any) {
   const st = store || gitStore(root)
   if (model.names) return model.names({ root, store: st })
   if (model.single) return [model.single]
@@ -83,7 +83,7 @@ export async function namesOf(model: any, root: any, store?: any) {
 /* what a model is handed: the store it reads and writes with, the root and a script runner for what needs a machine */
 const ctxOf = (model: any, root: string|undefined, extra: { name?: any; create?: boolean; store?: any; by?: string }) => { const store = extra.store || gitStore(root); return { root, model, path, matter, script: (n: any, a: never[]|undefined, env: NodeJS.ProcessEnv|undefined) => (store.kind === 'git' ? script(n, a, root, env) : Promise.resolve({ skipped: 'the deploy runs it' })), ...extra, store } }   /* a script needs a machine: over the rows it waits for the deploy */
 
-export async function read(model: any, name: any, root: any, extra = {}) {
+export async function read(model: any, name: string, root: any, extra = {}) {
   const ctx = ctxOf(model, root, { name, ...extra })
   if (model.read) return { name, ...(await model.read(name, ctx)) }
   const file = fileOf(model, name, root)
@@ -106,19 +106,19 @@ export async function list(model: any, root: any, extra = {}) {
   return items
 }
 /* what waits to be published (cloud mode): every draft with the model it belongs to */
-export async function drafts(models: any, root: any, extra: any = {}) {
+export async function drafts(models: any, root: string|undefined, extra: any = {}) {
   const store = extra.store || gitStore(root)
   if (store.kind !== 'rows') return []
   const out = []
   for (const d of await store.drafts()) {
     /* the deepest directory the path is under, a collection before a single record (the site's own dir is content/, over every other) */
-    const m = models.filter((x: any) => d.path.startsWith(x.dir + '/')).sort((x: any, y: any) => (y.single ? 0 : 1) - (x.single ? 0 : 1) || y.dir.length - x.dir.length)[0]
+    const m = models.filter((x: { dir: string }) => d.path.startsWith(x.dir + '/')).sort((x: any, y: any) => (y.single ? 0 : 1) - (x.single ? 0 : 1) || y.dir.length - x.dir.length)[0]
     out.push({ ...d, col: m ? m.key : null, label: m ? m.name : d.collection, name: m ? d.path.slice(m.dir.length + 1).replace(new RegExp('\\.' + m.ext + '$'), '') : d.slug })
   }
   return out
 }
 /* a draft's checks before it goes live: the fields and the model's checks over the record as the admin reads it */
-async function checkDraft(model: any, name: any, root: any, extra: any) {
+async function checkDraft(model: any, name: any, root: string|undefined, extra: any) {
   const ctx = ctxOf(model, root, { name, ...extra })
   const rec = await read(model, name, root, extra)
   if (model.fields) { const r = model.fields.safeParse(compact(rec.data)); if (!r.success) throw new Refusal(422, 'validation', { issues: r.error.issues.map((i: any) => ({ path: i.path.join('.'), message: i.message })), name }) }
@@ -182,7 +182,7 @@ const COMPILE: Record<string, (store: any, made: any, extra?: any) => Promise<un
     let kit: any = {}
     // @ts-expect-error TS2307: the file sits beside the pipe's copy of this module (assemble bundles it there), never in a checkout
     try { kit = (await import('../../kit-designs.json', { with: { type: 'json' } })).default } catch { /* on a machine the build reads the package */ }
-    const { designs, faults } = await compileDesigns({ store, kinds: KINDS, kitDesign: (k: any) => kit[k] || null, ...(extra.compileDesign ? { compile: extra.compileDesign } : {}) })
+    const { designs, faults } = await compileDesigns({ store, kinds: KINDS, kitDesign: (k: string|number) => kit[k] || null, ...(extra.compileDesign ? { compile: extra.compileDesign } : {}) })
     if (faults.length) throw new Error(faults.join('; '))
     return designs
   },
@@ -190,7 +190,7 @@ const COMPILE: Record<string, (store: any, made: any, extra?: any) => Promise<un
 async function recompile(keys: any, root: any, extra: any) {
   const store = extra.store
   if (!store || store.kind !== 'rows' || !store.client) return   /* a checkout builds; this is for rows */
-  const want = [...new Set<string>(keys.map((k: any) => FEEDS[k]).filter(Boolean))]
+  const want = [...new Set<string>(keys.map((k: string|number) => FEEDS[k]).filter(Boolean))]
   /* the catalog first where both are wanted: the funnels read what it made */
   const made: Record<string, unknown> = {}
   for (const name of want.sort((a, b) => (a === 'catalog' ? -1 : b === 'catalog' ? 1 : 0))) {
@@ -207,13 +207,13 @@ async function recompile(keys: any, root: any, extra: any) {
   }
 }
 
-const projected = async (model: any, root: any, extra: any) => {
+const projected = async (model: any, root: string|undefined, extra: any) => {
   if (!model || !model.projected) return
   try { await model.projected(ctxOf(model, root, extra)) }
   catch (e: any) { console.warn((model.key || 'a model') + ': not projected — ' + (e && e.message ? e.message : e)) }
 }
 
-export async function publish(model: any, name: any, root: any, extra: any = {}) {
+export async function publish(model: any, name: string, root: any, extra: any = {}) {
   const store = extra.store || gitStore(root)
   if (!store.publish) return { ok: true, published: [] }
   const file = fileOf(model, name, root)
@@ -226,7 +226,7 @@ export async function publish(model: any, name: any, root: any, extra: any = {})
   return { ok: true, published: out }
 }
 /* every draft published: each edit checked against its model first (a removal, or a draft of no model, goes as it is) */
-export async function publishAll(models: any, root: any, extra: any = {}) {
+export async function publishAll(models: any, root: string|undefined, extra: any = {}) {
   const store = extra.store || gitStore(root)
   if (!store.publish) return { ok: true, published: [] }
   for (const d of await drafts(models, root, extra)) {
@@ -242,13 +242,13 @@ export async function publishAll(models: any, root: any, extra: any = {}) {
   return { ok: true, published: out }
 }
 /* a draft removal called off */
-export async function keep(models: any, path: any, root: any, extra: any = {}) {
+export async function keep(models: any, path: string, root: string|undefined, extra: any = {}) {
   const store = extra.store || gitStore(root)
   if (store.keep) await store.keep(path)
   return { ok: true }
 }
 /* a write: prepare → the fields → the checks → the grammar → the file → the hook; refused before anything is written */
-export async function write(model: any, name: any, rec: any, root: any, { create = false, ...extra }: { create?: boolean, check?: boolean, [k: string]: any } = {}) {
+export async function write(model: any, name: string, rec: any, root: any, { create = false, ...extra }: { create?: boolean, check?: boolean, [k: string]: any } = {}) {
   const ctx = ctxOf(model, root, { name, create, ...extra })
   let record = { name, data: compact(rec.data), content: rec.content || '', parsed: rec.parsed }
   if (model.prepare) record = (await model.prepare(record, ctx)) || record
@@ -308,17 +308,17 @@ export async function rename(model: any, name: any, to: any, root: any, extra = 
   await ctx.store.rename(from, dest)
   return { ok: true, name: String(to) }
 }
-export async function runAction(model: any, action: any, payload: any, root: any, extra = {}) {
+export async function runAction(model: any, action: string, payload: any, root: string|undefined, extra = {}) {
   const fn = model.actions[action]
   if (!fn) throw new Refusal(400, `${model.key} has no action "${action}"`)
   return fn(payload || {}, ctxOf(model, root, extra))
 }
-export async function optionList(models: any, key: any, root: any, extra = {}) {
+export async function optionList(models: any, key: string|number, root: string|undefined, extra = {}) {
   for (const m of models) if (m.options[key]) return m.options[key](ctxOf(m, root, extra))
   return []   /* a list no model of this site provides (the theme's `topics` on a site with no instrument): the field simply offers nothing */
 }
 /* the client's shape: the nav, the grid and the drawer are drawn from this */
-export async function describe(model: any, root: any, store?: any) {
+export async function describe(model: any, root: string, store?: any) {
   let count = 1
   /* the rail's number. A model whose records are a tree says its own — the spaces' number is its
      spaces, not the rooms under them, and "4" beside Spaces would say four spaces to anybody. */

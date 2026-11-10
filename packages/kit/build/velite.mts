@@ -26,7 +26,7 @@ import { publicBook, publicPage, publicCompanion, holdsText } from '../supabase/
    VITE_SUPABASE_URL the app uses, read the way Vite reads it. */
 const ENV = { ...loadEnv(process.env.NODE_ENV || 'production', process.cwd(), 'VITE_'), ...process.env }
 const AUDIO_BASE = String(ENV.SUPABASE_URL || ENV.VITE_SUPABASE_URL || '').replace(/\/+$/, '')
-async function audioManifest(slug: any) {
+async function audioManifest(slug: string) {
   const file = resolve('audio/books', slug, 'index.json')
   if (!existsSync(file) || !AUDIO_BASE) return null
   return { base: AUDIO_BASE + '/storage/v1/object/public/audio/books/' + slug + '/', manifest: JSON.parse(readFileSync(file, 'utf8')) }
@@ -48,7 +48,7 @@ async function audioManifest(slug: any) {
  * (build/embed-content.mjs), not here, to keep the WASM model out of the
  * config bundle.
  */
-const MD = markdownRenderer({ highlight: (code: any, lang: any) => codeToHtml(code, { lang: lang || 'text', theme: 'github-light' }) })
+const MD = markdownRenderer({ highlight: (code: string, lang: any) => codeToHtml(code, { lang: lang || 'text', theme: 'github-light' }) })
 /* the body rendered: velite's own s.markdown replaced by the shared renderer (an empty body is a fault, as velite's was) */
 const markdown = () => s.custom((i) => i === undefined || typeof i === 'string').transform(async (v, ctx) => {
   const c: any = v ?? ctx.meta.content
@@ -71,7 +71,7 @@ const withCover = (then: any) => async (data: any) => {
   return d
 }
 /* a document's id is its path within its own collection: articles/foo -> foo */
-const stripCollection = (dir: any) => (data: any) => ({ ...data, id: data.path.replace(dir + '/', '') })
+const stripCollection = (dir: string) => (data: { path: string }) => ({ ...data, id: data.path.replace(dir + '/', '') })
 
 /* the kit's velite config for a site: the kit's collections, the site's own beside them (platformkit.config.js `collections`: a
    module exporting `collections` and optionally `prepare`), the theme's default strings merged under the site's */
@@ -96,7 +96,7 @@ export async function kitConfig(): Promise<any> {
    * So each is single only when there is something to be single about, and prepare settles the
    * absent one into its default — the way the storefront has always been handled with the store off.
    */
-  const hasFile = (p: any) => existsSync(resolve(c.root, 'content', p))
+  const hasFile = (p: string) => existsSync(resolve(c.root, 'content', p))
   const storeOn = c.modules.store !== false
   const formsOn = c.modules.forms !== false
   /* a team is a way of sharing a booking type, so it goes with the sessions module */
@@ -1469,7 +1469,7 @@ export async function kitConfig(): Promise<any> {
     /* the UI strings: the site's over the theme's defaults, by key — a word the site leaves out is the theme's */
     collections.ui = mergeUi(collections.ui, THEME.strings)
     /* and the three that need no file: an absent one is its default, never an empty list */
-    const settle = (key: any, empty: any) => { if (Array.isArray(collections[key])) collections[key] = collections[key][0] || empty }
+    const settle = (key: string, empty: any) => { if (Array.isArray(collections[key])) collections[key] = collections[key][0] || empty }
     settle('comments', { kinds: [] })
     settle('community', {})
     settle('traits', { visible: ['admin'], rules: [] })
@@ -1499,7 +1499,7 @@ export async function kitConfig(): Promise<any> {
        a failing entry refuses the build with its file, its field and the line */
     collections.models = modelsOn ? models : []
     if (modelsOn) {
-      const scope = (collections.ui || []).find((u: any) => u && u.scope === 'models')
+      const scope = (collections.ui || []).find((u: { scope: string }) => u && u.scope === 'models')
       const words = scope ? scope.groups : {}
       const refs = Object.fromEntries(models.map((m: any) => [m.key, new Set((Array.isArray(collections[collectionName(m.key)]) ? collections[collectionName(m.key)] : [collections[collectionName(m.key)]].filter(Boolean)).map((e: any) => e.slug))]))
       const faults = []

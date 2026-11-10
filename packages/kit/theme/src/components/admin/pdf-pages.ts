@@ -10,7 +10,7 @@ import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
 
 /* a blank leaf in the paper's colour, shown until a page is rendered */
-const BLANK = (w: any, h: any) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g: any = c.getContext('2d'); g.fillStyle = '#f7f4ec'; g.fillRect(0, 0, w, h); return c.toDataURL('image/png') }
+const BLANK = (w: number, h: number) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g: any = c.getContext('2d'); g.fillStyle = '#f7f4ec'; g.fillRect(0, 0, w, h); return c.toDataURL('image/png') }
 
 /* `crop`: { x, y, w, h } in the page's points — only that region is drawn (a panel of a jacket) */
 export function openPdf(url: any, { width = 720, onPage, onCount, crop = null }: any = {}) {

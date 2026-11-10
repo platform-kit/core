@@ -55,7 +55,7 @@ async function compile(content: any) {
   if (!mjml) mjml = (await import('mjml-browser')).default
   const mj = await renderToMjml(content, { allowHtmlBlocks: true })
   const r = mjml(mj, { validationLevel: 'soft' })
-  const bad = (r.errors || []).filter((e: any) => e && e.level !== 'warning')
+  const bad = (r.errors || []).filter((e: { level: string }) => e && e.level !== 'warning')
   if (bad.length) throw new Error(bad.map((e: any) => e.formattedMessage || e.message).join('; '))
   return r.html
 }
@@ -90,7 +90,7 @@ async function mount() {
   editorDirty.value = false
 }
 async function unmount() { if (editor) { try { editor.unmount() } catch (e) { /* gone */ } editor = null } }
-async function sendTo(to: any, html: any) {
+async function sendTo(to: string, html: any) {
   if (!supabaseOn || !isSignedIn.value) throw new Error('Sign in as an admin to send a test')
   const { data, error } = await (supabase as any).functions.invoke('send-email', { body: { kind: kind.value, to, html, subject: subject.value } })
   if (error) throw error
@@ -109,7 +109,7 @@ async function load() {
 let themeWatch: any = null
 onMounted(() => { load(); themeWatch = new MutationObserver(() => { if (editor) editor.setTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light') }); themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }) })
 onBeforeUnmount(() => { unmount(); if (themeWatch) themeWatch.disconnect() })
-async function pick(k: any) {
+async function pick(k: string) {
   if (k === kind.value) return
   if (dirty.value && !confirm('Leave this email with unsaved changes?')) return
   kind.value = k

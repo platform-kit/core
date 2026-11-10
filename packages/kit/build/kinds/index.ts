@@ -76,7 +76,7 @@ export function kinds(own: any[] = []) {
   return all
 }
 
-export const kindOf = (all: any, key: any) => all.find((k: any) => k.key === key) || null
+export const kindOf = (all: any, key: string) => all.find((k: any) => k.key === key) || null
 
 /*
  * WHAT A SUPPLIER NEEDS AND A KIND MAKES, matched now rather than at the till.
@@ -99,6 +99,6 @@ export function ready(kind: any, artefacts: any) {
   const want = (kind && kind.produces) || []
   if (!want.length) return { ready: true, missing: [] }
   const has = artefacts && typeof artefacts === 'object' ? artefacts : {}
-  const missing = want.filter((n: any) => has[n] === undefined || has[n] === null || has[n] === '')
+  const missing = want.filter((n: string|number) => has[n] === undefined || has[n] === null || has[n] === '')
   return { ready: missing.length === 0, missing }
 }

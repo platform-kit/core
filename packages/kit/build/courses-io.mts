@@ -31,7 +31,7 @@ export const COURSES_DIR = 'content/courses'
 export const KINDS = ['text', 'chapter', 'article', 'form', 'session']
 export const RELEASES = ['all', 'drip', 'cohort']
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-const list = (v: any) => (Array.isArray(v) ? v : v == null || v === '' ? [] : [v]).map((x) => String(x).trim()).filter(Boolean)
+const list = (v: string|null) => (Array.isArray(v) ? v : v == null || v === '' ? [] : [v]).map((x) => String(x).trim()).filter(Boolean)
 const dateOf = (v: any) => { const d = v instanceof Date ? v : new Date(String(v || '')); return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10) }
 
 /*
@@ -54,14 +54,14 @@ export async function siteKinds(root = process.cwd()) {
 }
 
 /* what a site kind's check said, as a list of problems with the lesson named */
-function checked(key: any, kind: any, ref: any, check: any) {
+function checked(key: string, kind: string, ref: string, check: any) {
   let said
   try { said = check(ref) } catch (e: any) { said = e && e.message ? e.message : String(e) }
   return (Array.isArray(said) ? said : said ? [said] : []).map((x) => `lesson ${key}: ${String(x)}`)
 }
 
 /* the body, split: what the course is about, and each text lesson's words by its key */
-export function bodyParts(body: any) {
+export function bodyParts(body: string) {
   const parts: any = String(body || '').split(/^## +/m)
   const about = parts.shift().trim()
   const texts: any = {}
@@ -80,7 +80,7 @@ export function lessonHref(l: any) {
 }
 
 /* a course's file, parsed, with every problem in it named — a course with problems is not pushed */
-export function parseCourse(slug: any, raw: any, { kinds = {} } = {}) {
+export function parseCourse(slug: string, raw: string, { kinds = {} } = {}) {
   const f = matter(String(raw || ''))
   const d = f.data || {}
   const problems = []
@@ -152,7 +152,7 @@ export function parseCourse(slug: any, raw: any, { kinds = {} } = {}) {
  * the lesson's section unless the file names it; `scored(ref)` says whether the form keeps a score.
  */
 export const QUIZ_EVENT = 'quiz_passed'
-export const quizAwardSlug = (course: any, lesson: any) => `quiz-${course}-${lesson}`
+export const quizAwardSlug = (course: any, lesson: string|number) => `quiz-${course}-${lesson}`
 export function quizAchievements(courses: any, { scored = (_ref: string | number) => true }: { scored?: (ref: string | number) => unknown } = {}) {
   const out: any = []
   for (const c of courses) {
@@ -174,10 +174,10 @@ export function quizAchievements(courses: any, { scored = (_ref: string | number
   return out
 }
 
-export async function readCourses(store: any, { kinds }: any = {}) {
+export async function readCourses(store: string|undefined, { kinds }: any = {}) {
   const st = asStore(store)
   const own = kinds || await siteKinds(typeof store === 'string' ? store : process.cwd())
-  const names = (await st.list(COURSES_DIR, { ext: 'md' })).filter((n: any) => !n.includes('/'))
+  const names = (await st.list(COURSES_DIR, { ext: 'md' })).filter((n: string|string[]) => !n.includes('/'))
   const out = []
   for (const n of names.sort()) { const slug = n.replace(/\.md$/, ''); out.push(parseCourse(slug, await st.read(`${COURSES_DIR}/${slug}.md`), { kinds: own })) }
   return out
@@ -190,7 +190,7 @@ export async function readCourses(store: any, { kinds }: any = {}) {
 export async function projectCourses({ courses, db }: any) {
   const out = { courses: 0, lessons: 0, unpublished: 0, refused: [] as string[] }
   const ok = courses.filter((c: { problems: any[]; slug: any }) => { if (c.problems.length) out.refused.push(`${c.slug}: ${c.problems.join('; ')}`); return !c.problems.length })
-  const must = (r: any, what: any) => { if (r.error) throw new Error(`courses: ${what} — ${r.error.message}`); return r }
+  const must = (r: any, what: string) => { if (r.error) throw new Error(`courses: ${what} — ${r.error.message}`); return r }
   for (const c of ok) {
     must(await db.from('courses').upsert({
       slug: c.slug, title: c.title, about: c.about, image: c.image, position: c.position, published: c.published,

@@ -51,7 +51,7 @@ const APPS = NETWORK && !!(site.network && site.network.apps)
 /* a site that lists following in community.hide draws no follow control or count (follows are kept) */
 const FOLLOWING = showsFollowing((site.community || {}).hide)
 const NP = computed(() => us('network').person.main)
-const fillN = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fillN = (s: any, m: { [x: string]: string }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const rel = ref<any>(null)
 const feed = ref<any>(null)
 const relBusy = ref(false)
@@ -101,7 +101,7 @@ const F = computed(() => us('account').fields.main)
 const G = computed(() => us('awards').gallery.main)
 const OF = computed(() => us('account').offers.main)
 const TM = computed(() => (us('teams').mine || {}).main || {})
-const fillW = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fillW = (s: any, m: { [x: string]: string }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const moneyOf = (c: any, cur: any) => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: (cur || 'usd').toUpperCase() }).format((Number(c) || 0) / 100) } catch (e) { return '' } }
 /* WHAT THEY SELL, if anything. The read is the same one the booking surface uses, narrowed to them:
    only live offerings, only where the site allows them at all, and only while they are on terms they
@@ -167,8 +167,8 @@ async function teamsLoad() {
   if (!mine.value || !isSignedIn.value) { teams.value = []; return }
   try { teams.value = await myTeams() } catch (e) { teams.value = [] }
 }
-const joinedWord = (t: any) => (t.source === 'fill' ? TM.value['by-fill'] : t.source === 'invite' ? TM.value['by-invite'] : TM.value['by-manual'])
-const joinedWhen = (iso: any) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) } catch (e) { return '' } }
+const joinedWord = (t: { source: string }) => (t.source === 'fill' ? TM.value['by-fill'] : t.source === 'invite' ? TM.value['by-invite'] : TM.value['by-manual'])
+const joinedWhen = (iso: string|number|Date) => { try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) } catch (e) { return '' } }
 
 /* where the site sells the network, whether this reader may follow anybody (network.access) — asked once
    who they are is known */

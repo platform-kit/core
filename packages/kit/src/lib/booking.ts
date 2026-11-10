@@ -23,9 +23,9 @@ import { supabase } from './supabase.js'
 import { offeringType } from 'platformkit/supabase/functions/_shared/sessions/offering.js'
 
 /* a call to one of the booking functions; an answer with an error becomes one */
-async function call(name: any, body: any) {
+async function call(name: string, body: any) {
   const { data, error } = await (supabase as any).functions.invoke(name, { body })
-  const fail = (msg: any, code: any, extra: any) => { const e: any = new Error(msg); e.code = code || ''; Object.assign(e, extra || {}); throw e }
+  const fail = (msg: string|undefined, code: string, extra: any) => { const e: any = new Error(msg); e.code = code || ''; Object.assign(e, extra || {}); throw e }
   if (error) {
     let msg = error.message || 'request failed', code = '', extra = {}
     try { const j = await error.context.json(); if (j && j.error) { msg = j.error; code = j.code || ''; extra = j } } catch (e) { /* no body */ }
@@ -54,13 +54,13 @@ export const answerBooking = (uid: any, yes: any) => call('book-session', { acti
 /* the host marks a no-show, after the time */
 export const markNoShow = (uid: any) => call('cancel-session', { uid, action: 'no-show' })
 /* `run` cancels the rest of the run too, where the booking belongs to one — asked, never assumed */
-export const cancelSession = (uid: any, reason: any, run: any) => call('cancel-session', { uid, reason: reason || undefined, run: run === true ? true : undefined })
+export const cancelSession = (uid: any, reason: any, run: boolean) => call('cancel-session', { uid, reason: reason || undefined, run: run === true ? true : undefined })
 
 /* a landing page may still link to a cal.com page (the public, no-account path,
    LandingCoaching / LandingCreator); that link carries the booker when there is
    one, so cal.com's form is prefilled. Members never see one: they book here. */
 export const isBookingUrl = (href: any) => /^https?:\/\/(app\.)?cal\.com\//i.test(String(href || ''))
-export function withBooker(href: any) {
+export function withBooker(href: string) {
   if (!isBookingUrl(href)) return href
   const u = user.value
   if (!u || !u.email) return href
@@ -74,7 +74,7 @@ export function withBooker(href: any) {
 }
 
 /* the event type a cal.com url names, by its slug — what a mirrored booking carries as `event` */
-export const eventOf = (href: any) => { try { return new URL(href).pathname.split('/').filter(Boolean).pop() || '' } catch (e) { return '' } }
+export const eventOf = (href: string|URL) => { try { return new URL(href).pathname.split('/').filter(Boolean).pop() || '' } catch (e) { return '' } }
 /* where a session happens, as one line — from a type's flat fields (where, link, place, address, phone) or a booking's
    `where` record ({ kind, url, name, address, number }) — worded by the booker's `where-*` lines; '' for nowhere in particular */
 export function placeOf(w: any, words: any = {}) {
@@ -187,7 +187,7 @@ export function sessionOptions(bookings = [], offerings = []) {
       const listed = (PRODUCTS || []).filter((p: any) => p.kind === 'membership' && p.tier && memberTiers.value.includes(p.tier) && (p.sessions || []).some((r: any) => r.type === s.slug)).sort((a: any, b: any) => (b.rank || 0) - (a.rank || 0))[0]
       const al = listed ? (listed.sessions || []).find((r: any) => r.type === s.slug) : null
       const weekly = al ? al.weekly : s.weekly, monthly = al ? al.monthly : s.monthly
-      const within = (span: any) => bookings
+      const within = (span: number) => bookings
         .filter((b: any) => b.event === event && !b.made_by && b.status !== 'cancelled' && b.status !== 'rescheduled' && b.start_at && new Date(b.start_at).getTime() >= now - span)
         .sort((a: any, b: any) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
       let blocked = false, next = null, span = ''

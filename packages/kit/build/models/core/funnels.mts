@@ -8,7 +8,7 @@ import { normalizeRules, describeRules } from '../../../supabase/functions/_shar
 export default {
   key: 'funnels', name: 'Funnels', dir: FUNNELS_DIR, title: 'title', module: 'funnels', editor: 'FunnelsAdmin', creates: true,
   grammar: {
-    parse: (text: any) => { const f = parseFunnel(text); return { data: f.data, content: '', parsed: { steps: f.steps } } },
+    parse: (text: string) => { const f = parseFunnel(text); return { data: f.data, content: '', parsed: { steps: f.steps } } },
     serialise: (rec: any) => {
       const steps = rec.parsed && Array.isArray(rec.parsed.steps) ? rec.parsed.steps : []
       if (!steps.length) throw new Refusal(422, 'a funnel has at least one step')

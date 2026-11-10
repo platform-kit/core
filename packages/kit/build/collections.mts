@@ -44,7 +44,7 @@ const ANY = z.looseObject ? z.looseObject({}) : z.object({}).passthrough()
  * the input as well as on the parent, which is the whole of what velite's patch threads — and a
  * dirty result is kept with its issues said out loud.
  */
-async function parseKeeping(schema: any, data: any, meta: any, where: any) {
+async function parseKeeping(schema: any, data: any, meta: any, where: string) {
   const ctx = { common: { issues: [], async: true, contextualErrorMap: undefined }, path: [], meta, schemaErrorMap: schema._def && schema._def.errorMap, parent: null, data, parsedType: 'object' }
   const r = await schema._parseAsync({ data, path: [], meta, parent: ctx })
   if (r && r.status === 'valid') return r.value
@@ -83,7 +83,7 @@ const plainOf = (content: any) => {
  * The meta a velite schema expects of its parse. Lazy where it is dear: `plain` renders the body,
  * and a collection whose schema never asks for it should not pay for it.
  */
-export function metaFor(path: any, content: any, config: any) {
+export function metaFor(path: string, content: string, config: any) {
   /*
    * EAGER, AND NEVER FROM INSIDE THE PARSE.
    *
@@ -175,7 +175,7 @@ export async function buildCollections({ root = process.cwd(), log = () => {} }:
      velite's shape so the rest of the build, the app and every test see no difference */
   const data: any = {}
   for (const [key, c] of Object.entries(cfg.collections)) {
-    const rows = (HELD[key] || []).slice().sort((x: any, y: any) => (x.file < y.file ? -1 : x.file > y.file ? 1 : 0)).map((r: any) => r.out)
+    const rows = (HELD[key] || []).slice().sort((x: { file: number }, y: { file: number }) => (x.file < y.file ? -1 : x.file > y.file ? 1 : 0)).map((r: any) => r.out)
     /* A SINGLE IS A RECORD AND NOT A LIST OF ONE, which is velite's own answer for the site's
        settings, its providers' policy and its storefront: `#content` imports an object there and a
        component reads its fields. The prepare hook settles three of them by hand; the rest are
@@ -230,7 +230,7 @@ export async function engineFor(root = process.cwd(), env = process.env) {
   const { loadSite } = await import('./site.mjs')
   const site = await loadSite(root)
   const name = engine(env, site)
-  if (name === 'collections') return { name, build: (opts: any) => buildCollections(opts) }
+  if (name === 'collections') return { name, build: (opts: { root?: string; log?: (m: string) => void }|undefined) => buildCollections(opts) }
   if (name === 'site') {
     const { pathToFileURL } = await import('node:url')
     const { resolve } = await import('node:path')

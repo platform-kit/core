@@ -227,7 +227,7 @@ const page = (name: string) => pages.find((p) => p.file === `${DOCS}/${name}.md`
    so the first identifier in a tick counts. Without that the check asked for a bare repetition
    of a word the page had already used better, which is a worse page for no gain. */
 const ticks = (text: string) => new Set([...text.matchAll(/`([A-Za-z_][A-Za-z0-9_.-]*)[^`]*`/g)].map((m) => m[1]))
-const readAll = (dirs: any[], exts: any) => dirs.flatMap((d: string) => walk2(path.join(ROOT, d), exts)).map((f: fs.PathOrFileDescriptor) => fs.readFileSync(f, 'utf8')).join('\n')
+const readAll = (dirs: any[], exts: string[]) => dirs.flatMap((d: string) => walk2(path.join(ROOT, d), exts)).map((f: fs.PathOrFileDescriptor) => fs.readFileSync(f, 'utf8')).join('\n')
 const walk2 = (d: string, exts: string[]): string[] => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? (e.name === 'node_modules' || e.name === 'supertonic' ? [] : walk2(path.join(d, e.name), exts)) : exts.some((x: string) => e.name.endsWith(x)) ? [path.join(d, e.name)] : []) : []
 
 /* environment variables: read by the kit or the theme, or demanded by the deploy check — each on the page, and each on the page read somewhere */

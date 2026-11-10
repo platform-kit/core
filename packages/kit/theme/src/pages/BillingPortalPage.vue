@@ -49,7 +49,7 @@ const activeTabLabel = computed(() => activeTab.value === 'usage'
   ? W.value['billing-usage-tab']
   : W.value['billing-membership-tab'])
 
-async function request(action: any) {
+async function request(action: string) {
   const { data, error } = await (supabase as any).functions.invoke('create-portal-session', { body: { action } })
   if (error) {
     let message = error.message || ''
@@ -96,7 +96,7 @@ async function load() {
   }
 }
 
-async function update(action: any) {
+async function update(action: string) {
   if (busy.value) return
   busy.value = true
   fault.value = ''
@@ -119,7 +119,7 @@ async function update(action: any) {
   }
 }
 
-function selectTab(tab: any) {
+function selectTab(tab: string) {
   if (tab === 'usage' && !usageRelevant.value) return
   const wasUsageActive = activeTab.value === 'usage'
   activeTab.value = tab

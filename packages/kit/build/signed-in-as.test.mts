@@ -33,13 +33,13 @@ import { launch, context as browserContext, WAIT, fillHeld } from './browser.mjs
 import { statusOf, leave, stackOf } from './test-stack.mjs'
 
 let pass = 0, fail = 0
-const ok = (name: any, cond: any, detail?: any) => { if (cond) { pass++; console.log('  ✔ ' + name) } else { fail++; console.log('  ✖ ' + name + (detail ? '\n      ' + detail : '')) } }
+const ok = (name: string, cond: boolean, detail?: string|undefined) => { if (cond) { pass++; console.log('  ✔ ' + name) } else { fail++; console.log('  ✖ ' + name + (detail ? '\n      ' + detail : '')) } }
 
 console.log('\nSIGNED IN AS EACH KIND OF PERSON\n')
 
 const args = process.argv.slice(2)
-const argOf = (n: any, d: any) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d }
-const skip = (why: any) => { console.log('  ⚠ SKIPPED — ' + why + '\n    What each kind of person SEES AND DOES in the site is NOT covered by this run.\n'); leave(0) }
+const argOf = (n: string, d: string) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d }
+const skip = (why: string) => { console.log('  ⚠ SKIPPED — ' + why + '\n    What each kind of person SEES AND DOES in the site is NOT covered by this run.\n'); leave(0) }
 
 const BASE = argOf('--url', process.env.INTERACTION_URL || stackOf()?.app || '')
 try { const r = await fetch(BASE, { signal: AbortSignal.timeout(4000) }); if (!r.ok) throw new Error(String(r.status)) }
@@ -58,16 +58,16 @@ const open = async () => {
   page.on('pageerror', (e: any) => errs.push(String(e.message || e).slice(0, 160)))
   /* what the page met on the way, said only when a person's check stops: a page that never draws says why */
   const seen: any = []
-  page.on('console', (m: any) => { if (m.type() === 'error') seen.push('console: ' + m.text().slice(0, 200)) })
+  page.on('console', (m: { type: () => string; text: () => string }) => { if (m.type() === 'error') seen.push('console: ' + m.text().slice(0, 200)) })
   page.on('requestfailed', (r: any) => seen.push('request failed: ' + r.url().replace(BASE, '') + ' — ' + (r.failure()?.errorText || '')))
   page.on('response', (r: any) => { if (r.status() >= 500) seen.push(r.status() + ': ' + r.url().replace(BASE, '')) })
   return { ctx, page, errs, seen }
 }
-const ready = async (page: any, path: any) => {
+const ready = async (page: any, path: string) => {
   await page.goto(BASE + path, { waitUntil: 'domcontentloaded' })
   await page.waitForFunction(() => (document as any).querySelector('#app')?.children.length > 0, { timeout: WAIT })
 }
-const signIn = async (page: any, email: any) => {
+const signIn = async (page: any, email: string) => {
   await page.evaluate(() => (window as any).DLauth && (window as any).DLauth.open({}))
   await page.locator('input[type="password"]').first().waitFor({ state: 'visible', timeout: WAIT })
   /* both values held before the form goes: under load it went up half-empty, or was drawn again empty (build/browser.mjs) */
@@ -80,7 +80,7 @@ const signIn = async (page: any, email: any) => {
  * a person HAS can be absent from the rail's words. The page says it itself: the shell's own body
  * opens with the section's title, right after the rail's last item.
  */
-const landed = async (page: any, path: any) => {
+const landed = async (page: any, path: string) => {
   await ready(page, path)
   await page.waitForFunction(() => /Back to site/.test(document.body.innerText), { timeout: WAIT }).catch(() => {})
   await page.waitForTimeout(2600)
@@ -142,7 +142,7 @@ for (const p of PEOPLE) {
       await ready(page, p.does.at)
       await page.waitForTimeout(3200)
       const done = p.does.find
-        ? await page.evaluate((sel: any) => document.querySelectorAll(sel).length, p.does.find).then((n: any) => n >= (p.does.least ?? 1))
+        ? await page.evaluate((sel: any) => document.querySelectorAll(sel).length, p.does.find).then((n: number) => n >= (p.does.least ?? 1))
         : (p as any).does.text.test(await page.evaluate(() => document.body.innerText))
       ok(`${p.who}: and is given ${p.does.what}`, done, `${p.does.at} drew none`)
     }

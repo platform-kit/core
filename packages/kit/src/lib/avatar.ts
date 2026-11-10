@@ -35,7 +35,7 @@ import { STYLE, STYLES, BOT_STYLE, OPTIONS, DEFS } from '#site/avatar'
 /* the collections a person may choose between, by the slug a profile stores. The slug never
    changes once it has been written to somebody's row. */
 export const AVATAR_STYLES = Object.keys(STYLES)
-const collection = (style: any) => (style && (STYLES as any)[style]) || STYLE
+const collection = (style: string|number) => (style && (STYLES as any)[style]) || STYLE
 
 /* drawn once per seed and per size. A page shows the same handful of people over and over — a rail,
    a feed, a thread, a directory — and rendering is not free. */
@@ -58,7 +58,7 @@ export const seedOf = (person: any) => String(
 
 /* the SVG as a data url, ready for an <img src>. utf8 rather than base64: it is a third smaller and
    every browser has read it for twenty years. */
-export function avatarUrl(seed: any, opts = {}) {
+export function avatarUrl(seed: string, opts = {}) {
   const key = String(seed || '')
   if (!key) return ''
   /* EVERY option is in the key. Twice now a key that named only some of them has handed back a
@@ -134,9 +134,9 @@ export const botFace = (bot: any, opts: any = {}) => {
  * What is left standing is everything below: choosing eyes on big-smile keeps the head and the
  * mouth and drops the hair and the glasses; choosing the mouth keeps the head and the eyes.
  */
-export function drawOrder(style: any) {
+export function drawOrder(style: string|number) {
   const def = (DEFS && ((DEFS as any)[style] || DEFS.patchwork)) || null
-  return (((def && def.canvas) || {}).elements || []).filter((e: any) => e && e.type === 'component').map((e: any) => e.name)
+  return (((def && def.canvas) || {}).elements || []).filter((e: { type: string }) => e && e.type === 'component').map((e: any) => e.name)
 }
 
 /* the options that take everything drawn over `trait` off the face */
@@ -163,7 +163,7 @@ const PART_ORDER: any = {
 
 /* the parts of a style as ONE ordered list, each `{ kind, name }` — shapes and colours together,
    because the person filling the form is not thinking in those two categories */
-export function traitRows(style: any, traits: any) {
+export function traitRows(style: string|number, traits: any) {
   const t = traits || traitsOf(style)
   const all = [
     ...Object.keys(t.colours || {}).map((name) => ({ kind: 'colour', name })),
@@ -171,14 +171,14 @@ export function traitRows(style: any, traits: any) {
   ]
   const want = PART_ORDER[style] || []
   const key = (r: any) => r.kind + ':' + r.name
-  const first = want.map((w: any) => all.find((r) => key(r) === w)).filter(Boolean)
+  const first = want.map((w: string) => all.find((r) => key(r) === w)).filter(Boolean)
   const rest = all.filter((r) => !want.includes(key(r)))
   /* the definition's own order for anything unnamed, and shapes before colours there as before */
   rest.sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'shape' ? -1 : 1))
   return [...first, ...rest]
 }
 
-export function traitsOf(style: any) {
+export function traitsOf(style: string|number) {
   const def = (DEFS && ((DEFS as any)[style] || DEFS.patchwork)) || null
   if (!def) return { shapes: {}, colours: {} }
   const shapes: any = {}
@@ -222,5 +222,5 @@ export function optionsFor(chosen: any) {
 }
 
 /* the key a part is turned off with, and the test for whether it is */
-export const offKey = (trait: any) => trait + 'Probability'
-export const isOff = (parts: any, trait: any) => !!parts && parts[offKey(trait)] === 0
+export const offKey = (trait: string) => trait + 'Probability'
+export const isOff = (parts: { [x: string]: number }, trait: any) => !!parts && parts[offKey(trait)] === 0

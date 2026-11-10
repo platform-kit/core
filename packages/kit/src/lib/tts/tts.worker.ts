@@ -72,7 +72,7 @@ async function build() {
   const totals: Record<string, number> = {}
   for (const f of BROWSER_FILES) {
     let last = 0
-    got[f] = await fetchWeight(f, (file: string|number, done: number, total: any) => {
+    got[f] = await fetchWeight(f, (file: string|number, done: number, total: number) => {
       totals[file] = total; doneBytes += done - last; last = done
       post({ type: 'download', file, done: doneBytes, total: Object.values(totals).reduce((a, b) => a + b, 0) })
     })
@@ -136,7 +136,7 @@ async function speak({ id, text, live, engine: settings }: any) {
       pcm.set(wav, pcm.length - wav.length)
       post({ type: 'piece', id, i, pcm, rate: engine.sampleRate }, [pcm.buffer])
     }
-  }, cancelled, live ? { cut: (t: string|null) => talkPieces(t, { first }), stepsAt: (i: any) => stepsFor(i, { steps, opening }) } : {})
+  }, cancelled, live ? { cut: (t: string|null) => talkPieces(t, { first }), stepsAt: (i: number) => stepsFor(i, { steps, opening }) } : {})
   if (r.cancelled) { post({ type: 'error', id, message: 'cancelled' }); return }
   const blob = writer.finish()
   post({ type: 'done', id, blob, seconds: Math.round(samples / engine.sampleRate), pieces: n, format: { codec: 'mp3', bitrate: KBPS * 1000, sampleRate: engine.sampleRate, channels: 1 } })

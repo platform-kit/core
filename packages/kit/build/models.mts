@@ -30,7 +30,7 @@ import { isMain } from './is-main.mjs'
 
 const ROOT = process.cwd()
 export const WIDGETS: any = { text: 'string', 'long-text': 'text', markdown: 'markdown', number: 'number', boolean: 'boolean', date: 'date', datetime: 'datetime', url: 'string', email: 'string', select: 'select', 'multi-select': 'multiselect', tags: 'list', reference: 'select', image: 'image', file: 'file', group: 'group', list: 'rows' }
-export const collectionName = (key: any) => 'models_' + key.replace(/-/g, '_')
+export const collectionName = (key: string) => 'models_' + key.replace(/-/g, '_')
 
 /* ---- the derivation ---- */
 function leaf(f: any, s: any, admin: any) {
@@ -47,7 +47,7 @@ function leaf(f: any, s: any, admin: any) {
   else t = s.string()
   return t
 }
-function fieldSchema(f: any, s: any, admin: any, models?: any) {
+function fieldSchema(f: any, s: any, admin: boolean, models?: any) {
   let t
   if (f.kind === 'group') t = s.object(Object.fromEntries(f.fields.map((g: any) => [g.key, fieldSchema(g, s, admin, models)])))
   else if (f.kind === 'list') t = s.array(f.of === 'group' ? s.object(Object.fromEntries(f.fields.map((g: any) => [g.key, fieldSchema(g, s, admin, models)]))) : leaf({ ...f, kind: f.of }, s, admin))
@@ -77,7 +77,7 @@ export function schemaFor(model: any, s: any, { admin = false } = {}) {
 /* ---- the check: the pure part is src/lib/models/entry.js (the drawer runs it too); the parse and the check together ---- */
 export function validateEntry(model: any, data: any, ctx: any, s: any) {
   const r = s.object(schemaFor(model, s)).safeParse(data)
-  if (!r.success) return { ok: false, errors: r.error.issues.map((i: any) => { const key = String(i.path[0]); const f = model.fields.find((x: any) => x.key === key); return { field: i.path.join('.'), message: fill((ctx && ctx.words && ctx.words.rules && ctx.words.rules.type && ctx.words.rules.type.message) || '{field}: {value}', { field: (f && f.label) || key, value: i.message }) } }) }
+  if (!r.success) return { ok: false, errors: r.error.issues.map((i: any) => { const key = String(i.path[0]); const f = model.fields.find((x: { key: string }) => x.key === key); return { field: i.path.join('.'), message: fill((ctx && ctx.words && ctx.words.rules && ctx.words.rules.type && ctx.words.rules.type.message) || '{field}: {value}', { field: (f && f.label) || key, value: i.message }) } }) }
   const errors = checkEntry(model, r.data, ctx)
   return { ok: !errors.length, errors, data: r.data }
 }
@@ -89,7 +89,7 @@ export async function modelWords(root = ROOT, opts = {}) {
 }
 
 /* ---- every entry of every model, read from the files (the build's and the check's) ---- */
-export async function readEntries(store: any, key: any) {
+export async function readEntries(store: string, key: string) {
   const st = asStore(store)
   const out = []
   for (const slug of await entryNames(st, key)) { const { data, content } = matter(await st.read(DIR + '/' + key + '/' + slug + '.md')); out.push({ slug, data, content }) }
@@ -119,7 +119,7 @@ export async function checkAll(root = ROOT, opts: any = {}) {
 
 /* ---- the JSON: the published entries of a model with JSON on, from .velite, the body as markdown — one object
    the build writes to dist/data/models/<key>.json and the dev server answers at the same address ---- */
-export function jsonFor(root: any, m: any) {
+export function jsonFor(root: string, m: any) {
   if (!m || !m.deliver.json) return null
   const p = join(root, '.velite', collectionName(m.key) + '.json')
   if (!existsSync(p)) return null

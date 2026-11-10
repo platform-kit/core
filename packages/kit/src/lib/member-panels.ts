@@ -9,7 +9,7 @@
  *                                      site's `order` where it gives one (anything it does not name keeps its place after)
  */
 export function gatesOf(site: any) {
-  const on = (k: any) => ((site && site.modules) || {})[k] !== false
+  const on = (k: string) => ((site && site.modules) || {})[k] !== false
   return {
     working: on('instrument') && !!(site && site.instrument && site.instrument.module),
     read: on('books') || on('articles'),

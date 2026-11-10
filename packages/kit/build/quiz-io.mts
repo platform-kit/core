@@ -24,7 +24,7 @@ export function parsePersonality(raw: any) {
   return { data: fm.data, types }
 }
 export function serialisePersonality({ data, types }: any) {
-  const body = (types || []).map((t: any) => `## ${t.n} ${t.name}\n\n${(t.statements || []).filter((s: any) => s.trim()).map((s: any) => '- ' + s.trim()).join('\n')}`).join('\n\n')
+  const body = (types || []).map((t: any) => `## ${t.n} ${t.name}\n\n${(t.statements || []).filter((s: string) => s.trim()).map((s: string) => '- ' + s.trim()).join('\n')}`).join('\n\n')
   return matter.stringify('\n' + body + '\n', data, DUMP)
 }
 
@@ -49,7 +49,7 @@ export function parseWords(raw: any) {
   return { data: fm.data, words }
 }
 export function serialiseWords({ data, words }: any) {
-  const lines = (words || []).filter((x: any) => x.w && x.w.trim()).map((x: any) => '- ' + x.w.trim() + (x.orig ? ' | orig: ' + x.orig.trim() : '') + (x.why ? ' | why: ' + x.why.trim() : ''))
+  const lines = (words || []).filter((x: { w: string }) => x.w && x.w.trim()).map((x: { w: string; orig: string; why: string }) => '- ' + x.w.trim() + (x.orig ? ' | orig: ' + x.orig.trim() : '') + (x.why ? ' | why: ' + x.why.trim() : ''))
   return matter.stringify('\n## words\n\n' + lines.join('\n') + '\n', data, DUMP)
 }
 
@@ -60,7 +60,7 @@ export function serialiseWords({ data, words }: any) {
    part of the statement's id (see velite.config.js), which the writer gives every
    line that has none (keyStatements) — the build refuses a line without one —
    so a line can be reworded, moved or retiered and its answers still match */
-export function parseDiagnostic(raw: any) {
+export function parseDiagnostic(raw: string) {
   const fm = matter(raw)
   /* the spec block is authoring guidance with comments: keep its text as written */
   const m = /^---\r?\n([\s\S]*?)\r?\n---/.exec(raw)
@@ -112,7 +112,7 @@ export function serialiseDiagnostic({ data, specRaw, spec, sections }: any) {
   const fmy = yamlDump(data, { lineWidth: -1 })   /* block style: a comma in a def must never split a key */
   const body = (sections || []).map((s: any) => {
     const tiers = [1, 2, 3].map((t) => {
-      const rows = ((s.tiers || {})[t] || []).filter((x: any) => x.text && x.text.trim())
+      const rows = ((s.tiers || {})[t] || []).filter((x: { text: string }) => x.text && x.text.trim())
       return rows.length ? `### tier ${t}\n` + rows.map((x: any) => '- ' + (x.reverse && !x.blank ? '(R) ' : '') + (x.blank ? '(B) ' : '') + (x.required ? '(!) ' : '') + (x.draft ? '(D) ' : '') + x.text.trim() + (x.key ? ' {#' + x.key + '}' : '')).join('\n') : ''
     }).filter(Boolean)
     return `## ${s.code}\n\n` + tiers.join('\n\n')
@@ -136,7 +136,7 @@ import { join } from 'node:path'
 export const AREA_KEY = /^[a-z][a-zA-Z0-9]*$/   /* camelCase, as the files need */
 /* a slot's slug is the key in kebab-case: selfConcept → self-concept-realization */
 export const areaSlug = (key: any) => String(key).replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()
-const esc = (x: any) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const LEVEL_SLUGS = '(circumstance|relationship|realization)'
 
 /* the area keys as the diagnostic files declare them — the one list; the
@@ -152,7 +152,7 @@ export function areaList(root = process.cwd()) {
   for (const n of names) {
     const raw = readFileSync(join(dir, n), 'utf8')
     const m = /^area:\s*(\S+)\s*$/m.exec(raw)
-    if (!m || out.some((a: any) => a.key === m[1])) continue
+    if (!m || out.some((a: { key: string }) => a.key === m[1])) continue
     const t = /^title:\s*(.+?)\s*$/m.exec(raw)
     out.push({ key: m[1], title: t ? t[1].replace(/^['"]|['"]$/g, '') : m[1] })
   }
@@ -167,7 +167,7 @@ export async function areaListOf(store: any) {
   for (const n of await st.list(dir)) {
     const raw = (await st.read(dir + '/' + n + '.md')) || ''
     const m = /^area:\s*(\S+)\s*$/m.exec(raw)
-    if (!m || out.some((a: any) => a.key === m[1])) continue
+    if (!m || out.some((a: { key: string }) => a.key === m[1])) continue
     const t = /^title:\s*(.+?)\s*$/m.exec(raw)
     out.push({ key: m[1], title: t ? t[1].replace(/^['"]|['"]$/g, '') : m[1] })
   }
@@ -175,34 +175,34 @@ export async function areaListOf(store: any) {
 }
 
 /* a file rewritten through the store, its path noted when it changed */
-async function rewriteFile(store: any, file: any, fn: any, changed: any) {
+async function rewriteFile(store: any, file: string, fn: any, changed: any) {
   const raw = await store.read(file)
   if (raw == null) return
   const out = fn(raw)
   if (out !== raw) { await store.write(file, out); changed.push(file) }
 }
-const mdFiles = async (store: any, dir: any) => (await store.list(dir)).map((n: any) => dir + '/' + n + '.md')
+const mdFiles = async (store: any, dir: string) => (await store.list(dir)).map((n: string) => dir + '/' + n + '.md')
 
-export async function renameAreaRefs(root: any, from: any, to: any) {
+export async function renameAreaRefs(root: any, from: any, to: string) {
   const { asStore } = await import('./store/index.mjs'); const store = asStore(root)
   if (from === to) return []
   if (!AREA_KEY.test(to)) throw new Error('an area key is camelCase: letters and digits, starting with a letter')
   const changed: any = []
   const F = esc(from), FS = esc(areaSlug(from)), TS = areaSlug(to)
   /* the slot records (by key) and their slugs (by the key's kebab-case) */
-  await rewriteFile(store, 'content/app/ui/topics.md', (raw: any) => raw
+  await rewriteFile(store, 'content/app/ui/topics.md', (raw: string) => raw
     .replace(new RegExp('^(###\\s+)' + F + ':', 'gm'), (m: any, a: any) => a + to + ':')
-    .replace(new RegExp('^(slug:\\s*)' + FS + '-', 'gm'), (m: any, a: any) => a + TS + '-'), changed)
+    .replace(new RegExp('^(slug:\\s*)' + FS + '-', 'gm'), (m: any, a: string) => a + TS + '-'), changed)
   /* the glossary's name override */
-  await rewriteFile(store, 'content/app/ui/glossary.md', (raw: any) => {
+  await rewriteFile(store, 'content/app/ui/glossary.md', (raw: string) => {
     const a = raw.indexOf('\n## areas'); if (a < 0) return raw
     const b = raw.indexOf('\n## ', a + 1); const end = b < 0 ? raw.length : b
     return raw.slice(0, a) + raw.slice(a, end).replace(new RegExp('^(###\\s+)' + F + '(\\s|$)', 'gm'), (m: any, h: any, t: any) => h + to + t) + raw.slice(end)
   }, changed)
   /* the slugs in the books' topics, the area in the companions' premises */
   for (const dir of ['content/books', 'content/companions']) {
-    for (const file of await mdFiles(store, dir)) await rewriteFile(store, file, (raw: any) => raw
-      .replace(new RegExp('^(\\s*-\\s*)' + FS + '-' + LEVEL_SLUGS + '\\s*$', 'gm'), (m: any, a: any, lvl: any) => a + TS + '-' + lvl)
+    for (const file of await mdFiles(store, dir)) await rewriteFile(store, file, (raw: string) => raw
+      .replace(new RegExp('^(\\s*-\\s*)' + FS + '-' + LEVEL_SLUGS + '\\s*$', 'gm'), (m: any, a: string, lvl: string) => a + TS + '-' + lvl)
       .replace(new RegExp('^(statementArea:\\s*)' + F + '\\s*$', 'gm'), (m: any, a: any) => a + to), changed)
   }
   return changed
@@ -216,7 +216,7 @@ export async function removeAreaRefs(root: any, area: any) {
   const { asStore } = await import('./store/index.mjs'); const store = asStore(root)
   const changed: any = []
   const A = esc(areaSlug(area))
-  for (const file of await mdFiles(store, 'content/books')) await rewriteFile(store, file, (raw: any) => raw
+  for (const file of await mdFiles(store, 'content/books')) await rewriteFile(store, file, (raw: string) => raw
     .replace(new RegExp('^\\s*-\\s*' + A + '-' + LEVEL_SLUGS + '\\s*\\n', 'gm'), '')
     /* a list left with nothing becomes an empty list, not a null */
     .replace(/^topics:\s*\n(?=\S|$)/m, 'topics: []\n'), changed)

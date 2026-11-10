@@ -45,7 +45,7 @@ const TEXT = /\.(md|json|yml|yaml|txt|csv)$/i
 /* what the deployment declared: 'git' (a repository is in the cycle) · 'off' (it is not) ·
    'undecided' (nothing declared — the admin asks, and the repository is treated as in the cycle,
    which is what it has always done) */
-export function cloudModeOf(root: any) {
+export function cloudModeOf(root: string) {
   try {
     const raw = fs.readFileSync(path.join(root, 'supabase/functions/_shared/cloud.json'), 'utf8')
     const c = JSON.parse(raw)
@@ -117,7 +117,7 @@ export async function exportRows(root: any, rows: any, { dry = false, log = () =
   return out
 }
 /* the checkout's files under some directories of the site — tracked or not yet, never the gitignored (a build's output under public/ is not the library's) */
-function trackedUnder(root: any, dirs: any) {
+function trackedUnder(root: any, dirs: string[]) {
   try {
     const { execFileSync } = require('node:child_process')
     return execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard', '--', ...dirs], { cwd: root }).toString('utf8').split('\0').filter(Boolean)
@@ -125,7 +125,7 @@ function trackedUnder(root: any, dirs: any) {
 }
 
 /* a file's row keys: the frontmatter and the body, the collection and slug of its path, whether it is published */
-export function metaOf(rel: any, text: any) {
+export function metaOf(rel: string, text: string) {
   const { collection, slug } = collectionOf(rel)
   let data = null, body = text, published = true
   if (/\.md$/i.test(rel)) { try { const fm = matter(text); data = fm.data; body = fm.content; published = fm.data.published !== false } catch { /* not frontmatter */ } }

@@ -49,15 +49,15 @@ const EN = computed(() => us('spaces').encryption)
    by id called every one of its posts "someone" while the thread beside it said The Scribe */
 const named = (m: any) => saidBy(m, props.names, P.value.someone)
 const who = (m: any) => (m.author_id && m.author_id === props.me ? P.value.you : named(m))
-const nameOf = (id: any) => (id && id === props.me ? P.value.you : (props.names[id] || P.value.someone))
+const nameOf = (id: string|number) => (id && id === props.me ? P.value.you : (props.names[id] || P.value.someone))
 /* the name a FACE draws its initials from is always the person's own: initials of "You" is a Y, and
    that is nobody. "You" belongs in the sentence under the title, not on the avatar. */
-const faceOf = (id: any) => props.names[id] || P.value.someone
+const faceOf = (id: string) => props.names[id] || P.value.someone
 
 /* HOW LONG AGO, in as few characters as it takes. A board is scanned, and "20m" is scanned; "20
    September 2026 at 14:03" is read, which is a different and slower thing. Anything older than a
    week is a date, because by then the exact hour has stopped mattering. */
-function ago(v: any) {
+function ago(v: string|number|Date) {
   const d = new Date(v)
   if (isNaN(d.getTime())) return ''
   const s = Math.max(0, (Date.now() - d.getTime()) / 1000)
@@ -91,7 +91,7 @@ const voices = (p: any) => {
   const out = [...new Set<string>(all)].slice(0, 4).map((id) => ({ id, name: faceOf(id) }))
   return out.length ? out : [{ id: 'bot', name: named(p) }]
 }
-const countWord = (n: any) => (n === 1 ? W.value['replies-one'] : (W.value['replies-many'] || '').replace('{n}', n))
+const countWord = (n: number) => (n === 1 ? W.value['replies-one'] : (W.value['replies-many'] || '').replace('{n}', n))
 
 /* THE READER'S OWN ORDER, kept per channel: whoever sorts a board by what is unanswered is
    answering it, and will be back tomorrow to answer more. */
@@ -110,11 +110,11 @@ function recall() {
   } catch (e) { sort.value = 'active'; show.value = 'all' }
 }
 watch(key, recall, { immediate: true })
-function pick(what: any, v: any) { (what === 'sort' ? sort : show).value = v; menu.value = ''; remember() }
+function pick(what: string, v: string) { (what === 'sort' ? sort : show).value = v; menu.value = ''; remember() }
 
 const shown = computed(() => {
   let list = props.posts.filter((p) => (show.value === 'open' ? !replies(p) : show.value === 'mine' ? (p as any).author_id === props.me : true))
-  const by = sort.value === 'new' ? (a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  const by = sort.value === 'new' ? (a: { created_at: string|number|Date }, b: { created_at: string|number|Date }) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     : sort.value === 'busy' ? (a: any, b: any) => replies(b) - replies(a) || new Date(moved(b)).getTime() - new Date(moved(a)).getTime()
     : (a: any, b: any) => new Date(moved(b)).getTime() - new Date(moved(a)).getTime()
   list = [...list].sort(by)

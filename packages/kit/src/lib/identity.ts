@@ -35,7 +35,7 @@ export function identityBus() {
     },
     /* Is this somebody new? Marks them as the person the reads are now for, and answers whether
        anything needs doing. The same id twice in a row is a refresh, not an arrival. */
-    begin(id: any) {
+    begin(id: string) {
       if (started && id === current) return false
       current = id
       started = true
@@ -45,7 +45,7 @@ export function identityBus() {
        in which case this answer is stale and belongs to a person who has already gone. `call` is
        how each hook is invoked, which is the caller's business (detached, and failures swallowed,
        in the app; straight through in a test). */
-    settle(id: any, call: any) {
+    settle(id: string, call: any) {
       if (!started || current !== id) return false
       for (const fn of hooks.slice()) call(fn, id)
       return true

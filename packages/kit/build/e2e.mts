@@ -112,7 +112,7 @@ const dropData = (id: string) => {
 }
 /* a stack stopped, and its networks with it: `supabase stop` leaves the shadow database's network, and a run's worth of
    those exhausts Docker's address pools */
-const stopStack = (workdir: any) => {
+const stopStack = (workdir: string) => {
   const cfg = path.join(workdir, 'supabase', 'config.toml')
   if (!fs.existsSync(cfg)) return
   const id = (/^project_id\s*=\s*"([^"]+)"/m.exec(fs.readFileSync(cfg, 'utf8')) || [])[1]

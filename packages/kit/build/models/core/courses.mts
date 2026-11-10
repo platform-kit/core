@@ -27,7 +27,7 @@ function lessonOut(l: any) {
 }
 
 /* every record the course builder saves, so a save cannot bend a file */
-export function courseFile(d: any, about: any) {
+export function courseFile(d: any, about: string) {
   const lessons = (d.lessons || []).filter((l: any) => l && l.key)
   const fm = clean({
     title: d.title, image: d.image, position: d.position, published: d.published === false ? false : undefined,
@@ -104,8 +104,8 @@ export default {
     },
   ],
   /* over a checkout the script writes the rows; over rows the store is holding a database, so the projection runs here */
-  after: async (rec: any, ctx: any) => { if (!(ctx.store && ctx.store.kind === 'rows')) await ctx.script('courses-push.mjs').catch((e: any) => console.warn('courses: not projected — ' + e.message)) },
-  afterRemove: async (name: any, ctx: any) => { if (!(ctx.store && ctx.store.kind === 'rows')) await ctx.script('courses-push.mjs').catch((e: any) => console.warn('courses: not projected — ' + e.message)) },
+  after: async (rec: any, ctx: any) => { if (!(ctx.store && ctx.store.kind === 'rows')) await ctx.script('courses-push.mjs').catch((e: { message: string }) => console.warn('courses: not projected — ' + e.message)) },
+  afterRemove: async (name: any, ctx: any) => { if (!(ctx.store && ctx.store.kind === 'rows')) await ctx.script('courses-push.mjs').catch((e: { message: string }) => console.warn('courses: not projected — ' + e.message)) },
   projected: async (ctx: any) => {
     const db = ctx.store && ctx.store.kind === 'rows' ? ctx.store.client : null
     if (!db) return

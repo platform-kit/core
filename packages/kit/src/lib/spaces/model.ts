@@ -21,7 +21,7 @@ const RUN_GAP = 5 * 60 * 1000   /* messages closer than this, from one person, r
 export function runsOf<M extends { kind?: string, author_id?: unknown, created_at: string } & Record<string, any>>(messages: M[] = []) {
   return messages.map((m, i) => {
     const prev = messages[i - 1], next = messages[i + 1]
-    const joins = (a: any, b: any) => !!a && !!b && a.kind !== 'system' && b.kind !== 'system'
+    const joins = (a: M, b: M) => !!a && !!b && a.kind !== 'system' && b.kind !== 'system'
       && a.author_id === b.author_id && !!a.author_id
       && Math.abs(new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) < RUN_GAP
     return { ...m, first: !joins(prev, m), last: !joins(m, next) }
@@ -288,7 +288,7 @@ export function railSections(channels: any[] = [], rows: any[] = [], spaceId: st
   const mine = channels.filter((c: any) => !spaceId || c.space_id === spaceId)
   const starred: any = [], open: any = [], dms: any = []
   for (const c of mine) {
-    const r: any = row((c as any).id)
+    const r = row((c as any).id)
     if ((c as any).kind === 'dm') { if (r) dms.push(c); continue }
     if (r && r.starred) starred.push(c)
     else open.push(c)
@@ -298,7 +298,7 @@ export function railSections(channels: any[] = [], rows: any[] = [], spaceId: st
      declared groups in their declared order, each with its rooms, and whatever sits under no
      heading last under none. A space that declares no group has one run, as it always did. */
   const place = (a: { position: any; name: any }, b: { position: any; name: any }) => ((a.position ?? 99) - (b.position ?? 99)) || String(a.name || '').localeCompare(String(b.name || ''))
-  const named: any = (groups || []).filter((g) => open.some((c: { group: any }) => c.group === g))
+  const named = (groups || []).filter((g) => open.some((c: { group: any }) => c.group === g))
   const grouped = named.map((g: any) => ({ name: g, channels: open.filter((c: { group: any }) => c.group === g).sort(place) }))
   const loose = open.filter((c: { group: any }) => !c.group || !named.includes(c.group)).sort(place)
   return { starred: starred.sort(place), channels: loose, groups: grouped, dms }
@@ -604,7 +604,7 @@ export const clockOf = (when: string|number|Date, zone?: string) => new Intl.Dat
 /* WHEN SOMETHING HAPPENED, on a thing that may be months old: the time alone while it is today,
    and the day in front of it once it is not. A ticket's timeline runs for weeks — a column of bare
    times on it says nothing at all — while a chat's is nearly always one afternoon. */
-export function stampOf(when: string|number|Date|null, now = Date.now(), zone?: any) {
+export function stampOf(when: string|number|Date|null, now = Date.now(), zone?: string|undefined) {
   if (!when) return ''
   const d = new Date(when)
   if (Number.isNaN(d.getTime())) return ''

@@ -75,7 +75,7 @@ export async function open(peerId: any) {
 let channel: any = null
 let seenTimer: any = null
 
-function peerOf(id: any) {
+function peerOf(id: string) {
   const row = inbox.value.find((c: { id: any }) => c.id === id)
   return row ? row.peer : null
 }
@@ -213,7 +213,7 @@ export async function seen() {
 }
 
 /* ---- sending ---- */
-async function notify(message_id: any) {
+async function notify(message_id: string) {
   try { await (supabase as any).functions.invoke('chat-notify', { body: { message_id } }) } catch (e) { /* the email is a courtesy */ }
 }
 

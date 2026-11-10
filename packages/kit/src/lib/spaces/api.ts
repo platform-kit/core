@@ -372,7 +372,7 @@ export async function firstReplies(roots: string|any[], n = 2) {
 /* a reaction is the same act on a comment as in a room, so the table is one (99-reactions) and a
    row says which surface it was left on. The room's own shape is unchanged — the name is put back
    on the way in, so nothing above here knows the column moved. */
-async function loadReactions(id: any) {
+async function loadReactions(id: string) {
   const { data, error } = await (supabase as any)
     .from('reactions').select('message_id:target_id, channel_id, user_id, emoji')
     .eq('surface', 'message').eq('channel_id', id)
@@ -400,7 +400,7 @@ export function closeThread() { thread.root = null; thread.replies = []; thread.
 
 /* optimistic: the row goes in with a client-made id, the insert follows, and the echo the database
    broadcasts lands on the same row — so a message never shows twice and never waits for the trip. */
-export async function send(channelId: any, body: string, opts: any = {}) {
+export async function send(channelId: string, body: string, opts: any = {}) {
   if (!on() || !channelId) return null
   const me = uid()
   const temp = {
@@ -725,7 +725,7 @@ export async function withdraw(id: any) {
  * outliving them — which is what makes it a different thing from Saved, where one person keeps a
  * message for themselves and nobody else ever sees it.
  */
-export async function loadPins(channelId: any) {
+export async function loadPins(channelId: string) {
   if (!on() || !channelId) return []
   const { data } = await (supabase as any).rpc('space_pinned', { p_channel: channelId })
   if (open.id === channelId) open.pins = data || []
@@ -798,7 +798,7 @@ export async function setNotify(channelId: any, notify: any) {
 export const hushes = ref<any>([])
 export async function loadHushes() { if (on()) hushes.value = (await rpc('space_my_mutes')) || [] }
 export const hushOf = (kind: string, ref: any) => (hushes.value || []).find((m: { kind: any; ref: any }) => m.kind === kind && m.ref === ref) || null
-export const isHushed = (kind: any, ref: any) => !!hushOf(kind, ref)
+export const isHushed = (kind: string, ref: any) => !!hushOf(kind, ref)
 
 export async function hush(kind: string, ref: any, until: string | null = null) {
   if (!on() || !kind || !ref) return
@@ -818,7 +818,7 @@ export async function unhush(kind: string, ref: any) {
   if (kind !== 'person') unread.value = (await rpc('space_unread')) || []
 }
 
-export async function join(channelId: any) {
+export async function join(channelId: string) {
   if (!on() || !channelId) return
   const { error } = await (supabase as any).from('channel_members').insert({ channel_id: channelId, user_id: uid() })
   if (!error) { unread.value = (await rpc('space_unread')) || []; watch(channelId) }
@@ -1042,7 +1042,7 @@ function unwatch(channelId: any) {
 }
 
 /* the database's own send. A payload without its body is a message too large to carry: fetch it. */
-async function arrived(channelId: any, payload: any) {
+async function arrived(channelId: string, payload: any) {
   if (!payload || !payload.id) return
   /* a sealed message's words ARE its cipher, which the wake carries, so it is not a payload that
      lost its body and must not be fetched again */
@@ -1062,7 +1062,7 @@ async function arrived(channelId: any, payload: any) {
   }))
 }
 
-function reacted(channelId: any, p: { message: any; on: any; user: any; emoji: any }) {
+function reacted(channelId: string, p: { message: any; on: any; user: any; emoji: any }) {
   if (!p || !p.message || channelId !== open.id) return
   if (p.on) open.reactions = [...open.reactions.filter((r: { message_id: any; user_id: any; emoji: any }) => !(r.message_id === p.message && r.user_id === p.user && r.emoji === p.emoji)), { message_id: p.message, channel_id: channelId, user_id: p.user, emoji: p.emoji }]
   else open.reactions = open.reactions.filter((r: { message_id: any; user_id: any; emoji: any }) => !(r.message_id === p.message && r.user_id === p.user && r.emoji === p.emoji))
@@ -1093,7 +1093,7 @@ const say = (channelId: string, event: string, payload: { user: any; seq?: any }
 }
 
 /* a keystroke, at most every few seconds */
-export function saidSomething(channelId: any) {
+export function saidSomething(channelId: string) {
   const now = Date.now()
   if ((lastTyped.get(channelId) || 0) + TYPING_MS > now) return
   lastTyped.set(channelId, now)
@@ -1105,7 +1105,7 @@ export const whoIsTyping = (channelId: string|number) => Object.keys(typing[chan
 /* ------------------------------------------------------------------ catching up */
 
 /* one channel, from what we hold to what there is */
-async function catchUpChannel(channelId: any) {
+async function catchUpChannel(channelId: string) {
   if (!on() || !channelId) return
   const row = unread.value.find((r: { channel: any }) => r.channel === channelId)
   const from = channelId === open.id

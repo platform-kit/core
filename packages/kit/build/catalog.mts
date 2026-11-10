@@ -54,14 +54,14 @@ const OUT_AT = 'supabase/functions/_shared/catalog.json'
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const USAGE_SCALE = 1_000_000
 
-export function compileUsage(file: any, usage: any, billing: any, currency: any, err: any) {
+export function compileUsage(file: string, usage: any, billing: string, currency: string, err: any) {
   if (usage == null) return null
   if (!usage || typeof usage !== 'object' || Array.isArray(usage)) {
     err(`${file}: usage must be a group of fields`)
     return null
   }
   const unit = resolveUsageUnit(usage.unit)
-  const micros = (value: any, field: any, { positive = false } = {}) => {
+  const micros = (value: any, field: string, { positive = false } = {}) => {
     const n = Number(value)
     const scaled = Math.round(n * USAGE_SCALE)
     if (!Number.isFinite(n) || (positive ? n <= 0 : n < 0) || !Number.isSafeInteger(scaled) || Math.abs(scaled / USAGE_SCALE - n) > 1e-9) {
@@ -123,14 +123,14 @@ async function load(st: any) {
        nothing. Only the LISTING is allowed to fail that way — a file that lists and will not read is
        a fault worth hearing about, not an empty catalog. */
     let names = []
-    try { names = (await st.list(dir, { ext: 'md' })).filter((n: any) => !n.includes('/')).sort() } catch { names = [] }
+    try { names = (await st.list(dir, { ext: 'md' })).filter((n: string|string[]) => !n.includes('/')).sort() } catch { names = [] }
     const out = []
     for (const n of names) { const at = dir + '/' + n + '.md'; out.push({ file: at, data: matter(await st.read(at)).data }) }
     cache[dir] = out
   }
   return cache
 }
-const text = async (st: any, at: any) => { try { return await st.read(at) } catch { return null } }
+const text = async (st: any, at: string) => { try { return await st.read(at) } catch { return null } }
 
 export async function compileCatalog({ store: from, root = process.cwd(), theme = null, brand = null, site = null }: any = {}) {
 const ROOT = root
@@ -146,7 +146,7 @@ const EVENTS_JSON = await text(st, '.velite/events.json')
 const EVENTS_MD = await (async () => {
   const out: any = []
   let names = []
-  try { names = (await st.list('content/events', { ext: 'md' })).filter((n: any) => !n.includes('/')) } catch { return out }
+  try { names = (await st.list('content/events', { ext: 'md' })).filter((n: string|string[]) => !n.includes('/')) } catch { return out }
   for (const n of names) {
     const d = matter(await st.read('content/events/' + n + '.md')).data || {}
     out.push({ slug: n, title: d.title, cost: d.cost, published: d.published })
@@ -154,10 +154,10 @@ const EVENTS_MD = await (async () => {
   return out
 })()
 const errors: any = []
-const err = (m: any) => errors.push(m)
+const err = (m: string) => errors.push(m)
 const siteUsage = usageOf(site || {})
 
-const files = (dir: any) => CACHE[dir] || []
+const files = (dir: string) => CACHE[dir] || []
 /* the published teams, so a type naming one that is gone is refused here rather than at nine on a
    Tuesday; a site with no teams folder simply has none */
 const teamSlugs = new Set((() => {
@@ -174,7 +174,7 @@ for (const { file, data: d } of files('content/store/products')) {
   if (offers[sku]) { err(`${file}: sku "${sku}" is already ${offers[sku].file}'s`); continue }
   const key = String(d.key || '')
   if (!/^[0-9a-f]{8}$/.test(key)) { err(`${file}: no key — node build/product-keys.mjs gives it one`); continue }
-  const twin: any = Object.values(offers).find((o: any) => o.key === key)
+  const twin = Object.values(offers).find((o: any) => o.key === key)
   if (twin) { err(`${file}: key ${key} is already ${twin.file}'s`); continue }
   const billing = d.billing === 'subscription' ? 'subscription' : 'once'
   const price = Number(d.price)
@@ -258,7 +258,7 @@ for (const { file, data: d } of files('content/store/products')) {
       /* a variant named in `variants:` that no combination produces is a typo, and a silent one:
          the price would simply never apply and nobody would know which */
       for (const k of Object.keys(d.variants || {})) {
-        if (!offers[sku].variants.some((v: any) => v.variant === k)) err(`${file}: variants names "${k}", which no combination of its options produces`)
+        if (!offers[sku].variants.some((v: { variant: string }) => v.variant === k)) err(`${file}: variants names "${k}", which no combination of its options produces`)
       }
       for (const k of d.unsold || []) {
         if (!offers[sku].variants.some((v: any) => v.variant === k)) err(`${file}: unsold names "${k}", which no combination of its options produces`)
@@ -303,7 +303,7 @@ for (const { file, data: d } of files('content/books')) {
     /* a markup needs the edition's quote to sit on; until the build has set one (deploy does, before this runs) the format is not on sale */
     if (!(o.price > 0)) { console.log(`  ${file}: ${o.format} is priced by markup and no edition has been quoted yet — not on sale until node build/print.mjs --book ${slug} sets one`); continue }
     if (offers[o.sku]) { err(`${file}: sku "${o.sku}" is already ${offers[o.sku].file}'s`); continue }
-    const twin: any = Object.values(offers).find((x: any) => x.key === o.key)
+    const twin = Object.values(offers).find((x: any) => x.key === o.key)
     if (twin) { err(`${file}: key ${o.key} (${o.format}) is already ${twin.file}'s`); continue }
     offers[o.sku] = { file, sku: o.sku, key: o.key, title: `${d.title} · ${o.format}`, kind: o.kind, billing: 'once', period: null,
       unit_amount: Math.round(o.price * 100), currency: o.currency, tier: null, rank: null, book: slug, format: o.format, binding: o.binding, trim: o.trim, paper: o.paper,
@@ -365,8 +365,8 @@ for (const { file, data: d } of files('content/store/products')) {
     ;(allowances[d.tier] ||= {})[type] = { weekly: Number(r.weekly) || 0, monthly: Number(r.monthly) || 0 }
   }
 }
-const eventOf = (href: any) => { try { return new URL(href).pathname.split('/').filter(Boolean).pop() || '' } catch (e) { return '' } }
-const userOf = (href: any) => { try { const p = new URL(href).pathname.split('/').filter(Boolean); return p.length >= 2 ? p[0] : '' } catch (e) { return '' } }
+const eventOf = (href: string|URL) => { try { return new URL(href).pathname.split('/').filter(Boolean).pop() || '' } catch (e) { return '' } }
+const userOf = (href: string|URL) => { try { const p = new URL(href).pathname.split('/').filter(Boolean); return p.length >= 2 ? p[0] : '' } catch (e) { return '' } }
 for (const { file, data: d } of files('content/sessions')) {
   if (d.published === false) continue
   const r = Array.isArray(d.requires) ? d.requires.map(String) : (d.requires || 'guest')
@@ -417,7 +417,7 @@ for (const { file, data: d } of files('content/sessions')) {
   let windowDays = 0, windowFrom = null, windowTo = null
   if (typeof d.window === 'number') { windowDays = Math.max(0, Math.round(d.window)) }
   else if (d.window && typeof d.window === 'object') {
-    const dayOk = (s: any) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s)
+    const dayOk = (s: string) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s)
     if (d.window.from && !dayOk(d.window.from)) err(`${file}: the window's from is a day (YYYY-MM-DD)`)
     if (d.window.to && !dayOk(d.window.to)) err(`${file}: the window's to is a day (YYYY-MM-DD)`)
     if (dayOk(d.window.from)) windowFrom = d.window.from
@@ -543,7 +543,7 @@ for (const { file, data: d } of files('content/sessions')) {
   const lists = priceLists(bySku, priceFiles)
   for (const [operationId, policy] of Object.entries(siteUsage.operations || {})) {
     if ((policy as any).mode !== 'offer') continue
-    const offer: any = Object.values(offers).find((candidate: any) => candidate.key === (policy as any).offerKey)
+    const offer = Object.values(offers).find((candidate: any) => candidate.key === (policy as any).offerKey)
     if (!offer) err(`usage.operations.${operationId}: no published offer has key ${(policy as any).offerKey}`)
     else if (!offer.usage) err(`${offer.file}: usage.operations.${operationId} names an offer without usage billing`)
   }
@@ -569,7 +569,7 @@ for (const { file, data: d } of files('content/sessions')) {
         if (new Set(packKeys).size !== packKeys.length) err('usage.autoTopUp.packKeys cannot repeat an offer key')
         const packs = []
         for (const key of [...new Set(packKeys)]) {
-          const pack: any = Object.values(offers).find((candidate: any) => candidate.key === key)
+          const pack = Object.values(offers).find((candidate: any) => candidate.key === key)
           if (!pack) {
             err(`usage.autoTopUp.packKeys: no published offer has stable key ${key}`)
             continue
@@ -607,7 +607,7 @@ for (const { file, data: d } of files('content/sessions')) {
    dynamic import — is assembled into the pipe, and the pipe may not reach a disk */
 async function writer() {
   const { readFileSync, writeFileSync, mkdirSync } = await import('node:fs')
-  return (at: any, text: any) => {
+  return (at: any, text: string|NodeJS.ArrayBufferView<ArrayBufferLike>) => {
     try { if (readFileSync(at, 'utf8') === text) return false } catch { /* not there yet */ }
     mkdirSync(at.replace(/\/[^/]*$/, ''), { recursive: true })
     writeFileSync(at, text)
@@ -651,7 +651,7 @@ export function priceLists(offers: any, records: any) {
   }
   const base = { name: 'base', kind: 'base', rules: [], priority: 0, prices }
   /* and whatever the shop has written beside it, in whole money as a file says it */
-  const further = (records || []).filter((r: any) => r && r.published !== false).map((r: any) => ({
+  const further = (records || []).filter((r: { published: boolean }) => r && r.published !== false).map((r: any) => ({
     name: r.path || r.title, kind: r.kind, status: r.status || 'active', rules: r.rules || [], priority: Number(r.priority) || 0,
     starts: r.starts || null, ends: r.ends || null,
     prices: (r.prices || []).map((x: any) => ({
@@ -664,7 +664,7 @@ export function priceLists(offers: any, records: any) {
   return [base, ...further]
 }
 /* the promotions, as the resolver wants them: money in pence, everything else as written */
-export function promotions(records: any) {
+export function promotions(records: { name: string }[]) {
   return (records || []).filter((r: any) => r && r.published !== false).map((r: any) => ({
     name: r.name || r.title, title: r.title, kind: r.kind || 'standard', status: r.status || 'active',
     method: r.method || 'percentage', value: Number(r.value) || 0,

@@ -12,8 +12,8 @@ import path from 'node:path'
 import { parseGroups, stringsHead as head, mergeGroups } from '../src/lib/strings-groups.js'
 export { parseGroups, mergeGroups }
 /* one file → { scope, title, groups } */
-export function parseFile(file: any) { const raw = fs.readFileSync(file, 'utf8'); return { ...head(raw), groups: parseGroups(raw) } }
-export const parseText = (raw: any) => ({ ...head(raw), groups: parseGroups(raw) })
+export function parseFile(file: fs.PathOrFileDescriptor) { const raw = fs.readFileSync(file, 'utf8'); return { ...head(raw), groups: parseGroups(raw) } }
+export const parseText = (raw: string) => ({ ...head(raw), groups: parseGroups(raw) })
 /* the site's strings through the store (content/app/ui), by scope */
 export async function readSiteScopes(store: any, dir = 'content/app/ui') {
   const { asStore } = await import('./store/index.mjs'); const st = asStore(store)
@@ -48,7 +48,7 @@ const ROLE_FIELDS = { provider: 'name', providers: 'plural', 'a-provider': 'a', 
 function fillRole(groups: any, role: any) {
   if (!role) return groups
   const lower = (x: any) => (x || '').charAt(0).toLowerCase() + (x || '').slice(1)
-  const one = (text: any) => {
+  const one = (text: string) => {
     let v = String(text)
     for (const [tag, field] of Object.entries(ROLE_FIELDS)) {
       if (!v.includes('{' + tag + '}')) continue
@@ -66,7 +66,7 @@ function fillRole(groups: any, role: any) {
   return walk(groups)
 }
 
-export function mergeUi(siteEntries: any, themeDir: any) {
+export function mergeUi(siteEntries: any, themeDir: string) {
   const theme = readScopes(themeDir)
   const site = Object.fromEntries((siteEntries || []).map((e: any) => [e.scope, e]))
   const merged: any = {}
@@ -85,7 +85,7 @@ export function mergeUi(siteEntries: any, themeDir: any) {
 }
 /* one scope, merged, for a build script (the site from cwd or a store, the theme from its manifest — or, where there
    is no manifest to read (the function), the theme's scopes handed in as `theme`: { scope: { groups } }) */
-export async function uiScope(scope: any, root = process.cwd(), { theme }: any = {}) {
+export async function uiScope(scope: string, root = process.cwd(), { theme }: any = {}) {
   const { asStore } = await import('./store/index.mjs'); const st = asStore(root)
   let t
   if (theme) t = theme[scope]

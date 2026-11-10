@@ -125,7 +125,7 @@ t('a setting changed is replaced in place; a theming line is kept as written', (
 t('a condition holds as nunjucks reads it', () => { assert.equal(holds("pick == 'C'", { pick: 'C' }), true); assert.equal(holds("pick == 'C'", { pick: 'a' }), false); assert.equal(holds('age > 18 and plan == "pro"', { age: 20, plan: 'pro' }), true); assert.equal(holds('', {}), true); assert.equal(holds('nope', {}), false) })
 t('a jump: the next slide whose condition holds, or has none', () => { const s = [{}, { jump: "plan == 'pro'" }, {}]; assert.equal(nextSlide(s, 0, { plan: 'free' }), 2); assert.equal(nextSlide(s, 0, { plan: 'pro' }), 1) })
 t('a binding renders into the copy; a list reads as a list', () => { assert.equal(renderCopy('Hi {$ name $}, {{ brand }}', context({ brand: 'Acme' }, { name: 'Jo' })), 'Hi Jo, Acme'); assert.equal(renderCopy('{$ many $}', { many: ['a', 'b'] }), 'a, b') })
-t('the copy renders with forms.md\'s block attributes', () => { const h: any = renderMarkdown('[.text-center #hi]\nHello **{$ name $}**\n\n# [.mb-2] T', { name: 'Jo' }); assert.ok(h.includes('<p id="hi" class="fmd-text-center">Hello <strong>Jo</strong></p>')); assert.ok(h.includes('<h1 class="fmd-mb-2">T</h1>')) })
+t('the copy renders with forms.md\'s block attributes', () => { const h = renderMarkdown('[.text-center #hi]\nHello **{$ name $}**\n\n# [.mb-2] T', { name: 'Jo' }); assert.ok(h.includes('<p id="hi" class="fmd-text-center">Hello <strong>Jo</strong></p>')); assert.ok(h.includes('<h1 class="fmd-mb-2">T</h1>')) })
 
 /* ---- the screens ---- */
 t('form-slides: a screen per slide, the end last, a jump as a skip', () => {

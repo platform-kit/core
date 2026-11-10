@@ -20,7 +20,7 @@ import { isSignedIn } from 'platformkit/lib/auth.js'
 const props = defineProps({ modelValue: { type: Object as PropType<any>, default: () => ({}) } })
 const emit = defineEmits(['update:modelValue'])
 const a = computed(() => props.modelValue || {})
-const set = (k: any, v: any) => { const next = { ...a.value }; if (v == null || v === '' || (Array.isArray(v) && !v.length)) delete next[k]; else next[k] = v; emit('update:modelValue', next) }
+const set = (k: string, v: any) => { const next = { ...a.value }; if (v == null || v === '' || (Array.isArray(v) && !v.length)) delete next[k]; else next[k] = v; emit('update:modelValue', next) }
 
 /* the rules there are, each with the control it takes */
 const RULES = [
@@ -50,14 +50,14 @@ const byKey = Object.fromEntries(RULES.map((r) => [r.key, r]))
 const added = ref<any>([])
 const active = computed(() => RULES.filter((r) => a.value[r.key] != null || added.value.includes(r.key)))
 const available = computed(() => RULES.filter((r) => !active.value.includes(r)))
-function add(key: any) { if (!key) return; if (!added.value.includes(key)) added.value.push(key); if (key === 'answered' && !a.value.answered) set('answered', [{ item: '' }]) }
-function drop(key: any) { added.value = added.value.filter((k: any) => k !== key); set(key, null) }
+function add(key: string) { if (!key) return; if (!added.value.includes(key)) added.value.push(key); if (key === 'answered' && !a.value.answered) set('answered', [{ item: '' }]) }
+function drop(key: string) { added.value = added.value.filter((k: any) => k !== key); set(key, null) }
 
 /* the choices */
 const TIERS = [...new Map<string, string>(PRODUCTS.filter((p: any) => p.kind === 'membership' && p.tier).map((p: any) => [p.tier, p.title])).entries()]
 const AREAS = DOMAINS.map(([k, name]: any) => [k, name])
 const LVLS = Object.entries(LEVELS).map(([k, l]) => [k, (l as any).name])
-const BOOKLIST = BOOKS.map((b: any): [string, string] => [b.slug, b.title])
+const BOOKLIST = BOOKS.map((b: { slug: string; title: string }): [string, string] => [b.slug, b.title])
 const CHARGES = [['clear', 'nothing stirred'], ...CHS.map((c: any) => [(c as any).k, (c as any).label])]
 const bookName = (slug: any) => { const b = BOOKLIST.find(([s]: any) => s === slug); return b ? b[1] : slug }
 const statementText = (id: any) => { const s = STATEMENTS.find((x: any) => (x as any).id === id); return s ? (s as any).text : '' }
@@ -75,13 +75,13 @@ function spanParts(v: any) {
 const spanOf = (p: any) => (p.mode === 'none' ? 'none' : p.mode === 'within' ? `${p.n}${p.u}-` : `${p.n}${p.u}+`)
 const setSpan = (k: any, patch: any) => set(k, spanOf({ ...spanParts(a.value[k]), ...patch }))
 
-const listOf = (k: any) => (Array.isArray(a.value[k]) ? a.value[k] : a.value[k] ? String(a.value[k]).split(/[,\s]+/) : []).filter(Boolean)
+const listOf = (k: string) => (Array.isArray(a.value[k]) ? a.value[k] : a.value[k] ? String(a.value[k]).split(/[,\s]+/) : []).filter(Boolean)
 const toggle = (k: any, v: any) => { const l = listOf(k); set(k, l.includes(v) ? l.filter((x) => x !== v) : [...l, v]) }
-const toggleTier = (v: any) => { let l = listOf('subscription'); if (l.includes(v)) l = l.filter((x) => x !== v); else if (v === 'none' || v === 'any') l = [v]; else l = [...l.filter((x) => x !== 'none' && x !== 'any'), v]; set('subscription', l) }
+const toggleTier = (v: string) => { let l = listOf('subscription'); if (l.includes(v)) l = l.filter((x) => x !== v); else if (v === 'none' || v === 'any') l = [v]; else l = [...l.filter((x) => x !== 'none' && x !== 'any'), v]; set('subscription', l) }
 
 /* the specific answers: rows of item · truth · charge */
 const answered = computed(() => (Array.isArray(a.value.answered) ? a.value.answered : []).map((r: any) => (typeof r === 'string' ? parseRow(r) : { item: r.item || '', truth: r.truth || '', charge: r.charge || '' })))
-const parseRow = (s: any) => { const m = /^\s*([\w-]+\.[\w-]+)\s*(?:=\s*(\w+))?\s*,?\s*(\w+)?\s*$/.exec(s) || []; return { item: m[1] || '', truth: m[2] || '', charge: m[3] || '' } }
+const parseRow = (s: string) => { const m = /^\s*([\w-]+\.[\w-]+)\s*(?:=\s*(\w+))?\s*,?\s*(\w+)?\s*$/.exec(s) || []; return { item: m[1] || '', truth: m[2] || '', charge: m[3] || '' } }
 const writeAnswered = (rows: any) => set('answered', rows.map((r: any) => ({ item: r.item, ...(r.truth ? { truth: r.truth } : {}), ...(r.charge ? { charge: r.charge } : {}) })))
 const patchAnswered = (i: any, patch: any) => writeAnswered(answered.value.map((r: any, j: any) => (j === i ? { ...r, ...patch } : r)))
 const dropAnswered = (i: any) => { const rows = answered.value.filter((_: any, j: any) => j !== i); if (rows.length) writeAnswered(rows); else drop('answered') }

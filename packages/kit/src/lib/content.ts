@@ -77,7 +77,7 @@ export function docTree(collection: string|number) {
   const root: DocDir = { dirs: {}, docs: [] }
   for (const e of entries) {
     const parts = e.id.split('/')
-    let node: any = root
+    let node = root
     for (const dir of parts.slice(0, -1)) {
       node.dirs[dir] = node.dirs[dir] || { slug: dir, title: prettify(dir), order: 99, dirs: {}, docs: [] }
       node = node.dirs[dir]

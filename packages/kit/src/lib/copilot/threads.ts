@@ -18,7 +18,7 @@
 export const TITLE_MAX = 72
 
 /* the first thing said, as a line: one line, no markdown, short enough to sit in a column */
-export function titleOf(said: any) {
+export function titleOf(said: string|null) {
   const one = String(said || '').replace(/\s+/g, ' ').trim()
   if (!one) return ''
   if (one.length <= TITLE_MAX) return one
@@ -33,7 +33,7 @@ export function titleOf(said: any) {
  * is whether this was today, and otherwise roughly when. The words come from the caller, because
  * every reader-facing string in this project is authored in markdown.
  */
-export function whenOf(at: any, words: any = {}, now = Date.now()) {
+export function whenOf(at: string|number|Date, words: any = {}, now = Date.now()) {
   const t = new Date(at).getTime()
   if (!Number.isFinite(t)) return ''
   const mins = Math.floor((now - t) / 60000)
@@ -79,7 +79,7 @@ export function threads(supabase: any, bot: any) {
 
     /* one line, and the thread moves to the top. The title is set once, by the first thing the
        PERSON said — never by an answer, which would title a conversation with its reply. */
-    async append(id: any, who: any, text: any, { title = false } = {}) {
+    async append(id: any, who: string, text: any, { title = false } = {}) {
       if (!id || !text) return
       const { error } = await supabase.from('copilot_lines').insert({ thread_id: id, who, said: text })
       if (error) throw error

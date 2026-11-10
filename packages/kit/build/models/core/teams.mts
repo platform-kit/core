@@ -29,14 +29,14 @@ const WORD: any = {
 async function onWrite(ctx: any) {
   if (ctx.store && ctx.store.kind === 'rows') return
   await ctx.script('teams.mjs')
-  await ctx.script('teams-push.mjs').catch((e: any) => console.warn('teams: not projected — ' + e.message))
+  await ctx.script('teams-push.mjs').catch((e: { message: string }) => console.warn('teams: not projected — ' + e.message))
 }
 
 export default {
   key: 'teams', name: 'Teams', dir: TEAMS_DIR, title: 'name', module: 'sessions',
   creates: true, body: true, bodyLabel: 'What this team is',
   grammar: {
-    parse: (text: any, ctx: any) => {
+    parse: (text: string, ctx: any) => {
       const t = parseTeam(String(ctx.name || '').replace(/\.md$/, ''), text)
       return { data: { name: t.name, published: t.published, thumb: t.thumb, position: t.position, ways: fillWays(t.fill) }, content: t.about || '' }
     },

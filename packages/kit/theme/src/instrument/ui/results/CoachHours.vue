@@ -7,7 +7,7 @@ import { ref, computed, onMounted } from 'vue'
 import { us } from '../strings.js'
 import { getHours, setHours, setOverride, removeOverride, makeDefault, forgetHours, zones, WEEKDAYS, emptyHours } from 'platformkit/lib/hours.js'
 const H = us('library').coaching.hours || {}
-const fill = (t: any, m: any) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (t: any, m: { [x: string]: string }) => String(t || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 const DAYS: any = { 1: H.mon, 2: H.tue, 3: H.wed, 4: H.thu, 5: H.fri, 6: H.sat, 7: H.sun }
 const open = ref(false), loading = ref(true), saving = ref(false), saved = ref(false), error = ref('')
 const hours = ref<any>(emptyHours()), overrides = ref<any>([]), had = ref(false)
@@ -18,10 +18,10 @@ const sets = ref<any>([]), picked = ref<any>(null)
 const current = computed(() => sets.value.find((s: any) => s.id === picked.value) || null)
 const isDefault = computed(() => !!(current.value && current.value.is_default))
 const { list: ZONES } = zones()
-const on = (d: any) => Array.isArray(hours.value.weekly[d]) && hours.value.weekly[d].length > 0
-function toggle(d: any) { if (on(d)) delete hours.value.weekly[d]; else hours.value.weekly[d] = [['09:00', '17:00']]; hours.value.weekly = { ...hours.value.weekly } }
-function add(d: any) { hours.value.weekly[d] = [...(hours.value.weekly[d] || []), ['13:00', '17:00']]; hours.value.weekly = { ...hours.value.weekly } }
-function drop(d: any, i: any) { const r = (hours.value.weekly[d] || []).filter((_: any, j: any) => j !== i); if (r.length) hours.value.weekly[d] = r; else delete hours.value.weekly[d]; hours.value.weekly = { ...hours.value.weekly } }
+const on = (d: string|number) => Array.isArray(hours.value.weekly[d]) && hours.value.weekly[d].length > 0
+function toggle(d: string|number) { if (on(d)) delete hours.value.weekly[d]; else hours.value.weekly[d] = [['09:00', '17:00']]; hours.value.weekly = { ...hours.value.weekly } }
+function add(d: string|number) { hours.value.weekly[d] = [...(hours.value.weekly[d] || []), ['13:00', '17:00']]; hours.value.weekly = { ...hours.value.weekly } }
+function drop(d: string|number, i: any) { const r = (hours.value.weekly[d] || []).filter((_: any, j: any) => j !== i); if (r.length) hours.value.weekly[d] = r; else delete hours.value.weekly[d]; hours.value.weekly = { ...hours.value.weekly } }
 async function load() {
   loading.value = true
   try {
@@ -62,7 +62,7 @@ async function saveRanges(o: any) { try { const r = await setOverride(o.day, o.r
 function addRange(o: any) { o.ranges = [...(o.ranges || []), ['13:00', '17:00']]; saveRanges(o) }
 function dropRange(o: any, i: any) { o.ranges = (o.ranges || []).filter((_: any, j: any) => j !== i); if (!o.ranges.length) o.ranges = null; saveRanges(o) }
 async function removeDay(o: any) { try { const r = await removeOverride(o.day, picked.value || undefined); overrides.value = r.overrides || [] } catch (e) { error.value = (e as any).message } }
-const dayLabel = (d: any) => { try { return new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(d + 'T12:00:00')) } catch (e) { return d } }
+const dayLabel = (d: string) => { try { return new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(d + 'T12:00:00')) } catch (e) { return d } }
 const usual = computed(() => sets.value.find((s: any) => s.is_default) || sets.value[0] || null)
 const summary = computed(() => { const w = (usual.value || hours.value).weekly || {}; return WEEKDAYS.filter((d) => Array.isArray(w[d]) && w[d].length).map((d) => DAYS[d].slice(0, 3)).join(' · ') })
 </script>

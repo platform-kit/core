@@ -122,7 +122,7 @@ async function askForHuman() { try { await wantHuman() } catch (e) { /* the note
    arriving. Outside that gap it is noise — with no bot on offer it describes an assistant the
    reader has never met, and once somebody has replied the reply says it better. */
 const handedOver = computed(() => askedForHuman.value && !!bot.value && !aPersonAnswered.value)
-const fill = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
+const fill = (s: any, m: { [x: string]: string }) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))
 
 /* list | thread | start */
 const view = ref('list')
@@ -181,7 +181,7 @@ async function resend() { if (!user.value || resent.value) return; try { await r
 
 function goList() { closeThread(); followups.value = []; view.value = 'list'; err.value = '' }
 function goStart() { closeThread(); followups.value = []; view.value = 'start'; err.value = ''; nextTick(() => composer.value && composer.value.focus && composer.value.focus()) }
-async function goThread(id: any) { followups.value = []; view.value = 'thread'; err.value = ''; await openThread(id); toFoot() }
+async function goThread(id: string) { followups.value = []; view.value = 'thread'; err.value = ''; await openThread(id); toFoot() }
 
 /* where to land on opening: a prompt → start; one thread → in it; else the list */
 onMounted(() => {
@@ -237,7 +237,7 @@ async function choose(m: any, c: any) {
 }
 const status = computed(() => (thread.conversation && thread.conversation.status) || 'open')
 /* the reader has a line in the open thread: only then is who they are worth asking about */
-const written = computed(() => view.value === 'thread' && thread.messages.some((m: any) => m.author === 'contact'))
+const written = computed(() => view.value === 'thread' && thread.messages.some((m: { author: string }) => m.author === 'contact'))
 /* the way in is offered only while there is one: under lockdown a sign-in is refused or undone at once (and
    undoing it drops the guest's token, and with it the thread from their device), so a guest just stays a guest */
 const wayIn = computed(() => written.value && !LOCKDOWN)
@@ -265,7 +265,7 @@ async function reply(text: any) {
 }
 
 /* ---- a new conversation ---- */
-async function begin(text: any) {
+async function begin(text: string) {
   err.value = ''
   const body = String(text || '').trim()
   const a = active.value, c = picked.value
@@ -316,7 +316,7 @@ function dropped(e: any) { dragging.value = 0; const f = e.dataTransfer && e.dat
 /* anything that grows the thread's foot — a strip, the follow-ups, the dots — keeps the foot in view */
 watch([written, () => followups.value.length, typingNow], () => { if (view.value === 'thread') toFoot() })
 
-const statusWord = (s: any) => P['status-' + s] || ''
+const statusWord = (s: string) => P['status-' + s] || ''
 const preview = (c: any) => previewOf(c.last, { deleted: P.withdrawn })
 const at = (c: any) => whenOf(c.last_message_at || c.created_at, Date.now(), { yesterday: P.yesterday })
 </script>

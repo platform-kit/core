@@ -185,8 +185,8 @@ const COMMUNITY_HIDE = ['following', 'saved', 'drafts', 'tickets']
 export const communityOf = (c: any) => {
   const m = c.community || {}
   const hide = Array.isArray(m.hide) ? m.hide.map(String) : []
-  const odd = hide.filter((h: any) => !COMMUNITY_HIDE.includes(h))
-  if (odd.length) throw new Error(`community.hide: ${odd.map((h: any) => '"' + h + '"').join(', ')} is not something a site can hide — the choices are ${COMMUNITY_HIDE.join(', ')}`)
+  const odd = hide.filter((h: string) => !COMMUNITY_HIDE.includes(h))
+  if (odd.length) throw new Error(`community.hide: ${odd.map((h: string) => '"' + h + '"').join(', ')} is not something a site can hide — the choices are ${COMMUNITY_HIDE.join(', ')}`)
   return { layout: m.layout === 'social' ? 'social' : 'chat', forYou: m.forYou === true, hide: [...new Set(hide)], places: [...kitPlacesOf(c), ...placesOf(m.places)], path: pathOf(m.path),
     /* members choose which spaces reach their Home (Pin to Home) — off: every space they are in does */
     pinning: m.pinning === true,
@@ -200,7 +200,7 @@ function gatedOf(m: any) {
   const a = m.access && typeof m.access === 'object' && !Array.isArray(m.access) ? m.access : {}
   const odd = Object.keys(a).filter((k) => !GATED_PLACES.includes(k))
   if (odd.length) throw new Error(`community.access: ${odd.map((k) => '"' + k + '"').join(', ')} is not a place a rule can be set on — the choices are ${GATED_PLACES.join(', ')} (Home is network.access; a registered place carries its own access)`)
-  return [...Object.keys(a).filter((k) => a[k] != null), ...(Array.isArray(m.places) ? m.places.filter((p: any) => p && p.access != null).map((p: any) => String(p.key)) : [])]
+  return [...Object.keys(a).filter((k) => a[k] != null), ...(Array.isArray(m.places) ? m.places.filter((p: { access: null }) => p && p.access != null).map((p: any) => String(p.key)) : [])]
 }
 /*
  * A PLACE IN THE COMMUNITY, by registration (openspec: community-places-by-registration): a row of the
@@ -214,7 +214,7 @@ function gatedOf(m: any) {
 /* THE COMMUNITY'S BASE ADDRESS (community.path): /feed unless the site names its own — one segment,
    and not one the site already answers on */
 const TAKEN_PATHS = ['/app', '/content', '/admin', '/store', '/spaces', '/a', '/c', '/form', '/to', '/book', '/cart', '/support', '/embed', '/api', '/docs', '/account', '/v1']
-export function pathOf(v: any) {
+export function pathOf(v: string|null) {
   if (v == null || v === '') return '/feed'
   const p = String(v)
   if (!/^\/[a-z][a-z0-9-]*$/.test(p)) throw new Error(`community.path: "${p}" is one segment from the root, like /community`)
@@ -261,7 +261,7 @@ export function placesOf(list: any) {
 export const coursesOf = (c: any) => {
   const m = c.courses || {}
   if (m.where != null) throw new Error('courses.where: removed — courses have their own pages at /courses and, where the community is on, a Courses place in it as well; take the key out')
-  const on = (k: any) => (c.modules || {})[k] !== false
+  const on = (k: string) => (c.modules || {})[k] !== false
   return { place: on('courses') && on('spaces') && on('network') }
 }
 /*

@@ -7,7 +7,7 @@ import { parseStrings, serialiseStrings } from '../../strings-admin.mjs'
 export default {
   key: 'strings', name: 'UI strings', dir: 'content/app/ui', title: 'scope', editor: 'StringsEditor', creates: true,
   grammar: {
-    parse: (text: any) => { const p = parseStrings(text); return { data: { scope: p.scope, title: p.title }, content: '', parsed: { fmRaw: p.fmRaw, spaced: p.spaced, groups: p.groups } } },
+    parse: (text: string) => { const p = parseStrings(text); return { data: { scope: p.scope, title: p.title }, content: '', parsed: { fmRaw: p.fmRaw, spaced: p.spaced, groups: p.groups } } },
     serialise: (rec: any) => { const p = rec.parsed || {}; return serialiseStrings(p.fmRaw || `scope: ${(rec.data && rec.data.scope) || ''}`, p.groups || {}, !!p.spaced) },
   },
   summary: (rec: any) => ({ file: rec.name + '.md', scope: rec.data.scope, title: rec.data.title, fmRaw: rec.parsed.fmRaw, spaced: rec.parsed.spaced, groups: rec.parsed.groups }),

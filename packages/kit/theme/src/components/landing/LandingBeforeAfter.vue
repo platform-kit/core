@@ -19,7 +19,7 @@ const at = ref<any>(null), el = ref<any>(null)
 let dragging = false
 function set(e: { clientX: number }) { const r = el.value.getBoundingClientRect(); at.value = Math.min(100, Math.max(0, ((e.clientX - r.left) / r.width) * 100)) }
 function down(e: any) { dragging = true; set(e); el.value.setPointerCapture(e.pointerId) }
-function move(e: any) { if (dragging) set(e) }
+function move(e: { clientX: number }) { if (dragging) set(e) }
 function up() { dragging = false }
 </script>
 <template>

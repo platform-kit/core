@@ -37,7 +37,7 @@ import validator from 'validator'
 export const has = (v: any) => v !== undefined && v !== null && v !== '' && v !== 0 && v !== false &&
   !(Array.isArray(v) && !v.length) && !(typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length)
 /* the fields of `r` that were actually declared, from a list of names */
-export const given = (r: any, names: any) => names.filter((n: any) => has(r[n]))
+export const given = (r: any, names: any) => names.filter((n: string|number) => has(r[n]))
 const list = (xs: any) => xs.join(', ')
 
 export const is = {
@@ -45,7 +45,7 @@ export const is = {
   email: (v: any) => typeof v === 'string' && validator.isEmail(v),
   hexColour: (v: any) => typeof v === 'string' && validator.isHexColor(v),
   slug: (v: any) => typeof v === 'string' && validator.isSlug(v),
-  host: (v: any, h: any) => { try { return new URL(v).hostname.replace(/^www\./, '') === h } catch { return false } },
+  host: (v: string|URL, h: string) => { try { return new URL(v).hostname.replace(/^www\./, '') === h } catch { return false } },
 }
 
 /* ---- the kit's rules ------------------------------------------------------------------------ */
@@ -174,7 +174,7 @@ export function checkContent(collections: any, site: any = {}) {
 }
 
 /* what to call the file in the complaint: velite keeps the path on most records */
-const fileOf = (r: any, name: any) => r.path || r.slug || r.key || r.sku || r.title || `(a ${name} record)`
+const fileOf = (r: any, name: string) => r.path || r.slug || r.key || r.sku || r.title || `(a ${name} record)`
 
 /* the sentence the build stops with */
 export function report(faults: any) {

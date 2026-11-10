@@ -35,7 +35,7 @@ try {
     const other = await member.rpc(fn as FnName, { p_user: buyerId })
     ok(`${fn}: anybody else is answered as somebody with nothing to show`, !other.error && Array.isArray(other.data) && other.data.length === 0, JSON.stringify(other.data))
   }
-  const bought: any = (await buyer.rpc('member_bought', { p_user: buyerId! })).data as any[] | null || []
+  const bought = (await buyer.rpc('member_bought', { p_user: buyerId! })).data as any[] | null || []
   ok('Bought holds the person\'s paid purchase', bought.some((p: { sku: string; }) => p.sku === 'member-panels-probe'), JSON.stringify(bought).slice(0, 200))
   ok('…with nothing of a payment provider\'s or a card\'s', !JSON.stringify(bought).match(/cs_|pi_|stripe|card/i))
 

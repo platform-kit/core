@@ -51,7 +51,7 @@ const props = defineProps({
 const emit = defineEmits(['view', 'space', 'open', 'place', 'drawer'])
 const W = computed(() => us('spaces').rail.main)
 const S = computed(() => us('network').shell.main)
-const count = (n: any) => (n > 99 ? '99+' : n || '')
+const count = (n: number) => (n > 99 ? '99+' : n || '')
 const C = (site && site.community) || {}
 
 /* THE FIRST SECTION AND WORK, from the one list */
@@ -64,11 +64,11 @@ const places = computed(() => socialPlaces({
 }))
 const wordOf = (m: any) => (m.place ? W.value[m.word] || m.word : m.word === 'saved' || m.word === 'drafts' || m.word === 'my-tickets' || m.word === 'coaching' ? W.value[m.word] : S.value[m.word])
 const QUEUE_ICON: any = { support: 'head', tickets: 'ticket', clients: 'people', comments: 'thread', 'social-comments': 'thread', 'social-dms': 'dm' }
-const isOn = (key: any) => props.view === key || (key === 'net' && props.view === 'net' && !props.channelId)
+const isOn = (key: string) => props.view === key || (key === 'net' && props.view === 'net' && !props.channelId)
 
 /* THE INBOX unfolds by hand, or while one of its rows is open; remembered per browser */
-const readSet = (k: any) => { try { return JSON.parse(localStorage.getItem(k) || '[]') } catch { return [] } }
-const writeSet = (k: any, v: any) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* private window */ } }
+const readSet = (k: string) => { try { return JSON.parse(localStorage.getItem(k) || '[]') } catch { return [] } }
+const writeSet = (k: string, v: number[]) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* private window */ } }
 const inbox = computed(() => places.value.first.find((m) => m.group) || null)
 const inboxPinned = ref(readSet('pk.nav.inbox').length > 0)
 const inboxOpen = computed(() => inboxPinned.value || !!(inbox.value && inbox.value.rows.some((r: any) => r.key === props.view)))
@@ -76,7 +76,7 @@ function toggleInbox() { inboxPinned.value = !inboxOpen.value; writeSet('pk.nav.
 
 /* THE SPACES fold unless the reader is in one or opened it themselves */
 const opened = ref(readSet('pk.nav.open'))
-const isOpen = (id: any) => spaceOpen(id, props.spaceId, opened.value)
+const isOpen = (id: string) => spaceOpen(id, props.spaceId, opened.value)
 function toggleSpace(id: any) {
   const next = opened.value.includes(id) ? opened.value.filter((x: any) => x !== id) : [...opened.value, id]
   /* folding the space being read means: not pinned open; it stays unfolded while it is read */
@@ -84,13 +84,13 @@ function toggleSpace(id: any) {
 }
 /* a space's rooms, its feed first; a space of one room has nothing to unfold, and its row opens it
    (the page opens a space on what it holds — places.js frontOf) */
-const roomsOf = (id: any) => roomsIn(id, props.channels)
-const foldsOf = (id: any) => foldOf(id, props.channels)
+const roomsOf = (id: string) => roomsIn(id, props.channels)
+const foldsOf = (id: string) => foldOf(id, props.channels)
 /* what a space of several rooms unfolds to: its rooms, then Events, People and Moderation */
-const itemsOf: any = (id: any) => spaceItems(id, props.channels, { events: props.eventSpaces.includes(id), keeps: props.keeps.includes(id) })
+const itemsOf: any = (id: string) => spaceItems(id, props.channels, { events: props.eventSpaces.includes(id), keeps: props.keeps.includes(id) })
 const PLACE_ICON: any = { events: 'calendar', people: 'people', keeping: 'shield' }
 const PLACE_WORD: any = { events: 'events', people: 'directory', keeping: 'keeping' }
-const placeOn = (id: any, key: any) => props.spaceId === id && props.view === (key === 'events' ? 'space-events' : key)
+const placeOn = (id: any, key: string) => props.spaceId === id && props.view === (key === 'events' ? 'space-events' : key)
 /* a space of one room is lit while the reader is in it — never while one of the first section's places,
    the Inbox's rows, the index or Browse is open, though the page still remembers the space last read */
 const spaceOnHere = (id: any) => props.spaceId === id && !foldsOf(id).length && !['index', 'discover'].includes(props.view)

@@ -36,7 +36,7 @@ const blocks = ref<any>([])
 const clone = (v: any) => JSON.parse(JSON.stringify(v == null ? null : v))
 /* `key:` with nothing after it is null in YAML; the form treats it as blank */
 const blankNulls = (v: any): any => (v === null ? undefined : Array.isArray(v) ? v.map(blankNulls) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, blankNulls(x)])) : v)
-const def = (b: any) => SECTION_SCHEMAS[b.component] || null
+const def = (b: { component: string|number }) => SECTION_SCHEMAS[b.component] || null
 /* the section against its schema, and its conditional record against the chosen kind's: { errors by path, valid } */
 function check(b: any) {
   const d = def(b); if (!d) return { errors: {}, valid: b.valid }
@@ -100,7 +100,7 @@ const subOf = (b: any) => { const d = def(b); return d ? subSchema(d, b.props) :
 /* adding: at the foot, or at the seam the + was pressed on */
 const pickerOpen = ref(false), insertAt = ref(-1)
 function askAdd(at = -1) { insertAt.value = at; pickerOpen.value = true }
-async function add(key: any) {
+async function add(key: string|number) {
   const d = SECTION_SCHEMAS[key]
   const b = { id: ++seq, component: key, props: clone(d.defaults || {}), open: true, valid: true, errors: {}, rawText: '' }
   Object.assign(b, check(b))
@@ -108,19 +108,19 @@ async function add(key: any) {
   if (insertAt.value >= 0) blocks.value.splice(insertAt.value, 0, b); else blocks.value.push(b)
   emitAll(); await nextTick(); scrollTo(b); emit('focus', blocks.value.indexOf(b))
 }
-function duplicate(i: any) {
+function duplicate(i: number) {
   const b = blocks.value[i]
   blocks.value.splice(i + 1, 0, { ...clone({ component: b.component, props: b.props }), id: ++seq, open: false, valid: b.valid, errors: clone(b.errors), rawText: '' })
   emitAll()
 }
-function remove(i: any) {
+function remove(i: string|number) {
   const b = blocks.value[i]
   if (b.props && Object.keys(b.props).length && !confirm('Remove this section?')) return
   blocks.value.splice(i, 1)
   emitAll()
 }
 function moveBy(i: any, d: any) { const j = i + d; if (j < 0 || j >= blocks.value.length) return; const [b] = blocks.value.splice(i, 1); blocks.value.splice(j, 0, b); emitAll() }
-function toggle(b: any) { b.open = !b.open; if (b.open) { for (const x of blocks.value) if (x !== b) x.open = false; emit('focus', blocks.value.indexOf(b)) } }
+function toggle(b: { open: boolean }) { b.open = !b.open; if (b.open) { for (const x of blocks.value) if (x !== b) x.open = false; emit('focus', blocks.value.indexOf(b)) } }
 const list = ref<any>(null)
 function scrollTo(b: any) { const el = list.value && list.value.$el && list.value.$el.querySelector(`[data-block="${b.id}"]`); if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }) }
 /* the preview's click: open that block */

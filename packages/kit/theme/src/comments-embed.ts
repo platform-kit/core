@@ -76,7 +76,7 @@ const kindOf = () => String(D.kind || (window as any).disqus_kind || 'page')
 const subjectOf = (page: any) => String(D.subject || page.identifier || page.url || location.pathname)
 
 let frame: any = null
-function draw(el: any, page: any) {
+function draw(el: HTMLElement, page: any) {
   const q = new URLSearchParams({
     kind: kindOf(),
     subject: subjectOf(page),

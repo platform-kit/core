@@ -3,11 +3,11 @@ const PAGE_SIZE = 100
 const MAX_PAGES = 20
 const PROFILE_WORKERS = 4
 
-const text = (value: any) => (typeof value === 'string' && value.trim() ? value : null)
+const text = (value: string) => (typeof value === 'string' && value.trim() ? value : null)
 const object = (value: any) => (value && typeof value === 'object' && !Array.isArray(value) ? value : null)
 const profileCache = new Map()
 
-function avatarUrlOf(value: any) {
+function avatarUrlOf(value: string) {
   if (typeof value !== 'string' || !value.trim()) return null
   try {
     const url = new URL(value.trim())
@@ -29,7 +29,7 @@ const authorNameOf = (message: any) => {
     || text(message.username) || text(message.handle)
     || text(author && author.username) || text(author && author.handle) || null
 }
-const timestamp = (value: any) => {
+const timestamp = (value: string|number|Date) => {
   if (typeof value !== 'string' || !Number.isFinite(Date.parse(value))) return null
   return new Date(value).toISOString()
 }
@@ -67,7 +67,7 @@ const pageItems = (value: any) => {
   return value.items
 }
 
-export function socialRef(accountId: any, kind: any, providerId: any) {
+export function socialRef(accountId: string, kind: string, providerId: string) {
   return JSON.stringify([String(accountId), kind, String(providerId)])
 }
 
@@ -79,7 +79,7 @@ function identity(row: any) {
   return socialRef(value.accountId, value.kind, value.providerRef)
 }
 
-function deskRow(account: any, kind: any, providerId: any, last: any, waiting: any, marks: any, operations = [], social = {}) {
+function deskRow(account: any, kind: string, providerId: any, last: any, waiting: boolean, marks: any, operations = [], social = {}) {
   const id = socialRef(account.id, kind, providerId)
   const marked = marks[`${SOURCE}:${id}`]
   if (!waiting && marked === undefined) return null
@@ -151,7 +151,7 @@ function parentIdOf(value: any) {
     return text(value.parent_id) || text(value.parentId) || text(value.in_reply_to_status_id_str) || text(value.in_reply_to_tweet_id)
   }
   if (Array.isArray(value.referenced_tweets)) {
-    const parent = value.referenced_tweets.find((item: any) => item && item.type === 'replied_to')
+    const parent = value.referenced_tweets.find((item: { type: string }) => item && item.type === 'replied_to')
     return parent && text(parent.id)
   }
   return null
@@ -235,7 +235,7 @@ export function commentRowsOf(comments: any, account: any, post: any, marks = {}
   }
   const out = []
   for (const [root, messages] of threads) {
-    messages.sort((a: any, b: any) => Date.parse(a.created_at) - Date.parse(b.created_at))
+    messages.sort((a: { created_at: string }, b: { created_at: string }) => Date.parse(a.created_at) - Date.parse(b.created_at))
     const last = messages[messages.length - 1]
     const row = deskRow(account, 'comment', root, last, !last.mine, marks, operations, {
       postId: post.provider_post_id,
@@ -250,7 +250,7 @@ export function commentRowsOf(comments: any, account: any, post: any, marks = {}
   return out
 }
 
-function failure(account: any, kind: any, reason: any) {
+function failure(account: any, kind: string, reason: string) {
   return {
     account: account.name || account.username || account.provider_id,
     kind,
@@ -258,7 +258,7 @@ function failure(account: any, kind: any, reason: any) {
   }
 }
 
-async function invoke(supabase: any, action: any, fields = {}) {
+async function invoke(supabase: any, action: string, fields = {}) {
   const { data, error } = await supabase.functions.invoke('social', { body: { action, ...fields } })
   if (error) throw error
   if (data && data.error) {
@@ -267,12 +267,12 @@ async function invoke(supabase: any, action: any, fields = {}) {
   return data || {}
 }
 
-async function operation(supabase: any, accountId: any, name: any, input = {}) {
+async function operation(supabase: any, accountId: any, name: string, input = {}) {
   const response = await invoke(supabase, 'desk_operation', { accountId, operation: name, input })
   return response.result
 }
 
-async function pages(supabase: any, accountId: any, name: any, input = {}) {
+async function pages(supabase: any, accountId: any, name: string, input = {}) {
   const result = []
   const cursors = new Set()
   let cursor
@@ -293,7 +293,7 @@ async function pages(supabase: any, accountId: any, name: any, input = {}) {
   })
 }
 
-function supports(operations: any, name: any) {
+function supports(operations: any, name: string) {
   return operations.some((item: any) => item && item.operation === name)
 }
 
@@ -483,7 +483,7 @@ async function enrichMessages(supabase: any, identity: any, messages: any) {
   })
 }
 
-export async function send(supabase: any, row: any, body: any) {
+export async function send(supabase: any, row: any, body: string) {
   const social = row && row.social
   const textBody = String(body || '').trim()
   if (!social || !textBody) throw new Error('A Social conversation and reply are required.')

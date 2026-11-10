@@ -73,7 +73,7 @@ export function echoGuard({ quiet = QUIET, tail = TAIL_MS, floorMin = FLOOR_MIN,
     /* what a person has to clear to be heard over this room's own leak */
     bar() { return Math.max(floorMin, floor * over) },
     /* loud enough, right now, to be a person and not the speakers */
-    isPerson(mine: any, now: number) { return !this.audible(now) || mine >= this.bar() },
+    isPerson(mine: number, now: number) { return !this.audible(now) || mine >= this.bar() },
     /* what the assistant is saying, so a transcript can be checked against it */
     speaking(text: string) { said = norm(text) },
     /*

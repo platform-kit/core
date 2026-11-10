@@ -32,7 +32,7 @@ import { loadTheme } from './theme.mjs'
 import { isMain } from './is-main.mjs'
 
 export const PHASES = ['prepare', 'functions', 'site', 'after']
-const KIT = (f: any) => fileURLToPath(new URL('./' + f, import.meta.url))
+const KIT = (f: string) => fileURLToPath(new URL('./' + f, import.meta.url))
 
 /* ---- the records ---- */
 function check(s: any, from: any) {
@@ -74,7 +74,7 @@ export async function moduleSet(site: any) {
 export async function loadSteps(site: any) {
   const c = site || await loadSite()
   const out: any = [], seen = new Map()
-  const add = (s: any, from: any) => { const r = check(s, from); if (seen.has(r.key)) throw new Error(`${from}: step ${r.key} is already declared by ${seen.get(r.key)}`); seen.set(r.key, from); out.push(r) }
+  const add = (s: any, from: string) => { const r = check(s, from); if (seen.has(r.key)) throw new Error(`${from}: step ${r.key} is already declared by ${seen.get(r.key)}`); seen.set(r.key, from); out.push(r) }
   const { STEPS } = await import('./steps/index.mjs')
   for (const s of STEPS) add(s, 'the kit')
   const theme = await loadTheme(c)
@@ -83,7 +83,7 @@ export async function loadSteps(site: any) {
   /* a step gated on a module no manifest declares would run always — refused here, where the
      person who wrote it is looking, rather than discovered by its feature never switching off */
   const known = await moduleSet(c)
-  const strange = out.filter((s: any) => s.module && !known.has(s.module))
+  const strange = out.filter((s: { module: string }) => s.module && !known.has(s.module))
   if (strange.length) throw new Error('a build step is gated on a module no manifest declares:\n  ' + strange.map((s: any) => `${s.key} → ${s.module} (${s.from})`).join('\n  '))
   Object.defineProperty(c, '_paymentProviderRegistrations', {
     configurable: true,
@@ -107,7 +107,7 @@ export async function loadSteps(site: any) {
  */
 const BACKEND_ENV = /^SUPABASE_|^PLATFORMKIT_SHADOW_DB_URL$/
 export const stepNeedsBackend = (s: any) =>
-  typeof s.backend === 'boolean' ? s.backend : (s.needs && s.needs.env || []).some((k: any) => BACKEND_ENV.test(k))
+  typeof s.backend === 'boolean' ? s.backend : (s.needs && s.needs.env || []).some((k: string) => BACKEND_ENV.test(k))
 
 export function whyOff(s: any, site: any, env = process.env, shape: any = null) {
   if (s.module && site.modules && site.modules[s.module] === false) return `the ${s.module} module is off`
@@ -115,10 +115,10 @@ export function whyOff(s: any, site: any, env = process.env, shape: any = null) 
   if (typeof s.when === 'function') { const w = s.when(env, site); if (!w) return s.whenText || 'its condition does not hold'; }
   return null
 }
-export const isOn = (s: any, site: any, env: any, shape: { backend: boolean; content: any; repo: any; mode: string; } | null = null) => whyOff(s, site, env, shape) === null
+export const isOn = (s: any, site: any, env: NodeJS.ProcessEnv|undefined, shape: { backend: boolean; content: any; repo: any; mode: string; } | null = null) => whyOff(s, site, env, shape) === null
 
 /* ---- the order: the declaration's, then every `after` respected (a stable topological sort) ---- */
-export function order(steps: any, phase: any) {
+export function order(steps: any, phase: string) {
   const list = steps.filter((s: any) => s.phase === phase)
   const keys = new Set(steps.map((s: any) => s.key))
   for (const s of list) for (const a of s.after) { if (!keys.has(a)) throw new Error(`step ${s.key}: after names "${a}", which no step declares`); if (!list.some((x: any) => x.key === a)) throw new Error(`step ${s.key}: after names "${a}", which is in another phase`) }
@@ -143,7 +143,7 @@ export function needsOf(steps: any, site: any, env = process.env, shape: { backe
   return steps.filter((s: any) => isOn(s, site, env, shape)).map((s: any) => ({ step: s, env: s.needs.env, tools: s.needs.tools, packages: s.needs.packages }))
 }
 const onPath = (tool: string|number) => { try { execSync((process.platform === 'win32' ? 'where ' : 'command -v ') + tool, { stdio: 'ignore' }); return true } catch { return false } }
-export const resolvable = (pkg: any, root: any) => { const from = path.resolve(root, 'package.json'); try { createRequire(from).resolve(pkg + '/package.json'); return true } catch { try { createRequire(from).resolve(pkg); return true } catch { return false } } }
+export const resolvable = (pkg: string, root: string) => { const from = path.resolve(root, 'package.json'); try { createRequire(from).resolve(pkg + '/package.json'); return true } catch { try { createRequire(from).resolve(pkg); return true } catch { return false } } }
 /* what is not there: [{ step, kind: env | tool | package, name }] — a variable unset, a tool off the path, a package no import from the site's root would find */
 export function missingNeeds(needs: any, env = process.env, root = process.cwd(), kinds = ['env', 'tool', 'package']) {
   const out = []
@@ -161,7 +161,7 @@ export function script(name: any, args = [], env = process.env, root = process.c
   if (r.status !== 0) throw new Error(`${name} exited ${r.status}`)
   return true
 }
-export async function runPhase(phase: any, { site, env = process.env, changed = null, only = null, dev = false, shape = null, localProjectionOnly = false, log = console.log }: any = {}) {
+export async function runPhase(phase: string, { site, env = process.env, changed = null, only = null, dev = false, shape = null, localProjectionOnly = false, log = console.log }: any = {}) {
   const c = site || await loadSite()
   const steps = await loadSteps(c)
   const ran = []
@@ -186,7 +186,7 @@ export async function listing(site: any, env = process.env, { root }: any = {}) 
   const lines = []
   for (const phase of PHASES) for (const s of order(steps, phase)) {
     const off = whyOff(s, c, env)
-    const need = [...s.needs.env, ...s.needs.tools.map((t: any) => t + ' (tool)'), ...s.needs.packages.map((p: any) => p + ' (package)')]
+    const need = [...s.needs.env, ...s.needs.tools.map((t: string) => t + ' (tool)'), ...s.needs.packages.map((p: string) => p + ' (package)')]
     lines.push(`  ${phase.padEnd(9)} ${s.key.padEnd(20)} ${off ? 'off — ' + off : 'on'}${s.after.length ? `  after ${s.after.join(', ')}` : ''}${need.length ? `  needs ${need.join(', ')}` : ''}${s.from === 'the kit' ? '' : `  (${s.from})`}`)
   }
   /* the listing checks what the site can know here — its tools and packages; the variables are the deploy's environment, and deploy-checks asks for those */
@@ -206,7 +206,7 @@ if (isMain(import.meta.url)) {
   if (args.includes('--only')) {
     const key = args[args.indexOf('--only') + 1]
     const steps = await loadSteps(c)
-    const s = steps.find((x: any) => x.key === key)
+    const s = steps.find((x: { key: string }) => x.key === key)
     if (!s) { console.error(`✖ steps: no step "${key}" — ${steps.map((x: any) => x.key).join(', ')}`); process.exit(2) }
     const off = whyOff(s, c)
     if (off) { console.error(`✖ steps: ${s.title} is off — ${off}`); process.exit(1) }

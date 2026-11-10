@@ -136,7 +136,7 @@ export function rowsStore({ url, key, client, by = '', onEvent = null }: any = {
     async dirs(dir: any) {
       const base = norm(dir).replace(/\/$/, '') + '/'
       const { data, error } = await sb.from(TABLE).select('path, content_drafts(deleted)').like('path', base + '%').is('deleted_at', null); if (error) throw error
-      return [...new Set((data || []).filter((r: any) => !fold(r).draft_deleted).map(({ path }: any) => path.slice(base.length)).filter((r: any) => r.includes('/')).map((r: any) => r.split('/')[0]))].sort()
+      return [...new Set((data || []).filter((r: any) => !fold(r).draft_deleted).map(({ path }: any) => path.slice(base.length)).filter((r: string|string[]) => r.includes('/')).map((r: string) => r.split('/')[0]))].sort()
     },
     async getAsset(rel: any) { const { data, error } = await sb.storage.from(BUCKET).download(norm(rel)); if (error) return null; return new Uint8Array(await data.arrayBuffer()) },
     async putAsset(rel: any, bytes: any, type = 'application/octet-stream') { const { error } = await sb.storage.from(BUCKET).upload(norm(rel), bytes, { upsert: true, contentType: type }); if (error) throw error; await emit({ kind: 'Asset', topic: 'publish', path: norm(rel), by: by || null }) },
@@ -161,31 +161,31 @@ export function rowsStore({ url, key, client, by = '', onEvent = null }: any = {
         return out.sort((x, y) => (x.type === y.type ? x.name.localeCompare(y.name) : x.type === 'dir' ? -1 : 1))
       },
       async mkdir(dir: any) { const d = guard(dir); cleanName(d.split('/').pop()); const { error } = await sb.storage.from(BUCKET).upload(d + '/.keep', new Uint8Array(0), { upsert: true, contentType: 'application/octet-stream' }); if (error) throw error },
-      async rename(from: any, name: any) { const f = guard(from); const to = f.split('/').slice(0, -1).concat(cleanName(name)).join('/'); await transfer(f, to, 'move'); return to },
+      async rename(from: any, name: string|undefined) { const f = guard(from); const to = f.split('/').slice(0, -1).concat(cleanName(name)).join('/'); await transfer(f, to, 'move'); return to },
       async move(from: any, toDir: any) { const f = guard(from), d = guard(toDir); const to = d + '/' + f.split('/').pop(); if (to !== f) await transfer(f, to, 'move'); return to },
       async copy(from: any, toDir: any) { const f = guard(from), d = guard(toDir); let to = d + '/' + f.split('/').pop(); if (await exists(to)) { const n: any = f.split('/').pop(), i = n.lastIndexOf('.'); to = d + '/' + (i > 0 ? n.slice(0, i) + '-copy' + n.slice(i) : n + '-copy') } await transfer(f, to, 'copy'); return to },
       async remove(rel: any) { const f = guard(rel); if (f === 'content/uploads' || f === 'public') throw refuse('a root is not removed'); const all = await under(f); if (all.length) { const { error } = await sb.storage.from(BUCKET).remove(all); if (error) throw error } },
       async search(dir: any, q: any, deep = true) {
         const d = guard(dir), needle = String(q || '').toLowerCase()
         const out: any = []
-        const walk = async (rel: any) => { for (const e of await store.assets.list(rel)) { if (e.name.toLowerCase().includes(needle)) out.push(e); if (deep && e.type === 'dir') await walk(e.path) } }
+        const walk = async (rel: string) => { for (const e of await store.assets.list(rel)) { if (e.name.toLowerCase().includes(needle)) out.push(e); if (deep && e.type === 'dir') await walk(e.path) } }
         await walk(d); return out
       },
     },
   }
-  const guard = (rel: any) => { const p = insideRoots(rel); if (!p) throw refuse('not a path the library reaches'); return p }
-  const exists = async (rel: any) => { const d = rel.split('/').slice(0, -1).join('/'), n = rel.split('/').pop(); const { data } = await sb.storage.from(BUCKET).list(d, { search: n, limit: 100 }); return !!(data || []).some((o: any) => o.name === n) }
+  const guard = (rel: string) => { const p = insideRoots(rel); if (!p) throw refuse('not a path the library reaches'); return p }
+  const exists = async (rel: string) => { const d = rel.split('/').slice(0, -1).join('/'), n = rel.split('/').pop(); const { data } = await sb.storage.from(BUCKET).list(d, { search: n, limit: 100 }); return !!(data || []).some((o: any) => o.name === n) }
   /* every object under a path: the object itself, or everything under a folder (the .keep objects too) */
-  const under = async (rel: any) => {
+  const under = async (rel: string) => {
     const { data } = await sb.storage.from(BUCKET).list(rel.split('/').slice(0, -1).join('/'), { search: rel.split('/').pop(), limit: 100 })
     const me = (data || []).find((o: any) => o.name === rel.split('/').pop())
     if (!me) return []
     if (me.id != null) return [rel]
     const out: any = []
-    const walk = async (d: any) => { for (let offset = 0; ; offset += 1000) { const { data: kids, error } = await sb.storage.from(BUCKET).list(d, { limit: 1000, offset }); if (error) throw error; for (const o of kids || []) { if (o.id == null) await walk(d + '/' + o.name); else out.push(d + '/' + o.name) } if (!kids || kids.length < 1000) break } }
+    const walk = async (d: string) => { for (let offset = 0; ; offset += 1000) { const { data: kids, error } = await sb.storage.from(BUCKET).list(d, { limit: 1000, offset }); if (error) throw error; for (const o of kids || []) { if (o.id == null) await walk(d + '/' + o.name); else out.push(d + '/' + o.name) } if (!kids || kids.length < 1000) break } }
     await walk(rel); return out
   }
-  const transfer = async (from: any, to: any, how: any) => {
+  const transfer = async (from: any, to: string, how: string) => {
     if (await exists(to)) throw refuse('a file with that name is there already', 409)
     const all = await under(from)
     if (!all.length) throw refuse('no such file', 404)
@@ -196,7 +196,7 @@ export function rowsStore({ url, key, client, by = '', onEvent = null }: any = {
   }
   return store
 }
-async function sha1(text: any) {
+async function sha1(text: string|undefined) {
   const buf = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(text))
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('')
 }

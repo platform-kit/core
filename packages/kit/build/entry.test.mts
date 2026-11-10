@@ -67,7 +67,7 @@ for (const [target, built] of Object.entries(bundle)) {
       const a = norm(k, e[k]), b = norm(k, mine[k])
       /* a value neither side has is not a fault, and JSON.stringify(undefined) is undefined —
          which used to throw out of the reporter and hide whatever the real difference was */
-      const say = (v: any) => (v === undefined ? String(v) : String(JSON.stringify(v)).slice(0, 120))
+      const say = (v: undefined) => (v === undefined ? String(v) : String(JSON.stringify(v)).slice(0, 120))
       try { assert.deepEqual(b, a) } catch { faults.push(`${k}: velite ${say(a)} / adapter ${say(b)}`) }
     }
     for (const k of Object.keys(mine)) if (!(k in e) && mine[k] !== undefined && mine[k] !== null) faults.push(`${k}: the adapter adds ${JSON.stringify(mine[k]).slice(0, 80)}`)

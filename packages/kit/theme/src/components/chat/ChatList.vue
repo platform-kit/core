@@ -45,14 +45,14 @@ function start(id: any) { emit('start', id) }
 /* ---- the coach's view: the order, and what each member is owed ---- */
 const ORDERS = ['activity', 'created', 'awaiting']
 const order = ref((() => { try { const o = localStorage.getItem('dl.chat.order'); return o !== null && ORDERS.includes(o) ? o : 'activity' } catch (e) { return 'activity' } })())
-function setOrder(o: any) { order.value = o; try { localStorage.setItem('dl.chat.order', o) } catch (e) { /* private mode */ } }
+function setOrder(o: string) { order.value = o; try { localStorage.setItem('dl.chat.order', o) } catch (e) { /* private mode */ } }
 const rows = computed(() => (props.coach ? sortInbox(props.conversations, order.value) : props.conversations))
 /* the reply time a member's membership promises: their highest tier's product, else the paid session's */
 const HOURS: any = { tier: {}, session: 0 }
 for (const p of PRODUCTS) { if (p['chat-hours'] > 0) { if (p.kind === 'membership' && p.tier) HOURS.tier[p.tier] = Math.max(HOURS.tier[p.tier] || 0, p['chat-hours']); if (p.kind === 'session') HOURS.session = HOURS.session ? Math.min(HOURS.session, p['chat-hours']) : p['chat-hours'] } }
 const hoursFor = (peer: any) => {
   if (!peer) return 0
-  const tiers = (peer.tiers || []).filter((t: any) => HOURS.tier[t]).sort((a: any, b: any) => tierRank(b) - tierRank(a))
+  const tiers = (peer.tiers || []).filter((t: string|number) => HOURS.tier[t]).sort((a: any, b: any) => tierRank(b) - tierRank(a))
   if (tiers.length) return HOURS.tier[tiers[0]]
   return peer.session_chat ? HOURS.session : 0
 }

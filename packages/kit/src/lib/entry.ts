@@ -56,8 +56,8 @@ const day = (d: any) => {
   return Number.isNaN(t.getTime()) ? s : t.toISOString()
 }
 const str = (v: any) => (v == null ? undefined : String(v))
-const num = (v: any, d?: any) => (v == null || v === '' ? d : Number(v))
-const bool = (v: any, d: any) => (v == null ? d : !!v)
+const num = (v: string|null, d?: number|undefined) => (v == null || v === '' ? d : Number(v))
+const bool = (v: any, d: boolean) => (v == null ? d : !!v)
 const arr = (v: any) => (Array.isArray(v) ? v : v == null ? [] : [v])
 const opt = (o: any) => { for (const k of Object.keys(o)) if (o[k] === undefined) delete o[k]; return o }
 
@@ -70,7 +70,7 @@ function document(d: any, { dates = ['date', 'updated'], access = true } = {}) {
   return out
 }
 /* a rendered body with velite's derived fields: the html, the excerpt, the reading time — and the toc where the collection has one */
-function rendered(md: any, ctx: any, { length = 200, toc = false, raw = false, optional = false } = {}) {
+function rendered(md: string, ctx: any, { length = 200, toc = false, raw = false, optional = false } = {}) {
   const body = optional && !(md || '').trim() ? '' : ctx.render(md || '')
   const text = plain(body)
   const out: any = { body, excerpt: text.slice(0, length), metadata: metadata(text) }
@@ -78,15 +78,15 @@ function rendered(md: any, ctx: any, { length = 200, toc = false, raw = false, o
   if (raw) out.raw = md || ''
   return out
 }
-const id = (path: any, dir: any) => String(path || '').replace(/\.md$/, '').replace(dir + '/', '')
+const id = (path: string, dir: string) => String(path || '').replace(/\.md$/, '').replace(dir + '/', '')
 /* a cover by its address: the build's sized object while the address is the one it was sized from (velite records
    `coverSource`); else the address as a picture (/uploads/…, the bucket's url — served as it is; a 2:3 guess for the
    shape until the build sizes it); a relative path beside the record (the old way) waits for the deploy */
-const coverOf = (d: any, was: any) => (!d.cover ? undefined : was.cover && was.coverSource === d.cover ? was.cover : /^(https?:)?\//.test(d.cover) ? { src: d.cover, width: 640, height: 960, aspectRatio: 2 / 3, blurDataURL: '' } : was.cover || null)
+const coverOf = (d: { cover: string }, was: any) => (!d.cover ? undefined : was.cover && was.coverSource === d.cover ? was.cover : /^(https?:)?\//.test(d.cover) ? { src: d.cover, width: 640, height: 960, aspectRatio: 2 / 3, blurDataURL: '' } : was.cover || null)
 
-export function toEntry(collection: any, row: any, ctx: any) {
+export function toEntry(collection: string, row: any, ctx: any) {
   const d = KEYS[collection] ? pick(row.data || {}, KEYS[collection]) : (row.data || {}), md = row.body || '', path = String(row.path || '').replace(/^content\//, '').replace(/\.md$/, '')
-  const bundle = (c: any) => (ctx.bundle && ctx.bundle[c]) || []
+  const bundle = (c: string) => (ctx.bundle && ctx.bundle[c]) || []
   switch (collection) {
     case 'articles': {
       const e = { ...document(d), path, ...rendered(md, ctx), id: id(path, 'articles') }
@@ -181,7 +181,7 @@ export function toEntry(collection: any, row: any, ctx: any) {
       /* a row reader-content cut for a guest (_shared/gate.js) names its quizzed chapters and its whole length,
          so mastery and the summary's reading time are counted over the whole book, not the free chapters */
       const quizzed = new Set(arr(d.quizzed))
-      if (typeof d.gatedFrom === 'number') out.forEach((c: any, i: any) => { if (i >= d.gatedFrom) out[i] = { title: c.title, gated: true, hasQuiz: quizzed.has(c.title) } })
+      if (typeof d.gatedFrom === 'number') out.forEach((c: any, i: number) => { if (i >= d.gatedFrom) out[i] = { title: c.title, gated: true, hasQuiz: quizzed.has(c.title) } })
       const words = typeof d.summaryWords === 'number' ? d.summaryWords : out.reduce((n: any, c: any) => n + c.words, 0)
       const rest = { ...d }; delete rest.quizzed; delete rest.gatedFrom
       /* no `raw`: the body is what `chapters` was parsed from, and velite does not keep it either */
@@ -189,9 +189,9 @@ export function toEntry(collection: any, row: any, ctx: any) {
     }
     case 'books': {
       const slug = id(path, 'books')
-      const was = bundle('books').find((b: any) => b.slug === slug) || {}
+      const was = bundle('books').find((b: { slug: string }) => b.slug === slug) || {}
       const raw = md
-      const e = { ...document(d, { dates: ['date'] }), tags: arr(d.tags), topics: arr(d.topics), concepts: arr(d.concepts), path, raw, metadata: metadata(raw), slug, chapters: raw.split(/^(?=# )/m).filter((s: any) => s.trim()).length, audio: was.audio || null }
+      const e = { ...document(d, { dates: ['date'] }), tags: arr(d.tags), topics: arr(d.topics), concepts: arr(d.concepts), path, raw, metadata: metadata(raw), slug, chapters: raw.split(/^(?=# )/m).filter((s: string) => s.trim()).length, audio: was.audio || null }
       e.fullText = bool(d.fullText, true)   /* velite's default: a book holds its text unless it says not */
       if (typeof d.gatedFrom === 'number') e.gatedFrom = d.gatedFrom   /* a row reader-content cut for a guest: where the reader asks for the rest */
       if (d.print) e.print = { ebook: true, contents: ['parts'], formats: {}, includes: [], files: [], cloth: 'black', foil: 'gold', trim: '6x9', paper: 'cream', currency: 'usd', ...d.print }
@@ -218,7 +218,7 @@ export function toEntry(collection: any, row: any, ctx: any) {
       /* a content model's entry: models_<key>, its defaults from the record the bundle carries */
       const m = /^models_(.+)$/.exec(collection)
       if (!m) return null
-      const model = (ctx.models || bundle('models')).find((x: any) => x && x.key === m[1].replace(/_/g, '-')) || (ctx.models || bundle('models')).find((x: any) => x && x.key.replace(/-/g, '_') === m[1])
+      const model = (ctx.models || bundle('models')).find((x: { key: string }) => x && x.key === m[1].replace(/_/g, '-')) || (ctx.models || bundle('models')).find((x: { key: string }) => x && x.key.replace(/-/g, '_') === m[1])
       if (!model) return null
       const e = { ...defaultsOf(model), ...d, published: bool(d.published, true), path, slug: path.split('/').pop() }
       if (model.body) { e.body = (md || '').trim() ? ctx.render(md) : ''; e.raw = md }
@@ -228,13 +228,13 @@ export function toEntry(collection: any, row: any, ctx: any) {
 }
 /* the collection a row's `collection` and `slug` name in the bundle: velite's `models_<key>` for a model's entry,
    `tests` and the rest as they are; the model records themselves are not adapted (a new model waits for the deploy) */
-export function targetOf(row: any) {
+export function targetOf(row: { collection: string; slug: string }) {
   if (row.collection === 'models') { const i = String(row.slug || '').indexOf('/'); return i > 0 ? 'models_' + row.slug.slice(0, i).replace(/-/g, '_') : null }
   if (row.collection === 'uploads' || row.collection === 'strings' || row.collection === 'tests' || !row.collection) return null
   return row.collection
 }
 /* where a collection's files live, for a draft the admin previews before it is a row (the store's collectionOf, the other way) */
-export function pathOf(collection: any, name: any) {
+export function pathOf(collection: string, name: string) {
   const dir = ({ products: 'content/store/products', collections: 'content/store/collections', ui: 'content/app/ui', storefront: 'content/store', site: 'content' } as any)[collection] || ('content/' + collection.replace(/^models_/, 'models/').replace(/_/g, '-'))
   return collection === 'site' ? 'content/site.md' : collection === 'storefront' ? 'content/store/storefront.md' : dir + '/' + name + '.md'
 }

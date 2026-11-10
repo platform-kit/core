@@ -7,13 +7,13 @@
 
 export function initLanding() {
   var CLEAN: any = []
-  var on = function (t: any, ev: any, fn: any, opt?: any) { t.addEventListener(ev, fn, opt); CLEAN.push(function () { t.removeEventListener(ev, fn, opt) }) }
+  var on = function (t: Element, ev: string, fn: any, opt?: undefined) { t.addEventListener(ev, fn, opt); CLEAN.push(function () { t.removeEventListener(ev, fn, opt) }) }
   var obs = function (o: any) { CLEAN.push(function () { o.disconnect() }); return o }
 
 var RM = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var NS = 'http://www.w3.org/2000/svg';
-function el(t: any,a: any){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
-function svg(vb: any){var s=el('svg',{viewBox:vb});return s;}
+function el(t: string,a: any){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);return e;}
+function svg(vb: string){var s=el('svg',{viewBox:vb});return s;}
 
 /* ---------- marquee ---------- */
 /* Two kinds of item, strictly alternating: what you get out of it, and a fact
@@ -25,7 +25,7 @@ function svg(vb: any){var s=el('svg',{viewBox:vb});return s;}
 /* the marquee's words are LandingMarquee's props now; it fills the band itself */
 
 /* ---------- chart wheel ---------- */
-function wheel(node: any,size?: any){
+function wheel(node: HTMLElement|null,size?: undefined){
   if(!node) return;
   var s=svg('0 0 200 200'), c=100, R=92, R2=72, R3=52;
   var g=el('g',{});
@@ -101,8 +101,8 @@ wheel(document.getElementById('lpwheelArt'));
 })();
 
 /* ---------- bento lane art ---------- */
-function laneArt(id: any,draw: any){var n=document.getElementById(id); if(!n)return; var s=svg('0 0 320 132'); draw(s); n.appendChild(s);}
-laneArt('lpartMeasure',function(s: any){
+function laneArt(id: string,draw: any){var n=document.getElementById(id); if(!n)return; var s=svg('0 0 320 132'); draw(s); n.appendChild(s);}
+laneArt('lpartMeasure',function(s: { appendChild: (arg0: Element) => void; }){
   var d=[18,20,19,24,26,25,29,32,31,36,39,42], n=d.length;
   var pts=d.map(function(v,i){ return [26+i*(268/(n-1)), 112-(v/50)*86]; });
   var path=pts.map(function(p,i){ return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1); }).join(' ');
@@ -113,7 +113,7 @@ laneArt('lpartMeasure',function(s: any){
   s.appendChild(el('circle',{cx:pts[n-1][0],cy:pts[n-1][1],r:4.6,fill:'var(--accent)'}));
   s.appendChild(el('circle',{cx:pts[0][0],cy:pts[0][1],r:3.2,fill:'var(--accent)',opacity:'.5'}));
 });
-laneArt('lpartLearn',function(s: any){
+laneArt('lpartLearn',function(s: { appendChild: (arg0: Element) => void; }){
   for(var i=0;i<5;i++){
     s.appendChild(el('rect',{x:40+i*50,y:24+ (i%2?10:0),width:34,height:84,rx:5,
       fill:'none',stroke:'var(--accent)','stroke-width':'1.3',opacity:(1-i*.13)}));
@@ -123,14 +123,14 @@ laneArt('lpartLearn',function(s: any){
       stroke:'var(--ink3)','stroke-width':'1.2',opacity:'.5'}));
   }
 });
-laneArt('lpartPractice',function(s: any){
+laneArt('lpartPractice',function(s: { appendChild: (arg0: Element) => void; }){
   for(var i=0;i<26;i++){
     var h=18+Math.abs(Math.sin(i*.7))*72;
     s.appendChild(el('rect',{x:22+i*11,y:66-h/2,width:5,height:h,rx:2.5,
       fill:'var(--accent)',opacity:(.35+Math.abs(Math.sin(i*.7))*.5).toFixed(2)}));
   }
 });
-laneArt('lpartConnect',function(s: any){
+laneArt('lpartConnect',function(s: { appendChild: (arg0: Element) => void; }){
   var pos=[[110,66],[160,44],[210,66],[160,90],[135,55],[185,55],[135,77],[185,77]];
   pos.forEach(function(p,i){
     s.appendChild(el('line',{x1:160,y1:66,x2:p[0],y2:p[1],stroke:'var(--accent)','stroke-width':'1.1',opacity:'.5'}));
@@ -169,8 +169,8 @@ laneArt('lpartConnect',function(s: any){
   ];
   var N=12, W=760, H=330, L=42, R=126, T=18, B=44;
   var pw=W-L-R, ph=H-T-B;
-  var X=function(i: any){ return L + i*(pw/(N-1)); };
-  var Y=function(v: any){ return T + (1-v/100)*ph; };
+  var X=function(i: number){ return L + i*(pw/(N-1)); };
+  var Y=function(v: number){ return T + (1-v/100)*ph; };
 
   var s=el('svg',{viewBox:'0 0 '+W+' '+H,'class':'lptsvg'});
   s.setAttribute('role','img');
@@ -211,7 +211,7 @@ laneArt('lpartConnect',function(s: any){
 
   var tip=document.createElement('div'); tip.className='lptip'; host.appendChild(tip);
 
-  function show(ev: any){
+  function show(ev: { clientX: number; }){
     var r=s.getBoundingClientRect();
     var px=(ev.clientX-r.left)/r.width*W;
     var i=Math.round((px-L)/(pw/(N-1)));
@@ -247,7 +247,7 @@ laneArt('lpartConnect',function(s: any){
       es.forEach(function(e){
         if(!e.isIntersecting) return;
         io2.unobserve(e.target);
-        paths.forEach(function(pt: any,k: any){
+        paths.forEach(function(pt: { style: { transition: string; strokeDashoffset: string; }; },k: number){
           pt.style.transition='stroke-dashoffset 1.5s cubic-bezier(.3,.8,.3,1) '+(k*.18)+'s';
           pt.style.strokeDashoffset='0';
         });
@@ -285,7 +285,7 @@ if(revs.length&&!RM){
      is watched as it lands, so nothing stays hidden for having missed the first pass */
   var mo=obs(new MutationObserver(function(ms){
     ms.forEach(function(m){ m.addedNodes.forEach(function(n: any){ if(n.nodeType!==1) return;
-      var list=n.classList&&n.classList.contains('lprv')?[n]:[]; n.querySelectorAll&&n.querySelectorAll('.lprv').forEach(function(x: any){ list.push(x); });
+      var list=n.classList&&n.classList.contains('lprv')?[n]:[]; n.querySelectorAll&&n.querySelectorAll('.lprv').forEach(function(x: Node){ list.push(x); });
       list.forEach(function(x: any){ if(!x.classList.contains('lpin')) io.observe(x); }); }); });
   }));
   var root=document.querySelector('.lproot')||document.body; mo.observe(root,{childList:true,subtree:true});
@@ -322,7 +322,7 @@ if(revs.length&&!RM){
   var beats=document.querySelectorAll('#lpbeats .lpbeat');
   var viss=document.querySelectorAll('#lpvis .lpvis');
   if(!beats.length) return;
-  function setActive(i: any){
+  function setActive(i: number){
     beats.forEach(function(b,j){ b.classList.toggle('lpon', j===i); });
     viss.forEach(function(v,j){ v.classList.toggle('lpon', j===i); });
   }
@@ -337,7 +337,7 @@ if(revs.length&&!RM){
 
 /* ---------- pointer glow on area cards ---------- */
 document.querySelectorAll('#lpareas .lparea').forEach(function(c: any){
-  on(c,'pointermove',function(ev: any){
+  on(c,'pointermove',function(ev: { clientX: number; clientY: number; }){
     var r=c.getBoundingClientRect();
     c.style.setProperty('--mx',(ev.clientX-r.left)+'px');
     c.style.setProperty('--my',(ev.clientY-r.top)+'px');
@@ -348,5 +348,5 @@ document.querySelectorAll('#lpareas .lparea').forEach(function(c: any){
    the tracked-metrics card, and the nav went earlier, so it was a scroll listener
    doing nothing on every frame. */
 
-  return function () { CLEAN.forEach(function (f: any) { try { f() } catch (e) { /* already gone */ } }); CLEAN = [] }
+  return function () { CLEAN.forEach(function (f: () => void) { try { f() } catch (e) { /* already gone */ } }); CLEAN = [] }
 }
