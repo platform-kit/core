@@ -12,5 +12,6 @@
 - [ ] The tests that are not yet `node:test`, moved to it
 - [x] The voice agent, the kit's fixtures and the generators that write the kit's own files
 - [x] A site may be TypeScript (`platformkit.config.ts`, `build/site-file.mts`), and the workspace's sites are
-- [ ] Type what the conversion left as `any` and the `from the conversion` markers, file by file
+- [x] The `from the conversion` markers, read and typed file by file (none left; `build/ts-migrate.mjs` and `build/vue-migrate.mjs` removed with them)
+- [ ] What the conversion left as `any`, narrowed where a value's shape is known
 - [ ] The full end-to-end suite on the converted kit

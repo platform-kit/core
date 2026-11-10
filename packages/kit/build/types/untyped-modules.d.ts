@@ -1,6 +1,6 @@
 /*
  * THE MODULES THE KIT IMPORTS THAT CARRY NO TYPES, declared as any until one is written (openspec: typescript-throughout).
- * build/ts-migrate.mjs adds a line when a converted file imports one.
+ * A module that ships no types is named here, one line each; a module that has types is never.
  */
 declare module 'pg'
 declare module 'picomatch'
