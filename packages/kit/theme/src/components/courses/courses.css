@@ -371,3 +371,21 @@
 .crs-wb-shelf small { color: var(--ink2); font-size: 13px; }
 .crs-wb-shelf-ico { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: var(--wash); color: var(--ink2); flex: 0 0 auto; }
 .crs-wb .crs-wb-mod-title { margin-bottom: 16px; }
+
+.crs-work-items { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.crs-work-item { display: inline-flex; align-items: center; gap: 7px; font: inherit; font-size: 14px; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--hair); background: var(--card); color: var(--ink2); cursor: pointer; }
+.crs-work-item:hover { border-color: var(--ink2); color: var(--ink); }
+.crs-work-item.is-on { border-color: var(--ink); color: var(--ink); font-weight: 600; }
+.crs-work-item.is-done { color: var(--ink); }
+.crs-work-n { font-size: 12px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.crs-work-item:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.crs-wb-views { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--hair); border-radius: 999px; margin: 0 0 24px; }
+.crs-wb-view { font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 999px; border: 0; background: transparent; color: var(--ink2); cursor: pointer; }
+.crs-wb-view.is-on { background: var(--ink); color: var(--paper, var(--card)); }
+.crs-wb-entry + .crs-wb-entry { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--hair); }
+.crs-wb-about { margin: 0 0 8px; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink2); }
+
+/* saved, with more than one way on: the actions under the words, not beside them */
+.crs-work .crs-quiz-result { grid-template-columns: auto minmax(0, 1fr); }
+.crs-work .crs-work-acts { grid-column: 1 / -1; justify-content: flex-start; }

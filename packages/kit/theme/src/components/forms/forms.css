@@ -173,3 +173,10 @@ html[data-theme='dark'] .ff-step, html[data-theme='dark'] .qopt { background: #F
 .ff-li-add:hover { color: var(--qink); border-color: var(--qink3) }
 .ff-list .ff-hint { margin-left: 72px }
 @media (max-width: 560px) { .ff-li-add, .ff-list .ff-hint { margin-left: 0 } .ff-grip, .ff-li-x { width: 28px } }
+
+.ff-li-offer { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0 72px; max-width: 520px }
+.ff-li-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--qhair); background: var(--qcard); color: var(--qink); font: inherit; font-size: 15px; padding: 7px 13px; border-radius: 999px; cursor: pointer }
+.ff-li-chip svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; opacity: .6 }
+.ff-li-chip:hover { border-color: var(--qink3) }
+.ff-li-chip:focus-visible { outline: 2px solid var(--qink); outline-offset: 1px }
+@media (max-width: 560px) { .ff-li-offer { margin-left: 0 } }

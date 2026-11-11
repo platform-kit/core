@@ -24,6 +24,8 @@ export function validateField(field: any, value: any, W: any) {
     /* an ordered list: the rows that say something; a required one needs at least one */
     case 'list': { const rows = (Array.isArray(value) ? value : []).map((r: any) => String(r ?? '').trim()).filter(Boolean)
       if (field.required && !rows.length) return w['list-required'] || 'Add at least one item.'
+      if (p.min && (field.required || rows.length) && rows.length < Number(p.min)) return (w['list-min'] || 'Add at least {n}.').replace('{n}', p.min)
+      if (p.max && rows.length > Number(p.max)) return (w['list-max'] || 'At most {n}.').replace('{n}', p.max)
       if (p.maxlength && rows.some((r: string) => r.length > Number(p.maxlength))) return (w['too-long'] || 'At most {n} characters.').replace('{n}', p.maxlength)
       return '' }
     case 'rating': case 'scale': return req(w['number-choice-required'] || 'Please make a selection.')

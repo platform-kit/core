@@ -43,7 +43,7 @@ const m = parseForm(fixture('every-kind.md'))
 t('the fixture parses with no error', () => assert.deepEqual(m.errors, []))
 t('the settings: forms.md\'s (defaults filled) and the kit\'s', () => {
   assert.equal(m.settings.title, 'Every kind'); assert.equal(m.settings['page-progress'], 'show'); assert.equal(m.settings.page, 'form-slides'); assert.equal(m.settings.accent, '0, 102, 255')
-  assert.deepEqual(m.kit, { published: true, once: true, respond: 'anyone', embedOrigins: ['https://example.com', 'http://localhost:3000'], webhook: 'https://example.com/hook', pass: 1, score: { pick: 'b' }, paid: '', ticket: '', ticketTitle: '', ticketPriority: '', workbook: false })
+  assert.deepEqual(m.kit, { published: true, once: true, respond: 'anyone', embedOrigins: ['https://example.com', 'http://localhost:3000'], webhook: 'https://example.com/hook', pass: 1, score: { pick: 'b' }, paid: '', ticket: '', ticketTitle: '', ticketPriority: '', workbook: false, uses: {}, about: null })
 })
 t('the data block is read', () => assert.deepEqual(m.data, { brand: 'Acme', plans: ['Free', 'Pro'] }))
 t('the slides: start first, the bodies, the end last', () => assert.deepEqual(m.slides.map((s) => s.type), ['start', 'body', 'body', 'body', 'body', 'end']))
@@ -186,6 +186,34 @@ t('a workbook form is signed in only', () => { const m = parseForm('#! workbook 
 t('a workbook form refuses what would send its answers elsewhere or treat them as a test', () => {
   const m = parseForm('#! workbook = true\n#! once = true\n#! webhook = https://example.com/hook\n#! score = x: a\n\nx = TextInput(| question = Q)')
   assert.equal(m.errors.length, 1); assert.match(m.errors[0].message, /once, score, webhook/); assert.equal(m.errors[0].line, 1)
+})
+
+/* ---- common answers, bounds, and following up on earlier answers ---- */
+t('a list offers common answers and earlier ones, within a fewest and a most, and is written back the same', () => {
+  const m = parseForm('#! workbook = true\n\nareas* = ListInput(\n  | question = Q\n  | min = 1\n  | max = 5\n  | options = Work, Money, Relationships\n  | optionsfrom = earlier, other\n)')
+  assert.deepEqual(m.errors, []); assert.deepEqual(m.warnings, [])
+  const f = m.fields[0]
+  assert.equal(f.params.min, 1); assert.equal(f.params.max, 5)
+  assert.deepEqual(f.params.options, ['Work', 'Money', 'Relationships']); assert.deepEqual(f.params.optionsfrom, ['earlier', 'other'])
+  assert.equal(composeField(f), 'areas* = ListInput(\n\t| question = Q\n\t| min = 1\n\t| max = 5\n\t| options = Work, Money, Relationships\n\t| optionsfrom = earlier, other\n)')
+})
+t('a list holds within its fewest and its most', () => {
+  const W = { 'list-min': 'min {n}', 'list-max': 'max {n}', 'list-required': 'one' }
+  const f = { kind: 'list', required: true, params: { min: 2, max: 3 } }
+  assert.equal(validateField(f, ['a'], W), 'min 2'); assert.equal(validateField(f, ['a', 'b', 'c', 'd'], W), 'max 3'); assert.equal(validateField(f, ['a', 'b'], W), '')
+  assert.equal(validateField({ ...f, required: false }, [], W), '')
+})
+t('a choice can take its choices from an earlier answer', () => { const m = parseForm('x = ChoiceInput(| question = Q | choicesfrom = feelings)'); assert.deepEqual(m.warnings, []); assert.deepEqual(m.fields[0].params.choicesfrom, ['feelings']) })
+t('a workbook form names the earlier answers it follows up on, and the list it is about', () => {
+  const m = parseForm('#! workbook = true\n#! about = situation: honest-look.change\n#! uses = feeling: under-the-feeling.feelings[0], why: cause.belief\n\nx = TextInput(| question = About {$ situation $})')
+  assert.deepEqual(m.errors, [])
+  assert.deepEqual(m.kit.about, { name: 'situation', form: 'honest-look', field: 'change' })
+  assert.deepEqual(m.kit.uses, { feeling: { form: 'under-the-feeling', field: 'feelings', top: true }, why: { form: 'cause', field: 'belief', top: false } })
+})
+t('following up is a workbook form\'s, and its references are refused when malformed', () => {
+  assert.match(parseForm('#! uses = a: f.x\n\nx = TextInput(| question = Q)').errors[0].message, /only a workbook form/)
+  assert.match(parseForm('#! workbook = true\n#! uses = a: Bad Form.x\n\nx = TextInput(| question = Q)').errors[0].message, /name: form.field/)
+  assert.match(parseForm('#! workbook = true\n#! about = a: f.x[0]\n\nx = TextInput(| question = Q)').errors[0].message, /whole list/)
 })
 
 console.log(`forms: ${n - bad}/${n} pass`)

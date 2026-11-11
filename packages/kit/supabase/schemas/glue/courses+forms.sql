@@ -136,12 +136,14 @@ begin
     'course', c.slug, 'title', c.title, 'mine', who = me,
     'reader', jsonb_build_object('id', who, 'name', public.course_person_name(who)),
     'lessons', coalesce((
+      -- each lesson's answers, one entry a response: a form about the rows of an earlier list has one per row (item)
       select jsonb_agg(jsonb_build_object('key', l.key, 'title', l.title, 'section', l.section, 'form', l.form, 'required', l.answers_required,
-        'updated_at', r.updated_at,
-        'answers', coalesce((select jsonb_object_agg(a.field, a.value) from public.form_answers a where a.response_id = r.id), '{}'::jsonb))
+        'entries', coalesce((select jsonb_agg(jsonb_build_object('item', x.item, 'updated_at', x.updated_at, 'completed', x.completed_at is not null,
+            'answers', coalesce((select jsonb_object_agg(a.field, a.value) from public.form_answers a where a.response_id = x.id), '{}'::jsonb))
+            order by x.started_at)
+          from public.form_responses x where x.user_id = who and x.form = l.form), '[]'::jsonb))
         order by l.position)
       from public.course_lessons l
-      left join lateral (select x.id, x.updated_at from public.form_responses x where x.user_id = who and x.form = l.form order by x.updated_at desc limit 1) r on true
       where l.course = p_course and l.form is not null), '[]'::jsonb),
     'shares', case when who = me then coalesce((
       select jsonb_agg(jsonb_build_object('id', s.id, 'coach', s.coach, 'name', public.course_person_name(s.coach), 'granted_at', s.granted_at) order by s.granted_at)

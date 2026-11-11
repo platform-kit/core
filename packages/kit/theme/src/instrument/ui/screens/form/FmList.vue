@@ -4,13 +4,28 @@ import type { PropType } from 'vue'
    them. A row's handle drags it (pointer events, so a finger works as well as a mouse) or, focused, moves it with
    the arrow keys. Enter starts a new row below; Backspace in an empty row removes it; Enter in an empty last row goes
    on to the next question. The value is the rows in order; the empty ones are dropped when the answer is kept. */
-import { ref, nextTick, onMounted, watch } from 'vue'
+import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import FmLabel from './FmLabel.vue'
 const props = defineProps({ field: { type: Object as PropType<any>, required: true }, modelValue: { default: () => [] }, ctx: { type: Object as PropType<any>, default: () => ({}) }, words: { type: Object as PropType<any>, default: () => ({}) }, error: { type: String, default: '' }, autofocus: { type: Boolean, default: false } })
 const emit = defineEmits(['update:modelValue', 'enter'])
 const p = props.field.params || {}
 const id = 'f_' + props.field.name
 const max = Number(p.max) || 0
+/* WHAT IT OFFERS TO TAP: the list's own common answers, then the earlier answers it names, less what is already a row */
+const asList = (v: any) => (Array.isArray(v) ? v : v == null || v === '' ? [] : [v]).map((x: any) => String(x).trim()).filter(Boolean)
+const offered = computed(() => {
+  const all = [...(p.optionsfrom || []).flatMap((n: string) => asList(props.ctx[n])), ...(p.options || [])]
+  const taken = new Set(rows.value.map((r) => r.text.trim().toLowerCase()))
+  const seen = new Set<string>()
+  return all.filter((o) => { const k = o.toLowerCase(); if (taken.has(k) || seen.has(k)) return false; seen.add(k); return true })
+})
+function take(o: string) {
+  const empty = rows.value.findIndex((r) => !r.text.trim())
+  if (empty >= 0) rows.value[empty].text = o
+  else if (!full()) rows.value.push({ id: ++seq, text: o })
+  else return
+  out()
+}
 
 let seq = 0
 type Row = { id: number; text: string }
@@ -91,10 +106,15 @@ function onDown(e: PointerEvent, i: number) {
         </button>
       </li>
     </ol>
+    <div v-if="offered.length && !full()" class="ff-li-offer" role="group" :aria-label="words['list-offer'] || 'Common answers'">
+      <button v-for="o in offered" :key="o" type="button" class="ff-li-chip" @click="take(o)">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>{{ o }}
+      </button>
+    </div>
     <button v-if="!full()" type="button" class="ff-li-add" @click="add()">
-      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>{{ words['list-add'] || 'Add another' }}
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>{{ offered.length ? (words['list-add-own'] || 'Add your own') : (words['list-add'] || 'Add another') }}
     </button>
-    <p v-if="!error" class="ff-hint"><kbd>Enter</kbd> {{ words['list-enter'] || 'for a new line' }}</p>
+    <p v-if="!error" class="ff-hint"><kbd>Enter</kbd> {{ words['list-enter'] || 'for a new line' }}<template v-if="max"> · {{ (words['list-up-to'] || 'up to {n}').replace('{n}', String(max)) }}</template></p>
     <p v-if="error" class="ff-msg" role="alert">{{ error }}</p>
     <p class="fq-vh" aria-live="polite">{{ said }}</p>
   </div>

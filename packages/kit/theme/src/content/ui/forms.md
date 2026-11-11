@@ -32,6 +32,8 @@ date-min: On or after {min}.
 date-max: On or before {max}.
 too-long: At most {n} characters.
 list-required: Add at least one item.
+list-min: Add at least {n}.
+list-max: At most {n}.
 invalid-pattern: Please match the requested format.
 file-size-error: File exceeds the size limit.
 file-image-only: Choose an image.
@@ -54,6 +56,9 @@ file-choose: choose a file
 file-drag: or drag it here
 list-placeholder: Type the first item
 list-add: Add another
+list-add-own: Add your own
+list-offer: Common answers
+list-up-to: up to {n}
 list-enter: for a new line
 list-item: Item {n}
 list-move: Move item {n}

@@ -84,6 +84,8 @@ going_well* = ListInput(
 )
 ```
 
+A list can offer **common answers** to tap (`options = work, money, relationships`), and the person's **earlier answers** the same way (`optionsfrom = not_well, repeating`: fields of the same form, or references from a workbook form's `uses`). Tapping one adds it as a row; **Add your own** adds a blank one. `min` and `max` bound how many rows: fewer than `min` is refused, and nothing can be added past `max`. A choice input can take its choices from an earlier answer the same way (`choicesfrom = feelings`).
+
 The answer is the rows in their order, each tidied and the empty ones dropped. A required list needs one row that says something. Through the Forms API it is long text, one row to a line.
 
 ## A workbook form
@@ -94,7 +96,9 @@ A workbook form is a person's own writing: a course lesson's practice and journa
 #! workbook = true
 ```
 
-It is answered signed in, and each person has **one response**. It reopens at its first question with everything they wrote, and what they change replaces what was there: there is no score and no "already answered". The day it was first finished stays; the response's own time says when it last changed.
+It is answered signed in, and each person has **one response**.
+
+**It can follow up on earlier answers.** `#! uses = feeling: under-the-feeling.feelings[0], idea: cause.belief` names answers from other workbook forms (`[0]` is a list's top row), and a question uses them as `{$ feeling $}` or offers from them. `#! about = situation: honest-look.change` makes the form about each row of that earlier list in turn, with one response for each row. The form opens on the top row; in a course lesson, the others are offered beside it and after it (**Do the same for …**). A reference from a form about a row reads what was answered about the same row. If an answer the form needs hasn't been given yet, its question is asked first, in place, and kept as the earlier form's answer. It reopens at its first question with everything they wrote, and what they change replaces what was there: there is no score and no "already answered". The day it was first finished stays; the response's own time says when it last changed.
 
 **Its answers are private.** The person reads them, and so do the coaches they share a course's workbook with ([Courses](/docs/running-a-site/content/courses)). Nobody else does, and that includes the site's administrators: a workbook form's responses aren't listed under Responses, aren't in the Forms API, and can't be deleted from the admin. An administrator reads one only if they are also a coach it was shared with. So a workbook form can't also set `once`, `score`, `pass`, `paid`, `webhook` or `ticket`; the builder's **Workbook form** switch sets it.
 

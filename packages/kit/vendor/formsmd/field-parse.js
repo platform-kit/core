@@ -164,6 +164,8 @@ function parseFieldLine(text, formDelimiter = "|") {
 			else if (key === "checked" && value && typeof value === "string") validParams[key] = value.split(",").map((item) => item.trim());
 			else if (key === "hidelabels" && value) validParams[key] = value;
 			else if (key === "hideformtext" && value) validParams[key] = value;
+			/* the kit's: the choices are an earlier answer's rows (a field of this form, or one of its references) */
+			else if (key === "choicesfrom" && value && typeof value === "string" && kind === "choice") validParams[key] = value.split(",").map((x) => x.trim()).filter(Boolean);
 			else bad(key, value);
 		}
 		validParams.choices = validParams.choices || [];
@@ -216,12 +218,16 @@ function parseFieldLine(text, formDelimiter = "|") {
 		}
 		validParams.sizelimit = validParams.sizelimit || 10;
 	} else if (kind === "list") {
-		/* AN ORDERED LIST: rows of one line each. `max` caps how many, `maxlength` how long a row may be,
-		   `placeholder` is what an empty row shows. */
+		/* AN ORDERED LIST: rows of one line each. `min` and `max` bound how many, `maxlength` how long a row may
+		   be, `placeholder` is what an empty row shows. `options` are common answers offered to tap, and
+		   `optionsfrom` names earlier answers (this form's fields, or the form's references) offered the same way. */
 		for (const [key, value] of Object.entries(restParams)) {
 			if (key === "placeholder" && value && typeof value === "string") validParams[key] = value;
 			else if (key === "disabled" && value) validParams[key] = value;
 			else if (key === "max" && value && value >>> 0 === parseFloat(value) && Number(value) > 0) validParams[key] = Number(value);
+			else if (key === "min" && value && value >>> 0 === parseFloat(value) && Number(value) > 0) validParams[key] = Number(value);
+			else if (key === "options" && value && typeof value === "string") validParams[key] = splitOptions(value, false).map((o) => o.label);
+			else if (key === "optionsfrom" && value && typeof value === "string") validParams[key] = value.split(",").map((x) => x.trim()).filter(Boolean);
 			else if (key === "maxlength" && value && value >>> 0 === parseFloat(value)) validParams[key] = Number(value);
 			else bad(key, value);
 		}

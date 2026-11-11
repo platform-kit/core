@@ -13,11 +13,13 @@ Course lessons end with a practice and a journal prompt, and the reader is sent 
 - **One form per lesson holds both the practice and the journal prompt** as its questions; the lesson text keeps the teaching.
 - **Answers are private to the reader.** Not even a site administrator reads them, unless they are also a coach the reader shared with. From the workbook page, the reader can share a course's workbook with a particular coach and later withdraw it. A coach sees the workbooks shared with them and no others. Each share is its own record (reader, coach, course, when granted, when withdrawn).
 
+- **Lists offer common answers and keep within bounds.** A list can offer preset answers and answers given earlier, as choices to tap, beside rows the reader adds themselves. It can set a fewest and a most.
+- **Follow-ups.** A workbook form can quote and choose from the reader's earlier answers in other forms. It can be about each row of an earlier list in turn: the top row by default, and the others if the reader opts in, with each row's answers kept apart. An earlier answer it needs and doesn't have yet is asked for first, in place.
+
 ## Non-goals
 
 - Sharing with anyone who isn't a coach on the site, or a public link.
 - Coaches commenting on answers. That can come later on top of sharing.
-- Showing an earlier answer inside a later lesson. That's worth doing once the workbook exists, as a separate change.
 
 ## Capabilities
 

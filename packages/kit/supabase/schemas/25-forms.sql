@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS "public"."form_responses" (
     "meta" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     -- a workbook form's response: its writer's alone, and the coaches they share it with (form_shared_with_me)
     "private" boolean DEFAULT false NOT NULL,
+    -- a workbook form about the rows of an earlier list: the row this response is about (one response a row)
+    "item" "text",
     CONSTRAINT "form_responses_who_check" CHECK ((("user_id" IS NOT NULL) OR ("anon_id" IS NOT NULL)))
 );
 
@@ -58,8 +60,8 @@ CREATE UNIQUE INDEX "form_answers_field_idx" ON "public"."form_answers" USING "b
 
 CREATE INDEX "form_responses_form_idx" ON "public"."form_responses" USING "btree" ("form", "started_at" DESC);
 
--- one open response per person per form: a return finds it; a form that allows one response keeps the completed one too
-CREATE UNIQUE INDEX "form_responses_user_open_idx" ON "public"."form_responses" USING "btree" ("form", "user_id") WHERE (("user_id" IS NOT NULL) AND ("completed_at" IS NULL));
+-- one open response per person per form (per row, for a workbook form about an earlier list's rows): a return finds it; a form that allows one response keeps the completed one too
+CREATE UNIQUE INDEX "form_responses_user_open_idx" ON "public"."form_responses" USING "btree" ("form", "user_id", COALESCE("item", ''::"text")) WHERE (("user_id" IS NOT NULL) AND ("completed_at" IS NULL));
 
 CREATE UNIQUE INDEX "form_responses_anon_open_idx" ON "public"."form_responses" USING "btree" ("form", "anon_id") WHERE (("anon_id" IS NOT NULL) AND ("user_id" IS NULL) AND ("completed_at" IS NULL));
 

@@ -11,3 +11,7 @@
 - [x] Docs: forms and courses pages
 - [x] Seen in a browser: the input, the lesson, the workbook and sharing, at 1280 and 390 px, light and dark
 - [x] DharmaLab: workbook forms for "Your circumstances", "What you feel" and "What you think and believe"; module 1 renamed
+- [x] Lists: options, optionsfrom, min; choices from an earlier answer
+- [x] References between workbook forms (uses, about), a response per row, the next row offered, a missing earlier answer asked in place
+- [x] The workbook page and the coach view by row
+- [x] DharmaLab: the approved questions, one per page, min 1 and max 5 on every list, following up on the situation; graded quizzes removed

@@ -84,8 +84,17 @@ try {
   /* ---- the workbook ---- */
   const book = await call(member, 'course_workbook', { p_course: COURSE })
   ok('the workbook holds every lesson that carries a form, in order', book.mine === true && book.lessons.map((l: any) => l.key).join() === 'look,think', book)
-  ok('…with the reader\'s answers, a list in their order', JSON.stringify(book.lessons[0].answers.going_well) === JSON.stringify(['my health', 'my work', 'my love life']) && book.lessons[0].answers.note === 'Plainly.', book.lessons[0])
-  ok('…and nothing for a lesson not answered yet', JSON.stringify(book.lessons[1].answers) === '{}', book.lessons[1])
+  const look = book.lessons[0].entries
+  ok('…with the reader\'s answers, a list in their order', look.length === 1 && JSON.stringify(look[0].answers.going_well) === JSON.stringify(['my health', 'my work', 'my love life']) && look[0].answers.note === 'Plainly.', book.lessons[0])
+  ok('…and nothing for a lesson not answered yet', book.lessons[1].entries.length === 0, book.lessons[1])
+  /* a form about each row of an earlier list: a response a row, kept apart */
+  for (const [item, feeling] of [['money', 'worry'], ['work', 'dread']]) {
+    const id = (await service.from('form_responses').insert({ form: `${FORM}-2`, user_id: memberId, private: true, item }).select('id').single()).data!.id
+    made.push(id)
+    await service.from('form_answers').insert({ response_id: id, field: 'feelings', value: [feeling] })
+  }
+  const rows = (await call(member, 'course_workbook', { p_course: COURSE })).lessons[1].entries
+  ok('a lesson about each row keeps a response a row, in the order they were begun', rows.map((e: any) => e.item + ':' + e.answers.feelings[0]).join() === 'money:worry,work:dread', rows)
 
   /* ---- sharing with a coach ---- */
   const coaches = await call(member, 'course_workbook_coaches')
@@ -102,7 +111,7 @@ try {
   const list = await call(coach, 'course_workbooks_shared')
   ok('the coach sees what was shared with them', list.some((w: any) => w.course === COURSE && w.reader === memberId))
   const theirs = await call(coach, 'course_workbook', { p_course: COURSE, p_reader: memberId })
-  ok('the coach reads the shared workbook, with the reader named and no sharing controls', !theirs.error && theirs.mine === false && theirs.shares === null && theirs.lessons[0].answers.note === 'Plainly.', theirs)
+  ok('the coach reads the shared workbook, with the reader named and no sharing controls', !theirs.error && theirs.mine === false && theirs.shares === null && theirs.lessons[0].entries[0].answers.note === 'Plainly.' && theirs.lessons[1].entries.length === 2, theirs)
   ok('…and its answers directly', ((await coach.from('form_answers').select('field').eq('response_id', resp)).data || []).length === 2)
   ok('…but not the reader\'s other responses', ((await coach.from('form_responses').select('id').eq('id', open)).data || []).length === 0)
   ok('another reader still can\'t', (await call(other, 'course_workbook', { p_course: COURSE, p_reader: memberId })).error === 'not-shared')
@@ -119,8 +128,8 @@ try {
 
   /* ---- the `form` function, where the site has the demo's workbook form ---- */
   const DEMO = 'one-page-workbook'
-  const post = async (values: Record<string, unknown>, end = true) => {
-    const fd = new FormData(); fd.append('_form', DEMO); fd.append('_slide', '1'); if (end) fd.append('_end', 'true')
+  const post = async (values: Record<string, unknown>, end = true, item = '') => {
+    const fd = new FormData(); fd.append('_form', DEMO); fd.append('_slide', '1'); if (end) fd.append('_end', 'true'); if (item) fd.append('_item', item)
     for (const [k, v] of Object.entries(values)) fd.append(k, Array.isArray(v) ? JSON.stringify(v) : String(v))
     const { data, error } = await member.functions.invoke('form', { body: fd })
     if (error) { let msg = error.message; try { msg = (await error.context.json()).error || msg } catch { /* none */ } return { error: msg } }
@@ -137,8 +146,14 @@ try {
     ok('an ordered list is kept in order, each row tidied and the empty ones dropped', JSON.stringify(cuts && cuts.value) === JSON.stringify(['really', 'very']), cuts)
     const again = await post({ cuts: ['very', 'really'] })
     ok('coming back revises the same response', again.response_id === first.response_id, again)
+    const other = await post({ cuts: ['other'] }, true, '  a second   row ')
+    made.push(other.response_id)
+    const otherRow = (await service.from('form_responses').select('item, private').eq('id', other.response_id).single()).data
+    ok('a response about another row is a response of its own, its row tidied', other.response_id !== first.response_id && otherRow && otherRow.item === 'a second row' && otherRow.private === true, otherRow)
+    const getOther = await member.functions.invoke('form', { body: { action: 'get', form: DEMO, item: 'a second row' } })
+    ok('…and reopens with its own answers', getOther.data && JSON.stringify(getOther.data.answers.cuts) === JSON.stringify(['other']), getOther.data)
     const after = (await service.from('form_answers').select('value').eq('response_id', first.response_id).eq('field', 'cuts').single()).data
-    const count = (await service.from('form_responses').select('id').eq('form', DEMO).eq('user_id', memberId)).data!.length
+    const count = (await service.from('form_responses').select('id').eq('form', DEMO).eq('user_id', memberId).is('item', null)).data!.length
     const row2 = (await service.from('form_responses').select('completed_at').eq('id', first.response_id).single()).data
     ok('…with the changed answer, still one response, and the day it was first finished', JSON.stringify(after && after.value) === JSON.stringify(['very', 'really']) && count === 1 && row2 && row2.completed_at === row!.completed_at, { after, count, row2 })
     const get = await member.functions.invoke('form', { body: { action: 'get', form: DEMO } })

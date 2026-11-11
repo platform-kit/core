@@ -21,3 +21,32 @@ A form SHALL be able to declare itself a workbook form. A signed-in respondent S
 - **THEN** the same response opens with every earlier answer, the changed answer replaces the old one, and there is still one response
 
 Verified by: `build/forms-db.test.mts`
+
+### Requirement: An ordered list offers common answers and keeps within its bounds
+
+An ordered list SHALL be able to offer preset answers (`options`) and answers the respondent gave earlier (`optionsfrom`, naming fields or references), shown as choices the respondent taps to add as a row. The respondent SHALL also be able to add rows of their own. A list SHALL be able to set the fewest rows (`min`) and the most (`max`). It SHALL refuse fewer than `min` rows, and offer no way to add a row past `max`. A choice input SHALL be able to take its choices from an earlier answer (`choicesfrom`).
+
+#### Scenario: picking from common answers
+
+- **WHEN** a list offers work, money and relationships with `min = 1` and `max = 5`, and the respondent taps money, adds "my sister" and drags it to the top
+- **THEN** the answer is my sister, money; a sixth row can't be added; and an empty list is refused
+
+Verified by: `build/forms.test.mts` and the input driven in a browser
+
+### Requirement: A workbook form follows up on earlier answers
+
+A workbook form SHALL be able to name earlier answers by reference (`#! uses = <name>: <form>.<field>`, or `[0]` for a list's top row), and use them in its questions and choices. It SHALL be able to be about each row of an earlier list in turn (`#! about = <name>: <form>.<field>`). Then the respondent has one response per row. The form asks about the top row first, and offers each further row as a choice. A reference from a form about a row SHALL read the answers given about the same row. When an answer a form refers to hasn't been given, the form SHALL ask for it first, in place, and keep it as the earlier form's answer.
+
+#### Scenario: a follow-up on the situation chosen first
+
+- **WHEN** a reader whose most-wanted change is money opens a later form that is about each of those situations
+- **THEN** its questions name money; once it is finished, it offers to do the same for their second situation; and each situation's answers are kept apart
+
+Verified by: `build/course-workbook-db.test.mts` and the course in a browser
+
+#### Scenario: an earlier answer not given yet
+
+- **WHEN** a reader opens a later form before answering the question it refers to
+- **THEN** that question is asked first, in place, and the answer is kept as the earlier form's
+
+Verified by: the course in a browser

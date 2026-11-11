@@ -30,9 +30,11 @@ async function call(body: any, h?: any) {
 }
 
 /* a slide's values — a File as itself, a list as JSON — and `_end` when the form is done */
-export function postSlide(slug: string|Blob, values: any, { end = false, slide = 0 } = {}) {
+export function postSlide(slug: string|Blob, values: any, { end = false, slide = 0, item = '' } = {}) {
   const fd = new FormData()
   fd.append('_form', slug)
+  /* a workbook form about one row of an earlier list: which row this response is about */
+  if (item) fd.append('_item', item)
   fd.append('_slide', String(slide))
   if (end) fd.append('_end', 'true')
   /* the page's query — a GET prefill, a campaign's parameters — as the response's hidden fields (Typeform's `hidden`) */
@@ -48,4 +50,4 @@ export function postSlide(slug: string|Blob, values: any, { end = false, slide =
   return call(fd)
 }
 /* what this person has answered so far on a form, and whether they finished it */
-export function getResponse(slug: any) { return call({ action: 'get', form: slug }) }
+export function getResponse(slug: any, item = '') { return call({ action: 'get', form: slug, ...(item ? { item } : {}) }) }

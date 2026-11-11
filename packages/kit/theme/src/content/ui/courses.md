@@ -127,6 +127,8 @@ work-saved: Saved to your workbook
 work-saved-line: You can change these answers whenever you like.
 work-edit: Change my answers
 work-open: Open my workbook
+work-next: Do the same for {item}
+work-items: What these answers are about
 workbook: Workbook
 quiz-passed: Passed
 quiz-failed: Not passed yet
@@ -161,6 +163,9 @@ print: Print or save as PDF
 not-answered: Not answered yet
 answer-it: Answer it
 updated: Last changed {date}
+by-module: By module
+by-row: By subject
+row-kicker: Subject
 empty: There are no workbook questions in this course.
 share-title: Share with a coach
 share-lead: A coach you share with can read this workbook for as long as you leave it shared. Nobody else can, including the site's administrators.

@@ -27,28 +27,39 @@
 
       <p v-if="!book.lessons.length" class="crs-wb-empty">{{ B.empty }}</p>
 
-      <div v-for="m in modules" :key="m.key" class="crs-wb-mod">
-        <h2 class="crs-wb-mod-title"><span class="crs-kicker">{{ fill(S['module-of'], { n: m.n }) }}</span>{{ m.name }}</h2>
-        <div v-for="l in m.lessons" :key="l.key" class="crs-wb-lesson">
-          <div class="crs-wb-lesson-head">
-            <h3>{{ l.title }}</h3>
-            <span v-if="l.updated_at" class="crs-wb-when">{{ fill(B.updated, { date: day(l.updated_at) }) }}</span>
-          </div>
-          <dl v-if="hasAnswers(l)" class="crs-wb-qa">
-            <template v-for="q in questionsOf(l)" :key="q.name">
-              <dt>{{ q.question }}</dt>
-              <dd>
-                <ol v-if="Array.isArray(l.answers[q.name]) && q.kind === 'list'" class="crs-wb-list"><li v-for="(row, i) in l.answers[q.name]" :key="i">{{ row }}</li></ol>
-                <p v-else-if="present(l.answers[q.name])" class="crs-wb-text">{{ said(l.answers[q.name]) }}</p>
-                <p v-else class="crs-wb-blank">{{ B['not-answered'] }}</p>
-              </dd>
-            </template>
-          </dl>
-          <p v-else class="crs-wb-blank">
-            {{ B['not-answered'] }}<template v-if="book.mine && openLesson(l.key)"> · <a :href="courseHref + '/' + l.key">{{ B['answer-it'] }}</a></template>
-          </p>
-        </div>
+      <!-- by module, as the course runs; or, where lessons follow up on the rows of an earlier list, by row: each one's
+           answers together, lesson after lesson -->
+      <div v-if="rowsKept.length" class="crs-wb-views crs-wb-noprint" role="tablist">
+        <button type="button" role="tab" class="crs-wb-view" :class="{ 'is-on': by === 'module' }" :aria-selected="by === 'module'" @click="by = 'module'">{{ B['by-module'] }}</button>
+        <button type="button" role="tab" class="crs-wb-view" :class="{ 'is-on': by === 'row' }" :aria-selected="by === 'row'" @click="by = 'row'">{{ B['by-row'] }}</button>
       </div>
+
+      <template v-if="by === 'module' || !rowsKept.length">
+        <div v-for="m in modules" :key="m.key" class="crs-wb-mod">
+          <h2 class="crs-wb-mod-title"><span class="crs-kicker">{{ fill(S['module-of'], { n: m.n }) }}</span>{{ m.name }}</h2>
+          <div v-for="l in m.lessons" :key="l.key" class="crs-wb-lesson">
+            <div class="crs-wb-lesson-head"><h3>{{ l.title }}</h3></div>
+            <template v-if="answered(l).length">
+              <div v-for="e in answered(l)" :key="e.item || ''" class="crs-wb-entry">
+                <p v-if="e.item" class="crs-wb-about">{{ e.item }}</p>
+                <WbAnswers :lesson="l" :entry="e" />
+              </div>
+            </template>
+            <p v-else class="crs-wb-blank">
+              {{ B['not-answered'] }}<template v-if="book.mine && openLesson(l.key)"> · <a :href="courseHref + '/' + l.key">{{ B['answer-it'] }}</a></template>
+            </p>
+          </div>
+        </div>
+      </template>
+      <template v-else>
+        <div v-for="row in rowsKept" :key="row" class="crs-wb-mod">
+          <h2 class="crs-wb-mod-title"><span class="crs-kicker">{{ B['row-kicker'] }}</span>{{ row }}</h2>
+          <div v-for="x in chainOf(row)" :key="x.lesson.key" class="crs-wb-lesson">
+            <div class="crs-wb-lesson-head"><h3>{{ x.lesson.title }}</h3></div>
+            <WbAnswers :lesson="x.lesson" :entry="x.entry" />
+          </div>
+        </div>
+      </template>
 
       <!-- the reader's sharing: who can read it now, and a coach to share it with -->
       <div v-if="book.mine" class="crs-side-card crs-wb-share crs-wb-noprint">
@@ -76,10 +87,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, h } from 'vue'
 import { user } from 'platformkit/lib/auth.js'
 import { setHead } from 'platformkit/lib/seo.js'
 import { forms as FORMS } from '#content'
+import { renderCopy } from 'platformkit/lib/forms/logic.js'
 import { words, fill, day, rpc, loadCourse, courseState } from './course-ui.js'
 import CourseIcon from './CourseIcon.vue'
 
@@ -121,16 +133,43 @@ const modules = computed(() => {
 })
 const openLesson = (key: string) => { const l = ((state.value && state.value.lessons) || []).find((x: any) => x.key === key); return !!(l && l.open) }
 
-/* a form's questions, from the form itself, in its order */
-const questionsOf = (l: any) => {
-  const f = (FORMS || []).find((x: any) => x.slug === l.form)
-  const fields = (f && f.model && f.model.fields) || []
+/* a form's questions, from the form itself, in its order, with what they follow up on filled in as it was for this
+   entry: the row it is about, and the earlier answers it names, read from the same workbook */
+const modelOf = (slug: string) => { const f = (FORMS || []).find((x: any) => x.slug === slug); return f ? f.model : null }
+const earlier = (form: string, field: string, item: string | null) => {
+  const l = ((book.value && book.value.lessons) || []).find((x: any) => x.form === form)
+  const about = modelOf(form) && modelOf(form).kit && modelOf(form).kit.about
+  const e = l && (l.entries || []).find((x: any) => (about ? x.item === item : !x.item))
+  return e ? e.answers[field] : undefined
+}
+const contextOf = (l: any, entry: any) => {
+  const kit = (modelOf(l.form) || {}).kit || {}
+  const ctx: any = { ...((entry && entry.answers) || {}) }
+  if (kit.about) ctx[kit.about.name] = entry && entry.item
+  for (const [name, r] of Object.entries(kit.uses || {}) as any) { const v = earlier(r.form, r.field, entry && entry.item); ctx[name] = r.top && Array.isArray(v) ? v[0] : v }
+  return ctx
+}
+const questionsOf = (l: any, entry: any = null) => {
+  const m = modelOf(l.form)
+  const fields = (m && m.fields) || []
+  const ctx = contextOf(l, entry)
   const q = (x: any) => [x.question, x.params && x.params.question].find((v) => v && v !== '...' && v !== x.name) || x.name
-  return fields.map((x: any) => ({ name: x.name, kind: x.kind, question: q(x) }))
+  return fields.map((x: any) => ({ name: x.name, kind: x.kind, question: renderCopy(q(x), ctx) }))
 }
 const present = (v: any) => v != null && v !== '' && !(Array.isArray(v) && !v.length)
-const hasAnswers = (l: any) => l.answers && Object.values(l.answers).some(present)
 const said = (v: any) => (Array.isArray(v) ? v.join(', ') : typeof v === 'object' ? JSON.stringify(v) : String(v))
+/* a lesson's responses that say something: one, or one a row for a form about each row of an earlier list */
+const answered = (l: any) => (l.entries || []).filter((e: any) => e.answers && Object.values(e.answers).some(present))
+/* the rows the reader has followed up on, in the order they first did, and each one's chain through the lessons */
+const by = ref<'module' | 'row'>('module')
+const rowsKept = computed(() => [...new Set(((book.value && book.value.lessons) || []).flatMap((l: any) => answered(l).map((e: any) => e.item).filter(Boolean)))] as string[])
+const chainOf = (row: string) => ((book.value && book.value.lessons) || []).map((l: any) => ({ lesson: l, entry: answered(l).find((e: any) => e.item === row) })).filter((x: any) => x.entry)
+/* one response's questions and answers, a list in its order */
+const WbAnswers = (p: { lesson: any; entry: any }) => h('dl', { class: 'crs-wb-qa' }, questionsOf(p.lesson, p.entry).filter((q: any) => present(p.entry.answers[q.name])).flatMap((q: any) => {
+  const v = p.entry.answers[q.name]
+  return [h('dt', q.question), h('dd', Array.isArray(v) && q.kind === 'list' ? h('ol', { class: 'crs-wb-list' }, v.map((r: any) => h('li', String(r)))) : h('p', { class: 'crs-wb-text' }, said(v)))]
+}))
+WbAnswers.props = ['lesson', 'entry']
 
 /* sharing: anyone with the coach role but the people it is already shared with */
 const choices = computed(() => (coaches.value || []).filter((c: any) => !((book.value && book.value.shares) || []).some((s: any) => s.coach === c.id)))

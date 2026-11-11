@@ -37,7 +37,7 @@ import { unescape } from '../../../vendor/formsmd/helpers.js'
 export const KINDS = Object.values(TYPES).map(([, kind]) => kind)
 export const FORMSMD_TYPE = Object.fromEntries(Object.values(TYPES).map(([type, kind]) => [kind, type]))
 /* the kit's own settings: what the file says about its life on the site */
-export const KIT_SETTINGS = ['published', 'once', 'respond', 'embed-origins', 'webhook', 'pass', 'score', 'paid', 'ticket', 'ticket-title', 'ticket-priority', 'workbook']
+export const KIT_SETTINGS = ['published', 'once', 'respond', 'embed-origins', 'webhook', 'pass', 'score', 'paid', 'ticket', 'ticket-title', 'ticket-priority', 'workbook', 'uses', 'about']
 /* forms.md's settings that name where the data goes: the kit's backend is where, so a file never sets them */
 export const REFUSED_SETTINGS = ['post-url', 'get-url', 'post-sheet-name']
 /* forms.md's theming settings: read (the file is theirs) and ignored (the site's design draws the form) */
@@ -48,7 +48,7 @@ const isUrl = (v: string) => /^https?:\/\/[^\s]+$/.test(v)
 
 /* the kit's settings off the `#!` lines: parsed, validated, and the refused ones named */
 function kitSettings(lines: any) {
-  const kit: any = { published: true, once: false, respond: 'anyone', embedOrigins: [], webhook: '', pass: null, score: {}, paid: '', ticket: '', ticketTitle: '', ticketPriority: '', workbook: false }
+  const kit: any = { published: true, once: false, respond: 'anyone', embedOrigins: [], webhook: '', pass: null, score: {}, paid: '', ticket: '', ticketTitle: '', ticketPriority: '', workbook: false, uses: {}, about: null }
   const errors: any = []
   lines.forEach((raw: string, i: number) => {
     const t = raw.trim()
@@ -71,6 +71,20 @@ function kitSettings(lines: any) {
        `ticket-title` names the field whose answer titles it (else the form's own title), and
        `ticket-priority` the field whose answer sets the priority, where one asks. */
     else if (key === 'ticket') kit.ticket = value === 'false' ? '' : (value === 'true' ? 'yes' : value)
+    /* A WORKBOOK FORM'S EARLIER ANSWERS: `uses` names them (name: form.field, or form.field[0] for a list's top row) for
+       its questions and choices; `about` names a list whose rows the form is about, one response a row */
+    else if (key === 'uses' || key === 'about') {
+      for (const pair of value.split(',')) {
+        const p = pair.trim(); if (!p) continue
+        const m = /^([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*([a-z0-9]+(?:-[a-z0-9]+)*)\.([a-zA-Z_][a-zA-Z0-9_]*)(\[0\])?$/.exec(p)
+        if (!m) { errors.push({ line, message: `"${key}" is name: form.field (or form.field[0] for a list's top row), not "${p}"` }); continue }
+        const ref = { form: m[2], field: m[3], top: !!m[4] }
+        if (key === 'uses') kit.uses[m[1]] = ref
+        else if (kit.about) errors.push({ line, message: '"about" names one list' })
+        else if (ref.top) errors.push({ line, message: '"about" names a whole list, without [0]' })
+        else kit.about = { name: m[1], form: m[2], field: m[3] }
+      }
+    }
     else if (key === 'ticket-title') kit.ticketTitle = value
     else if (key === 'ticket-priority') kit.ticketPriority = value
     else if (key === 'embed-origins') { const list = value.split(',').map((s: string) => s.trim()).filter(Boolean); const bad = list.find((o: string) => !/^https?:\/\/[^\s/]+$/.test(o)); if (bad) errors.push({ line, message: `"embed-origins" lists origins (https://example.com), not "${bad}"` }); else kit.embedOrigins = list }
@@ -95,6 +109,10 @@ function kitSettings(lines: any) {
     const clash = [kit.once && 'once', kit.pass != null && 'pass', Object.keys(kit.score).length && 'score', kit.paid && 'paid', kit.webhook && 'webhook', kit.ticket && 'ticket'].filter(Boolean)
     if (clash.length) errors.push({ line, message: `a workbook form keeps a reader's answers to themselves and lets them revise them, so it can't also set ${clash.join(', ')}` })
     kit.respond = 'authenticated'
+  }
+  if (!kit.workbook && (Object.keys(kit.uses).length || kit.about)) {
+    const line = lines.findIndex((l: string) => /^\s*#!\s*(uses|about)\s*=/.test(l)) + 1
+    errors.push({ line, message: 'only a workbook form follows up on earlier answers: add #! workbook = true' })
   }
   return { kit, errors }
 }

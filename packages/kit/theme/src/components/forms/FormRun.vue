@@ -16,13 +16,15 @@ import { grade as gradeOf } from 'platformkit/supabase/functions/_shared/forms/s
 import { postSlide, getResponse } from 'platformkit/lib/forms/api.js'
 import { embedContext, embedMessenger } from 'platformkit/lib/forms/typeform-embed.js'
 import { us } from 'platformkit/lib/strings.js'
-import { isSignedIn, authSettled } from 'platformkit/lib/auth.js'
+import { isSignedIn, authSettled, user } from 'platformkit/lib/auth.js'
+import { supabase } from 'platformkit/lib/supabase.js'
+import { forms as FORMS } from '#content'
 import { capture } from 'platformkit/lib/analytics.js'
 import '../../instrument/ui/instrument.css'
 import './forms.css'
 
-const props = defineProps({ form: { type: Object as PropType<any>, required: true }, embed: { type: Boolean, default: false } })
-const emit = defineEmits(['complete'])
+const props = defineProps({ form: { type: Object as PropType<any>, required: true }, embed: { type: Boolean, default: false }, item: { type: String, default: '' } })
+const emit = defineEmits(['complete', 'about'])
 const model = computed(() => props.form.model)
 const settings = computed(() => model.value.settings || {})
 const kit = computed(() => model.value.kit || {})
@@ -40,10 +42,12 @@ const done = ref(false)
 const state = reactive<any>({
   answers, data: model.value.data || {}, words: W, grade: null, already: false, closed: false, signin: false, unpaid: false, wasForm: settings.value.page === 'form-slides',
   autofocusAll: settings.value.autofocus === 'all-slides',
-  submit: async (values: any, screen: { last: any; index: any }) => {
+  submit: async (values: any, screen: { last: any; index: any; target?: any }) => {
     Object.assign(answers, values)
     if (settings.value.page !== 'form-slides') return
-    const r = await postSlide(props.form.slug, values, { end: !!screen.last, slide: screen.index })
+    /* an earlier form's question, asked here because this one needs its answer: kept as that form's */
+    if (screen.target) { await postSlide(screen.target.form, values, { slide: 0, item: screen.target.item }); keepEarlier(screen.target, values); return }
+    const r = await postSlide(props.form.slug, values, { end: !!screen.last, slide: screen.index, item: aboutItem.value })
     if (r && r.completed) finish(r)
   },
   active: null,   /* the screen on stage, for the Next control */
@@ -51,7 +55,80 @@ const state = reactive<any>({
 })
 const ctx = () => context(state.data, answers)
 const key = ref(0)
-const screens = computed(() => { void key.value; return formScreens(model.value, ctx).map((s: any) => ({ ...s, state })) })
+const screens = computed(() => { void key.value; return [...pre.value, ...formScreens(model.value, ctx)].map((s: any) => ({ ...s, state })) })
+
+/*
+ * FOLLOWING UP ON EARLIER ANSWERS (openspec: forms-api). A workbook form names earlier answers (`uses`) and may be
+ * about each row of an earlier list in turn (`about`). The reader's own answers to those forms are read here (their
+ * own rows, under RLS), put in the context the questions and choices read, and an answer it needs and hasn't got is
+ * asked first, in place, and kept as the earlier form's. A form about a row reads a form that is also about rows for
+ * the same row.
+ */
+const uses = computed(() => (kit.value.uses || {}) as Record<string, { form: string; field: string; top: boolean }>)
+const about = computed(() => kit.value.about as { name: string; form: string; field: string } | null)
+const follows = computed(() => !!(about.value || Object.keys(uses.value).length))
+const modelOf = (slug: string) => { const f = (FORMS || []).find((x: any) => x.slug === slug); return f ? f.model : null }
+const isAbout = (slug: string) => { const m = modelOf(slug); return !!(m && m.kit && m.kit.about) }
+const rowsOf = (v: any) => (Array.isArray(v) ? v : v == null || v === '' ? [] : [v]).map((x: any) => String(x).trim()).filter(Boolean)
+/* store[form][item or ''] = { answers, completed } */
+const store = reactive<Record<string, Record<string, { answers: any; completed: boolean }>>>({})
+const items = ref<string[]>([])
+const aboutItem = ref(props.item || '')
+const pre = ref<any[]>([])
+const answerAt = (form: string, field: string) => { const s = store[form] || {}; const e = s[isAbout(form) ? aboutItem.value : ''] ; return e ? e.answers[field] : undefined }
+function resolve() {
+  if (about.value) state.data[about.value.name] = aboutItem.value
+  for (const [name, r] of Object.entries(uses.value)) { const v = answerAt(r.form, r.field); state.data[name] = r.top ? rowsOf(v)[0] || '' : v }
+}
+async function loadEarlier() {
+  const uid = user.value && user.value.id
+  if (!uid || !supabase) return
+  const slugs = [...new Set([props.form.slug, ...Object.values(uses.value).map((r) => r.form), ...(about.value ? [about.value.form] : [])])]
+  const { data: rs } = await (supabase as any).from('form_responses').select('id, form, item, completed_at, started_at').eq('user_id', uid).in('form', slugs).order('started_at')
+  const ids = (rs || []).map((r: any) => r.id)
+  const { data: as } = ids.length ? await (supabase as any).from('form_answers').select('response_id, field, value').in('response_id', ids) : { data: [] }
+  for (const r of rs || []) {
+    const answers: any = {}
+    for (const a of as || []) if (a.response_id === r.id) answers[a.field] = a.value
+    ;(store[r.form] ||= {})[r.item || ''] = { answers, completed: !!r.completed_at }
+  }
+}
+function aboutRows() { const a = about.value; if (!a) return []; const e = (store[a.form] || {})['']; return rowsOf(e && e.answers[a.field]) }
+function settleItem() {
+  items.value = aboutRows()
+  if (about.value && (!aboutItem.value || !items.value.includes(aboutItem.value))) aboutItem.value = items.value[0] || ''
+  resolve()
+  emit('about', { items: items.value, item: aboutItem.value, done: items.value.filter((i) => ((store[props.form.slug] || {})[i] || {}).completed) })
+}
+/* an earlier form's field, with whatever of its own form it offers from asked first where that is missing too */
+function blockOf(slug: string, field: string): any {
+  const m = modelOf(slug); if (!m) return null
+  const walk = (bs: any[]): any => { for (const b of bs || []) { if (b.type === 'field' && b.name === field) return b; const f = b.blocks && walk(b.blocks); if (f) return f } return null }
+  for (const s of m.slides || []) { const f = walk(s.blocks); if (f) return f }
+  return null
+}
+function missingScreens() {
+  const out: any[] = [], seen = new Set<string>()
+  const ask = (slug: string, field: string, item: string) => {
+    const k = slug + '.' + field + '@' + item
+    if (seen.has(k)) return
+    seen.add(k)
+    const b = blockOf(slug, field); if (!b) return
+    const has = ((store[slug] || {})[item] || { answers: {} }).answers
+    for (const n of [...(b.params.optionsfrom || []), ...(b.params.choicesfrom || [])]) if (blockOf(slug, n) && !rowsOf(has[n]).length) ask(slug, n, item)
+    if (!rowsOf(has[field]).length) out.push({ kind: 'form', id: 'earlier:' + k, index: -1, type: 'body', blocks: [b], fields: [b], isForm: true, post: true, end: false, last: false, first: !out.length, jump: '', progress: 0, align: '', disablePrev: true, button: '', redirect: '', restart: false, submitText: '', target: { form: slug, item } })
+  }
+  if (about.value && !aboutRows().length) ask(about.value.form, about.value.field, '')
+  for (const r of Object.values(uses.value)) if (!rowsOf(answerAt(r.form, r.field)).length && !(about.value && r.form === about.value.form && r.field === about.value.field)) ask(r.form, r.field, isAbout(r.form) ? aboutItem.value : '')
+  return out
+}
+/* the earlier form's answer, kept here too, so what follows reads it at once */
+function keepEarlier(target: { form: string; item: string }, values: any) {
+  const e = ((store[target.form] ||= {})[target.item] ||= { answers: {}, completed: false })
+  Object.assign(e.answers, values)
+  Object.assign(state.data, values)
+  settleItem()
+}
 /* inside Typeform's embed (the page opened at /to/<slug>?typeform-embed=…): its messages to the parent */
 const tf = embedMessenger(embedContext())
 let ro: any = null
@@ -62,7 +139,8 @@ function finish(r: any) {
   capture('form_complete', { form: props.form.slug, score: state.grade ? state.grade.score : null })
   /* the response's own id goes with it: a caller that must point at what was answered — a space
      asking a form of somebody at its door — has nothing else to hold on to */
-  emit('complete', { answers: { ...answers }, grade: state.grade, response: r && r.response_id ? r.response_id : null })
+  if (about.value) { ((store[props.form.slug] ||= {})[aboutItem.value] ||= { answers: {}, completed: false }).completed = true; settleItem() }
+  emit('complete', { answers: { ...answers }, grade: state.grade, response: r && r.response_id ? r.response_id : null, item: aboutItem.value })
 }
 function onAnswer(screen: { index: number; last: any }, values: any) {
   if (!started.value) { started.value = true; capture('form_start', { form: props.form.slug }); if (tf) tf.started() }
@@ -101,8 +179,16 @@ async function pay() {
 }
 onMounted(async () => {
   try {
+    if (follows.value) {
+      await loadEarlier()
+      settleItem()
+      /* the earlier forms' answers by their own names, for what a question offers from them: the current row's only */
+      for (const [slug, byItem] of Object.entries(store)) if (slug !== props.form.slug) { const e = byItem[isAbout(slug) ? aboutItem.value : '']; if (e) Object.assign(state.data, e.answers) }
+      resolve()
+      pre.value = missingScreens()
+    }
     if (settings.value.page === 'form-slides' && kit.value.published !== false) {
-      const r = await getResponse(props.form.slug)
+      const r = await getResponse(props.form.slug, aboutItem.value)
       if (r && r.answers) Object.assign(answers, r.answers)
       if (r && r.last_slide != null) lastSlide.value = r.last_slide
       /* WHAT IT COSTS. A paid form says so before the first question rather than after it — and
@@ -136,8 +222,9 @@ function placeStart() {
   if (state.already) { startAt.value = list.length - 1; return }
   /* a workbook form opens at its first question, with everything the reader wrote there to change */
   if (kit.value.workbook) { startAt.value = 0; return }
+  if (pre.value.length) { startAt.value = 0; return }
   /* the slide after the last one posted (the server says which), never the end */
-  startAt.value = lastSlide.value == null ? 0 : Math.min(lastSlide.value + 1, list.length - 1)
+  startAt.value = lastSlide.value == null ? 0 : Math.min(pre.value.length + lastSlide.value + 1, list.length - 1)
 }
 const shown = computed(() => (state.signin || state.unpaid || !ready.value ? [] : screens.value.slice(startAt.value)))
 </script>

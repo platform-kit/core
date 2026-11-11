@@ -1322,7 +1322,10 @@ class Composer {
 			`${name}${params.required ? "*" : ""} = ListInput(`,
 		].concat(composeSharedFieldParams(params, formDelimiter));
 		if (params.placeholder !== undefined) templateChunks.push(`\t${formDelimiter}placeholder = ${params.placeholder}`);
+		if (params.min !== undefined) templateChunks.push(`\t${formDelimiter}min = ${params.min}`);
 		if (params.max !== undefined) templateChunks.push(`\t${formDelimiter}max = ${params.max}`);
+		if (params.options !== undefined && params.options.length) templateChunks.push(`\t${formDelimiter}options = ${params.options.map((o) => (typeof o === "string" ? o : o.label)).join(", ")}`);
+		if (params.optionsfrom !== undefined && params.optionsfrom.length) templateChunks.push(`\t${formDelimiter}optionsfrom = ${params.optionsfrom.join(", ")}`);
 		if (params.maxlength !== undefined) templateChunks.push(`\t${formDelimiter}maxlength = ${params.maxlength}`);
 		templateChunks.push(")");
 		const attrs = composeAttrs(params);

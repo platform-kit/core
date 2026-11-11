@@ -9,6 +9,12 @@ const props = defineProps({ field: { type: Object as PropType<any>, required: tr
 const emit = defineEmits(['update:modelValue', 'enter'])
 const p = computed(() => props.field.params || {})
 const multiple = computed(() => p.value.multiple !== undefined)
+/* the choices: the document's, or an earlier answer's rows (choicesfrom) */
+const choices = computed(() => {
+  if (!p.value.choicesfrom) return p.value.choices || []
+  const rows = p.value.choicesfrom.flatMap((n: string) => { const v = props.ctx[n]; return Array.isArray(v) ? v : v == null || v === '' ? [] : [v] })
+  return [...new Set(rows.map((x: any) => String(x).trim()).filter(Boolean))].map((v) => ({ value: v, label: v }))
+})
 const picture = computed(() => props.field.kind === 'picture')
 const chosen = computed(() => (multiple.value ? (Array.isArray(props.modelValue) ? props.modelValue : []) : props.modelValue == null ? '' : String(props.modelValue)))
 const isOn = (v: any) => (multiple.value ? (chosen.value as any[]).includes(v) : chosen.value === v)
@@ -25,7 +31,7 @@ const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     <FmLabel :field="field" :ctx="ctx" :words="words" tag="div" />
     <p v-if="multiple && p.hideformtext === undefined" class="ff-hint">{{ words['choose-many'] }}</p>
     <div class="ff-choices" :role="multiple ? 'group' : 'radiogroup'">
-      <button v-for="(c, n) in p.choices" :key="c.value" type="button" class="qopt ff-opt" :class="{ on: isOn(c.value) }" :role="multiple ? 'checkbox' : 'radio'" :aria-checked="isOn(c.value)" :disabled="p.disabled !== undefined" @click="pick(c.value)">
+      <button v-for="(c, n) in choices" :key="c.value" type="button" class="qopt ff-opt" :class="{ on: isOn(c.value) }" :role="multiple ? 'checkbox' : 'radio'" :aria-checked="isOn(c.value)" :disabled="p.disabled !== undefined" @click="pick(c.value)">
         <img v-if="picture && c.image" class="ff-pic" :src="c.image" alt="" loading="lazy" />
         <span class="k">{{ letters[Number(n)] || Number(n) + 1 }}</span>
         <span v-if="!(picture && p.hidelabels !== undefined)" class="qoptl">{{ c.label }}</span>

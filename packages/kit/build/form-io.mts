@@ -42,6 +42,7 @@ function composerParams(block: any) {
       if (NEVER.includes(k + ':' + kind)) continue
       if (Array.isArray(block.set) ? !block.set.includes(k) : (DEFAULTS[kind] && k in DEFAULTS[kind] && JSON.stringify(DEFAULTS[kind][k]) === JSON.stringify(v)) || v === undefined || v === '') continue
     }
+    if (k === 'options' && block.kind === 'list') { out[k] = (v || []).map(String); continue }   /* a list's common answers are plain words */
     if (k === 'choices' || k === 'options') { out[k] = (v || []).map((c: { label: any; value: any; image: string }) => { const o: { label: any, value?: any, image?: string } = { label: c.label }; if (c.value !== c.label) o.value = c.value; if (kind === 'picture') o.image = c.image || ''; return o }); continue }
     if (k === 'availablecountries') { out.availableCountries = Array.isArray(v) ? v : String(v).split(',').map((x) => x.trim()).filter(Boolean); continue }
     out[CAMEL[k] || k] = v

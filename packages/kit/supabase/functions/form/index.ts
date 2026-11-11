@@ -35,6 +35,8 @@ import type { Json } from '../_shared/database.types.ts'   /* the compiled artef
 
 type Field = { name: string; kind: string; required: boolean; multiple: boolean; values?: string[]; slide: number }
 type Form = { title: string; fields: Field[]; kit: { published: boolean; once: boolean; respond: string; embedOrigins: string[]; webhook: string; pass: number | null; score: Record<string, string>; paid?: string; ticket?: string; ticketTitle?: string; ticketPriority?: string; workbook?: boolean }; settings: { page: string }; api?: any }
+/* the row an answer is about: a line of text, as a list keeps its rows */
+const rowOf = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, 200)
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const MAX_VALUE = 20000
 const MAX_FILE = 25 * 1024 * 1024
@@ -74,8 +76,10 @@ async function formCredit(userId: string, sku: string) {
 
 /* the response this person is on for the form: open, or the completed one on a `once` form. A workbook form has one
    response per reader, finished or not: it reopens with their answers and what they change revises it. */
-async function findResponse(slug: string, form: Form, w: { user: any; anon: string }) {
+async function findResponse(slug: string, form: Form, w: { user: any; anon: string }, item = '') {
   let q = admin.from('form_responses').select('id, completed_at, score, total, passed').eq('form', slug)
+  /* a workbook form about the rows of an earlier list keeps a response per row */
+  if (form.kit.workbook) q = item ? q.eq('item', item) : q.is('item', null)
   q = w.user ? q.eq('user_id', w.user.id) : q.is('user_id', null).eq('anon_id', w.anon)
   const { data } = await q.order('started_at', { ascending: false }).limit(5)
   const rows = data ?? []
@@ -189,7 +193,7 @@ Deno.serve(async (req: Request) => {
 
   /* ---- my answers so far ---- */
   if (!multipart && body.action === 'get') {
-    const { row, already } = await findResponse(slug, form, w)
+    const { row, already } = await findResponse(slug, form, w, rowOf(body.item))
     /* a paid form says so here, so the runner can take them to the checkout before the first
        question rather than after it. A response already open was paid for when it was started. */
     const pay = form.kit.paid && !row && !credit ? { unpaid: true, sku: form.kit.paid } : {}
@@ -223,12 +227,13 @@ Deno.serve(async (req: Request) => {
     if (f.kind === 'number' || f.kind === 'rating' || f.kind === 'scale') { const n = Number(value); if (String(value) !== '' && Number.isFinite(n)) value = n }
     answers.push({ field: k, value })
   }
-  const { row: found, already } = await findResponse(slug, form, w)
+  const item = form.kit.workbook ? rowOf(body._item) : ''
+  const { row: found, already } = await findResponse(slug, form, w, item)
   if (already) return json({ error: 'already answered', code: 'already' }, 409)
   let id = found ? found.id : ''
   if (!id) {
     /* a workbook form's response is private: the database lets nobody but its writer and the coaches they share it with read it */
-    const { data, error } = await admin.from('form_responses').insert({ form: slug, ...ident(w), private: !!form.kit.workbook, origin: req.headers.get('x-form-origin') || req.headers.get('origin') || null, meta: metaOf(req, body) }).select('id').single()
+    const { data, error } = await admin.from('form_responses').insert({ form: slug, ...ident(w), private: !!form.kit.workbook, item: item || null, origin: req.headers.get('x-form-origin') || req.headers.get('origin') || null, meta: metaOf(req, body) }).select('id').single()
     if (error) return json({ error: error.message }, 500)
     id = data.id
   }

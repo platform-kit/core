@@ -119,15 +119,22 @@
             <!-- THE LESSON'S WORKBOOK FORM: the reader's own answers, kept, and changed whenever they like -->
             <div v-if="workDoc && state.enrollment" class="crs-quiz crs-work">
               <p class="crs-kicker crs-work-kicker"><CourseIcon name="workbook" :size="15" />{{ S['work-kicker'] }}<span v-if="lesson.answers_required && !(here && here.done)" class="crs-work-need"> · {{ S['work-required'] }}</span></p>
+              <!-- a form about each of an earlier list's rows: which row this is, and the others to do too -->
+              <div v-if="workAbout.items.length > 1" class="crs-work-items" role="group" :aria-label="S['work-items']">
+                <button v-for="(it, i) in workAbout.items" :key="it" type="button" class="crs-work-item" :class="{ 'is-on': it === workAbout.item, 'is-done': workAbout.done.includes(it) }" :aria-pressed="it === workAbout.item" @click="workOn(it)">
+                  <CourseIcon v-if="workAbout.done.includes(it)" name="done" :size="14" /><span v-else class="crs-work-n">{{ i + 1 }}</span>{{ it }}
+                </button>
+              </div>
               <div v-if="workSaved" class="crs-quiz-result is-passed" role="status">
                 <span class="crs-quiz-badge"><CourseIcon name="done" :size="26" /></span>
                 <div class="crs-quiz-text"><strong>{{ S['work-saved'] }}</strong><span class="crs-quiz-need">{{ S['work-saved-line'] }}</span></div>
                 <span class="crs-work-acts">
+                  <button v-if="workNext" type="button" class="btn solid" @click="workOn(workNext)">{{ fill(S['work-next'], { item: workNext }) }}</button>
                   <button type="button" class="btn" @click="workAgain">{{ S['work-edit'] }}</button>
                   <a class="btn" :href="courseHref + '/workbook'">{{ S['work-open'] }}</a>
                 </span>
               </div>
-              <FormRun v-else :key="lessonKey + ':work:' + workRuns" :form="workDoc" embed class="crs-quiz-run crs-work-run" @complete="onWork" />
+              <FormRun v-else :key="lessonKey + ':work:' + workItem + ':' + workRuns" :form="workDoc" :item="workItem" embed class="crs-quiz-run crs-work-run" @complete="onWork" @about="(a: any) => (workAbout = a)" />
             </div>
 
             <div v-if="downloads.length" class="crs-files">
@@ -258,8 +265,12 @@ function again() { result.value = null; runs.value++ }
    lesson itself is finished by the reader, and waits for the form where the course says its answers are required. */
 const workDoc = computed(() => (props.lesson && props.lesson.form ? (FORMS || []).find((f: any) => f.slug === props.lesson.form && f.published !== false) || null : null))
 const workSaved = ref(false), workRuns = ref(0)
-watch(() => props.lessonKey, () => { workSaved.value = false })
+/* a form about each row of an earlier list: the row it is on (the top one unless the reader picks another), the rows, and which are done */
+const workItem = ref(''), workAbout = ref<{ items: string[]; item: string; done: string[] }>({ items: [], item: '', done: [] })
+watch(() => props.lessonKey, () => { workSaved.value = false; workItem.value = ''; workAbout.value = { items: [], item: '', done: [] } })
+const workNext = computed(() => workAbout.value.items.find((i) => i !== workAbout.value.item && !workAbout.value.done.includes(i)) || '')
 function onWork() { workSaved.value = true; emit('form-done') }
 function workAgain() { workSaved.value = false; workRuns.value++ }
+function workOn(item: string) { workItem.value = item; workSaved.value = false; workRuns.value++ }
 const whyWord = (l: any) => (l.why === 'not-yet' ? fill(S.value['not-yet'], { date: day(l.opens_at) }) : S.value[l.why] || '')
 </script>
