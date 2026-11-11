@@ -79,24 +79,65 @@ function onHandleKey(e: KeyboardEvent, i: number) {
   if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); move(i, e.key === 'ArrowUp' ? -1 : 1) }
   else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); remove(i) }
 }
+/*
+ * DRAGGING ONE, the way a sortable list moves: the card follows the pointer, lifted; the cards it passes slide aside to
+ * open the place it would land; let go, and it settles into that place before the order is kept. A mouse can take the
+ * card anywhere but its remove button; a finger takes it by the handle, so a swipe over the cards still scrolls.
+ */
 const dragging = ref<number | null>(null)
+const settling = ref(false)
+/* the moment the order is kept, nothing animates: the cards are already where they belong */
+const instant = ref(false)
+const offsets = ref<Record<number, number>>({})
+/* where the held card would land, so every card shows the number it will have */
+const span = ref<[number, number] | null>(null)
+const rankOf = (i: number) => { if (!span.value) return i + 1; const [f, t] = span.value; if (i === f) return t + 1; if (f < t && i > f && i <= t) return i; if (f > t && i >= t && i < f) return i + 2; return i + 1 }
 const list = ref<HTMLElement | null>(null)
+const GAP = 8
 function onDown(e: PointerEvent, i: number) {
-  if (e.button !== 0) return
+  if (e.button !== 0 || p.disabled !== undefined || settling.value) return
+  const target = e.target as HTMLElement
+  if (target.closest('.ff-rank-x')) return
+  if (e.pointerType !== 'mouse' && !target.closest('.ff-rank-grip')) return
   e.preventDefault()
-  const r = rows.value[i]; dragging.value = r.id
-  const handle = e.currentTarget as HTMLElement
-  handle.setPointerCapture(e.pointerId)
+  const cards = list.value ? [...list.value.querySelectorAll<HTMLElement>('.ff-rank')] : []
+  const boxes = cards.map((c) => c.getBoundingClientRect())
+  const from = i, r = rows.value[i], h = boxes[i].height + GAP
+  const startY = e.clientY, top = boxes[0].top - boxes[i].top, bottom = boxes[boxes.length - 1].top - boxes[i].top
+  let to = from
+  dragging.value = r.id
+  const el = e.currentTarget as HTMLElement
+  el.setPointerCapture(e.pointerId)
   const onMove = (ev: PointerEvent) => {
-    const items = list.value ? [...list.value.querySelectorAll<HTMLElement>('.ff-rank')] : []
-    const from = rows.value.findIndex((x) => x.id === r.id)
-    let to = items.findIndex((el) => { const b = el.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2 })
-    if (to < 0) to = items.length - 1
-    else if (to > from) to -= 1
-    if (to !== from) { rows.value.splice(from, 1); rows.value.splice(to, 0, r) }
+    const dy = Math.max(top - h / 2, Math.min(bottom + h / 2, ev.clientY - startY))
+    /* where it would land: past the middle of the card next to it */
+    const centre = boxes[from].top + boxes[from].height / 2 + dy
+    to = from
+    for (let j = 0; j < boxes.length; j++) {
+      const mid = boxes[j].top + boxes[j].height / 2
+      if (j < from && centre < mid) { to = j; break }
+      if (j > from && centre > mid) to = j
+    }
+    const next: Record<number, number> = { [r.id]: dy }
+    rows.value.forEach((x, j) => { if (j === from) return; next[x.id] = from < to && j > from && j <= to ? -h : from > to && j >= to && j < from ? h : 0 })
+    offsets.value = next
+    span.value = [from, to]
   }
-  const onUp = () => { handle.removeEventListener('pointermove', onMove); handle.removeEventListener('pointerup', onUp); handle.removeEventListener('pointercancel', onUp); dragging.value = null; out() }
-  handle.addEventListener('pointermove', onMove); handle.addEventListener('pointerup', onUp); handle.addEventListener('pointercancel', onUp)
+  const onUp = () => {
+    el.removeEventListener('pointermove', onMove); el.removeEventListener('pointerup', onUp); el.removeEventListener('pointercancel', onUp)
+    /* settle into the place it lands, then keep the order with nothing moved */
+    settling.value = true
+    offsets.value = { ...offsets.value, [r.id]: (to - from) * h }
+    setTimeout(() => {
+      instant.value = true
+      dragging.value = null
+      if (to !== from) { rows.value.splice(from, 1); rows.value.splice(to, 0, r); out(); said.value = w('list-moved', 'Moved to position {n} of {total}.', { n: to + 1, total: rows.value.length }) }
+      offsets.value = {}
+      span.value = null
+      nextTick(() => requestAnimationFrame(() => { instant.value = false; settling.value = false }))
+    }, 160)
+  }
+  el.addEventListener('pointermove', onMove); el.addEventListener('pointerup', onUp); el.addEventListener('pointercancel', onUp)
 }
 
 /* the line under the question: how many, and what the order is for */
@@ -116,12 +157,13 @@ const guide = computed(() => {
 
     <!-- what has been chosen, in order -->
     <ol v-if="rows.length" ref="list" class="ff-ranks" :aria-label="w('list-chosen', 'Your order')">
-      <li v-for="(r, i) in rows" :key="r.id" class="ff-rank" :class="{ 'is-dragging': dragging === r.id }">
-        <span class="ff-rank-n" aria-hidden="true">{{ i + 1 }}</span>
+      <li v-for="(r, i) in rows" :key="r.id" class="ff-rank" :class="{ 'is-dragging': dragging === r.id, 'is-sorting': dragging !== null && !settling, 'is-settling': settling, 'is-instant': instant }"
+        :style="offsets[r.id] ? { transform: 'translateY(' + offsets[r.id] + 'px)' } : undefined" @pointerdown="(e) => onDown(e, i)">
+        <span class="ff-rank-n" aria-hidden="true">{{ rankOf(i) }}</span>
         <span class="ff-rank-text">{{ r.text }}</span>
         <button :ref="(el) => { if (el) handles[r.id] = el as HTMLElement }" type="button" class="ff-rank-grip"
           :aria-label="w('list-move', 'Move {item}, number {n}', { item: r.text, n: i + 1 })" :title="w('list-move-hint', 'Drag, or use the arrow keys')"
-          @pointerdown="(e) => onDown(e, i)" @keydown="(e) => onHandleKey(e, i)">
+          @keydown="(e) => onHandleKey(e, i)">
           <svg viewBox="0 0 12 16" aria-hidden="true"><circle cx="4" cy="3" r="1.3" /><circle cx="8" cy="3" r="1.3" /><circle cx="4" cy="8" r="1.3" /><circle cx="8" cy="8" r="1.3" /><circle cx="4" cy="13" r="1.3" /><circle cx="8" cy="13" r="1.3" /></svg>
         </button>
         <button type="button" class="ff-rank-x" :aria-label="w('list-remove', 'Remove {item}', { item: r.text })" @click="remove(i)">
