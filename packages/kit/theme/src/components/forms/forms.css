@@ -156,27 +156,31 @@ html[data-theme='dark'] .ff-step, html[data-theme='dark'] .qopt { background: #F
   .ff-steps .ff-step { min-width: 36px; height: 44px; font-size: 15px }
 }
 
-/* AN ORDERED LIST: numbered rows, each with a handle to drag it by and a way to take it out */
-.ff-ol { list-style: none; margin: 4px 0 0; padding: 0; max-width: 560px; display: grid; gap: 8px }
-.ff-li { display: flex; align-items: center; gap: 8px; touch-action: none }
-.ff-li.is-dragging { opacity: .6 }
-.ff-li .ff-num { flex: 0 0 auto; min-width: 1.6em; text-align: right; font-size: 17px; color: var(--qink3); font-variant-numeric: tabular-nums }
-.qz .ff-li .ff-li-in { flex: 1 1 0; min-width: 0; width: 0; margin-top: 0 }
-.ff-grip, .ff-li-x { flex: 0 0 auto; display: inline-grid; place-items: center; width: 32px; height: 40px; border: 0; background: transparent; color: var(--qink3); border-radius: 8px; cursor: grab; padding: 0 }
-.ff-grip svg { width: 12px; height: 16px; fill: currentColor }
-.ff-li-x { cursor: pointer; opacity: .7 }
-.ff-li-x svg, .ff-li-add svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round }
-.ff-grip:hover, .ff-li-x:hover { color: var(--qink); background: var(--qhair) }
-.ff-grip:focus-visible, .ff-li-x:focus-visible, .ff-li-add:focus-visible { outline: 2px solid var(--qink); outline-offset: 1px }
-.ff-li.is-dragging .ff-grip { cursor: grabbing }
-.ff-li-add { display: inline-flex; align-items: center; gap: 8px; margin: 12px 0 0 72px; border: 1px dashed var(--qhair); background: transparent; color: var(--qink2); font: inherit; font-size: 15px; padding: 8px 14px; border-radius: 10px; cursor: pointer }
-.ff-li-add:hover { color: var(--qink); border-color: var(--qink3) }
-.ff-list .ff-hint { margin-left: 72px }
-@media (max-width: 560px) { .ff-li-add, .ff-list .ff-hint { margin-left: 0 } .ff-grip, .ff-li-x { width: 28px } }
 
-.ff-li-offer { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0 72px; max-width: 520px }
-.ff-li-chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--qhair); background: var(--qcard); color: var(--qink); font: inherit; font-size: 15px; padding: 7px 13px; border-radius: 999px; cursor: pointer }
-.ff-li-chip svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; opacity: .6 }
-.ff-li-chip:hover { border-color: var(--qink3) }
-.ff-li-chip:focus-visible { outline: 2px solid var(--qink); outline-offset: 1px }
-@media (max-width: 560px) { .ff-li-offer { margin-left: 0 } }
+
+/* AN ORDERED LIST, as a ranking: the chosen on top, numbered cards with a handle and a way out; under them what there
+   is to choose from, as option cards like a choice question's; and a line to type something else */
+.ff-list-guide { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; max-width: 560px; margin: -4px 0 14px; font-size: 14.5px; color: var(--qink3) }
+.ff-list-count { font-family: var(--m, ui-monospace, monospace); font-size: 12px; color: var(--qink3); white-space: nowrap }
+.ff-ranks { list-style: none; margin: 0 0 18px; padding: 0; max-width: 560px; display: grid; gap: 8px }
+.ff-rank { display: flex; align-items: center; gap: 12px; padding: 6px 6px 6px 12px; border: 1px solid var(--qink); border-radius: 12px; background: var(--qcard); font-family: var(--f, 'Bitter', Georgia, serif); font-size: 16px; touch-action: none; transition: box-shadow .15s, transform .15s }
+.ff-rank.is-dragging { transform: scale(1.015); box-shadow: 0 12px 26px -14px #0007 }
+.ff-rank-n { flex: 0 0 auto; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--qink); color: var(--paper, #fff); font-family: var(--m, ui-monospace, monospace); font-size: 12px; font-weight: 600 }
+.ff-rank-text { flex: 1; min-width: 0; line-height: 1.35; overflow-wrap: anywhere }
+.ff-rank-grip, .ff-rank-x { flex: 0 0 auto; display: inline-grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 9px; background: transparent; color: var(--qink3); padding: 0; cursor: pointer }
+.ff-rank-grip { cursor: grab }
+.ff-rank.is-dragging .ff-rank-grip { cursor: grabbing }
+.ff-rank-grip svg { width: 12px; height: 16px; fill: currentColor }
+.ff-rank-x svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round }
+.ff-rank-grip:hover, .ff-rank-x:hover { color: var(--qink); background: var(--qhair) }
+.ff-rank-grip:focus-visible, .ff-rank-x:focus-visible { outline: 2px solid var(--qink); outline-offset: 1px }
+.ff-pool { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-width: 560px }
+.ff-pool .ff-pool-opt { width: 100%; min-width: 0 }
+.ff-pool .ff-pool-opt:disabled { opacity: .45; cursor: default; transform: none }
+.ff-pool-other .qoptl { color: var(--qink3) }
+.ff-list-type { display: flex; gap: 8px; max-width: 560px; margin-top: 10px; align-items: center }
+.qz .ff-list-type .ff-in { flex: 1; min-width: 0; width: 0; margin-top: 0 }
+.ff-list-add { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px }
+.ff-list-add svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round }
+.ff-list-add:disabled { opacity: .4; cursor: default }
+@media (max-width: 560px) { .ff-pool { gap: 6px } .qz .ff-pool .ff-pool-opt { padding: 11px 12px; gap: 9px; font-size: 15px } .qz .ff-pool .ff-pool-opt:hover { transform: none } .ff-rank { gap: 10px; padding-left: 10px } .ff-list-add span { display: none } .ff-list-add { padding-left: 14px; padding-right: 14px } }

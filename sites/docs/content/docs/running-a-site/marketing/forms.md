@@ -74,7 +74,7 @@ That is the whole of what a desk with no language model needs: a prompt somebody
 
 ## An ordered list
 
-`ListInput` asks for a list in an order the person chooses: as many one-line rows as they want, each with a handle to drag it up or down (a finger works as well as a mouse; focused, the arrow keys move it). Enter starts a new row below, Backspace in an empty row takes it out, and Enter in an empty last row goes on to the next question. The question says what the order means.
+`ListInput` asks for a list in an order the person chooses. What they have chosen sits on top as numbered cards, each with a handle to drag it up or down (a finger works as well as a mouse; focused, the arrow keys move it) and a way to take it out. Under the cards are the answers to choose from, as option cards like a choice question's, and **Something else**, which opens a line to type their own and add it with Enter. A list with nothing to offer is that typing line alone. The question says what the order means.
 
 ```
 going_well* = ListInput(
@@ -84,7 +84,7 @@ going_well* = ListInput(
 )
 ```
 
-A list can offer **common answers** to tap (`options = work, money, relationships`), and the person's **earlier answers** the same way (`optionsfrom = not_well, repeating`: fields of the same form, or references from a workbook form's `uses`). Tapping one adds it as a row; **Add your own** adds a blank one. `min` and `max` bound how many rows: fewer than `min` is refused, and nothing can be added past `max`. A choice input can take its choices from an earlier answer the same way (`choicesfrom = feelings`).
+A list can offer **common answers** to tap (`options = work, money, relationships`), and the person's **earlier answers** the same way (`optionsfrom = not_well, repeating`: fields of the same form, or references from a workbook form's `uses`). Choosing one adds it as the next numbered card. `min` and `max` bound how many: fewer than `min` is refused, and at `max` the options step aside until one is taken out. A line under the question says how many to choose and how many are chosen. A choice input can take its choices from an earlier answer the same way (`choicesfrom = feelings`).
 
 The answer is the rows in their order, each tidied and the empty ones dropped. A required list needs one row that says something. Through the Forms API it is long text, one row to a line.
 

@@ -323,7 +323,7 @@
 .crs-pbar-word { display: none; }
 
 /* a lesson's workbook form */
-.crs-work-kicker { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; }
+.crs-work-kicker { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 0 0 10px; }
 .crs-work-need { color: var(--ink2); text-transform: none; letter-spacing: 0; }
 .crs-work .crs-work-run { min-height: 380px; }
 .crs-work-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }

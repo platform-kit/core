@@ -54,17 +54,23 @@ nps-label-start: Not likely at all
 nps-label-end: Extremely likely
 file-choose: choose a file
 file-drag: or drag it here
-list-placeholder: Type the first item
-list-add: Add another
-list-add-own: Add your own
-list-offer: Common answers
-list-up-to: up to {n}
-list-enter: for a new line
-list-item: Item {n}
-list-move: Move item {n}
+list-placeholder: Type an answer, then press Enter
+list-add-typed: Add
+list-other: Something else
+list-other-placeholder: Type it, then press Enter
+list-type: Type an answer
+list-chosen: Your order
+list-added: {item} added, number {n}.
+list-removed: {item} removed.
+list-full: You've chosen {max}. Take one out to choose another.
+list-reorder: Drag to change the order.
+list-range: Choose {min} to {max}.
+list-up-to-n: Choose up to {max}.
+list-offer: Choose from
+list-move: Move {item}, number {n}
 list-move-hint: Drag, or use the arrow keys
 list-moved: Moved to position {n} of {total}.
-list-remove: Remove item {n}
+list-remove: Remove {item}
 record-voice: Record an answer
 record-video: Record a video
 record-again: Record it again
