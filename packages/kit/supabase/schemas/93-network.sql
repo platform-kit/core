@@ -1215,6 +1215,27 @@ $$;
 DROP TRIGGER IF EXISTS "network_touch_moderation" ON "public"."network_moderation";
 CREATE TRIGGER "network_touch_moderation" AFTER INSERT ON "public"."network_moderation" FOR EACH ROW EXECUTE FUNCTION "public"."network_touch_moderation"();
 
+-- MOVE THE HEAD OF A REPOSITORY, and only from the head the commit was built on. Two projections of one member at once (a
+-- join and a post a moment apart) each build a commit from the head they read: the first moves it, the second is told
+-- false and builds again from the new one. A last-writer-wins upsert here once kept the profile-only commit and lost the post.
+CREATE OR REPLACE FUNCTION "public"."network_commit_swap"("p_did" "text", "p_user" "uuid", "p_prev" "text", "p_cid" "text", "p_rev" "text") RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+begin
+  if p_prev is null then
+    insert into public.network_commits (did, user_id, cid, rev, updated_at) values (p_did, p_user, p_cid, p_rev, now())
+      on conflict (did) do nothing;
+  else
+    update public.network_commits set cid = p_cid, rev = p_rev, updated_at = now() where did = p_did and cid = p_prev;
+  end if;
+  return found;
+end;
+$$;
+REVOKE ALL ON FUNCTION "public"."network_commit_swap"("text", "uuid", "text", "text", "text") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."network_commit_swap"("text", "uuid", "text", "text", "text") FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."network_commit_swap"("text", "uuid", "text", "text", "text") TO "service_role";
+
 -- the sweep, for whatever an ask missed (the function down, a deploy mid-flight)
 CREATE OR REPLACE FUNCTION "public"."run_network_project"() RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER

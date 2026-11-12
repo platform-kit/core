@@ -1515,8 +1515,10 @@ export type Database = {
       }
       course_lessons: {
         Row: {
+          answers_required: boolean
           body: string | null
           course: string
+          form: string | null
           key: string
           kind: string
           media: Json
@@ -1527,8 +1529,10 @@ export type Database = {
           title: string
         }
         Insert: {
+          answers_required?: boolean
           body?: string | null
           course: string
+          form?: string | null
           key: string
           kind?: string
           media?: Json
@@ -1539,8 +1543,10 @@ export type Database = {
           title: string
         }
         Update: {
+          answers_required?: boolean
           body?: string | null
           course?: string
+          form?: string | null
           key?: string
           kind?: string
           media?: Json
@@ -1582,6 +1588,55 @@ export type Database = {
             columns: ["enrollment"]
             isOneToOne: false
             referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_workbook_shares: {
+        Row: {
+          coach: string
+          course: string
+          granted_at: string
+          id: string
+          reader: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          coach: string
+          course: string
+          granted_at?: string
+          id?: string
+          reader: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          coach?: string
+          course?: string
+          granted_at?: string
+          id?: string
+          reader?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_workbook_shares_coach_fkey"
+            columns: ["coach"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_workbook_shares_course_fkey"
+            columns: ["course"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["slug"]
+          },
+          {
+            foreignKeyName: "course_workbook_shares_reader_fkey"
+            columns: ["reader"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1992,9 +2047,11 @@ export type Database = {
           completed_at: string | null
           form: string
           id: string
+          item: string | null
           meta: Json
           origin: string | null
           passed: boolean | null
+          private: boolean
           score: number | null
           started_at: string
           total: number | null
@@ -2008,9 +2065,11 @@ export type Database = {
           completed_at?: string | null
           form: string
           id?: string
+          item?: string | null
           meta?: Json
           origin?: string | null
           passed?: boolean | null
+          private?: boolean
           score?: number | null
           started_at?: string
           total?: number | null
@@ -2024,9 +2083,11 @@ export type Database = {
           completed_at?: string | null
           form?: string
           id?: string
+          item?: string | null
           meta?: Json
           origin?: string | null
           passed?: boolean | null
+          private?: boolean
           score?: number | null
           started_at?: string
           total?: number | null
@@ -7905,6 +7966,7 @@ export type Database = {
         Args: { p_course: string | null; p_user: string | null }
         Returns: boolean
       }
+      course_is_coach: { Args: { p_user: string | null }; Returns: boolean }
       course_lesson: {
         Args: { p_course: string | null; p_lesson: string | null }
         Returns: Json
@@ -7940,6 +8002,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      course_person_name: { Args: { p_user: string | null }; Returns: string }
       course_quiz_result: {
         Args: { p_form: string | null; p_user: string | null }
         Returns: Json
@@ -7949,6 +8012,17 @@ export type Database = {
         Returns: boolean
       }
       course_state: { Args: { p_course: string | null }; Returns: Json }
+      course_workbook: {
+        Args: { p_course: string | null; p_reader?: string | null }
+        Returns: Json
+      }
+      course_workbook_coaches: { Args: never; Returns: Json }
+      course_workbook_share: {
+        Args: { p_coach: string | null; p_course: string | null }
+        Returns: Json
+      }
+      course_workbook_withdraw: { Args: { p_share: string | null }; Returns: Json }
+      course_workbooks_shared: { Args: never; Returns: Json }
       courses_list: { Args: never; Returns: Json }
       cover_choices: { Args: never; Returns: Json }
       email_answered: {
@@ -8031,6 +8105,10 @@ export type Database = {
       find_words: {
         Args: { k: string | null; lim?: number | null; since: string | null }
         Returns: Json
+      }
+      form_shared_with_me: {
+        Args: { p_form: string | null; p_user: string | null }
+        Returns: boolean
       }
       get_my_entitlements: { Args: never; Returns: Json }
       has_role: { Args: { p_role: string | null }; Returns: boolean }
@@ -8140,6 +8218,16 @@ export type Database = {
       }
       network_can_read_image: { Args: { p_name: string | null }; Returns: boolean }
       network_can_see: { Args: { p_user: string | null }; Returns: boolean }
+      network_commit_swap: {
+        Args: {
+          p_cid: string | null
+          p_did: string | null
+          p_prev: string | null
+          p_rev: string | null
+          p_user: string | null
+        }
+        Returns: boolean
+      }
       network_find: {
         Args: { p_limit?: number | null; p_q: string | null }
         Returns: string[]

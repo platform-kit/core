@@ -82,14 +82,21 @@ async function keypairOf(identity: { created_at: string; did: string; joined_at:
 
 const fromHex = (h: string) => { const s = String(h).replace(/^\\x/, ''); const out = new Uint8Array(s.length / 2); for (let i = 0; i < out.length; i++) out[i] = parseInt(s.slice(i * 2, i * 2 + 2), 16); return out }
 
+/* a repository as one commit left it: the head, then its blocks, then the head again. A commit landing between the two
+   reads lets go of blocks the first head needed, so a read that saw the head move, or cannot load, reads again */
 async function loadRepo(did: string) {
-  const { data: head } = await admin.from('network_commits').select('cid, rev').eq('did', did).maybeSingle()
-  const storage = new MemoryBlockstore()
-  if (!head) return { storage, repo: null as Repo | null }
-  const { data: rows } = await admin.from('network_repo_blocks').select('cid, bytes').eq('did', did)
-  for (const r of (rows || []) as any[]) await storage.putBlock(parseCid(r.cid), fromHex(r.bytes))
-  const repo = await Repo.load(storage, parseCid(head.cid))
-  return { storage, repo }
+  for (let i = 0; ; i++) {
+    const { data: head } = await admin.from('network_commits').select('cid, rev').eq('did', did).maybeSingle()
+    const storage = new MemoryBlockstore()
+    if (!head) return { storage, repo: null as Repo | null }
+    const { data: rows } = await admin.from('network_repo_blocks').select('cid, bytes').eq('did', did)
+    for (const r of (rows || []) as any[]) await storage.putBlock(parseCid(r.cid), fromHex(r.bytes))
+    const { data: still } = await admin.from('network_commits').select('cid').eq('did', did).maybeSingle()
+    try {
+      if (still && still.cid === head.cid) return { storage, repo: await Repo.load(storage, parseCid(head.cid)) }
+    } catch (e) { if (i >= 4) throw e }
+    if (i >= 4) throw new Error('the repository kept moving while it was read')
+  }
 }
 
 /* everything a joined member has made public, as records keyed by collection/rkey */
@@ -142,6 +149,12 @@ async function publicRecords(userId: string, domain: string) {
  * matching account event instead and no commit.
  */
 export async function project(userId: string, domain: string) {
+  /* two projections of one member at once (a join and a post a moment apart) each build a commit from the head they
+     read; only the first moves the head, and the other builds again from it, so neither one's records are lost */
+  for (let i = 0; i < 5; i++) { const r = await projectOnce(userId, domain); if (!('lost' in r)) return r }
+  throw new Error('the repository moved under five projections in a row')
+}
+async function projectOnce(userId: string, domain: string): Promise<Record<string, unknown>> {
   const { data: identity } = await admin.from('network_identities').select('*').eq('user_id', userId).maybeSingle()
   if (!identity || !identity.joined_at || identity.left_at) return { skipped: true }
   const did = identity.did as string
@@ -190,9 +203,13 @@ export async function project(userId: string, domain: string) {
   const newRows: any[] = []
   for (const [cid, bytes] of commit.newBlocks) newRows.push({ did, cid: String(cid), bytes: '\\x' + [...(bytes as Uint8Array)].map((b) => b.toString(16).padStart(2, '0')).join('') })
   for (let i = 0; i < newRows.length; i += 200) await admin.from('network_repo_blocks').upsert(newRows.slice(i, i + 200), { onConflict: 'did,cid' })
+  /* the head moves only from the one this commit was built on (network_commit_swap); one that lost the race builds again */
+  const { data: moved, error: swapError } = await admin.rpc('network_commit_swap', { p_did: did, p_user: userId, p_prev: repo ? String(repo.cid) : null, p_cid: String(commit.cid), p_rev: commit.rev })
+  if (swapError) throw swapError
+  if (!moved) return { lost: true }
+  /* only now what it let go: a commit that lost may have dropped a block the winner's tree still holds */
   const removed = commit.removedCids.toList().map((c: any) => String(c))
   if (removed.length) await admin.from('network_repo_blocks').delete().eq('did', did).in('cid', removed)
-  await admin.from('network_commits').upsert({ did, user_id: userId, cid: String(commit.cid), rev: commit.rev, updated_at: now() })
 
   /* WHAT A RELAY NEEDS TO CHECK IT: the new blocks and the ones its proofs pass through (the commit,
      the tree's path to every record touched), and the tree's root before — so the commit can be

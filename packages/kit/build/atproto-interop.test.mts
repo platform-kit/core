@@ -128,14 +128,19 @@ try {
   /* ------------------------------------------------------------ the repository */
   const pe = (await A.sb.from('network_posts').insert({ author_id: A.id, text: 'public, on the wider network', audience: 'everyone' }).select().single()).data
   const ph = (await A.sb.from('network_posts').insert({ author_id: A.id, text: 'only for the people here', audience: 'here' }).select().single()).data
-  const head = await until(async () => {
+  const holdsPost = async () => {
     const r = await fetch(`${FN}/xrpc/com.atproto.sync.getLatestCommit?did=${identity}`).then((x) => x.json()).catch(() => null)
     if (!r || !r.cid) return null
     const car = new Uint8Array(await (await fetch(`${FN}/xrpc/com.atproto.sync.getRepo?did=${identity}`)).arrayBuffer())
     const v = await verifyRepoCar(car, identity, doc.verificationMethods.atproto).catch(() => null)
     const cs = v ? (Array.isArray(v.creates) ? v.creates : Object.values(v.creates || {})) : []
     return cs.some((c: any) => c.rkey === pe!.rkey) ? v : null
-  })
+  }
+  /* the database asks for the update the moment the post is written. On a fresh test stack its first asks can fail to
+     find the functions server by name, and the sweep that catches a missed ask runs every five minutes: so where the
+     ask has not landed, the test asks as the sweep would — the member is still marked, which is what this holds */
+  let head = await until(holdsPost)
+  if (!head) { await fetch(FN + '/internal/project', { method: 'POST', headers: { Authorization: 'Bearer ' + serviceKey() } }); head = await until(holdsPost) }
   const creates = head ? (Array.isArray(head.creates) ? head.creates : Object.values(head.creates)) : []
   const paths = creates.map((c: { collection: any; rkey: any }) => `${c.collection}/${c.rkey}`)
   ok('the repository verifies against the signing key the DID document names', !!head, 'no verified repository')

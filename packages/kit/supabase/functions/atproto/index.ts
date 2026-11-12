@@ -127,11 +127,15 @@ Deno.serve(async (req: Request) => {
   /* a joined member's public records changed: every queued member's repository is made to agree */
   if (path === '/internal/project' && req.method === 'POST') {
     if (!(await isServiceBearer(req))) return no(REFUSALS.forbidden())
-    const { data: dirty } = await admin.from('network_dirty').select('user_id').order('at').limit(50)
+    const { data: dirty } = await admin.from('network_dirty').select('user_id, at').order('at').limit(50)
     const done: any[] = []
-    for (const d of (dirty || []) as any[]) {
-      await admin.from('network_dirty').delete().eq('user_id', d.user_id)
-      try { done.push({ user: d.user_id, ...(await project(d.user_id, domain())) }) } catch (e) { console.error('atproto project:', d.user_id, e); done.push({ user: d.user_id, error: String(e) }) }
+    for (const d of dirty || []) {
+      /* the mark goes once the repository agrees, and only the mark this read: one made since, by a change that may not be
+         in this commit, stays for the next ask; a projection that failed leaves it for the sweep */
+      try {
+        done.push({ user: d.user_id, ...(await project(d.user_id, domain())) })
+        await admin.from('network_dirty').delete().eq('user_id', d.user_id).lte('at', d.at)
+      } catch (e) { console.error('atproto project:', d.user_id, e); done.push({ user: d.user_id, error: String(e) }) }
     }
     return json({ done })
   }

@@ -337,6 +337,21 @@ try {
   ok('…never a post without pictures or video', !bSees.includes(plain.id))
   ok('…and nothing for somebody signed out', (await fy(guest)).length === 0)
   if (mp) await service.from('network_posts').delete().eq('id', mp.id)
+
+  /* ---- a repository head moves only from the head its commit was built on (network_commit_swap) ---- */
+  {
+    const did = 'did:plc:networkdbswapprobe'
+    await service.from('network_commits').delete().eq('did', did)
+    const swap = async (prev: string | null, cid: string) => (await service.rpc('network_commit_swap', { p_did: did, p_user: A.id, p_prev: prev, p_cid: cid, p_rev: 'r-' + cid })).data
+    ok('the first commit of a repository lands', (await swap(null, 'c1')) === true)
+    ok('…and a second first commit, built on nothing, does not', (await swap(null, 'c1b')) === false)
+    ok('a commit built on the head lands', (await swap('c1', 'c2')) === true)
+    ok('one built on a head that has moved does not, and the head stays', (await swap('c1', 'c2b')) === false && (await service.from('network_commits').select('cid').eq('did', did).single()).data?.cid === 'c2')
+    await service.from('network_commits').delete().eq('did', did)
+    const asMember = await A.sb.rpc('network_commit_swap', { p_did: did, p_user: A.id, p_prev: null, p_cid: 'x', p_rev: 'x' })
+    ok('a member may not move a head', !!asMember.error)
+  }
+
 } catch (e: any) {
   fail++
   console.log('  FAIL  the run — ' + (e?.message || e))
