@@ -251,6 +251,19 @@ await ok('a fulfilment made before any of this reads through chosen, with the de
   }
 })
 
+/* a sale from before there were orders is drawn beside the orders as a loose purchase, and its line names
+   what was chosen the way an order line does — the admin page reads variant_title from either */
+await ok('the admin list carries a loose purchase with its variant name', async () => {
+  const { data: p, error } = await db.from('purchases').insert({ email: 'probe@example.com', sku: SKU, variant: 'v0', title: 'A thing', variant_title: 'Paperback', amount_total: 1000, currency: 'usd' }).select('id').single()
+  if (error) throw new Error('purchase: ' + error.message)
+  try {
+    const got = (await rpc('admin_orders', {})) as { loose: { id: string; variant_title: string | null }[] } | null
+    const row = got && got.loose.find((r) => r.id === p.id)
+    if (!row) throw new Error('the purchase is not among the loose ones')
+    eq(row.variant_title, 'Paperback', 'its variant name')
+  } finally { await db.from('purchases').delete().eq('id', p.id) }
+})
+
 await clean()
 console.log(fail ? `\norders-db: ${pass} passed, ${fail} FAILED\n` : `\norders-db: ${pass} passed\n`)
 process.exit(fail ? 1 : 0)

@@ -45,9 +45,8 @@ export type AdminOrder = Pick<Row<'orders'>, 'id' | 'number' | 'version' | 'stat
   fulfilments: Pick<Row<'fulfilments'>, 'id' | 'supplier' | 'status' | 'tracking' | 'quantity' | 'proof' | 'error' | 'book' | 'format'>[]
   returns: Pick<Row<'returns'>, 'id' | 'number' | 'status' | 'reason' | 'exchange_order_id' | 'requested_at'>[]
 }
-export type LoosePurchase = Pick<Row<'purchases'>, 'id' | 'sku' | 'variant' | 'title' | 'amount_total' | 'currency' | 'status' | 'email' | 'user_id' | 'created_at' | 'quantity'> & {
+export type LoosePurchase = Pick<Row<'purchases'>, 'id' | 'sku' | 'variant' | 'title' | 'amount_total' | 'currency' | 'status' | 'email' | 'user_id' | 'created_at' | 'quantity' | 'variant_title'> & {
   session: string | null
-  variant_title?: undefined   /* not sent: admin_orders builds a loose purchase without it */
 }
 export type AdminOrders = { orders: AdminOrder[]; loose: LoosePurchase[] }
 

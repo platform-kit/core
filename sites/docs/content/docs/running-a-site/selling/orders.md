@@ -23,6 +23,9 @@ _filter_ of that page rather than a page of their own — a parcel from a printe
 your own shelf are the same fact about one sale, and having two pages meant a shop selling both
 had to look in two places to see one order.
 
+A sale from before there were orders has no order of its own. It is listed beside the orders as
+a single line, with the same title and variant name an order line shows.
+
 A parcel that is waiting or has failed carries its own two buttons, beside the error if there is
 one: **Send to the printer** (**Try again** on a failure) hands the job to the printer, and
 **Check status** asks the printer where an existing job is — which is how a printer that sends no

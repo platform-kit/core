@@ -544,7 +544,7 @@ AS $$
       -- and the sales from before there were orders, so the page is never emptier than it was
       'loose', coalesce((
         select jsonb_agg(jsonb_build_object(
-            'id', p.id, 'sku', p.sku, 'variant', p.variant, 'title', p.title,
+            'id', p.id, 'sku', p.sku, 'variant', p.variant, 'title', p.title, 'variant_title', p.variant_title,
             'amount_total', p.amount_total, 'currency', p.currency, 'status', p.status,
             'email', p.email, 'user_id', p.user_id, 'created_at', p.created_at,
             'quantity', p.quantity, 'session', coalesce(p.checkout_identity, p.stripe_checkout_session_id))
