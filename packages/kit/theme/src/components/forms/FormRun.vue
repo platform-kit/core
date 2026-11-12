@@ -46,7 +46,11 @@ const state = reactive<any>({
     Object.assign(answers, values)
     if (settings.value.page !== 'form-slides') return
     /* an earlier form's question, asked here because this one needs its answer: kept as that form's */
-    if (screen.target) { await postSlide(screen.target.form, values, { slide: 0, item: screen.target.item }); keepEarlier(screen.target, values); return }
+    if (screen.target) {
+      /* a form about each row answers for the row chosen by now, which may have been chosen a screen ago */
+      const t = { form: screen.target.form, item: screen.target.about ? aboutItem.value : screen.target.item }
+      await postSlide(t.form, values, { slide: 0, item: t.item }); keepEarlier(t, values); return
+    }
     const r = await postSlide(props.form.slug, values, { end: !!screen.last, slide: screen.index, item: aboutItem.value })
     if (r && r.completed) finish(r)
   },
@@ -107,6 +111,14 @@ function blockOf(slug: string, field: string): any {
   for (const s of m.slides || []) { const f = walk(s.blocks); if (f) return f }
   return null
 }
+/* the copy above an earlier question, such as the line naming the situation it is about, comes with it when every name it
+   shows is one this form knows too; copy naming anything else would show a blank */
+function copyAbove(slug: string, field: string): any[] {
+  const m = modelOf(slug); if (!m) return []
+  const known = new Set([...Object.keys(uses.value || {}), ...(about.value ? [about.value.name] : [])])
+  const s = (m.slides || []).find((x: any) => (x.blocks || []).some((b: any) => b.type === 'field' && b.name === field))
+  return s ? s.blocks.filter((b: any) => b.type === 'markdown' && !b.condition && (b.deps || []).every((d: string) => known.has(d))) : []
+}
 function missingScreens() {
   const out: any[] = [], seen = new Set<string>()
   const ask = (slug: string, field: string, item: string) => {
@@ -116,7 +128,7 @@ function missingScreens() {
     const b = blockOf(slug, field); if (!b) return
     const has = ((store[slug] || {})[item] || { answers: {} }).answers
     for (const n of [...(b.params.optionsfrom || []), ...(b.params.choicesfrom || [])]) if (blockOf(slug, n) && !rowsOf(has[n]).length) ask(slug, n, item)
-    if (!rowsOf(has[field]).length) out.push({ kind: 'form', id: 'earlier:' + k, index: -1, type: 'body', blocks: [b], fields: [b], isForm: true, post: true, end: false, last: false, first: !out.length, jump: '', progress: 0, align: '', disablePrev: true, button: '', redirect: '', restart: false, submitText: '', target: { form: slug, item } })
+    if (!rowsOf(has[field]).length) out.push({ kind: 'form', id: 'earlier:' + k, index: -1, type: 'body', blocks: [...copyAbove(slug, field), b], fields: [b], isForm: true, post: true, end: false, last: false, first: !out.length, jump: '', progress: 0, align: '', disablePrev: true, button: '', redirect: '', restart: false, submitText: '', target: { form: slug, item, about: isAbout(slug) } })
   }
   if (about.value && !aboutRows().length) ask(about.value.form, about.value.field, '')
   for (const r of Object.values(uses.value)) if (!rowsOf(answerAt(r.form, r.field)).length && !(about.value && r.form === about.value.form && r.field === about.value.field)) ask(r.form, r.field, isAbout(r.form) ? aboutItem.value : '')
