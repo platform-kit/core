@@ -38,6 +38,8 @@
 .fq { display: block; font-size: clamp(21px, 2.6vw, 27px); font-weight: 700; letter-spacing: -.02em; line-height: 1.2; color: var(--qink); margin: 0 0 8px }
 .fq.fq-sm { font-size: 16.5px; font-weight: 600; letter-spacing: 0 }
 .fq-req { color: var(--accent2, var(--qink)); font-size: .7em; margin-left: 2px }
+/* a workbook asks one question a page and needs each answer: a mark on every question says nothing */
+.frun-workbook .fq-req { display: none }
 .fq-vh { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0 }
 .fq-desc { font-size: 15.5px; color: var(--qink3); margin: 0 0 12px; line-height: 1.45 }
 .ff-hint { font-size: 13px; color: var(--qink3); margin: 8px 0 0 }
