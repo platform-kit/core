@@ -37,6 +37,29 @@ const PASS = /^(STRIPE_SECRET_KEY|STRIPE_PUBLISHABLE_KEY|VITE_STRIPE_PUBLISHABLE
 
 export const inContainer = () => process.env.PLATFORMKIT_E2E_IN_CONTAINER === '1'
 
+/*
+ * A RUN'S SLOT. Two runs of one checkout (two sessions, two terminals) go side by side: each takes the first slot no live
+ * run holds, a lock file naming its process, and its containers, network, volumes, image tag and image cache are the
+ * slot's. Slot 0's names are the checkout's own, so a run alone is named and cached as before. A slot whose process is
+ * gone (a crash, a kill) is taken over, and the next run in it removes what that one left, as before.
+ */
+const alive = (pid: number) => { try { process.kill(pid, 0); return true } catch (e: any) { return e && e.code === 'EPERM' } }
+export function takeSlot(id: string, dir = os.tmpdir(), slots = 8): { n: number; release: () => void } {
+  for (let n = 0; n < slots; n++) {
+    const lock = path.join(dir, `platformkit-e2e-${id}-${n}.lock`)
+    const take = () => { try { fs.writeFileSync(lock, String(process.pid), { flag: 'wx' }); return true } catch { return false } }
+    let got = take()
+    if (!got) {
+      let pid = 0
+      try { pid = Number(fs.readFileSync(lock, 'utf8')) } catch { /* released as it was read */ }
+      if (pid === process.pid) continue
+      if (!pid || !alive(pid)) { fs.rmSync(lock, { force: true }); got = take() }
+    }
+    if (got) return { n, release: () => { try { if (Number(fs.readFileSync(lock, 'utf8')) === process.pid) fs.rmSync(lock, { force: true }) } catch { /* gone */ } } }
+  }
+  return die(`${slots} end-to-end runs of this checkout are already going: wait for one to end`)
+}
+
 const die = (m: string) => { console.error(`\n\x1b[31m✖\x1b[0m ${m}\n`); process.exit(1) }
 const say = (m: string) => console.log(`\x1b[2m[e2e]\x1b[0m ${m}`)
 const docker = (a: readonly string[], opts = {}) => spawnSync('docker', a, { encoding: 'utf8', ...opts })
@@ -102,7 +125,11 @@ export async function runInContainer(script: string, args: string[]) {
   }
   /* a path argument names the same file inside */
   const mapped = args.map((a) => (path.isAbsolute(a) && fs.existsSync(a) ? inside(a) : a))
-  const id = path.basename(root).toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + crypto.createHash('sha1').update(root).digest('hex').slice(0, 8)
+  const checkout = path.basename(root).toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + crypto.createHash('sha1').update(root).digest('hex').slice(0, 8)
+  const slot = takeSlot(checkout)
+  process.on('exit', slot.release)
+  const id = slot.n ? `${checkout}-${slot.n}` : checkout
+  if (slot.n) say(`another run of this checkout is going: this one is run ${slot.n + 1}, with its own containers and image cache`)
   const name = `platformkit-e2e-${id}`
   const image = `platformkit-e2e:${id}`
 
@@ -117,7 +144,7 @@ export async function runInContainer(script: string, args: string[]) {
     docker(['volume', 'rm', '-f', parts.work, parts.sock])
     docker(['network', 'rm', parts.net])
   }
-  /* one run per checkout: an earlier run's containers (kept, or left by a crash) go first */
+  /* what an earlier run in this slot left (kept, or a crash) goes first; a live run holds its own slot, so it is never this */
   removeAll()
   if (!(await buildImage(root, image))) die('the test image would not build (the output above says why)')
   /* every build replaces the last, which is left nameless: those go now, or each run leaves gigabytes behind */

@@ -236,6 +236,7 @@ const KIT_TESTS = [
   ['runtime-paths.test.mts'],
   ['deploy-pins.test.mts'],
   ['dev-workspace.test.mts'],
+  ['e2e-slots.test.mts'],
   ['dev-directory.test.mts'],
   ['dev.test.mts'],
   ['dev-stop.test.mts'],

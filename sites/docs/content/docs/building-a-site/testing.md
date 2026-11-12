@@ -9,6 +9,7 @@ sources:
     packages/kit/build/browser.mts,
     packages/kit/build/e2e.mts,
     packages/kit/build/e2e-container.mts,
+    packages/kit/build/e2e-slots.test.mts,
     packages/kit/docker/e2e.Dockerfile,
     packages/kit/build/test-stack.mts,
     packages/kit/build/test-guard.mts,
@@ -197,6 +198,7 @@ The checks that need a database, the functions or a browser run here, never agai
 - **It installs from scratch** (`npm ci`; what a fetched site needs beyond the workspace goes in beside it), on Playwright's browser image with Node as `.nvmrc` pins it and Deno.
 - **Two containers of the image, on a network of their own.** The tests' container runs the app, the browser and the tests; beside it a second runs the Docker daemon every stack of the run starts in, so the stacks never meet your dev stacks. The code is a volume of the run's own, filled from the image and mounted at the same path in both, so the daemon finds every folder the Supabase CLI names. They are apart because a daemon changes the network around it whenever a container or network comes or goes, and a browser in that network abandons every request in flight when it does (`net::ERR_NETWORK_CHANGED`). The tests reach the stacks at the daemon's name, which the CLI is given as `SUPABASE_SERVICES_HOSTNAME` (its documented setting for a daemon elsewhere), and talk to the daemon through `DOCKER_HOST`; a container the daemon starts reaches the tests' container as `host.docker.internal`. The daemon's images are kept in a volume, so they are pulled once. The `.env` files are mounted read-only, never built into the image.
 - **The run happens inside** (`docker exec`), its output streamed and its exit code returned. Afterwards its logs are copied to `node_modules/.cache/platformkit/e2e/` and both containers, the code volume and the network are removed — unless `--keep`, which leaves them up to look into (`docker exec -it platformkit-e2e-<id> bash`). A fetched site inside the container is files, not a checkout: the host verified its pin before building the image from it.
+- **Two runs of one checkout go side by side.** A run takes the first free slot of the checkout, a lock file naming its process, and its containers, network, volumes and image cache are that slot's. A run alone has the names it always had; a second one at the same time says it is run 2 and keeps an image cache of its own. A slot whose run crashed is taken over and cleared; one a live run holds is never touched.
 
 Inside it, before any stack, the run asks for what every site needs: Docker answering, and a browser for the page checks (the image's, or the one `PLAYWRIGHT_CHROMIUM_PATH` names). Without either it stops at once, naming it. Then, for each site:
 
