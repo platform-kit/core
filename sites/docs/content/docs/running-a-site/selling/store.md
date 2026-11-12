@@ -152,7 +152,9 @@ Sales → **Price lists**. A product’s own price is the usual one; a list is a
 some people, some of the time, or in another currency. Each list says what **kind** it is — a
 _sale_, which strikes the usual price through beside it, or an _override_, which simply is the
 price — optionally when it **starts** and **ends**, and who it is **for**, as rules rather than
-a word: every rule must hold, and a list with none is for everybody.
+a word: every rule must hold, and a list with none is for everybody. A rule that compares (more
+than, at least, less than, at most) needs a number, such as a basket total of 5000; the editor
+refuses a word there.
 
 **The most specific list wins, not the cheapest.** If you run a sale at $14 and a members’
 rate at $15, a member pays **$15**. That is deliberate and it is the thing to understand

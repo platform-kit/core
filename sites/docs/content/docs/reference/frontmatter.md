@@ -165,7 +165,8 @@ refuses a content field called `stock`, `quantity`, `available` or their like by
 
 `title`, `published`, `kind` (`override` · `sale`), `status` (`active` · `draft`), `currency`,
 `starts` and `ends` (a window; neither means always), `priority`, `rules` (rows of `attribute`,
-`operator` — eq · ne · in · gt · gte · lt · lte — and `value`; **every one must hold**) and
+`operator` — eq · ne · in · gt · gte · lt · lte — and `value`; **every one must hold**, and a
+comparison — gt · gte · lt · lte — needs a number as its value, or the build refuses it) and
 `prices` (rows of `sku`, `variant`, `amount` in whole money, optionally `min_quantity` /
 `max_quantity`).
 

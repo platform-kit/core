@@ -1198,7 +1198,7 @@ export async function kitConfig(): Promise<any> {
           attribute: s.string(),
           operator: s.enum(['eq', 'ne', 'in', 'gt', 'gte', 'lt', 'lte']).default('eq'),
           value: s.any(),
-        })).default([]),
+        }).refine((r: { operator: string; value?: unknown }) => !['gt', 'gte', 'lt', 'lte'].includes(r.operator) || (r.value != null && r.value !== '' && !Number.isNaN(Number(r.value))), { message: 'a rule that compares (more than, at least, less than, at most) needs a number as its value' })).default([]),
         /* WHAT THE PRICE IS, per sku and shape, in whole money, optionally banded by quantity.
            Always an amount: a list is a price, never a discount. A percentage or a flat amount
            off is a PROMOTION (content/store/promotions), which applies on top of this. */
@@ -1251,7 +1251,7 @@ export async function kitConfig(): Promise<any> {
           attribute: s.string(),
           operator: s.enum(['eq', 'ne', 'in', 'gt', 'gte', 'lt', 'lte']).default('eq'),
           value: s.any(),
-        })).default([]),
+        }).refine((r: { operator: string; value?: unknown }) => !['gt', 'gte', 'lt', 'lte'].includes(r.operator) || (r.value != null && r.value !== '' && !Number.isNaN(Number(r.value))), { message: 'a rule that compares (more than, at least, less than, at most) needs a number as its value' })).default([]),
         /* what it may spend before it stops, and how much it has: a campaign budget */
         budget: s.object({
           kind: s.enum(['spend', 'usage']).default('usage'),

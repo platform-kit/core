@@ -258,6 +258,11 @@ made every `gte` threshold dead and every `lte` one match always — a discount 
 baskets given to every basket, silently. The checkout computes it from the standing prices
 before resolving promotions; the page reads the bag.
 
+**A comparison needs a number.** A `gt`, `gte`, `lt` or `lte` rule whose value is not a number
+once compared as a threshold of 0, so "at least fifty" written as a word matched every basket.
+The content build and the editor refuse such a rule, and one that reaches the resolver anyway
+never holds (`ruleHolds` in `_shared/prices.ts` and `_shared/promotions.ts`).
+
 **A price belongs to a product, and a caller naming none gets nothing.** The sku guard once
 skipped itself when either side was empty, and the page passed no sku — so every product sold
 one way matched every other and the shop showed the first product’s price, on every simple

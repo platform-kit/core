@@ -19,6 +19,7 @@
  */
 import assert from 'node:assert/strict'
 import { priceOf, ruleHolds, openAt, currenciesOf } from '../supabase/functions/_shared/prices.js'
+import { COLLECTIONS } from './models/core/collections.mjs'
 
 let pass = 0, fail = 0
 const ok = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; }) => { try { fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + String((e && e.message) || e).split('\n').slice(0, 4).join('\n    ')) } }
@@ -163,6 +164,18 @@ ok('every operator, and an unknown one never holds', () => {
   assert.equal(ruleHolds({ attribute: 'a', operator: 'nonsense', value: 1 }, { a: 1 }), false)
   assert.equal(ruleHolds({ attribute: 'customer.tiers', operator: 'in', value: ['inner'] }, { customer: { tiers: ['inner'] } }), true)
   assert.equal(ruleHolds({ attribute: 'missing.thing', value: 1 }, {}), false)
+})
+
+ok('a comparison with a value that is not a number never holds, and the editor refuses one', () => {
+  assert.equal(ruleHolds({ attribute: 'a', operator: 'gte', value: '50' }, { a: 60 }), true, 'a number written as text still compares')
+  for (const value of ['fifty', '', null]) for (const operator of ['gt', 'gte', 'lt', 'lte'])
+    assert.equal(ruleHolds({ attribute: 'a', operator, value }, { a: 60 }), false, operator + ' ' + JSON.stringify(value) + ' is no threshold of 0')
+  for (const model of ['prices', 'promotions']) {
+    const rules = COLLECTIONS[model].fields.shape.rules
+    assert.equal(rules.safeParse([{ attribute: 'item_total', operator: 'gte', value: 'fifty' }]).success, false, model + ' refuses it')
+    assert.equal(rules.safeParse([{ attribute: 'item_total', operator: 'gte', value: '3000' }]).success, true, model + ' takes a number')
+    assert.equal(rules.safeParse([{ attribute: 'customer.class', operator: 'eq', value: 'member' }]).success, true, model + ' takes a word where nothing compares')
+  }
 })
 
 console.log(fail ? `\nprices: ${fail} failed, ${pass} passed\n` : `\nprices: all ${pass} checks passed\n`)

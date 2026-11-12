@@ -11,7 +11,7 @@ sources:
     packages/kit/src/lib/access.ts,
     packages/kit/theme/src/pages/SharePage.vue,
   ]
-reviewed: 2026-11-10
+reviewed: 2026-11-12
 ---
 
 Use the Published switch to control whether a record is available to visitors. Set titles, descriptions, and images so search results and shared links describe the right page. This guide covers the shared rules; each editor has its own fields and validation.
