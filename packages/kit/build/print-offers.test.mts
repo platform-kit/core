@@ -1,6 +1,11 @@
 /* A book whose text is withheld (`fullText: false`) is in print as its summaries alone (src/lib/print-offers.js):
    the summary edition is the only contents it offers, and without one it is not in print. Pinned by npm test. */
 import { printSpec, formatOffers } from '../src/lib/print-offers.js'
+import { modules } from '#site'
+import { notHere } from './test-stack.mjs'
+
+/* a site that does not sell print offers nothing to check */
+if (modules.print === false) { notHere('print-offers.test.mjs', 'the print module is off'); process.exit(0) }
 
 let pass = 0, fail = 0
 const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? '\n        ' + detail : '')) } }
