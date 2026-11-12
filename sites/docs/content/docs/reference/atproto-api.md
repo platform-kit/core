@@ -15,7 +15,7 @@ sources:
     packages/kit/supabase/functions/_shared/atproto/appview.ts,
     packages/kit/build/atproto-interop.test.mts,
   ]
-reviewed: 2026-11-10
+reviewed: 2026-11-12
 ---
 
 The guide is [The social network](/content/docs/building-a-site/social-network). This page says exactly what is there. Module: `network`; with it off the function answers every request with `MethodNotImplemented` and the host carries none of its rewrites.

@@ -33,7 +33,6 @@ export const stripeConfigured = STRIPE_KEY.length > 0 || stripeMock
    mock on purpose. */
 export const stripeLive = STRIPE_KEY.length > 0 && !stripeMock
 export const stripe = new Stripe(STRIPE_KEY || 'sk_test_unconfigured', {
-  // @ts-ignore only Deno has this package's types: Namespace '"npm:*"' has no exported member 'LatestApiVersion'.
   apiVersion: '2024-06-20' as Stripe.LatestApiVersion,
   httpClient: Stripe.createFetchHttpClient(),
 })

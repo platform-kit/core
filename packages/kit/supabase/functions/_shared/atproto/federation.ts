@@ -85,7 +85,6 @@ const fromHex = (h: string) => { const s = String(h).replace(/^\\x/, ''); const 
 async function loadRepo(did: string) {
   const { data: head } = await admin.from('network_commits').select('cid, rev').eq('did', did).maybeSingle()
   const storage = new MemoryBlockstore()
-  // @ts-ignore only Deno has this package's types: Cannot use namespace 'Repo' as a type.
   if (!head) return { storage, repo: null as Repo | null }
   const { data: rows } = await admin.from('network_repo_blocks').select('cid, bytes').eq('did', did)
   for (const r of (rows || []) as any[]) await storage.putBlock(parseCid(r.cid), fromHex(r.bytes))
@@ -269,7 +268,8 @@ export async function repoStatus(did: string) {
 export async function repoCar(did: string) {
   const { storage, repo } = await loadRepo(did)
   if (!repo) return null
-  return blocksToCarFile(repo.cid, storage.blocks)
+  /* copied into a buffer of its own: the library types its bytes as possibly shared, which a Response does not take */
+  return new Uint8Array(await blocksToCarFile(repo.cid, storage.blocks))
 }
 
 export async function recordCar(did: string, collection: string, rkey: string) {

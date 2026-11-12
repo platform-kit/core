@@ -55,7 +55,6 @@ const paymentIntentFromError = (error: unknown): { id: string; status: string; c
     : null
 }
 
-// @ts-ignore only Deno has this package's types: Namespace '"npm:*"' has no exported member 'Subscription'.
 function subscriptionSnapshot(subscription: Stripe.Subscription): PaymentSubscriptionSnapshot {
   const customerId = identifier(subscription.customer)
   const scheduleId = identifier(subscription.schedule)
@@ -82,7 +81,6 @@ function subscriptionSnapshot(subscription: Stripe.Subscription): PaymentSubscri
   }
 }
 
-// @ts-ignore only Deno has this package's types: Cannot use namespace 'Stripe' as a type.
 async function invoiceSnapshot(stripe: Stripe, invoice: Stripe.Invoice): Promise<PaymentInvoiceSnapshot> {
   const lines = await Promise.all(invoice.lines.data.map(async (line: any) => {
     const rawPrice = line.price
@@ -108,12 +106,10 @@ async function invoiceSnapshot(stripe: Stripe, invoice: Stripe.Invoice): Promise
   }
 }
 
-// @ts-ignore only Deno has this package's types: Namespace '"npm:*"' has no exported member 'PriceCreateParams'.
 function intervalFor(offer: PaymentCatalogOffer): Stripe.PriceCreateParams.Recurring.Interval | undefined {
   return offer.interval
 }
 
-// @ts-ignore only Deno has this package's types: Namespace '"npm:*"' has no exported member 'Price'.
 function catalogPriceMatches(price: Stripe.Price, offer: PaymentCatalogOffer): boolean {
   const subscription = offer.kind === 'subscription'
   return price.active &&
@@ -147,7 +143,6 @@ const eventTypes: Record<string, string> = {
 
 export function createPaymentProvider(
   secrets: Readonly<Record<string, string | undefined>>,
-  // @ts-ignore only Deno has this package's types: Cannot use namespace 'Stripe' as a type.
   runtime?: { stripe: Stripe },
 ) {
   const stripe = runtime?.stripe
@@ -302,7 +297,6 @@ export function createPaymentProvider(
       if (input.shippingCountry != null && !/^[A-Z]{2}$/.test(input.shippingCountry)) {
         throw new PaymentProviderError('invalid_shipping_country', 'Stripe checkout shipping country must be a two-letter uppercase country code.', 422)
       }
-      // @ts-ignore only Deno has this package's types: Namespace '"npm:*"' has no exported member 'Checkout'.
       const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = []
       for (const line of input.lines) {
         const metadata = { ...(line.metadata ?? {}), key: line.offerKey, sku: line.sku }
@@ -360,13 +354,11 @@ export function createPaymentProvider(
         } : {}),
         ...(input.collectTaxId ? { tax_id_collection: { enabled: true } } : {}),
         ...(input.allowedPaymentMethods?.length ? {
-          // @ts-ignore only Deno has this package's types: Namespace '"npm:*"' has no exported member 'Checkout'.
           payment_method_types: [...input.allowedPaymentMethods] as Stripe.Checkout.SessionCreateParams.PaymentMethodType[],
         } : {}),
         ...(input.shippingAddress ? {
           shipping_address_collection: {
             allowed_countries: input.shippingCountry
-              // @ts-ignore only Deno has this package's types: Namespace '"npm:*"' has no exported member 'Checkout'.
               ? [input.shippingCountry as Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry]
               : [],
           },
@@ -466,7 +458,6 @@ export function createPaymentProvider(
       }
       const expandedSubscription = session.subscription
       const subscription = expandedSubscription && typeof expandedSubscription === 'object'
-        // @ts-ignore only Deno has this package's types: Namespace '"npm:*"' has no exported member 'Subscription'.
         ? expandedSubscription as Stripe.Subscription
         : typeof expandedSubscription === 'string'
           ? await stripe.subscriptions.retrieve(expandedSubscription, {
@@ -550,7 +541,6 @@ export function createPaymentProvider(
         const metadata = { ...(offer.metadata ?? {}), key: offer.offerKey, sku: offer.sku }
         const live = await stripe.prices.list({ lookup_keys: [offer.offerKey], active: true, limit: 1 })
         const current = live.data[0]
-        // @ts-ignore only Deno has this package's types: Namespace '"npm:*"' has no exported member 'Product'.
         let product: Stripe.Product
         if (current) {
           const currentProductId = identifier(current.product)
@@ -768,7 +758,6 @@ export function createPaymentProvider(
         throw new PaymentProviderError('webhook_unconfigured', 'Stripe webhook verification is not configured.', 503)
       }
       const rawBody = await request.text()
-      // @ts-ignore only Deno has this package's types: Namespace '"npm:*"' has no exported member 'Event'.
       let event: Stripe.Event
       try {
         event = await stripe.webhooks.constructEventAsync(
@@ -797,13 +786,11 @@ export function createPaymentProvider(
         ? objectId
         : identifier(Reflect.get(object, 'subscription'))
       const subscription = event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated'
-        // @ts-ignore only Deno has this package's types: Namespace '"npm:*"' has no exported member 'Subscription'.
         ? subscriptionSnapshot(object as Stripe.Subscription)
         : event.type === 'invoice.paid' && subscriptionId
           ? subscriptionSnapshot(await stripe.subscriptions.retrieve(subscriptionId, { expand: ['items.data.price.product'] }))
           : undefined
       const invoice = event.type === 'invoice.paid'
-        // @ts-ignore only Deno has this package's types: Namespace '"npm:*"' has no exported member 'Invoice'.
         ? await invoiceSnapshot(stripe, object as Stripe.Invoice)
         : undefined
       const amountTotal = Reflect.get(object, 'amount_total')

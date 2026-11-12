@@ -20,7 +20,7 @@ sources:
     sites/docs/package.json,
     sites/docs/platformkit.config.ts,
   ]
-reviewed: 2026-11-10
+reviewed: 2026-11-12
 ---
 
 PlatformKit sites use three packages. Before changing code, identify which package owns the behavior:

@@ -7,6 +7,8 @@ declare const EdgeRuntime: any
 /* the packages the workspace installs read as themselves */
 declare module 'npm:@supabase/supabase-js@2' { export * from '@supabase/supabase-js' }
 declare module 'jsr:@supabase/supabase-js@2' { export * from '@supabase/supabase-js' }
+declare module 'npm:stripe@17' { import Stripe from 'stripe'; export default Stripe }
+declare module 'npm:@atproto/repo@0.11.0' { export * from '@atproto/repo' }
 declare module 'npm:*'
 declare module 'jsr:*'
 declare module 'https://*'
@@ -72,4 +74,3 @@ declare module '*/pipe/src/lib/forms/api-shape.js'
 declare module '*/pipe/src/lib/forms/parse.js'
 declare module '*/pipe/theme-strings.json'
 declare module '*/strings.json'
-declare module '@cf-wasm/photon/others'

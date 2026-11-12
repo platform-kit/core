@@ -86,7 +86,6 @@ Deno.serve(async (req: { method: string; url: string|URL; headers: { get: (arg0:
   if (!wantsWork) return new Response(req.method === 'HEAD' ? null : src.bytes, { status: 200, headers: headers(etag, src.type || asset.mime || 'application/octet-stream', src.bytes.byteLength) })
 
   await ready
-  // @ts-ignore only Deno has this package's types: Cannot use namespace 'PhotonImage' as a type.
   let img: PhotonImage
   try { img = PhotonImage.new_from_byteslice(src.bytes) } catch { return err('BadQuery', 'The picture could not be decoded.', 415) }
   const focus = f && f !== 'face' && f !== 'faces' ? f : 'center'
@@ -111,16 +110,15 @@ Deno.serve(async (req: { method: string; url: string|URL; headers: { get: (arg0:
 
 /* on the raw pixels: a canvas of the size asked with the picture centred on a colour; corners rounded by alpha; a
    transparent picture flattened onto a colour for jpg */
-// @ts-ignore only Deno has this package's types: Cannot use namespace 'PhotonImage' as a type.
 function pad(img: PhotonImage, tw: number, th: number, bgc: Rgba) {
   const sw = img.get_width(), sh = img.get_height(), src = img.get_raw_pixels()
   const out = new Uint8Array(tw * th * 4)
-  for (let i = 0; i < tw * th; i++) { out[i * 4] = bgc.r; out[i * 4 + 1] = bgc.g; out[i * 4 + 2] = bgc.b; out[i * 4 + 3] = bgc.a }
+  const [br, bg, bb, ba] = channels(bgc)
+  for (let i = 0; i < tw * th; i++) { out[i * 4] = br; out[i * 4 + 1] = bg; out[i * 4 + 2] = bb; out[i * 4 + 3] = ba }
   const ox = Math.round((tw - sw) / 2), oy = Math.round((th - sh) / 2)
   for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) { const tx = ox + x, ty = oy + y; if (tx < 0 || ty < 0 || tx >= tw || ty >= th) continue; const si = (y * sw + x) * 4, di = (ty * tw + tx) * 4; const a = src[si + 3] / 255; out[di] = Math.round(src[si] * a + out[di] * (1 - a)); out[di + 1] = Math.round(src[si + 1] * a + out[di + 1] * (1 - a)); out[di + 2] = Math.round(src[si + 2] * a + out[di + 2] * (1 - a)); out[di + 3] = Math.max(out[di + 3], src[si + 3]) }
   return new PhotonImage(out, tw, th)
 }
-// @ts-ignore only Deno has this package's types: Cannot use namespace 'PhotonImage' as a type.
 function rounded(img: PhotonImage, radius: number) {
   const w = img.get_width(), h = img.get_height(), px = img.get_raw_pixels(), r = Math.min(radius, w / 2, h / 2)
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
@@ -129,9 +127,11 @@ function rounded(img: PhotonImage, radius: number) {
   }
   return new PhotonImage(px, w, h)
 }
-// @ts-ignore only Deno has this package's types: Cannot use namespace 'PhotonImage' as a type.
+/* a colour's four channels: Photon's Rgba holds them behind getters, and has no r, g, b or a of its own */
+const channels = (c: Rgba) => [c.get_red(), c.get_green(), c.get_blue(), c.get_alpha()]
 function flatten(img: PhotonImage, bgc: Rgba) {
   const w = img.get_width(), h = img.get_height(), px = img.get_raw_pixels()
-  for (let i = 0; i < w * h; i++) { const a = px[i * 4 + 3] / 255; if (a < 1) { px[i * 4] = Math.round(px[i * 4] * a + bgc.r * (1 - a)); px[i * 4 + 1] = Math.round(px[i * 4 + 1] * a + bgc.g * (1 - a)); px[i * 4 + 2] = Math.round(px[i * 4 + 2] * a + bgc.b * (1 - a)); px[i * 4 + 3] = 255 } }
+  const [br, bg, bb] = channels(bgc)
+  for (let i = 0; i < w * h; i++) { const a = px[i * 4 + 3] / 255; if (a < 1) { px[i * 4] = Math.round(px[i * 4] * a + br * (1 - a)); px[i * 4 + 1] = Math.round(px[i * 4 + 1] * a + bg * (1 - a)); px[i * 4 + 2] = Math.round(px[i * 4 + 2] * a + bb * (1 - a)); px[i * 4 + 3] = 255 } }
   return new PhotonImage(px, w, h)
 }

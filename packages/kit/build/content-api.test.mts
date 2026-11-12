@@ -338,7 +338,7 @@ try {
     assert.ok(r.body.servers.length >= 1 && r.body.servers.some((x: { url: string }) => x.url.endsWith('/functions/v1/content')), 'the function names its own address')
     const also = await get('/content/v1/openapi.json'); assert.equal(also.status, 200); assert.equal(also.body.info.title, r.body.info.title)
   })
-  await ok('the Images API: a 400 × 300 WebP cut from the top, avif answered as webp, a padded jpg on a colour, a circle, out of range refused, the cache and the ETag', async () => {
+  await ok('the Images API: a 400 × 300 WebP cut from the top, avif answered as webp, a padded jpg on the colour asked, a circle, out of range refused, the cache and the ETag', async () => {
     const pic = index.assets.find((a: { mime: string; width: number }) => /^image\/(png|jpeg|webp)$/.test(a.mime) && a.width > 300)
     if (!pic) { note('no picture in the library — the Images API is checked on the demo'); return }
     const a: any = await client.getAsset(assetId(pic.address)); const u = url + '/functions/v1/images' + a.fields.file.url.replace(/^\/\/[^/]+\/api\/media/, '')
@@ -347,6 +347,11 @@ try {
     const fill = await dims('?w=400&h=300&fit=fill&f=top&fm=webp&q=70'); assert.deepEqual([fill.status, fill.format, fill.width, fill.height], [200, 'webp', 400, 300]); assert.ok(fill.cache!.includes('immutable'))
     const avif = await dims('?w=200&fm=avif'); assert.equal(avif.format, 'webp'); assert.equal(avif.width, 200)
     const pad = await dims('?w=300&h=300&fit=pad&bg=rgb:ff0000&fm=jpg'); assert.deepEqual([pad.format, pad.width, pad.height], ['jpeg', 300, 300])
+    /* and the padding is the colour asked: a 600 × 60 frame leaves a band beside any picture narrower than 10 : 1, and its
+       left edge, half way down, is red — Photon's colour is read through its getters, and once was read as nothing (black) */
+    const band = await sharp(Buffer.from(await (await fetch(u + '?w=600&h=60&fit=pad&bg=rgb:ff0000&fm=jpg')).arrayBuffer())).raw().toBuffer({ resolveWithObject: true })
+    const at = (30 * band.info.width) * band.info.channels, rgb = [band.data[at], band.data[at + 1], band.data[at + 2]]
+    assert.ok(rgb[0] > 200 && rgb[1] < 60 && rgb[2] < 60, 'the padding is red, not ' + rgb.join(','))
     const circle = await dims('?w=120&r=max&fm=png'); assert.equal(circle.format, 'png'); assert.equal(circle.width, 120)
     const scaled = await dims('?w=100&h=40&fit=scale'); assert.deepEqual([scaled.width, scaled.height], [100, 40])
     const bad = await fetch(u + '?w=0'); assert.equal(bad.status, 400); assert.equal((await bad.json()).sys.id, 'BadQuery')
