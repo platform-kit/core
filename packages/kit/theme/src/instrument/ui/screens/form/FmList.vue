@@ -183,7 +183,7 @@ const guide = computed(() => {
     </div>
     <div v-if="showInput" class="ff-list-type">
       <label class="fq-vh" :for="id">{{ w('list-type', 'Type an answer') }}</label>
-      <input :id="id" ref="input" v-model="draft" type="text" class="qwordin ff-in" :placeholder="hasOptions ? w('list-other-placeholder', 'Type it, then press Enter') : (p.placeholder || w('list-placeholder', 'Type an answer, then press Enter'))" :maxlength="p.maxlength || null" :disabled="p.disabled !== undefined" @keydown="onType" />
+      <input :id="id" ref="input" v-model="draft" type="text" class="qwordin ff-in" :placeholder="p.placeholder || (hasOptions ? w('list-other-placeholder', 'Type it, then press Enter') : w('list-placeholder', 'Type an answer, then press Enter'))" :maxlength="p.maxlength || null" :disabled="p.disabled !== undefined" @keydown="onType" />
       <button type="button" class="qbtn ff-list-add" :disabled="!draft.trim()" :aria-label="w('list-add-typed', 'Add')" @click="choose(draft) && (draft = '')"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg><span>{{ w('list-add-typed', 'Add') }}</span></button>
     </div>
 

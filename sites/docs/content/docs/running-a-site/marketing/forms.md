@@ -84,7 +84,7 @@ going_well* = ListInput(
 )
 ```
 
-A list can offer **common answers** to tap (`options = work, money, relationships`), and the person's **earlier answers** the same way (`optionsfrom = not_well, repeating`: fields of the same form, or references from a workbook form's `uses`). Choosing one adds it as the next numbered card. `min` and `max` bound how many: fewer than `min` is refused, and at `max` the options step aside until one is taken out. A line under the question says how many to choose and how many are chosen. A choice input can take its choices from an earlier answer the same way (`choicesfrom = feelings`).
+A list can offer **common answers** to tap (`options = work, money, relationships`), and the person's **earlier answers** the same way (`optionsfrom = not_well, repeating`: fields of the same form, or references from a workbook form's `uses`). Choosing one adds it as the next numbered card. `min` and `max` bound how many: fewer than `min` is refused, and at `max` the options step aside until one is taken out. A line under the question says how many to choose and how many are chosen. A choice input can take its choices from an earlier answer the same way (`choicesfrom = feelings`). A list's `placeholder` is the example in the box the person types in, including the box under **Something else** when the list offers answers.
 
 The answer is the rows in their order, each tidied and the empty ones dropped. A required list needs one row that says something. Through the Forms API it is long text, one row to a line.
 
