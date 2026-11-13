@@ -68,7 +68,7 @@ const screens = computed(() => { void key.value; return [...pre.value, ...formSc
  * asked first, in place, and kept as the earlier form's. A form about a row reads a form that is also about rows for
  * the same row.
  */
-const uses = computed(() => (kit.value.uses || {}) as Record<string, { form: string; field: string; top: boolean }>)
+const uses = computed(() => (kit.value.uses || {}) as Record<string, { form: string; field: string; top: boolean; last?: boolean }>)
 const about = computed(() => kit.value.about as { name: string; form: string; field: string } | null)
 const follows = computed(() => !!(about.value || Object.keys(uses.value).length))
 const modelOf = (slug: string) => { const f = (FORMS || []).find((x: any) => x.slug === slug); return f ? f.model : null }
@@ -82,7 +82,7 @@ const pre = ref<any[]>([])
 const answerAt = (form: string, field: string) => { const s = store[form] || {}; const e = s[isAbout(form) ? aboutItem.value : ''] ; return e ? e.answers[field] : undefined }
 function resolve() {
   if (about.value) state.data[about.value.name] = aboutItem.value
-  for (const [name, r] of Object.entries(uses.value)) { const v = answerAt(r.form, r.field); state.data[name] = r.top ? rowsOf(v)[0] || '' : v }
+  for (const [name, r] of Object.entries(uses.value)) { const v = answerAt(r.form, r.field); const rows = rowsOf(v); state.data[name] = r.top ? rows[0] || '' : r.last ? rows[rows.length - 1] || '' : v }
 }
 async function loadEarlier() {
   const uid = user.value && user.value.id

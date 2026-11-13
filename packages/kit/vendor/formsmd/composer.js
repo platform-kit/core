@@ -1312,6 +1312,24 @@ class Composer {
 	 * @param {FormFieldSharedParamsType & { placeholder?: string, max?: number, maxlength?: number }} params
 	 * @returns {string}
 	 */
+	/**
+	 * A ladder: one question asked again of each answer.
+	 *
+	 * @param {string} name
+	 * @param {FormFieldSharedParamsType & { from?: string, stop?: string, placeholder?: string, max?: number, maxlength?: number }} params
+	 * @returns {string}
+	 */
+	ladderInput = (name, params) => {
+		const instance = this;
+		const formDelimiter = instance.settings.formDelimiter !== "\n" ? `${instance.settings.formDelimiter} ` : "";
+		const templateChunks = [`${name}${params.required ? "*" : ""} = LadderInput(`].concat(composeSharedFieldParams(params, formDelimiter));
+		for (const k of ["from", "then", "stop", "placeholder", "max", "maxlength"]) if (params[k] !== undefined) templateChunks.push(`\t${formDelimiter}${k} = ${params[k]}`);
+		templateChunks.push(")");
+		const attrs = composeAttrs(params);
+		if (attrs.length > 0) templateChunks.unshift(`[${attrs.join(" ")}]`);
+		return templateChunks.join("\n");
+	};
+
 	listInput = (name, params) => {
 		const instance = this;
 		const formDelimiter =

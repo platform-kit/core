@@ -54,6 +54,9 @@ function onEnter(how: string) { if (how !== 'pick') submit() }
 const buttonText = computed(() => {
   const s = props.screen
   if (s.type === 'start') return s.button || W.value.start
+  /* a slide with a ladder ends it with its own words */
+  const ladder = visibleFields().find((f: any) => f.kind === 'ladder' && f.params && f.params.stop)
+  if (s.isForm && ladder) return ladder.params.stop
   if (s.isForm) return s.submitText || W.value.ok
   return W.value.next
 })

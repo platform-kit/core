@@ -71,17 +71,17 @@ function kitSettings(lines: any) {
        `ticket-title` names the field whose answer titles it (else the form's own title), and
        `ticket-priority` the field whose answer sets the priority, where one asks. */
     else if (key === 'ticket') kit.ticket = value === 'false' ? '' : (value === 'true' ? 'yes' : value)
-    /* A WORKBOOK FORM'S EARLIER ANSWERS: `uses` names them (name: form.field, or form.field[0] for a list's top row) for
+    /* A WORKBOOK FORM'S EARLIER ANSWERS: `uses` names them (name: form.field, or form.field[0] for a list's top row, form.field[-1] for its last) for
        its questions and choices; `about` names a list whose rows the form is about, one response a row */
     else if (key === 'uses' || key === 'about') {
       for (const pair of value.split(',')) {
         const p = pair.trim(); if (!p) continue
-        const m = /^([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*([a-z0-9]+(?:-[a-z0-9]+)*)\.([a-zA-Z_][a-zA-Z0-9_]*)(\[0\])?$/.exec(p)
-        if (!m) { errors.push({ line, message: `"${key}" is name: form.field (or form.field[0] for a list's top row), not "${p}"` }); continue }
-        const ref = { form: m[2], field: m[3], top: !!m[4] }
+        const m = /^([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*([a-z0-9]+(?:-[a-z0-9]+)*)\.([a-zA-Z_][a-zA-Z0-9_]*)(\[0\]|\[-1\])?$/.exec(p)
+        if (!m) { errors.push({ line, message: `"${key}" is name: form.field (or form.field[0] for a list's top row, form.field[-1] for its last), not "${p}"` }); continue }
+        const ref = { form: m[2], field: m[3], top: m[4] === '[0]', last: m[4] === '[-1]' }
         if (key === 'uses') kit.uses[m[1]] = ref
         else if (kit.about) errors.push({ line, message: '"about" names one list' })
-        else if (ref.top) errors.push({ line, message: '"about" names a whole list, without [0]' })
+        else if (ref.top || ref.last) errors.push({ line, message: '"about" names a whole list, without [0] or [-1]' })
         else kit.about = { name: m[1], form: m[2], field: m[3] }
       }
     }
@@ -364,5 +364,5 @@ export function fieldContract(model: any) {
      letter. A field's key is not a question, and `working_on` in front of somebody who has to act
      on the answer is a small daily insult to whoever wrote the form. ('...' is forms.md's own
      placeholder for a field that was never given one.) */
-    question: (f.params && f.params.question && f.params.question !== '...' ? f.params.question : '') || f.name, kind: f.kind, required: !!f.required, multiple: f.kind === 'list' || !!(f.params && f.params.multiple), values: f.kind === 'choice' || f.kind === 'picture' ? (f.params.choices || []).map((c: any) => c.value) : f.kind === 'select' ? (f.params.options || []).map((o: any) => o.value) : undefined, slide: f.slide }))
+    question: (f.params && f.params.question && f.params.question !== '...' ? f.params.question : '') || f.name, kind: f.kind, required: !!f.required, multiple: f.kind === 'list' || f.kind === 'ladder' || !!(f.params && f.params.multiple), values: f.kind === 'choice' || f.kind === 'picture' ? (f.params.choices || []).map((c: any) => c.value) : f.kind === 'select' ? (f.params.options || []).map((o: any) => o.value) : undefined, slide: f.slide }))
 }

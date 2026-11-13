@@ -92,6 +92,8 @@ said = VoiceInput(| question = Say it | maxLength = 90)
 seen = VideoInput(| question = Show me | maxLength = 30)
 ranked = ListInput(| question = Ranked | max = 5)
 
+under = LadderInput(| question = Under that | from = ranked | then = And under that | stop = Nothing under it | max = 4)
+
 ::: [.col-6 #half]
 Half a row, kept as it is.
 :::

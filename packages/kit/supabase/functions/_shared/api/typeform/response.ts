@@ -19,7 +19,7 @@ export function answerOf(field: any, a: any, fileUrl: any) {
   const v = a.value
   if (a.file_path) return { ...head, type: 'file_url', file_url: fileUrl ? fileUrl(a.file_path) : a.file_path }
   /* an ordered list, as long text: one row to a line, in the respondent's order */
-  if (field.kind === 'list') return { ...head, type: 'text', text: (Array.isArray(v) ? v : [v]).filter((x: any) => x != null && x !== '').map(String).join('\n') }
+  if (field.kind === 'list' || field.kind === 'ladder') return { ...head, type: 'text', text: (Array.isArray(v) ? v : [v]).filter((x: any) => x != null && x !== '').map(String).join('\n') }
   switch (type) {
     case 'email': return { ...head, type: 'email', email: String(v ?? '') }
     case 'website': return { ...head, type: 'url', url: String(v ?? '') }

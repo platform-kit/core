@@ -13,9 +13,10 @@ import FmScale from './FmScale.vue'
 import FmFile from './FmFile.vue'
 import FmRecord from './FmRecord.vue'
 import FmList from './FmList.vue'
+import FmLadder from './FmLadder.vue'
 const props = defineProps({ blocks: { type: Array as PropType<any[]>, default: () => [] }, ctx: { type: Object as PropType<any>, default: () => ({}) }, values: { type: Object as PropType<any>, required: true }, errors: { type: Object as PropType<any>, default: () => ({}) }, words: { type: Object as PropType<any>, default: () => ({}) }, autofocusAll: { type: Boolean, default: false } })
 const emit = defineEmits(['enter'])
-const KIND: any = { text: FmText, email: FmText, url: FmText, tel: FmText, password: FmText, number: FmText, date: FmText, time: FmText, datetime: FmText, select: FmSelect, choice: FmChoice, picture: FmChoice, rating: FmRating, scale: FmScale, file: FmFile, voice: FmRecord, video: FmRecord, list: FmList }
+const KIND: any = { text: FmText, email: FmText, url: FmText, tel: FmText, password: FmText, number: FmText, date: FmText, time: FmText, datetime: FmText, select: FmSelect, choice: FmChoice, picture: FmChoice, rating: FmRating, scale: FmScale, file: FmFile, voice: FmRecord, video: FmRecord, list: FmList, ladder: FmLadder }
 const shown = computed(() => props.blocks.filter((b) => holds((b as any).condition, props.ctx)))
 const classes = (b: any) => ['fdiv', ...(b.attrs && b.attrs.classes ? b.attrs.classes.map((c: string) => 'fmd-' + c) : [])]
 /* the first field of the slide takes focus when the document asks for it on every slide, or the field does */

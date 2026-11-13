@@ -222,8 +222,8 @@ Deno.serve(async (req: Request) => {
     let value: unknown = String(v).slice(0, MAX_VALUE)
     if (f.multiple) { try { value = JSON.parse(String(v)) } catch { value = [String(v)] } if (!Array.isArray(value)) value = [value] }
     if (f.values && f.values.length) { const vs = Array.isArray(value) ? value : [value]; if (vs.some((x) => !f.values!.includes(String(x)))) return json({ error: `"${k}" is not one of the choices`, code: 'choice' }, 400) }
-    /* an ordered list keeps its rows in order, each a line of text, the empty ones dropped */
-    if (f.kind === 'list') value = (value as unknown[]).map((x) => String(x ?? '').replace(/\s+/g, ' ').trim()).filter(Boolean)
+    /* an ordered list, and a ladder, keep their rows in order, each a line of text, the empty ones dropped */
+    if (f.kind === 'list' || f.kind === 'ladder') value = (value as unknown[]).map((x) => String(x ?? '').replace(/\s+/g, ' ').trim()).filter(Boolean)
     if (f.kind === 'number' || f.kind === 'rating' || f.kind === 'scale') { const n = Number(value); if (String(value) !== '' && Number.isFinite(n)) value = n }
     answers.push({ field: k, value })
   }

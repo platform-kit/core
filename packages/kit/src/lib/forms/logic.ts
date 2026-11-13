@@ -38,7 +38,9 @@ export function valueOf(v: any) {
   if (typeof v === 'object' && v.name) return v.name   /* a file: its name */
   return String(v)
 }
-const bindable = (ctx: any) => Object.fromEntries(Object.entries(ctx).map(([k, v]) => [k, Array.isArray(v) || (v && typeof v === 'object' && (v as any).name && !Array.isArray(v)) ? valueOf(v) : v]))
+/* a list prints as its rows joined, as forms.md prints it, and stays a list a {% for %} can walk */
+const listOf = (v: any[]) => { const rows: any = [...v]; rows.toString = () => String(valueOf(v)); return rows }
+const bindable = (ctx: any) => Object.fromEntries(Object.entries(ctx).map(([k, v]) => [k, Array.isArray(v) ? listOf(v) : v && typeof v === 'object' && (v as any).name ? valueOf(v) : v]))
 
 /* the next slide from `from` going forward (or back): the first whose jump condition holds, or has none — forms.md's getNextSlide */
 export function nextSlide(slides: any, from: number, ctx: { plan: string }, dir = 1) {

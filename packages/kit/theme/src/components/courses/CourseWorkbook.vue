@@ -146,7 +146,7 @@ const contextOf = (l: any, entry: any) => {
   const kit = (modelOf(l.form) || {}).kit || {}
   const ctx: any = { ...((entry && entry.answers) || {}) }
   if (kit.about) ctx[kit.about.name] = entry && entry.item
-  for (const [name, r] of Object.entries(kit.uses || {}) as any) { const v = earlier(r.form, r.field, entry && entry.item); ctx[name] = r.top && Array.isArray(v) ? v[0] : v }
+  for (const [name, r] of Object.entries(kit.uses || {}) as any) { const v = earlier(r.form, r.field, entry && entry.item); ctx[name] = Array.isArray(v) && r.top ? v[0] : Array.isArray(v) && r.last ? v[v.length - 1] : v }
   return ctx
 }
 const questionsOf = (l: any, entry: any = null) => {
@@ -167,7 +167,7 @@ const chainOf = (row: string) => ((book.value && book.value.lessons) || []).map(
 /* one response's questions and answers, a list in its order */
 const WbAnswers = (p: { lesson: any; entry: any }) => h('dl', { class: 'crs-wb-qa' }, questionsOf(p.lesson, p.entry).filter((q: any) => present(p.entry.answers[q.name])).flatMap((q: any) => {
   const v = p.entry.answers[q.name]
-  return [h('dt', q.question), h('dd', Array.isArray(v) && q.kind === 'list' ? h('ol', { class: 'crs-wb-list' }, v.map((r: any) => h('li', String(r)))) : h('p', { class: 'crs-wb-text' }, said(v)))]
+  return [h('dt', q.question), h('dd', Array.isArray(v) && (q.kind === 'list' || q.kind === 'ladder') ? h('ol', { class: 'crs-wb-list' }, v.map((r: any) => h('li', String(r)))) : h('p', { class: 'crs-wb-text' }, said(v)))]
 }))
 WbAnswers.props = ['lesson', 'entry']
 

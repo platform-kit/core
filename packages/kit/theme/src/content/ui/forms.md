@@ -34,6 +34,12 @@ too-long: At most {n} characters.
 list-required: Add at least one item.
 list-min: Add at least {n}.
 list-max: At most {n}.
+ladder-step: Step {n}
+ladder-placeholder: Type your answer
+ladder-deeper: Go deeper
+ladder-back: Back a step
+ladder-full: That is as many steps as this question takes.
+ladder-required: Write at least one answer.
 invalid-pattern: Please match the requested format.
 file-size-error: File exceeds the size limit.
 file-image-only: Choose an image.

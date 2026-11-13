@@ -41,6 +41,9 @@ const TYPES = {
 	/* and an ordered list: as many short rows as the respondent wants, put in the order they choose.
 	   The answer is the rows, in that order. */
 	listinput: ["listInput", "list"],
+	/* and a ladder: one question asked again of each answer, until there is nothing under it. The answer is the
+	   steps, in order. */
+	ladderinput: ["ladderInput", "ladder"],
 };
 
 /* THE FIELD LINE, built from the kinds above so the list is written once. It was written out twice
@@ -228,6 +231,20 @@ function parseFieldLine(text, formDelimiter = "|") {
 			else if (key === "min" && value && value >>> 0 === parseFloat(value) && Number(value) > 0) validParams[key] = Number(value);
 			else if (key === "options" && value && typeof value === "string") validParams[key] = splitOptions(value, false).map((o) => o.label);
 			else if (key === "optionsfrom" && value && typeof value === "string") validParams[key] = value.split(",").map((x) => x.trim()).filter(Boolean);
+			else if (key === "maxlength" && value && value >>> 0 === parseFloat(value)) validParams[key] = Number(value);
+			else bad(key, value);
+		}
+	} else if (kind === "ladder") {
+		/* A LADDER: `from` names the answer the first step is asked of (a field of the form, or one of its references), `then`
+		   is the question every step after the first asks (the first asks `question`),
+		   `stop` is what the button that ends it says, `max` bounds the steps, `placeholder` and `maxlength` the box. */
+		for (const [key, value] of Object.entries(restParams)) {
+			if (key === "placeholder" && value && typeof value === "string") validParams[key] = value;
+			else if (key === "stop" && value && typeof value === "string") validParams[key] = value;
+			else if (key === "then" && value && typeof value === "string") validParams[key] = value;
+			else if (key === "from" && value && typeof value === "string") validParams[key] = value.trim();
+			else if (key === "disabled" && value) validParams[key] = value;
+			else if (key === "max" && value && value >>> 0 === parseFloat(value) && Number(value) > 0) validParams[key] = Number(value);
 			else if (key === "maxlength" && value && value >>> 0 === parseFloat(value)) validParams[key] = Number(value);
 			else bad(key, value);
 		}

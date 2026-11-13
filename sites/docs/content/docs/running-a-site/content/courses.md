@@ -32,7 +32,7 @@ sources:
     packages/kit/supabase/schemas/glue/courses+forms.sql,
     packages/kit/build/course-workbook-db.test.mts,
   ]
-reviewed: 2026-11-10
+reviewed: 2026-11-12
 ---
 
 A course is sections and lessons in order, which a reader works through and finishes. The `courses` module adds them: the course builder in the admin, the reader's pages, enrollments, release over time, completion, certificates and the emails that go with them.
@@ -60,7 +60,7 @@ A text lesson can carry a **workbook form**: a form that sets `#! workbook = tru
 
 `answers: required` holds the lesson until the form is finished: **Complete and continue** says to answer the questions first. `answers: optional`, the default, leaves the form there to use and the lesson finished as any text lesson is. Only a text lesson carries a form, the form must be a workbook form, and `workbook` is never a lesson's key; the build names any of these.
 
-**The workbook page**, `/courses/<slug>/workbook` (and the same under the community), gathers everything the reader has written in the course: each module, each lesson with a form, each question with its answer, a list in the reader's order. It prints on its own, without the site around it, so it saves as a PDF. Where lessons follow up on the rows of an earlier list, it can also be read **by subject**: each row's answers together, lesson after lesson. A site can rename it in its own strings. The course page and the lesson player link to it.
+**The workbook page**, `/courses/<slug>/workbook` (and the same under the community), gathers everything the reader has written in the course: each module, each lesson with a form, each question with its answer, a list in the reader's order and a ladder from its first step to its deepest. It prints on its own, without the site around it, so it saves as a PDF. Where lessons follow up on the rows of an earlier list, it can also be read **by subject**: each row's answers together, lesson after lesson. A site can rename it in its own strings. The course page and the lesson player link to it.
 
 **It is private.** Only the reader reads it. On the workbook page they can share it with a particular coach, anyone holding the coach or provider role, and stop sharing it whenever they like. Each share is kept as a record of who, which course, and when it was granted and withdrawn. A coach finds what has been shared with them under **Workbooks shared with you** in the library, and reads it at the same address with `?reader=`. The site's administrators don't read a workbook unless they are also a coach it was shared with.
 

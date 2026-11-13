@@ -50,7 +50,7 @@ t('the slides: start first, the bodies, the end last', () => assert.deepEqual(m.
 t('the start slide: its button and its copy with a binding and an attribute line', () => { const s = m.slides[0]; assert.equal(s.button, 'Go'); assert.equal(s.blocks[0].type, 'markdown'); assert.deepEqual(s.blocks[0].deps, ['brand']); assert.ok(s.blocks[0].md.includes('[.text-center]')) })
 t('every kind is a field of its kind', () => {
   const kinds = Object.fromEntries(m.fields.map((f: { name: any; kind: any }) => [f.name, f.kind]))
-  assert.deepEqual(kinds, { name: 'text', email: 'email', site: 'url', phone: 'tel', secret: 'password', age: 'number', about: 'text', plan: 'select', pick: 'choice', many: 'choice', pickOther: 'text', picture: 'picture', stars: 'rating', nps: 'scale', when: 'date', at: 'time', stamp: 'datetime', file: 'file', said: 'voice', seen: 'video', ranked: 'list' })
+  assert.deepEqual(kinds, { name: 'text', email: 'email', site: 'url', phone: 'tel', secret: 'password', age: 'number', about: 'text', plan: 'select', pick: 'choice', many: 'choice', pickOther: 'text', picture: 'picture', stars: 'rating', nps: 'scale', when: 'date', at: 'time', stamp: 'datetime', file: 'file', said: 'voice', seen: 'video', ranked: 'list', under: 'ladder' })
   assert.deepEqual([...new Set(m.fields.map((f: { kind: any }) => f.kind))].sort(), [...KINDS].sort())   /* every kind the language has, at least once */
 })
 t('the parameters, per kind, as forms.md reads them', () => {
@@ -137,11 +137,13 @@ t('form-slides: a screen per slide, the end last, a jump as a skip', () => {
   assert.deepEqual(s.map((x: { progress: any }) => x.progress), [0, 25, 50, 75, 100, 100])
 })
 t('slides: the same screens, nothing posted', () => { const w = parseForm(raw.replace('#! title = Every kind', '#! title = Every kind\n#! page = slides')); const s = formScreens(w, () => ({})); assert.equal(s.length, 6); assert.ok(s.every((x: { post: any }) => !x.post)); assert.equal(s[1].isForm, false) })
-t('single: one screen, every block', () => { const w = parseForm(raw.replace('#! title = Every kind', '#! title = Every kind\n#! page = single')); const s = formScreens(w, () => ({})); assert.equal(s.length, 1); assert.equal(s[0].single, true); assert.equal(s[0].fields.length, 21) })
+t('a list in copy prints joined, and a loop walks its rows', () => { assert.equal(renderCopy('{$ steps $}', { steps: ['a', 'b'] }).trim(), renderCopy('{$ one $}', { one: 'a, b' }).trim()); assert.equal(renderCopy('{% for s in steps %}[{{ s }}]{% endfor %}', { steps: ['a', 'b'] }), '[a][b]') })
+t('single: one screen, every block', () => { const w = parseForm(raw.replace('#! title = Every kind', '#! title = Every kind\n#! page = single')); const s = formScreens(w, () => ({})); assert.equal(s.length, 1); assert.equal(s[0].single, true); assert.equal(s[0].fields.length, 22) })
 t('a document with no end slide gets the default one', () => { const w = parseForm('a = TextInput(| question = A)'); const s = formScreens(w, () => ({})); assert.equal(s.length, 2); assert.equal(s[1].defaultEnd, true) })
 
 /* ---- the validation ---- */
 const W = { required: 'req', 'invalid-email': 'mail', 'invalid-url': 'url', 'invalid-number': 'num', 'number-min': 'min {min}', 'number-max': 'max {max}', 'invalid-date': 'date', 'choice-required': 'choose', 'number-choice-required': 'pickone', 'file-size-error': 'big', 'too-long': 'long {n}', 'invalid-phone': 'phone' }
+t('a ladder: where it starts, what ends it, how many steps, and its steps checked as rows', () => { const f = m.fields.find((x: any) => x.name === 'under'); assert.deepEqual([f.params.from, f.params.stop, f.params.max], ['ranked', 'Nothing under it', 4]); assert.equal(validateField({ kind: 'ladder', required: true, params: {} }, [' '], W), 'Write at least one answer.'); assert.equal(validateField({ kind: 'ladder', params: { max: 2 } }, ['a', 'b', 'c'], W), 'At most 2.'); assert.equal(validateField({ kind: 'ladder', required: true, params: {} }, ['I have to fight'], W), '') })
 t('required, by kind', () => { assert.equal(validateField({ kind: 'text', required: true, params: {} }, '', W), 'req'); assert.equal(validateField({ kind: 'choice', required: true, params: { choices: [] } }, null, W), 'choose'); assert.equal(validateField({ kind: 'rating', required: true, params: {} }, null, W), 'pickone'); assert.equal(validateField({ kind: 'text', required: false, params: {} }, '', W), '') })
 t('the shape a kind asks for', () => {
   assert.equal(validateField({ kind: 'email', params: {} }, 'nope', W), 'mail'); assert.equal(validateField({ kind: 'email', params: {} }, 'a@b.co', W), '')
@@ -210,8 +212,9 @@ t('a workbook form names the earlier answers it follows up on, and the list it i
   const m = parseForm('#! workbook = true\n#! about = situation: honest-look.change\n#! uses = feeling: under-the-feeling.feelings[0], why: cause.belief\n\nx = TextInput(| question = About {$ situation $})')
   assert.deepEqual(m.errors, [])
   assert.deepEqual(m.kit.about, { name: 'situation', form: 'honest-look', field: 'change' })
-  assert.deepEqual(m.kit.uses, { feeling: { form: 'under-the-feeling', field: 'feelings', top: true }, why: { form: 'cause', field: 'belief', top: false } })
+  assert.deepEqual(m.kit.uses, { feeling: { form: 'under-the-feeling', field: 'feelings', top: true, last: false }, why: { form: 'cause', field: 'belief', top: false, last: false } })
 })
+t('a reference can name the last row of a list', () => { const m = parseForm('#! workbook = true\n#! uses = root: deepest.under[-1]\n\nx = TextInput(| question = X)'); assert.deepEqual(m.errors, []); assert.deepEqual(m.kit.uses.root, { form: 'deepest', field: 'under', top: false, last: true }) })
 t('following up is a workbook form\'s, and its references are refused when malformed', () => {
   assert.match(parseForm('#! uses = a: f.x\n\nx = TextInput(| question = Q)').errors[0].message, /only a workbook form/)
   assert.match(parseForm('#! workbook = true\n#! uses = a: Bad Form.x\n\nx = TextInput(| question = Q)').errors[0].message, /name: form.field/)
