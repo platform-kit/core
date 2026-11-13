@@ -265,7 +265,7 @@ export async function planFor({ kind, name, level = 'site', module: owner = null
     const B = (f: string) => { const p = path.join(kitRoot, 'build', f); const t = p.replace(/\.(m?)js$/, '.$1ts'); return !fs.existsSync(p) && fs.existsSync(t) ? t : p }
     const D = (f: string) => path.join(ws, 'sites', 'docs', 'content', 'docs', f)
     if (kind === 'module') {
-      edits.push({ path: kitMods, what: `MODULES += ${name}`, apply: async (t: any) => { const a = await namedArray(t, 'MODULES'); return a ? appendRaw(t, a, fragment(dir, '_entry.js.tmpl', v)) : null } })
+      edits.push({ path: kitMods, what: `MODULES += ${name}`, apply: async (t: any) => { const a = await namedArray(t, 'LISTED'); return a ? appendRaw(t, a, fragment(dir, '_entry.js.tmpl', v)) : null } })
       /* the module pages list every module: the modules table and the config's modules row */
       edits.push({ path: D('building-a-site/modules.md'), what: `a ${name} row in the modules table`, apply: (t: any) => addTableRow(t, /^\| `translation`/, `| \`${name}\` | ${v.Title}: describe what it adds (see [${v.Title}](/content/docs/building-a-site/${name})) |`) })
       edits.push({ path: D('reference/config-keys.md'), what: `${name} in the modules row`, apply: (t: string) => { const m = /(the features (?:`[^`]+`, )*`[^`]+`)/.exec(t); return m ? t.slice(0, m.index) + m[1] + `, \`${name}\`` + t.slice(m.index + m[0].length) : null } })
@@ -277,23 +277,26 @@ export async function planFor({ kind, name, level = 'site', module: owner = null
     if (kind === 'function') {
       if (!owner) return { refused: 'A core function belongs to a module: pass --module <key>.' }
       edits.push({ path: kitMods, what: `${owner}.owns.functions += ${name}`, apply: async (t: any) => {
-        const a = await namedArray(t, 'MODULES'); const m = a && a.elements.find((e: { type: string }) => e && e.type === 'ObjectExpression' && propOf(e, 'key') && propOf(e, 'key').value.value === owner)
+        const a = await namedArray(t, 'LISTED'); const m = a && a.elements.find((e: { type: string }) => e && e.type === 'ObjectExpression' && propOf(e, 'key') && propOf(e, 'key').value.value === owner)
         if (!m) return null
         return pushIn(t, ['owns', 'functions'], `'${name}'`, async () => m)
       } })
     }
     if (kind === 'page') {
-      const app = path.join(kitRoot, 'theme', 'src', 'App.vue')
-      const gate = owner ? `moduleOn('${owner}') ? defineAsyncComponent(() => import('./pages/${v.Name}Page.vue')) : null` : `defineAsyncComponent(() => import('./pages/${v.Name}Page.vue'))`
-      edits.push({ path: app, what: `App.vue routes /${name} to ${v.Name}Page`, apply: (t: string) => {
-        const declAnchor = /\nconst EntriesPage = [^\n]*\n/.exec(t), routeAnchor = t.indexOf('  <LandingPage v-else-if="isPageRoute(route)"')
-        if (!declAnchor || routeAnchor < 0) return null
-        const decl = `/* ${v.title} (generated: platformkit generate page ${name} --level core) */\nconst ${v.Name}Page = ${gate}\n`
-        const line = `  <${v.Name}Page v-else-if="${owner ? `${v.Name}Page && ` : ''}(route === '/${name}' || route.startsWith('/${name}/'))" :key="route" :path="route" />\n`
-        const at = declAnchor.index + declAnchor[0].length
-        const u = t.slice(0, at) + decl + t.slice(at)
-        const r = u.indexOf('  <LandingPage v-else-if="isPageRoute(route)"')
-        return u.slice(0, r) + line + u.slice(r)
+      /* a page is a contribution to the page table (openspec: modules-as-packages): its module's \`pages\`, or core's list, tried
+         after every module's own pages and before a landing page that claims an address (order 260), in the first free place */
+      const entry = (order: number) => `{ name: '${v.Name}Page', order: ${order}, page: 'theme:pages/${v.Name}Page.vue', path: '/${name}', keyBy: 'route', props: { path: 'route' } }`
+      const freeOrder = (...texts: string[]) => { const used = new Set(texts.flatMap((x) => [...x.matchAll(/order: (\d+)/g)].map((m) => Number(m[1])))); for (let o = 251; o < 260; o++) if (!used.has(o)) return o; return null }
+      const corePages = path.join(kitRoot, 'build', 'modules', 'core-pages.mts')
+      if (!owner) edits.push({ path: corePages, what: `core's pages += /${name}`, apply: (t: string) => {
+        const o = freeOrder(t, fs.readFileSync(kitMods, 'utf8')); const at = t.indexOf("  { name: 'LandingPage', order: 260")
+        return o == null || at < 0 ? null : t.slice(0, at) + '  ' + entry(o) + ',\n' + t.slice(at)
+      } })
+      else edits.push({ path: kitMods, what: `${owner}.pages += /${name}`, apply: async (t: any) => {
+        const o = freeOrder(t, fs.readFileSync(corePages, 'utf8')); if (o == null) return null
+        const a = await namedArray(t, 'LISTED'); const m = a && a.elements.find((e: { type: string }) => e && e.type === 'ObjectExpression' && propOf(e, 'key') && propOf(e, 'key').value.value === owner)
+        if (!m) return null
+        return pushIn(t, ['pages'], entry(o), async () => m)
       } })
     }
     /* the docs page that names every new file, or the docs check refuses them */

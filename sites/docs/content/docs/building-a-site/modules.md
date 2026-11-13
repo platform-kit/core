@@ -29,6 +29,10 @@ sources:
     packages/kit/theme/src/pages/AdminPage.vue,
     packages/kit/build/modules/backend.mts,
     packages/kit/build/modules/folders.mts,
+    packages/kit/build/modules/core-pages.mts,
+    packages/kit/src/lib/pages.ts,
+    packages/kit/src/lib/page-routes.ts,
+    packages/kit/theme/src/App.vue,
     packages/kit/build/module-drop.mts,
     packages/kit/build/modules-off-db.test.mts,
   ]
@@ -168,7 +172,7 @@ npx platformkit generate test sanity
 npx platformkit generate step tally
 ```
 
-It writes into the site by default. `--level core` writes the same kinds into PlatformKit itself, in its own form (the module list, the steps' and models' indexes, the test list, `App.vue` for a page, and a docs page naming every new file), and is refused unless PlatformKit is a checkout rather than an installed package. It never overwrites: a file that exists or a module name that is taken writes nothing, and `--dry-run` lists what it would do. A site replaces the templates for a kind by putting its own in `generators/<kind>/` (files under `packages/kit/build/generators/site/<kind>/`, with `@@name@@`, `@@Name@@` and `@@title@@` filled in).
+It writes into the site by default. `--level core` writes the same kinds into PlatformKit itself, in its own form (the module list, the steps' and models' indexes, the test list, a page in its module's `pages` or core's list, and a docs page naming every new file), and is refused unless PlatformKit is a checkout rather than an installed package. It never overwrites: a file that exists or a module name that is taken writes nothing, and `--dry-run` lists what it would do. A site replaces the templates for a kind by putting its own in `generators/<kind>/` (files under `packages/kit/build/generators/site/<kind>/`, with `@@name@@`, `@@Name@@` and `@@title@@` filled in).
 
 **The manifest**, anywhere the config points at:
 
@@ -266,6 +270,10 @@ very property [switching one module off breaks no other](/content/docs/building-
 there to prove. And there is no defensible way to resolve it automatically, because
 last-one-loaded would make the answer depend on the order a site's config happened to register
 things in. Same rule as a landing section registered under a name the theme already has.
+
+## A module contributes its pages
+
+Which page an address shows is a table, not a list in the theme. Core's pages (`build/modules/core-pages.mts`: the landing pages, the content, the app area, the admin, sharing, a person's page and the rest) and each enabled module's `pages` are composed by the kit's Vite plugin into `#site/pages`, and `App.vue` shows the first page, in `order`, whose test holds for the address (`src/lib/pages.ts`). A page entry names its component (`theme:<path>` in the theme, `./<path>` in the module's folder), its `order`, and either a `test` (`specifier#export`, a function of the address and whether content is being edited; the kit's are in `src/lib/page-routes.ts`) or a `path` it answers with every address under it. `keyBy: 'route'` mounts it afresh at every address; `props` passes the address or a fixed value; `with` makes it a page one module adds only while another is on, as spaces answers `/feed` where the network is on too; `cmsOnly` keeps it out of a built site that edits nothing, as the preview is. A module that is off contributes no page, so its pages are not in the bundle at all. Two pages at one order are refused. The orders keep the place each page had when the theme held the list, ten apart, and `build/module-routes.test.mts` holds every address on every fixture site to the page it showed then.
 
 ## A module is a folder
 

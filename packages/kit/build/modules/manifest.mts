@@ -67,6 +67,31 @@ export interface PaymentProviderRegistration {
   optionalSecrets?: readonly string[]
   webhookPath: string
 }
+/*
+ * A PAGE A MODULE CONTRIBUTES (openspec: modules-as-packages). The kit's page table tries every enabled module's
+ * pages in `order` and shows the first whose `test` holds for the address.
+ *   name   the page's name, as the route census records it
+ *   order  where it is tried: two pages with one order are refused
+ *   page   the component: 'theme:<path>' in the site's theme, or './<path>' in the module's own folder
+ *   test   'specifier#export': a (route, ctx) => boolean the page answers to
+ *   path   or, in place of a test, the address the page answers, and every address under it
+ *   keyBy  'route' remounts the page at every address; omitted, it stays mounted
+ *   props  props given to the page: 'route' is the address itself, anything else is passed as written
+ *   eager  imported with the app rather than when first shown
+ *   with   another module that must be on too, for a page one module adds when another is there
+ */
+export interface PageContribution {
+  name: string
+  order: number
+  page: string
+  test?: string
+  path?: string
+  keyBy?: 'route'
+  props?: Record<string, string>
+  eager?: boolean
+  with?: string
+  cmsOnly?: boolean
+}
 export interface ModuleDeclaration {
   key: string
   what: string
@@ -77,6 +102,7 @@ export interface ModuleDeclaration {
   cloud: Cell
   owns?: Owns
   paymentProviders?: PaymentProviderRegistration[]
+  pages?: PageContribution[]
 }
 /* a declaration read: every `owns` kind present, a requirement always { module, why } */
 export interface Module {
@@ -89,13 +115,39 @@ export interface Module {
   requires: Array<{ module: string, why: string | null }>
   owns: Required<Owns>
   paymentProviders: PaymentProviderRegistration[]
+  pages: PageContribution[]
   where?: string
 }
 export type Modules = Map<string, Module>
 export type Switches = Record<string, boolean | undefined>
 
 /* every field a manifest may carry, so a typo is refused rather than ignored */
-export const FIELDS = ['key', 'what', 'needs', 'requires', 'static', 'git', 'cloud', 'owns', 'paymentProviders']
+export const FIELDS = ['key', 'what', 'needs', 'requires', 'static', 'git', 'cloud', 'owns', 'paymentProviders', 'pages']
+export const PAGE_FIELDS = ['name', 'order', 'page', 'test', 'path', 'keyBy', 'props', 'eager', 'with', 'cmsOnly']
+
+/* a module's pages, each checked field by field */
+export function pagesOf(input: unknown, where: string, faults: string[]): PageContribution[] {
+  if (input == null) return []
+  if (!Array.isArray(input)) { faults.push(`${where}: \`pages\` must be a list`); return [] }
+  const out: PageContribution[] = []
+  for (const [i, p] of input.entries()) {
+    const label = `${where}: \`pages[${i}]\``
+    if (!p || typeof p !== 'object') { faults.push(`${label} must be a record`); continue }
+    for (const k of Object.keys(p)) if (!PAGE_FIELDS.includes(k)) faults.push(`${label}: \`${k}\` is not a page field (${PAGE_FIELDS.join(' · ')})`)
+    if (typeof p.name !== 'string' || !p.name) faults.push(`${label}.name must be the page's name`)
+    if (!Number.isInteger(p.order)) faults.push(`${label}.order must be a whole number`)
+    if (typeof p.page !== 'string' || !/^(theme:|\.\/)/.test(p.page)) faults.push(`${label}.page must be 'theme:<path>' or './<path>'`)
+    if ((p.test == null) === (p.path == null)) faults.push(`${label} answers a \`test\` or a \`path\`, one of the two`)
+    else if (p.test != null && (typeof p.test !== 'string' || !/^[^#]+#[A-Za-z_$][\w$]*$/.test(p.test))) faults.push(`${label}.test must be 'specifier#export'`)
+    else if (p.path != null && (typeof p.path !== 'string' || !/^\/[a-z0-9/_-]*$/.test(p.path))) faults.push(`${label}.path must be an address such as '/loyalty'`)
+    if (p.keyBy != null && p.keyBy !== 'route') faults.push(`${label}.keyBy is 'route' or nothing`)
+    if (p.props != null && (typeof p.props !== 'object' || !Object.values(p.props).every((v) => typeof v === 'string'))) faults.push(`${label}.props must map names to strings`)
+    if (p.with != null && typeof p.with !== 'string') faults.push(`${label}.with must be a module's key`)
+    if (p.cmsOnly != null && typeof p.cmsOnly !== 'boolean') faults.push(`${label}.cmsOnly is true or nothing`)
+    out.push(p)
+  }
+  return out
+}
 export const OWNS: OwnsKind[] = ['routes', 'admin', 'schema', 'functions', 'cron', 'steps', 'env']
 /* what exactly one module may claim. Everything a switch takes away with it — and not `env`, which
    is the deployment's and is shared: see the collision check in readManifests for why. */
@@ -323,6 +375,7 @@ export function readManifest(input: unknown, where = 'a manifest'): { manifest: 
     }
   }
   const paymentProviders = paymentProvidersOf(m.paymentProviders, owns, where, faults)
+  const pages = pagesOf(m.pages, where, faults)
 
   return {
     manifest: faults.length ? null : {
@@ -330,6 +383,7 @@ export function readManifest(input: unknown, where = 'a manifest'): { manifest: 
       static: m.static, git: m.git, cloud: m.cloud, requires: reqs,
       owns: Object.fromEntries(OWNS.map((k) => [k, owns[k] || []])) as Required<Owns>,
       paymentProviders,
+      pages,
     },
     faults,
   }
@@ -351,6 +405,13 @@ export function readManifests(entries: Array<{ manifest: unknown, where: string 
   }
   /* a module that needs one nobody declares can never be satisfied */
   for (const m of by.values()) for (const r of m.requires) if (!by.has(r.module)) faults.push(`\`${m.key}\` requires \`${r.module}\`, which no manifest declares`)
+  /* two pages tried at one order would make which one shows an accident of loading; a page that waits on a module nobody declares never shows */
+  const orders = new Map<number, string>()
+  for (const m of by.values()) for (const p of m.pages) {
+    if (p.with && !by.has(p.with)) faults.push(`\`${m.key}\` contributes the page ${p.name} with \`${p.with}\`, which no manifest declares`)
+    if (orders.has(p.order)) faults.push(`pages ${orders.get(p.order)} and ${m.key}:${p.name} are both at order ${p.order}`)
+    else orders.set(p.order, `${m.key}:${p.name}`)
+  }
   const providers = new Map<string, string>()
   for (const m of by.values()) for (const provider of m.paymentProviders) {
     if (providers.has(provider.id)) faults.push(`payment provider \`${provider.id}\` is declared by two modules: \`${providers.get(provider.id)}\` and \`${m.key}\``)

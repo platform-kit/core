@@ -97,7 +97,7 @@ supabase/
 src/theme.js                   the manifest, including optional theme-owned module declarations
 src/main.js                    the entry: the forward, the theme, cloud mode's content loaded, then app.js
 src/app.js                     the app: the css, the look, the session, the mount
-src/App.vue, router.js         the shell and the route switch
+src/App.vue, router.js         the shell, and the page the page table chooses
 src/layouts/SiteLayout.vue     the header, the footer, the veils
 src/pages/                     Landing, Content, Store, Diagnostics, Call, Admin (the one desk: the CMS, or the live views in production), ApiReference (/api: Scalar over the OpenAPI document), Book (/book/<slug>: the booker on its own page, for cal.com's embed), Preview, Share
 src/components/                everything else: content/, landing/ (+ skins), admin/, chat/, support/, store…

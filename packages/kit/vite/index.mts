@@ -69,11 +69,26 @@ function networkProxy(c: any, mode: string) {
 }
 
 
-function site(c: any, theme: any, keys: string[] = []): Plugin {
+/*
+ * THE PAGE TABLE (openspec: modules-as-packages): core's pages and every enabled module's, in order. A page with
+ * `with` needs that module on too. Two pages at one order are refused here, core's included.
+ */
+export async function pageTable(c: any, modules: Map<string, any>) {
+  const { CORE_PAGES } = await import('../build/modules/core-pages.mjs')
+  const { isOn } = await import('../build/modules/manifest.mjs')
+  const on = (k: string) => modules.has(k) && isOn(k, c.modules || {})
+  const rows: any[] = CORE_PAGES.map((p: any) => ({ ...p, module: 'core', dir: null }))
+  for (const m of modules.values()) if (on(m.key)) for (const p of m.pages || []) if (!p.with || on(p.with)) rows.push({ ...p, module: m.key })
+  rows.sort((a, b) => a.order - b.order)
+  for (let i = 1; i < rows.length; i++) if (rows[i].order === rows[i - 1].order) throw new Error(`pages ${rows[i - 1].module}:${rows[i - 1].name} and ${rows[i].module}:${rows[i].name} are both at order ${rows[i].order}`)
+  return rows
+}
+
+function site(c: any, theme: any, keys: string[] = [], pages: any[] = []): Plugin {
   const overrides = resolveOverrides(c, theme)
   const overrideFiles = new Set(Object.values(overrides))
   /* a virtual id must not hold a '#': the browser would read it as a fragment */
-  const V = Object.fromEntries(['site', 'site/looks', 'site/landing', 'site/app', 'site/routes', 'site/nav', 'site/analytics', 'site/instrument', 'site/recommendations', 'site/admin', 'site/courses', 'site/member', 'site/permissions', 'site/desk', 'site/strings-default'].map((k) => ['#' + k, '\0platformkit:' + k.replace('/', '-')]))
+  const V = Object.fromEntries(['site', 'site/looks', 'site/landing', 'site/app', 'site/routes', 'site/nav', 'site/analytics', 'site/instrument', 'site/recommendations', 'site/admin', 'site/courses', 'site/member', 'site/permissions', 'site/desk', 'site/strings-default', 'site/page-tests', 'site/pages'].map((k) => ['#' + k, '\0platformkit:' + k.replace('/', '-')]))
   const abs = (p: string) => path.resolve(c.root, p)
   const J = JSON.stringify
   /* where the generated modules are written (see writeFiles below), and how one imports a site's file from there:
@@ -86,6 +101,29 @@ function site(c: any, theme: any, keys: string[] = []): Plugin {
   const contract = (mod: any, names: any) => (mod ? `import * as M from ${J(from(mod))}\n` : '') + Object.entries(names).map(([k, d]) => `export const ${k} = ${mod ? `M.${k} !== undefined ? M.${k} : (${d})` : d}`).join('\n') + '\n'
   /* what each virtual module is: the code its id is answered with, generated from the config */
   const generate = async (id: string) => {
+    if (id === V['#site/page-tests'] || id === V['#site/pages']) {
+      const { MODULE_DIRS } = await import('../build/modules/folders.mjs')
+      const rel = (file: string) => { const r = path.relative(dir, file).split(path.sep).join('/'); return r.startsWith('.') ? r : './' + r }
+      const fileOf = (p: any) => p.page.startsWith('theme:') ? path.join(theme.src, p.page.slice(6)) : path.join(MODULE_DIRS.get(p.module) as string, p.page)
+      const spec = (p: any) => { const s = p.test.slice(0, p.test.lastIndexOf('#')); return s.startsWith('./') ? rel(path.join(MODULE_DIRS.get(p.module) as string, s)) : s }
+      const fn = (p: any) => p.test.slice(p.test.lastIndexOf('#') + 1)
+      if (id === V['#site/page-tests']) {
+        const imports = pages.map((p, i) => p.path ? `const t${i} = (r) => r === ${J(p.path)} || r.startsWith(${J(p.path + '/')})` : `import { ${fn(p)} as t${i} } from ${J(spec(p))}`).sort((a, b) => Number(a.startsWith('const')) - Number(b.startsWith('const'))).join('\n')
+        return imports + '\n/* every page this site shows, in the order they are tried: the first whose test holds is shown */\nexport const PAGE_TESTS = [\n' +
+          pages.map((p, i) => `  { name: ${J(p.name)}, order: ${p.order}, module: ${J(p.module)}, test: t${i}, keyBy: ${J(p.keyBy || null)}, props: ${J(p.props || {})} }`).join(',\n') + '\n]\n'
+      }
+      const lines = [`import { defineAsyncComponent } from 'vue'`, `import { PAGE_TESTS } from '#site/page-tests'`, `import { CMS } from 'platformkit/lib/router.js'`]
+      const comps: string[] = []
+      const eager = new Map<string, string>()
+      pages.forEach((p, i) => {
+        if (p.page === 'theme:site-route') { comps.push('null'); return }
+        const file = rel(fileOf(p))
+        if (p.eager) { if (!eager.has(file)) { eager.set(file, 'E' + eager.size); lines.push(`import E${eager.size - 1} from ${J(file)}`) } comps.push(eager.get(file) as string) }
+        else if (p.cmsOnly) comps.push(`CMS ? defineAsyncComponent(() => import(${J(file)})) : null`)
+        else comps.push(`defineAsyncComponent(() => import(${J(file)}))`)
+      })
+      return lines.join('\n') + '\n/* the page table: each page with its component, fetched when it is first shown unless it is eager */\nconst COMPONENTS = [' + comps.join(', ') + ']\nexport const PAGES = PAGE_TESTS.map((p, i) => ({ ...p, component: COMPONENTS[i] }))\n'
+    }
     if (id === V['#site']) return `export default ${JSON.stringify(publicSite(c))}\n/* the community's registered places, each page fetched when it is first opened */\nexport const places = [${communityOf(c).places.map((x) => `{ ...${J({ ...x, component: undefined })}, load: () => import(${J(from(x.component))}) }`).join(', ')}]\nexport const modules = ${JSON.stringify(c.modules)}\nexport const moduleKeys = ${JSON.stringify(keys)}\nexport const api = ${JSON.stringify(publicSite(c).api)}\n`
     if (id === V['#site/looks']) {
       /*
@@ -505,6 +543,7 @@ export async function platformkit(opts: any = {}): Promise<Plugin[]> {
     throw new Error('the site\'s own module manifests could not be resolved: ' + (e && e.message ? e.message : e))
   }
   const theme = await loadTheme(c)
+  const pages = await pageTable(c, await (await import('../build/steps.mjs')).moduleSet(c))
   const withContent = opts.content !== false
   return [
     /*
@@ -571,7 +610,7 @@ export async function platformkit(opts: any = {}): Promise<Plugin[]> {
       }),
     },
     fonts(c.root),
-    site(c, theme, keys),
+    site(c, theme, keys, pages),
     ...(withContent ? [velite(c)] : []),
     adminServer(),
     uploads(),

@@ -67,7 +67,7 @@ The models themselves are the `models` model of the registry (`build/models/core
 
 ## The pages, the JSON, the section
 
-`router.js` has `ROUTES.entries = '/c'` and `ENTRY_KEYS`, the models with pages on (from `#content`'s `models`); `/c/<key>` and `/c/<key>/<slug>` resolve only for those, and `App.vue` mounts `EntriesPage.vue` (the index and the entry, one page) as its own chunk only when there is one. `routes.mjs` adds every such index and every published entry to the prerender and the sitemap; the head is set from the title, the summary field and the image field.
+`router.js` has `ROUTES.entries = '/c'` and `ENTRY_KEYS`, the models with pages on (from `#content`'s `models`); `/c/<key>` and `/c/<key>/<slug>` resolve only for those, and the models module's page in the page table mounts `EntriesPage.vue` (the index and the entry, one page) as its own chunk only when there is one. `routes.mjs` adds every such index and every published entry to the prerender and the sitemap; the head is set from the title, the summary field and the image field.
 
 `models.mjs --json` writes `dist/data/models/<key>.json` for every model with JSON on, from `.velite` (`jsonFor`: the model's key, name and fields, the entries with the body as markdown); `platformkit build` runs it after the bundle, and the dev server answers the same address from the same function. The `Entries` section is `LandingEntries.vue` in the landing registry, its schema in `landing/schemas.js` (the model from those with the section on, `layout`, `limit`), offered only when a model has the section on.
 

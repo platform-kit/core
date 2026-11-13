@@ -57,6 +57,10 @@ const LISTED: Array<ModuleDeclaration | string> = [
   {
     key: 'store', what: 'the storefront, the bag, checkout, the shapes a thing is sold in', needs: 'there is nowhere to keep an order',
     static: false, git: true, cloud: true,
+    pages: [
+      { name: 'StorePage', order: 110, page: 'theme:pages/StorePage.vue', test: 'platformkit/lib/page-routes.js#store' },
+      { name: 'CartHandoffPage', order: 150, page: 'theme:pages/CartHandoffPage.vue', test: 'platformkit/lib/page-routes.js#cartHandoff', keyBy: 'route', props: { path: 'route' } },
+    ],
     owns: {
       steps: ['sales'],
       schema: ['41-inventory.sql', '42-promotions.sql', '43-orders.sql'],
@@ -82,6 +86,10 @@ const LISTED: Array<ModuleDeclaration | string> = [
   {
     key: 'sessions', what: 'booking types, the booker, the calendar', needs: 'there is nowhere to keep a booking',
     static: false, git: true, cloud: true,
+    pages: [
+      { name: 'CallPage', order: 30, page: 'theme:pages/CallPage.vue', test: 'platformkit/lib/page-routes.js#call', keyBy: 'route' },
+      { name: 'BookPage', order: 140, page: 'theme:pages/BookPage.vue', test: 'platformkit/lib/page-routes.js#book', keyBy: 'route', props: { path: 'route' } },
+    ],
     owns: {
       steps: ['teams', 'teams-push'],
       schema: ['55-sessions.sql', '56-teams.sql', '57-providers.sql'],
@@ -109,6 +117,9 @@ const LISTED: Array<ModuleDeclaration | string> = [
   {
     key: 'support', what: 'the widget, the desk, the prompts', needs: 'there is nowhere to keep a conversation',
     static: false, git: true, cloud: true,
+    pages: [
+      { name: 'SupportPage', order: 180, page: 'theme:pages/SupportPage.vue', test: 'platformkit/lib/page-routes.js#support' },
+    ],
     owns: {
       steps: ['support-sdk'],
       schema: ['70-support.sql', '72-tickets.sql'], functions: ['support', 'support-api'],
@@ -139,6 +150,11 @@ const LISTED: Array<ModuleDeclaration | string> = [
        same guards, reached by another kind of client, so it comes and goes with this switch and
        answers for the three shapes with it. It needs a backend for the same reason spaces does,
        and additionally the api module, which gates every other door the same way. */
+    pages: [
+      { name: 'SpacesPage', order: 200, page: 'theme:pages/SpacesPage.vue', test: 'platformkit/lib/page-routes.js#spaces' },
+      /* with the network on too, /feed opens on the spaces page in either layout: one page answers both */
+      { name: 'SpacesPage', order: 205, page: 'theme:pages/SpacesPage.vue', test: 'platformkit/lib/page-routes.js#feed', with: 'network' },
+    ],
     owns: {
       steps: ['spaces', 'spaces-push'], functions: ['spaces', 'matrix-api'], schema: ['90-spaces.sql', '91-matrix.sql', '98-community.sql'],
       cron: [
@@ -177,6 +193,9 @@ const LISTED: Array<ModuleDeclaration | string> = [
   {
     key: 'network', what: 'a page per person, follows, a timeline — and the same served to atproto apps', needs: 'a post, a follow and an account are rows',
     static: false, git: true, cloud: true,
+    pages: [
+      { name: 'FeedPage', order: 210, page: 'theme:pages/FeedPage.vue', test: 'platformkit/lib/page-routes.js#feed' },
+    ],
     owns: {
       schema: ['93-network.sql'], functions: ['atproto'], env: ['NETWORK_HANDLE_DOMAIN', 'NETWORK_PLC_ROTATION_KEY'],
       cron: [
@@ -207,6 +226,9 @@ const LISTED: Array<ModuleDeclaration | string> = [
     key: 'courses', what: 'courses: lessons in order, released over time, tracked to completion, with certificates',
     needs: 'there is nowhere to keep who is enrolled, how far they are, or what is open to them',
     static: false, git: true, cloud: true,
+    pages: [
+      { name: 'CoursesPage', order: 230, page: 'theme:pages/CoursesPage.vue', test: 'platformkit/lib/page-routes.js#courses' },
+    ],
     owns: {
       routes: ['/courses', '/certificates'],
       steps: ['courses-push'],
@@ -218,6 +240,9 @@ const LISTED: Array<ModuleDeclaration | string> = [
   {
     key: 'forms', what: 'the builder, /form/<slug>, the responses', needs: 'there is nowhere to keep a response',
     static: false, git: true, cloud: true,
+    pages: [
+      { name: 'FormPage', order: 120, page: 'theme:pages/FormPage.vue', test: 'platformkit/lib/page-routes.js#form', keyBy: 'route', props: { path: 'route' } },
+    ],
     owns: { steps: ['form-embed', 'forms'], schema: ['25-forms.sql'], functions: ['form', 'forms-api'] },
   },
   {
@@ -243,11 +268,17 @@ const LISTED: Array<ModuleDeclaration | string> = [
   {
     key: 'models', what: 'content models and their entries', needs: 'an entry is edited through the admin, which needs a backend',
     static: false, git: true, cloud: true,
+    pages: [
+      { name: 'EntriesPage', order: 250, page: 'theme:pages/EntriesPage.vue', test: 'platformkit/lib/page-routes.js#entries', keyBy: 'route', props: { path: 'route' } },
+    ],
     owns: { steps: ['models-json'] },
   },
   {
     key: 'api', what: 'the content API', needs: 'the API is Edge Functions',
     static: false, git: true, cloud: true,
+    pages: [
+      { name: 'ApiReferencePage', order: 130, page: 'theme:pages/ApiReferencePage.vue', test: 'platformkit/lib/page-routes.js#apiReference' },
+    ],
     owns: {
       schema: ['85-api.sql'],
       cron: [
@@ -259,6 +290,9 @@ const LISTED: Array<ModuleDeclaration | string> = [
   {
     key: 'bots', what: 'bots, tools and commands', needs: 'an agent run is rows and a function',
     static: false, git: true, cloud: true,
+    pages: [
+      { name: 'VoicePage', order: 40, page: 'theme:pages/VoicePage.vue', test: 'platformkit/lib/page-routes.js#voice', keyBy: 'route' },
+    ],
     owns: {
       steps: ['bots', 'bots-push'],
       schema: ['96-agents.sql'], functions: ['agent-run'],

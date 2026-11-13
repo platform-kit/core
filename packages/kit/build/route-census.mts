@@ -1,11 +1,11 @@
 /*
  * The route census: which page a site shows at each address.
  *
- * It reads the page chain in theme/src/App.vue as written (each branch's component and its v-if
- * condition, in order) and evaluates the conditions against the real router, loaded through Vite
- * for the site, so the site's module switches, content pages and registered routes all apply. The
- * recorded census (build/fixtures/route-census.json) is what any change to how pages are chosen must
- * reproduce; build/module-routes.test.mts compares the two.
+ * It asks the site's page table (#site/page-tests, which the kit's Vite plugin composes from core's pages and
+ * every enabled module's) which page each address shows, through Vite for the site, so the site's module
+ * switches, content pages and registered routes all apply. The record (build/fixtures/route-census.json) was
+ * first taken from the page chain App.vue held before the table replaced it (commit d7961283), and is what any
+ * change to how pages are chosen must reproduce; build/module-routes.test.mts compares the two.
  *
  * Run `node build/route-census.mts --write` from the workspace root to record it again, which is
  * only right when a page is meant to move.
@@ -13,39 +13,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parse } from '@vue/compiler-sfc'
 
 const KIT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const WORKSPACE = path.resolve(KIT, '../..')
 export const CENSUS_SITES = ['demo', 'docs', 'brochure', 'club']
 export const CENSUS_FILE = path.join(KIT, 'build/fixtures/route-census.json')
 
-type Branch = { page: string, test: string | null, isExpr?: string }
 export type Census = Record<string, Record<string, string>>
-
-/* the page chain: the run of v-if / v-else-if / v-else siblings that begins with the first branch */
-export function pageChain(source: string): { branches: Branch[], consts: [string, string][] } {
-  const { descriptor } = parse(source)
-  const nodes: any[] = (descriptor.template?.ast?.children || []).filter((n: any) => n.type === 1)
-  const branches: Branch[] = []
-  let started = false
-  for (const n of nodes) {
-    const dir = (name: string) => n.props.find((p: any) => p.type === 7 && p.name === name)
-    const ifd = dir('if'), elseIf = dir('else-if'), els = dir('else')
-    if (!started) { if (!ifd) continue; started = true }
-    else if (!elseIf && !els) break
-    const is = n.tag === 'component' ? n.props.find((p: any) => p.type === 7 && p.name === 'bind' && p.arg?.content === 'is')?.exp?.content : undefined
-    branches.push({ page: n.tag, test: (ifd || elseIf)?.exp?.content ?? null, isExpr: is })
-    if (els) break
-  }
-  /* the script's top-level consts, each page constant reduced to whether it exists */
-  const script = descriptor.scriptSetup?.content || ''
-  const consts: [string, string][] = []
-  for (const m of script.matchAll(/^const ([A-Za-z_$][\w$]*) = (.+)$/gm)) {
-    consts.push([m[1], m[2].replace(/defineAsyncComponent\(\(\) => import\([^)]*\)\)/g, 'true')])
-  }
-  return { branches, consts }
-}
 
 /* the addresses worth asking about on a site: every route the kit names, one level under each, the
    special shapes the chain tests for, every content page, every registered site route, and two that
@@ -62,18 +36,6 @@ function addresses(r: any): string[] {
   return [...out].sort()
 }
 
-/* what the chain shows at one address, under one scope */
-export function pageAt(branches: Branch[], scope: Record<string, any>, route: string): string {
-  const names = Object.keys(scope)
-  const run = (expr: string) => Function(...names, 'route', `return (${expr})`)(...names.map((n) => scope[n]), route)
-  for (const b of branches) {
-    if (b.test !== null && !run(b.test)) continue
-    if (b.page === 'component' && b.isExpr) { const c = run(b.isExpr.replace(/\.component$/, '')); return 'site-route:' + (c?.path ?? '?') }
-    return b.page
-  }
-  return '(none)'
-}
-
 /* the census of one site, in dev (CMS on) and as built (CMS on only for a cloud site) */
 export async function censusOf(site: string): Promise<Record<string, string>> {
   const root = path.join(WORKSPACE, 'sites', site)
@@ -87,15 +49,14 @@ export async function censusOf(site: string): Promise<Record<string, string>> {
   const server = await createServer({ configFile: path.join(root, 'vite.config.ts'), root, server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom', logLevel: 'error' })
   try {
     const r = await server.ssrLoadModule('platformkit/lib/router.js')
-    const m = await server.ssrLoadModule('platformkit/lib/modules.js')
-    const { branches, consts } = pageChain(fs.readFileSync(path.join(KIT, 'theme/src/App.vue'), 'utf8'))
+    const { PAGE_TESTS } = await server.ssrLoadModule('#site/page-tests')
+    const { pageAt } = await server.ssrLoadModule('platformkit/lib/pages.js')
     const out: Record<string, string> = {}
-    for (const [mode, cms] of [['dev', true], ['build', r.CLOUD]] as const) {
-      const scope: Record<string, any> = { ...r, moduleOn: m.moduleOn, CMS: cms, DEV: mode === 'dev' }
-      for (const [name, expr] of consts) {
-        try { scope[name] = Function(...Object.keys(scope), `return (${expr})`)(...Object.values(scope)) } catch { /* not a page constant */ }
+    for (const [mode, cms] of [['dev', true], ['build', !!r.CLOUD]] as const) {
+      for (const a of addresses(r)) {
+        const p = pageAt(PAGE_TESTS, a, { CMS: cms, DEV: mode === 'dev' })
+        out[`${mode} ${a}`] = !p ? '(none)' : p.name === 'site-route' ? 'site-route:' + (r.siteRouteOf(a)?.path ?? '?') : p.name
       }
-      for (const a of addresses(r)) out[`${mode} ${a}`] = pageAt(branches, scope, a)
     }
     return out
   } finally {

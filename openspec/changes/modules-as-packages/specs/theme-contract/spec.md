@@ -16,4 +16,4 @@ Verified by: `build/manifests.test.mts`, with a planted component
 - **WHEN** a site overrides a module's component by name
 - **THEN** every import of that component, in the module and elsewhere, resolves to the site's
 
-Verified by: `build/theme-overrides.test.mts` against `sites/demo`
+Verified by: `build/overrides.test.mts` against `sites/demo`
