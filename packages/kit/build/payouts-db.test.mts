@@ -1,6 +1,7 @@
 /*
- * THE LEDGER AGAINST THE STACK. The pure arithmetic is build/payouts.test.mjs; what is here is the
- * part a pure function cannot tell you:
+ * THE LEDGER AGAINST THE STACK. What anybody is owed is the database's alone, so this is where the
+ * share, the flat amount, the delay and the reversal are tested; build/payouts.test.mjs covers only
+ * what a page reads (the rule's refusals and the sum of lines). And the part no page can tell you:
  *
  *   THE SWEEP RUNS TWICE AND PAYS ONCE. A cron, a hand and a retry after a fault all call the same
  *   function, so "already done" has to be the database's answer rather than something a caller

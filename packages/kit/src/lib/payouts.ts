@@ -1,7 +1,9 @@
 /*
- * WHAT THE BUSINESS OWES, as arithmetic. Pure: no imports, no clock it asks itself, no database —
- * the page, the sweep and build/payouts.test.mjs read the same functions, so "a refund of half
- * reverses half" is a test rather than a claim.
+ * WHAT A PAGE NEEDS TO KNOW ABOUT PAYOUTS. Pure: no imports, no clock it asks itself, no database.
+ * What anybody is owed is worked out by the database alone (payouts_sweep and payouts_reverse in
+ * supabase/schemas/57-providers.sql, tested by build/payouts-db.test.mjs); nothing here computes an
+ * amount. This holds the rule's vocabulary and its refusals for the admin form, the sum of lines the
+ * database already wrote for the earnings page, and the delay's grammar for the build.
  *
  * A rule is a TRIGGER and an AMOUNT, and they mix: a person may hold any number and they all apply.
  * That is the whole model, and it is why "flat monthly, plus a share of every call" is two rows
@@ -28,45 +30,12 @@ export function ruleFault(rule: any) {
   return null
 }
 
-/* WHAT ONE RULE COMES TO, given what was actually collected. A share is of what the customer paid
-   after any discount — so the number can always be explained by pointing at one payment — and a
-   share of nothing is nothing, which is said rather than skipped: a booking that was free or came
-   with a membership DID happen, and a line saying it came to nothing is the honest record. */
-export function amountOf(rule: any, collected = 0) {
-  const r = rule || {}
-  if (r.amount_kind === 'share') return Math.round((Math.max(0, Number(collected) || 0) * Number(r.amount)) / 10000)
-  return Math.max(0, Math.round(Number(r.amount) || 0))
-}
-
-/* WHEN IT MAY BE SENT. The site holds it for a while after the money was collected — not to hold
-   the money, but so a refund inside the window reverses a line instead of chasing money already
-   sent. A business that pays out same-day is a business that asks providers for money back. */
-export function payableAt(collectedAt: string, delayMinutes = 0) {
-  const at = new Date(collectedAt || Date.now()).getTime()
-  const wait = Math.max(0, Number(delayMinutes) || 0)
-  return new Date((isFinite(at) ? at : Date.now()) + wait * 60000).toISOString()
-}
-
-/* WHAT A REFUND REVERSES. In proportion, so half the payment back is half the amount earned back,
-   and never more than was earned — a rounding that reversed a penny more than it gave is a ledger
-   that drifts. A line that never became payable is not reversed at all: it simply never was. */
-export function reversalOf(line: { amount: any }, refunded: number, collected: number) {
-  const earned = Math.max(0, Number((line && line.amount) || 0))
-  const back = Math.max(0, Number(refunded) || 0)
-  const paid = Math.max(0, Number(collected) || 0)
-  if (!earned || !back) return 0
-  if (!paid || back >= paid) return earned
-  return Math.min(earned, Math.round((earned * back) / paid))
-}
-
 /* WHAT SOMEBODY IS OWED, from their lines alone — never from the processor, which knows what was
    sent and not why. Earned is everything; payable is what the delay has released and nothing has
    paid; sent is what went. A reversal is a line of its own with a negative amount, so it simply
    sums: nothing here has to remember to subtract. */
 /* a line of what a provider is owed: its amount, when it may be paid, and when it was */
 export type PayoutLine = { amount: number, payable_at: string, paid_at?: string | null, [k: string]: any }
-/* a provider's standing rule: what it earns on, how much, and in what */
-export type PayoutRule = { trigger: string, booking_type?: string, amount_kind: string, amount: number, currency: string, active: boolean, [k: string]: any }
 export function balanceOf(lines: PayoutLine[] = [], now = Date.now()) {
   let earned = 0, payable = 0, sent = 0, waiting = 0
   for (const l of lines || []) {
@@ -84,26 +53,6 @@ export function balanceOf(lines: PayoutLine[] = [], now = Date.now()) {
   /* NEVER A DEMAND. A reversal bigger than anything owed leaves the balance at nothing and stands
      against what is earned next; it is not an invoice to a provider. */
   return { earned, payable: Math.max(0, payable), waiting, sent, owed: Math.max(0, payable) }
-}
-
-/* the lines one booking makes, given the rules the person holds. One per rule, so two rules on one
-   booking are two lines that each say which rule made them. */
-export function linesFor({ rules = [], booking = {}, collected = 0, delay = 0 }: { rules?: PayoutRule[], booking?: Record<string, any>, collected?: number, delay?: number } = {}) {
-  const out = []
-  for (const r of rules) {
-    if (!r || (r as any).active === false || ruleFault(r)) continue
-    if ((r as any).trigger !== 'booking') continue
-    if ((r as any).booking_type !== (booking as any).type) continue
-    out.push({
-      rule_id: (r as any).id,
-      amount: amountOf(r, collected),
-      currency: (r as any).currency || 'usd',
-      booking_uid: (booking as any).uid,
-      earned_at: (booking as any).end_at || (booking as any).start_at,
-      payable_at: payableAt((booking as any).collected_at || (booking as any).end_at || (booking as any).start_at, delay),
-    })
-  }
-  return out
 }
 
 /* a span as the policy writes it → whole minutes, the same grammar a space's window takes */

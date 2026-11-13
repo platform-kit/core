@@ -184,7 +184,7 @@ const KIT_TESTS = [
   ['tiers.test.mts'],
   on('sessions') && ['booking.test.mts'],   /* one list, two kinds of record: a provider's offering wearing a booking type's shape, so the surface and the judge can never disagree about what it is */
   ['providers-db.test.mts'],   /* what a provider may do: the cautious policy, a signed version frozen, who is owed the new one, an offering theirs and never deleted, and failing to sign stopping selling and nothing else */
-  ['payouts.test.mts'],   /* what the business owes, as arithmetic: a share of a week refused where it is written, a refund reversing in proportion and never more, and earned · payable · waiting · sent kept four different numbers */
+  ['payouts.test.mts'],   /* what a page knows about payouts: a share of a week refused where it is written, and earned · payable · waiting · sent kept four different numbers (what is owed is payouts-db's) */
   ['people-db.test.mts'],   /* every account in one read, against the stack: the narrowings, the search, what the desk already knows about one person, and nothing at all for a reader */
   ['payouts-db.test.mts'],   /* the same arithmetic in the database: the sweep firing once however often it runs, the delay, and a refund reversing a line that has already gone */
   ['awards-db.test.mts'],   /* the event stream awards a badge when its rule is met and not before, and a client can neither award itself one nor read what the site believes about it */   /* who a booking type is for: one rule both sides of the gate ask, and a list of tiers that implies no ladder */   /* a coach reaches the admin for one thing — their own page — and the pipe refuses every other record, not merely hides it */
