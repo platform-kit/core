@@ -45,7 +45,7 @@ A manifest contributes to points the kit composes:
 
 A disabled module contributes nothing. Its components are never imported, so they leave the bundle as they do today through the guarded dynamic imports.
 
-**Route precedence.** Today it is the order of the chain. Contributed routes are matched by explicit precedence (the most specific match wins), with ties refused at build. A test records every path the chain answers today and checks that the registry answers each one with the same page.
+**Route precedence.** Today it is the order of the chain, and specificity cannot reproduce it: content claims addresses at run time (a landing page at `/p/<name>` wins over the profile page, and any content page wins over a site-registered route), and some routes depend on conditions such as `DOCS_ONLY` and `CMS`. So each contributed route carries an explicit `order` (numbers that keep today's chain order, with gaps for new routes), a declarative match (`exact`, `prefix` or `under`), an optional named test exported by the module (such as courses' `coursesRoute` or core's `isPageRoute`), and an optional condition. The first route, by order, whose match, test and condition all hold shows its page. Two routes with the same order are refused at build. The route census (`build/route-census.mts`) records, for every fixture site in dev and as built, which page each address shows, read from the chain as it stands, and `build/module-routes.test.mts` checks the registry reproduces it address by address.
 
 ## Slots
 

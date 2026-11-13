@@ -23,6 +23,8 @@ sources:
     packages/kit/build/functions-data.mts,
     sites/club/platformkit.config.ts,
     packages/kit/build/manifests.test.mts,
+    packages/kit/build/route-census.mts,
+    packages/kit/build/module-routes.test.mts,
     packages/kit/build/modules/manifest.mts,
     packages/kit/build/modules-off.test.mts,
     packages/kit/build/dryrun-db.test.mts,
@@ -167,7 +169,7 @@ It needs a dev server and the stack, and skips loudly naming what went uncovered
 
 The navigation editor's options are checked against the pages and membership tiers the site actually declares. Declared routes are checked across all options: `/` is supplied by the shared Home link, not duplicated in the separate `Your pages` group. A site with no landing-page records or store offers should not need to invent either just to pass the shared suite.
 
-The module-manifest checks match build steps to their declared owners across the kit, theme and site, validate registered payment-provider declarations, and hold a site-registered module to the same ownership rules as a kit module. The YAML front-matter writer is also checked for no-op saves: unchanged records retain their original formatting, including the spacing inside inline maps.
+The module-manifest checks match build steps to their declared owners across the kit, theme and site, validate registered payment-provider declarations, and hold a site-registered module to the same ownership rules as a kit module. The route census (`route-census.mts`) records which page every address shows on each fixture site (demo, docs, brochure and club), in dev and as built, by reading the page chain in the theme's `App.vue` and evaluating each branch against the real router loaded through Vite with the site's content freshly built. `module-routes.test.mts` works the census out again and compares it address by address with `build/fixtures/route-census.json`, so a change to how pages are chosen cannot move a page unnoticed; `node build/route-census.mts --write` records it again when a page is meant to move. The YAML front-matter writer is also checked for no-op saves: unchanged records retain their original formatting, including the spacing inside inline maps.
 
 `packages/kit/build/test.mts`, what every site's `npm test` calls. Run it from the site directory: the runner takes `process.cwd()` as the site root and resolves shared packages, docs and specs from the workspace root. CI runs it from the generic `sites/docs` and `sites/demo` fixtures; the workspace-root, dev-directory and stop tests cover the shared front door and managed local processes. The source-CLI test invokes a local Git source without requiring publication and checks that standalone help does not need workspace Vite dependencies; the runtime-path test pins the shared cache location. Before the demo bundle build, CI starts and resets its local Supabase stack and passes the local URL and keys to the build; it does not use hosted backend credentials.
 

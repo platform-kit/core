@@ -20,7 +20,7 @@ Verified by: `build/assembled-tree.test.mts` and `build/module-routes.test.mts`
 
 ### Requirement: A module contributes and the kit composes
 
-A module SHALL contribute its routes, admin sections, navigation, community places, member-card panels, build steps, content models, emails, default wording and scheduled jobs from its manifest, and the kit SHALL compose them. No kit file outside the module SHALL name the module's pages or components. A disabled module SHALL contribute nothing and its components SHALL NOT be in the built bundle. When two contributed routes match a path equally, the build SHALL fail.
+A module SHALL contribute its routes, admin sections, navigation, community places, member-card panels, build steps, content models, emails, default wording and scheduled jobs from its manifest, and the kit SHALL compose them. No kit file outside the module SHALL name the module's pages or components. A disabled module SHALL contribute nothing and its components SHALL NOT be in the built bundle. When two contributed routes carry the same order, the build SHALL fail.
 
 #### Scenario: every path answered as before
 
@@ -31,7 +31,7 @@ Verified by: `build/module-routes.test.mts`
 
 #### Scenario: two routes claim one path
 
-- **WHEN** two modules contribute routes that match one path with equal precedence
+- **WHEN** two modules contribute routes with the same order
 - **THEN** the build fails, naming both
 
 Verified by: `build/module-routes.test.mts`, with a planted pair

@@ -1,7 +1,7 @@
 ## Tasks
 
 ### Foundations
-- [ ] A route census: every path the `App.vue` chain answers today on the demo, and the page it shows, recorded as a fixture. Verified by `build/module-routes.test.mts` passing on the old layout.
+- [x] A route census: every path the `App.vue` chain answers today on the demo, and the page it shows, recorded as a fixture. Verified by `build/module-routes.test.mts` passing on the old layout.
 - [ ] The loader: reads `packages/kit/modules/*` and a site's `src/modules/*`, together with the old layout. Verified by an unchanged assembled tree and route census.
 - [ ] Contribution points composed by the kit: routes with precedence, admin sections, nav, places, member-card panels, steps, models, emails, strings, cron. Verified by `module-routes` and `module-slots` tests and an unchanged demo build.
 - [ ] The assembler and override resolver read module folders. Integrations load after both modules' schema, and module function code is placed under `_shared/<module>/`. Verified by `assembled-tree.test.mts` byte-identical and `theme-overrides.test.mts`.

@@ -117,6 +117,7 @@ const KIT_TESTS = [
   ['modes.test.mts'],
   ['who-can.test.mts'],   /* every seeded kind of person against every action that defines one — what they may DO, asked of the database rather than of the page, because a hidden button is not a closed door */
   ['manifests.test.mts'],   /* what a module declares about itself: a missing shape, a typo’d field, an exception with no reason and two manifests under one key are each refused rather than quietly meaning nothing */
+  ['module-routes.test.mts'],   /* every address on every fixture site shows the page the recorded census says, in dev and as built (openspec: modules-as-packages) */
   ['site-module.test.mts'],   /* the extension model tried against a site that uses it: sites/demo registers a module the kit has never heard of, and it gets everything one of the kit's does — and loses all of it, and nothing of the kit's, when its switch says false. Skips loudly if the fixture is not in the checkout. */
   ['modules-off.test.mts'],   /* one module off at a time, every module: its own steps stop and its secrets stop being demanded, nothing else moves, every step is gated on a switch that exists, and a coupling that is real is NAMED rather than tolerated */                   /* the three shapes: every module declares what it does in each, and the code is derived to see whether it backs the claim */
   on('bots') && ['anthropic.test.mts'],    /* the second provider: the shape both ways, the order, and which failures are worth trying somebody else for */
