@@ -77,6 +77,16 @@ The Supabase CLI serves and deploys functions from one directory, `supabase/func
 - A function's platform settings, such as `verify_jwt = false`, move from `config.toml.template` into the module's manifest, and the assembler writes them into the site's `config.toml`.
 - Schema, rows and seed are copied into `supabase/schemas/`, `data/` and `seed/` under their current file names, so `sql_paths` and the load order are unchanged; integrations go where the glue files load today, after every module's own schema.
 
+## Editing during dev
+
+The source is what a developer edits, so an edit there has to reach the running dev site without a restart. Today it does not for functions: `dev` assembles `supabase/` once at start, so an edit to a kit function is served only after a restart. This change closes that gap for every kind of file:
+
+- **Browser code** (pages, components, logic, wording): Vite loads it from the module folder itself, never from a copy, so HMR works as it does for the theme today. The kit's Vite plugin adds `packages/kit/modules/` and the site's `src/modules/` to the files it serves and watches.
+- **Functions and their shared code:** `dev` watches every enabled module's `functions/` and re-copies a changed file into the assembled tree at once, rewriting that function's `deno.json` if its imports changed. `supabase functions serve` already reloads when its folder changes, so the edit is live on the next request. Links instead of copies were rejected: the CLI serves functions from inside a container that mounts only the site's `supabase/functions/`, so a link pointing outside it does not resolve there.
+- **Schema, rows and seed:** a database cannot hot-reload. On a change, `dev` re-assembles the file and applies the plan to the dev database if it is non-destructive. If it would drop or rewrite something, `dev` prints the plan and the `platformkit migrate` command to run instead.
+- **Manifests:** a change to `module.ts` (a route, a slot, a function setting) re-runs the composition. Routes and slots reload the page; function settings rewrite `config.toml`, and `dev` says the function server needs a restart, because the CLI reads that file only at start.
+- **Content models and build steps** are rebuilt by the watch the content builder already runs.
+
 ## Packages
 
 The first step is folders inside `packages/kit/modules/`. Once the boundary check passes on every module, each folder gets a `package.json` (`@platformkit/<key>`) as a workspace package. All are released together under the kit's one version, so modules never depend on different versions of each other.

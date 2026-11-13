@@ -79,6 +79,31 @@ Verified by: `build/module-boundaries.test.mts`, with a planted import
 
 Verified by: `build/module-boundaries.test.mts` against a fixture site
 
+### Requirement: An edit to a module reaches the running dev site
+
+During `platformkit dev`, an edit to any file in an enabled module's folder SHALL take effect without restarting dev: browser code by hot reload, a function on its next request, a non-destructive schema change applied to the dev database. A schema change that would drop or rewrite data SHALL NOT be applied by dev, and dev SHALL say what to run instead.
+
+#### Scenario: a function edited during dev
+
+- **WHEN** a module's function, or its shared code, is edited while dev runs
+- **THEN** the next request to that function runs the edited code, with no restart
+
+Verified by: `build/dev-module-watch.test.mts`
+
+#### Scenario: a component edited during dev
+
+- **WHEN** a module's component is edited while dev runs
+- **THEN** the open page updates by hot reload
+
+Verified by: `build/dev-module-watch.test.mts`, through the dev server's HMR channel
+
+#### Scenario: a destructive schema edit during dev
+
+- **WHEN** a schema edit would drop a column while dev runs
+- **THEN** dev applies nothing and prints the plan and the migrate command
+
+Verified by: `build/dev-module-watch.test.mts`
+
 ## MODIFIED Requirements
 
 ### Requirement: A site or a theme may add a module
