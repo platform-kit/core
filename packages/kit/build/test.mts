@@ -257,6 +257,7 @@ const KIT_TESTS = [
   ['bundle-secrets.test.mts'],  /* a whole build of the demo with every server secret planted publishes none of them; slow, BUNDLE_SECRETS_TEST=0 skips it */
   ['usage-alert.test.mts'],   /* which usage payments raise the site-wide banner, and the pages it keeps off */
   ['assembled-tree.test.mts'],   /* the assembled supabase/ tree is generated: the step passes on a fresh checkout and a stale copy, and refuses a file neither owner declared */
+  ['assembled-identical.test.mts'],   /* every file each snapshot site's backend receives, with its modules as configured and each off in turn, byte for byte against the recorded hashes (openspec: modules-as-packages) */
   ['site-modules.test.mts'],   /* the #site/* modules are files the dependency scan follows: a package only the site imports is pre-bundled at startup, not found mid-request */
   ['sections.test.mts'],   /* the landing catalogue: registry ↔ schemas, defaults valid, no one site's vocabulary, the embed patterns */
   ['site-nav.test.mts'],   /* who the community link is for: shown to a visitor when there is a room to walk into, a word while it is a way in */
