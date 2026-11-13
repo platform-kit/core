@@ -9,9 +9,9 @@
 - [x] Docs: the build page, configuration, the CLI; source paths across the docs
 - [x] The Edge Functions' JavaScript modules (`supabase/functions`), checked by `tsc` through `tsconfig.functions.json`; `deno check` over every function is still to do
 - [x] The integration scripts and the tests, to TypeScript and under the strict check
-- [ ] The tests that are not yet `node:test`, moved to it
+- [ ] The tests that are not yet `node:test`, moved to it — moved to `framework-finish` (task 7)
 - [x] The voice agent, the kit's fixtures and the generators that write the kit's own files
 - [x] A site may be TypeScript (`platformkit.config.ts`, `build/site-file.mts`), and the workspace's sites are
 - [x] The `from the conversion` markers, read and typed file by file (none left; `build/ts-migrate.mjs` and `build/vue-migrate.mjs` removed with them)
-- [ ] What the conversion left as `any`, narrowed where a value's shape is known
-- [ ] The full end-to-end suite on the converted kit
+- [ ] What the conversion left as `any`, narrowed where a value's shape is known — moved to `framework-finish` (task 6)
+- [ ] The full end-to-end suite on the converted kit — moved to `framework-finish` (task 17)
