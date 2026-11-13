@@ -142,6 +142,14 @@ registerHooks({
   })
   assert.equal(npx.status, 0, npx.stderr)
   assert.match(npx.stdout, /github source CLI works/)
+  /* what a site's install carries is what npm packs: the kit's own default email designs, which a site that has not drawn one
+     falls back on (build/emails.mts) and the functions bundle reads (build/assemble.mts), must be in it */
+  const packed = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts', '--silent'], { cwd: path.join(root, 'packages', 'kit'), encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 })
+  assert.equal(packed.status, 0, packed.stderr)
+  const packedFiles = JSON.parse(packed.stdout)[0].files.map((f: any) => f.path)
+  for (const design of fs.readdirSync(path.join(root, 'packages', 'kit', 'content', 'emails'))) {
+    assert.ok(packedFiles.includes(`content/emails/${design}`), `content/emails/${design} is not in the kit package`)
+  }
   console.log('source-cli: passed')
 } finally {
   fs.rmSync(fixture, { recursive: true, force: true })
