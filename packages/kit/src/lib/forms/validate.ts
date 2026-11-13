@@ -11,13 +11,15 @@ const DATE: any = { datetime: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, date: /^\d{4}-\
 
 export const empty = (v: any) => v == null || v === '' || (Array.isArray(v) && v.length === 0)
 
-export function validateField(field: any, value: any, W: any) {
+/* `ctx` is what the slide is shown over: a choice offered from earlier answers (choicesfrom) is checked against them */
+export function validateField(field: any, value: any, W: any, ctx: any = {}) {
   const w = W || {}
   const p = field.params || {}
   const req = (msg: any) => (field.required && empty(value) ? msg : '')
   switch (field.kind) {
     case 'choice': case 'picture': { const r = req(w['choice-required'] || 'Please select an item in the list.'); if (r) return r
-      const allowed = (p.choices || []).map((c: any) => c.value); const vs = Array.isArray(value) ? value : empty(value) ? [] : [value]
+      const offered = (p.choicesfrom || []).flatMap((n: string) => { const v = ctx[n]; return Array.isArray(v) ? v : v == null || v === '' ? [] : [v] }).map(String)
+      const allowed = [...(p.choices || []).map((c: any) => c.value), ...offered]; const vs = Array.isArray(value) ? value : empty(value) ? [] : [value]
       return vs.every((v) => allowed.includes(v)) ? '' : (w['choice-required'] || 'Please select an item in the list.') }
     case 'select': { const r = req(w['select-required'] || w.required || 'This is required.'); if (r) return r
       return empty(value) || (p.options || []).some((o: any) => o.value === value) ? '' : (w['select-required'] || 'Select an option') }
@@ -59,8 +61,8 @@ export function validateField(field: any, value: any, W: any) {
 }
 
 /* every visible field of a slide checked; the first message per field */
-export function validateSlide(fields: any, values: any, W: any) {
+export function validateSlide(fields: any, values: any, W: any, ctx: any = {}) {
   const errors: any = {}
-  for (const f of fields) { const m = validateField(f, values[f.name], W); if (m) errors[f.name] = m }
+  for (const f of fields) { const m = validateField(f, values[f.name], W, ctx); if (m) errors[f.name] = m }
   return errors
 }

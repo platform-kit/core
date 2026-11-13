@@ -150,6 +150,8 @@ t('the shape a kind asks for', () => {
   assert.equal(validateField({ kind: 'date', params: {} }, '2024-1-1', W), 'date'); assert.equal(validateField({ kind: 'date', params: {} }, '2024-01-01', W), '')
   assert.equal(validateField({ kind: 'text', params: { maxlength: '3' } }, 'abcd', W), 'long 3'); assert.equal(validateField({ kind: 'text', params: { pattern: '[a-z]+' } }, 'abc', W), '')
   assert.equal(validateField({ kind: 'tel', params: {} }, '12', W), 'phone')
+  /* a choice offered from earlier answers is one of those answers, and nothing else */
+  assert.equal(validateField({ kind: 'choice', required: true, params: { choicesfrom: ['truths'] } }, 'God is love', W, { truths: ['God is love', 'God is here'] }), ''); assert.equal(validateField({ kind: 'choice', params: { choicesfrom: ['truths'] } }, 'made up', W, { truths: ['God is love'] }), 'choose')
   assert.equal(validateField({ kind: 'choice', params: { choices: [{ value: 'a' }] } }, 'z', W), 'choose'); assert.equal(validateField({ kind: 'choice', params: { choices: [{ value: 'a' }, { value: 'b' }], multiple: true } }, ['a', 'b'], W), '')
   assert.equal(validateField({ kind: 'file', params: { sizelimit: 1 } }, { size: 2 * 1024 * 1024, type: 'image/png' }, W), 'big')
 })

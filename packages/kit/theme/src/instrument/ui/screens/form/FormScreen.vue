@@ -37,7 +37,7 @@ async function submit() {
   if (sending.value) return
   const fields = visibleFields()
   for (const k of Object.keys(errors)) delete errors[k]
-  Object.assign(errors, validateSlide(fields, values, W.value))
+  Object.assign(errors, validateSlide(fields, values, W.value, ctx.value))
   if (Object.keys(errors).length) { const first = document.querySelector('.ff-err'); if (first) first.scrollIntoView({ block: 'center', behavior: 'smooth' }); return }
   const out = {}
   for (const f of fields) if (values[f.name] !== undefined) (out as any)[f.name] = values[f.name]
