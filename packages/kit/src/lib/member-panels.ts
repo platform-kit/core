@@ -14,13 +14,12 @@ export function gatesOf(site: any) {
     working: on('instrument') && !!(site && site.instrument && site.instrument.module),
     read: on('books') || on('articles'),
     bought: on('store'),
-    courses: on('courses'),
   }
 }
 
 export function arrange(kitPanels: any, gates: any, mine: any = {}) {
   const off = new Set(mine.off || [])
-  const list = [...kitPanels.filter((p: any) => gates[p.key] && !off.has(p.key)), ...(mine.panels || [])]
+  const list = [...kitPanels.filter((p: any) => gates[p.key] !== false && !off.has(p.key)), ...(mine.panels || [])]
   const order = mine.order || []
   if (!order.length) return list
   const at = (k: any) => { const i = order.indexOf(k); return i < 0 ? order.length + list.findIndex((p) => p.key === k) : i }

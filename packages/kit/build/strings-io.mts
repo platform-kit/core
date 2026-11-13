@@ -21,12 +21,20 @@ export async function readSiteScopes(store: any, dir = 'content/app/ui') {
   for (const name of await st.list(dir)) { const raw = await st.read(dir + '/' + name + '.md'); const p = parseText(raw || ''); if (p.scope) out[p.scope] = { ...p, file: dir + '/' + name + '.md' } }
   return out
 }
-/* every strings file in a directory on disk, by scope — the theme's defaults; a directory that is not there is no strings */
-export function readScopes(dir: any) {
+/* every strings file in a directory on disk, by scope — the theme's defaults, and each module folder's (strings/), when
+   given a list; a directory that is not there is no strings, and one scope in two places is refused */
+export function readScopes(dirs: string | string[]) {
   const out: any = {}
-  let files = []
-  try { files = fs.readdirSync(dir).filter((f) => f.endsWith('.md')).sort() } catch { return out }
-  for (const f of files) { const p = parseFile(path.join(dir, f)); if (p.scope) out[p.scope] = { ...p, file: path.join(dir, f) } }
+  for (const dir of ([] as string[]).concat(dirs)) {
+    let files: string[] = []
+    try { files = fs.readdirSync(dir).filter((f) => f.endsWith('.md')).sort() } catch { continue }
+    for (const f of files) {
+      const p = parseFile(path.join(dir, f))
+      if (!p.scope) continue
+      if (out[p.scope]) throw new Error(`the strings scope ${p.scope} is in both ${out[p.scope].file} and ${path.join(dir, f)}`)
+      out[p.scope] = { ...p, file: path.join(dir, f) }
+    }
+  }
   return out
 }
 /* the `ui` collection as the app reads it: every scope of the theme and the site, merged */
@@ -66,8 +74,8 @@ function fillRole(groups: any, role: any) {
   return walk(groups)
 }
 
-export function mergeUi(siteEntries: any, themeDir: string) {
-  const theme = readScopes(themeDir)
+export function mergeUi(siteEntries: any, themeDirs: string | string[]) {
+  const theme = readScopes(themeDirs)
   const site = Object.fromEntries((siteEntries || []).map((e: any) => [e.scope, e]))
   const merged: any = {}
   for (const scope of new Set([...Object.keys(theme), ...Object.keys(site)])) {
@@ -89,7 +97,7 @@ export async function uiScope(scope: string, root = process.cwd(), { theme }: an
   const { asStore } = await import('./store/index.mjs'); const st = asStore(root)
   let t
   if (theme) t = theme[scope]
-  else { const { loadSite } = await import('./site.mjs'); const { loadTheme } = await import('./theme.mjs'); t = readScopes((await loadTheme(await loadSite(st.root || process.cwd()))).strings)[scope] }
+  else { const { loadSite } = await import('./site.mjs'); const { loadTheme } = await import('./theme.mjs'); t = readScopes((await loadTheme(await loadSite(st.root || process.cwd()))).stringDirs)[scope] }
   const s = (await readSiteScopes(st))[scope]
   return mergeGroups(t && t.groups, s && s.groups)
 }

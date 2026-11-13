@@ -45,7 +45,7 @@ Verified by: `build/modules-off.test.mts`
 
 ### Requirement: Modules meet through slots and integrations
 
-A module SHALL declare the named slots other modules may fill. What one module adds when another is on SHALL live in the adding module's integrations, and SHALL be installed only when both are on. A contribution to a slot no enabled module declares SHALL fail the build.
+A module SHALL declare the named slots other modules may fill. What one module adds when another is on SHALL live in the adding module's integrations, and SHALL be installed only when both are on. A fill naming a slot that no module declares SHALL be refused; a fill for a slot whose module is off SHALL simply not be installed.
 
 #### Scenario: an integration with its other module off
 
@@ -56,8 +56,8 @@ Verified by: `build/modules-off-db.test.mts` and `build/modules-off.test.mts`
 
 #### Scenario: a fill for a slot nobody declares
 
-- **WHEN** a module contributes to a slot no enabled module declares
-- **THEN** the build fails, naming the slot and the module
+- **WHEN** a module fills a slot that no module declares
+- **THEN** its manifest is refused, naming the slot and the module
 
 Verified by: `build/module-slots.test.mts`
 

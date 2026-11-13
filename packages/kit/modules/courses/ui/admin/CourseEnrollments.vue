@@ -7,7 +7,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { us } from 'platformkit/lib/content.js'
 import { supabase } from 'platformkit/lib/supabase.js'
-import AdminHead from './AdminHead.vue'
+import AdminHead from 'platformkit/theme/components/admin/AdminHead.vue'
 
 /* what this page reads of each answer (46-courses.sql): the courses, and a course's lessons by key */
 type Listed = { slug: string; title: string }

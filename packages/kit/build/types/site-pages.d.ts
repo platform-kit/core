@@ -8,3 +8,7 @@ declare module '#site/pages' {
   import type { Component } from 'vue'
   export const PAGES: Array<PageRow & { component: Component | null }>
 }
+declare module '#site/admin-screens' {
+  import type { Component } from 'vue'
+  export const SCREENS: Record<string, Component>
+}

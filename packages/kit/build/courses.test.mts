@@ -8,11 +8,12 @@ import { parseCourse, bodyParts, lessonHref, KINDS, quizAchievements, siteKinds,
 import models, { courseFile } from '../modules/courses/build/models.mjs'
 const [model] = models
 import { certificatePdf } from '../src/lib/certificate-pdf.js'
-import { gatesOf } from '../src/lib/member-panels.js'
+import { fillsOf } from './modules/manifest.mjs'
+import { resolveModules } from './site.mjs'
 import { MODULES } from './modules/kit.mjs'
 import { coursesOf, communityOf, publicSite, courseKindsOf } from './site.mjs'
 import { forwardOf } from '../src/lib/community/places.js'
-import { libraryOf } from '../src/lib/courses-paths.js'
+import { libraryOf } from '../modules/courses/index.js'
 import fs from 'node:fs'
 
 let pass = 0, fail = 0
@@ -134,7 +135,7 @@ ok('an article, a form and a session open their own pages', lessonHref({ kind: '
 }
 
 /* the member card, and the module */
-ok('the Courses panel is drawn where the module is on', gatesOf({ modules: { courses: true } }).courses === true && gatesOf({ modules: { courses: false } }).courses === false)
+ok('the Courses panel is drawn where the module is on', fillsOf(resolveModules(), { courses: true }, 'spaces:member-card').some((x) => x.key === 'courses') && !fillsOf(resolveModules(), { courses: false }, 'spaces:member-card').some((x) => x.key === 'courses'))
 const mod: any = MODULES.find((m) => m.key === 'courses')
 ok('courses is a module with no static shape', !!mod && mod.static === false && mod.git === true && mod.cloud === true)
 ok('…owning its schema, its push, its function, its routes and its sweep', mod && mod.owns.schema.includes('46-courses.sql') && mod.owns.steps.includes('courses-push') && mod.owns.functions.includes('course-notify') && mod.owns.routes.includes('/courses') && mod.owns.cron.some((c: { command: string }) => /run_course_notices/.test(c.command)))
@@ -147,7 +148,7 @@ ok('…owning its schema, its push, its function, its routes and its sweep', mod
   const places = communityOf(social).places, place = places.find((p) => p.key === 'courses')
   ok('with a community, Courses is one of its places, before the site\'s own', !!place && places[0] === place && place.wide && place.shows === 'everyone' && place.icon === 'course')
   ok('…claiming nothing, so /courses stays the courses\' own pages', place && place.claims.length === 0 && forwardOf('/courses/writing-plainly', places, '/feed') === null)
-  ok('…its page named by package, so no path of the build machine reaches the browser', place && place.component === 'platformkit/theme/components/courses/CoursesPlace.vue' && !JSON.stringify(publicSite({ ...social, looks: {} })).includes(process.cwd()))
+  ok('…its page named by package, so no path of the build machine reaches the browser', place && place.component === 'platformkit/modules/courses/ui/CoursesPlace.vue' && !JSON.stringify(publicSite({ ...social, looks: {} })).includes(process.cwd()))
   let refused = ''
   try { coursesOf({ modules: {}, courses: { where: 'community' } }) } catch (e: any) { refused = e.message }
   ok('courses.where is refused by name, saying what replaced it', /courses\.where: removed/.test(refused) && /Courses place/.test(refused), refused)

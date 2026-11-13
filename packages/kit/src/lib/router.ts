@@ -81,7 +81,7 @@ export const CMS = DEV || CLOUD
    are never picked, a gate stops offering it, and the prerender leaves it out of the sitemap. */
 import site, { modules, places as SITE_PLACES } from '#site'
 import { forwardOf, socialSpacesHome } from './community/places.js'
-import { libraryOf } from './courses-paths.js'
+import { libraryOf } from '../../modules/courses/index.js'
 /* the one reading of a switch (lib/modules.js): it refuses a name no manifest declares, because
    `modules.stor !== false` is TRUE and would switch a module on rather than off */
 import { moduleOn, anyModuleOn } from './modules.js'

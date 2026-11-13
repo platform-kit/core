@@ -137,7 +137,7 @@
 import type { PropType } from 'vue'
 import { computed, h, ref, watch } from 'vue'
 import { ROUTES } from 'platformkit/lib/router.js'
-import MarkdownDoc from '../MarkdownDoc.vue'
+import MarkdownDoc from 'platformkit/theme/components/MarkdownDoc.vue'
 import CourseCover from './CourseCover.vue'
 import CourseIcon from './CourseIcon.vue'
 import { words, fill, pct, day, shortDay, leadOf, restOf, modulesOf, kindOf, stateOf, markOf, nextOpen, nextOpening, cadenceOf, siteKind, useMeasures } from './course-ui.js'

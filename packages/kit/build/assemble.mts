@@ -360,7 +360,7 @@ for (const [target, entry] of plan) {
 {
   const { loadTheme } = await import('./theme.mjs'); const { readScopes } = await import('./strings-io.mjs')
   const theme = await loadTheme(c)
-  const scopes = readScopes(theme.strings)
+  const scopes = readScopes(theme.stringDirs)
   const out: any = {}; for (const [k, v] of Object.entries(scopes)) out[k] = { groups: (v as any).groups }
   plan.set('functions/_shared/pipe/theme-strings.json', { from: theme.strings, content: Buffer.from(JSON.stringify(out) + '\n') })
 }

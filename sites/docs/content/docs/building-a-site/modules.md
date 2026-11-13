@@ -32,6 +32,9 @@ sources:
     packages/kit/build/modules/registry.mts,
     packages/kit/build/modules/in-place.mts,
     packages/kit/modules/registry.mts,
+    packages/kit/build/module-slots.test.mts,
+    packages/kit/modules/courses/index.ts,
+    packages/kit/modules/courses/build/index.mts,
     packages/kit/build/modules/core-pages.mts,
     packages/kit/src/lib/pages.ts,
     packages/kit/src/lib/page-routes.ts,
@@ -277,6 +280,12 @@ things in. Same rule as a landing section registered under a name the theme alre
 ## A module contributes its pages
 
 Which page an address shows is a table, not a list in the theme. Core's pages (`build/modules/core-pages.mts`: the landing pages, the content, the app area, the admin, sharing, a person's page and the rest) and each enabled module's `pages` are composed by the kit's Vite plugin into `#site/pages`, and `App.vue` shows the first page, in `order`, whose test holds for the address (`src/lib/pages.ts`). A page entry names its component (`theme:<path>` in the theme, `./<path>` in the module's folder), its `order`, and either a `test` (`specifier#export`, a function of the address and whether content is being edited; the kit's are in `src/lib/page-routes.ts`) or a `path` it answers with every address under it. `keyBy: 'route'` mounts it afresh at every address; `props` passes the address or a fixed value; `with` makes it a page one module adds only while another is on, as spaces answers `/feed` where the network is on too; `cmsOnly` keeps it out of a built site that edits nothing, as the preview is. A module that is off contributes no page, so its pages are not in the bundle at all. Two pages at one order are refused. The orders keep the place each page had when the theme held the list, ten apart, and `build/module-routes.test.mts` holds every address on every fixture site to the page it showed then.
+
+## Modules meet through slots
+
+A module adds to another's screens without either importing the other. The one that offers declares a slot in its manifest (`slots`); the one that adds fills it (`fills`, keyed `<owner>:<slot>`). Core's slot is `core:admin-screen`, a screen in the admin ({ key, component }); spaces offers `spaces:member-card`, a panel on a member's card ({ key, component, words: { scope, group, mine, theirs } } naming where its title is worded), and `spaces:place`, a place in the community ({ key, word, icon, component, wide, shows, claims }). A fill is installed only while its module, the slot's owner and every module it names in `with` are on: courses' place in the community needs spaces and the network, its panel needs spaces, and its enrolment screen needs only courses. A fill naming a slot no module declares is refused when the manifests are read. Components a fill names are given to the browser by package (`platformkit/modules/<key>/...`) or from the site's root, never by a path of the build machine. `build/module-slots.test.mts` holds all of this.
+
+A module has two front doors: `index.ts`, what the browser may import of it, and `build/index.mts`, what the build and the functions may. Its screens, wording (`strings/<scope>.md`, beside the theme's defaults; one scope in two places is refused) and browser logic (`lib/`) are in its folder too, and its components join the theme's in one registry, so a site overrides a module's component by name exactly as it overrides the theme's.
 
 ## A module is a folder
 

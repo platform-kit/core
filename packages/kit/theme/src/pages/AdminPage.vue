@@ -51,7 +51,8 @@ import CommentsAdmin from '../components/CommentsAdmin.vue'
 import NetworkAdmin from '../components/NetworkAdmin.vue'
 import PeopleAdmin from '../components/admin/PeopleAdmin.vue'
 import PayoutsAdmin from '../components/admin/PayoutsAdmin.vue'
-import CourseEnrollments from '../components/admin/CourseEnrollments.vue'
+/* the screens other modules add to the admin (core's admin-screen slot; openspec: modules-as-packages) */
+import { SCREENS } from '#site/admin-screens'
 import PaymentsAdmin from '../components/admin/PaymentsAdmin.vue'
 import SpacesAdmin from '../components/SpacesAdmin.vue'
 import PushSettings from '../components/PushSettings.vue'
@@ -1238,8 +1239,8 @@ onMounted(async () => {
       <div v-else-if="view === 'payouts'" class="ad-analytics">
         <PayoutsAdmin />
       </div>
-      <div v-else-if="view === 'course-enrollments'" class="ad-analytics">
-        <CourseEnrollments />
+      <div v-else-if="(SCREENS as any)[view]" class="ad-analytics">
+        <component :is="(SCREENS as any)[view]" />
       </div>
       <div v-else-if="view === 'payments'" class="ad-analytics">
         <PaymentsAdmin />

@@ -4,7 +4,8 @@ import { pathToFileURL } from 'node:url'
 import path from 'node:path'
 import { DEPLOYMENT_DEFAULTS, modeOf } from './modes.mjs'
 import { MODULES } from './modules/kit.mjs'
-import { readManifests } from './modules/manifest.mjs'
+import { readManifests, fillsOf } from './modules/manifest.mjs'
+import { inModule } from './modules/folders.mjs'
 import { inferenceOf } from './inference-config.mjs'
 import { paymentProviderPublicSettingsOf } from './payment-provider-registry.mjs'
 import { KINDS } from '../modules/courses/build/index.mjs'
@@ -285,8 +286,9 @@ export const courseKindsOf = (c: any) => {
 }
 /* the kit's own places in the community, before the site's: Courses, where the community is there to hold it */
 function kitPlacesOf(c: any) {
-  if (!coursesOf(c).place) return []
-  return [{ key: 'courses', word: 'courses', icon: 'course', component: 'platformkit/theme/components/courses/CoursesPlace.vue', wide: true, shows: 'everyone', claims: [] }]
+  coursesOf(c)
+  /* every place a module adds to the community (spaces' place slot; openspec: modules-as-packages) */
+  return fillsOf(resolveModules(), c.modules || {}, 'spaces:place').map(({ module, with: _w, ...p }: any) => ({ ...p, component: inModule(module, p.component) }))
 }
 export const networkOf = (c: any) => {
   const n = c.network || {}

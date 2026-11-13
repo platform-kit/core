@@ -150,6 +150,8 @@ const LISTED: Array<ModuleDeclaration | string> = [
        same guards, reached by another kind of client, so it comes and goes with this switch and
        answers for the three shapes with it. It needs a backend for the same reason spaces does,
        and additionally the api module, which gates every other door the same way. */
+    /* what other modules may add: a panel on a member's card, a place in the community */
+    slots: ['member-card', 'place'],
     pages: [
       { name: 'SpacesPage', order: 200, page: 'theme:pages/SpacesPage.vue', test: 'platformkit/lib/page-routes.js#spaces' },
       /* with the network on too, /feed opens on the spaces page in either layout: one page answers both */

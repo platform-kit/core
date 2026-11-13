@@ -24,6 +24,6 @@
       "#content": ["../build/content-node.mts"]
     }
   },
-  "include": ["../supabase/functions/deno-shim.d.ts", "src/**/*.vue", "src/**/*.ts", "src/**/*.js", "../build/types/*.d.ts"],
+  "include": ["../supabase/functions/deno-shim.d.ts", "src/**/*.vue", "src/**/*.ts", "src/**/*.js", "../build/types/*.d.ts", "../modules/*/ui/**/*.vue", "../modules/*/ui/**/*.ts", "../modules/*/lib/**/*.ts", "../modules/*/index.ts", "../modules/*/integrations/**/*.vue", "../modules/*/integrations/**/*.ts"],
   "exclude": ["node_modules"]
 }

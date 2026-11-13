@@ -84,11 +84,11 @@ export async function pageTable(c: any, modules: Map<string, any>) {
   return rows
 }
 
-function site(c: any, theme: any, keys: string[] = [], pages: any[] = []): Plugin {
+function site(c: any, theme: any, keys: string[] = [], pages: any[] = [], modules: Map<string, any> = new Map()): Plugin {
   const overrides = resolveOverrides(c, theme)
   const overrideFiles = new Set(Object.values(overrides))
   /* a virtual id must not hold a '#': the browser would read it as a fragment */
-  const V = Object.fromEntries(['site', 'site/looks', 'site/landing', 'site/app', 'site/routes', 'site/nav', 'site/analytics', 'site/instrument', 'site/recommendations', 'site/admin', 'site/courses', 'site/member', 'site/permissions', 'site/desk', 'site/strings-default', 'site/page-tests', 'site/pages'].map((k) => ['#' + k, '\0platformkit:' + k.replace('/', '-')]))
+  const V = Object.fromEntries(['site', 'site/looks', 'site/landing', 'site/app', 'site/routes', 'site/nav', 'site/analytics', 'site/instrument', 'site/recommendations', 'site/admin', 'site/courses', 'site/member', 'site/permissions', 'site/desk', 'site/strings-default', 'site/page-tests', 'site/pages', 'site/admin-screens'].map((k) => ['#' + k, '\0platformkit:' + k.replace('/', '-')]))
   const abs = (p: string) => path.resolve(c.root, p)
   const J = JSON.stringify
   /* where the generated modules are written (see writeFiles below), and how one imports a site's file from there:
@@ -101,6 +101,13 @@ function site(c: any, theme: any, keys: string[] = [], pages: any[] = []): Plugi
   const contract = (mod: any, names: any) => (mod ? `import * as M from ${J(from(mod))}\n` : '') + Object.entries(names).map(([k, d]) => `export const ${k} = ${mod ? `M.${k} !== undefined ? M.${k} : (${d})` : d}`).join('\n') + '\n'
   /* what each virtual module is: the code its id is answered with, generated from the config */
   const generate = async (id: string) => {
+    if (id === V['#site/admin-screens']) {
+      /* the admin's screens other modules add (core's admin-screen slot): each fetched when it is first opened */
+      const { fillsOf } = await import('../build/modules/manifest.mjs')
+      const { inModule } = await import('../build/modules/folders.mjs')
+      const fills = fillsOf(modules, c.modules || {}, 'core:admin-screen')
+      return `import { defineAsyncComponent } from 'vue'\nexport const SCREENS = {\n` + fills.map((x: any) => `  ${J(x.key)}: defineAsyncComponent(() => import(${J(from(inModule(x.module, String(x.component))))})),\n`).join('') + '}\n'
+    }
     if (id === V['#site/page-tests'] || id === V['#site/pages']) {
       const { MODULE_DIRS } = await import('../build/modules/folders.mjs')
       const rel = (file: string) => { const r = path.relative(dir, file).split(path.sep).join('/'); return r.startsWith('.') ? r : './' + r }
@@ -218,9 +225,16 @@ function site(c: any, theme: any, keys: string[] = [], pages: any[] = []): Plugi
        kit panels off, adding its own and setting the order */
     if (id === V['#site/member']) {
       const site = c.modules.spaces && c.spaces && c.spaces.member
-      return `import { kitPanels } from 'platformkit/theme/components/spaces/panels/index.js'\nimport { arrange } from 'platformkit/lib/member-panels.js'\n`
+      /* the panels other modules add through spaces' member-card slot, each from its module's folder (openspec: modules-as-packages) */
+      const { fillsOf } = await import('../build/modules/manifest.mjs')
+      const { inModule } = await import('../build/modules/folders.mjs')
+      const fills = fillsOf(modules, c.modules || {}, 'spaces:member-card')
+      /* a fill names its component and where its title's words are: { scope, group, mine, theirs } in the module's strings */
+      const panel = (x: any, i: number) => { const w = x.words; return `{ key: ${J(x.key)}, title: ({ mine }) => us(${J(w.scope)})[${J(w.group)}].main[mine ? ${J(w.mine)} : ${J(w.theirs)}], component: F${i} }` }
+      return `import { kitPanels } from 'platformkit/theme/components/spaces/panels/index.js'\nimport { arrange } from 'platformkit/lib/member-panels.js'\nimport { us } from 'platformkit/lib/content.js'\n`
+        + fills.map((x: any, i: number) => `import F${i} from ${J(from(inModule(x.module, String(x.component))))}\n`).join('')
         + (site ? `import * as M from ${J(from(site))}\n` : 'const M = {}\n')
-        + `export const panels = arrange(kitPanels, ${JSON.stringify(gatesOf(c))}, M)\n`
+        + `export const panels = arrange([...kitPanels${fills.map((x: any, i: number) => ', ' + panel(x, i)).join('')}], ${JSON.stringify(gatesOf(c))}, M)\n`
     }
     if (id === V['#site/desk']) return contract(deskSourcesOf(c).sources, DESK)
     /*
@@ -235,7 +249,7 @@ function site(c: any, theme: any, keys: string[] = [], pages: any[] = []): Plugi
      */
     if (id === V['#site/strings-default']) {
       const { readScopes } = await import('platformkit/build/strings-io.mjs')
-      const scopes = readScopes(theme.strings)
+      const scopes = readScopes(theme.stringDirs)
       const out: any = {}
       for (const [k, v] of Object.entries(scopes)) out[k] = (v as any).groups
       return `export const groups = ${JSON.stringify(out)}\n`
@@ -543,7 +557,8 @@ export async function platformkit(opts: any = {}): Promise<Plugin[]> {
     throw new Error('the site\'s own module manifests could not be resolved: ' + (e && e.message ? e.message : e))
   }
   const theme = await loadTheme(c)
-  const pages = await pageTable(c, await (await import('../build/steps.mjs')).moduleSet(c))
+  const moduleMap = await (await import('../build/steps.mjs')).moduleSet(c)
+  const pages = await pageTable(c, moduleMap)
   const withContent = opts.content !== false
   return [
     /*
@@ -610,7 +625,7 @@ export async function platformkit(opts: any = {}): Promise<Plugin[]> {
       }),
     },
     fonts(c.root),
-    site(c, theme, keys, pages),
+    site(c, theme, keys, pages, moduleMap),
     ...(withContent ? [velite(c)] : []),
     adminServer(),
     uploads(),

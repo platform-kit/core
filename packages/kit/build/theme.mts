@@ -8,6 +8,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
+import { allModuleDirs } from './modules/folders.mjs'
 
 const walk = (d: string): string[] => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]))
 
@@ -23,13 +24,17 @@ export async function loadTheme(c: { theme: any; root: any }) {
   /* a path the manifest names as the site has it (.js); in the workspace, a .js not there is its .ts */
   const abs = (p: string) => { const a = path.resolve(src, p); const t = a.replace(/\.(m?)js$/, '.$1ts'); return !fs.existsSync(a) && t !== a && fs.existsSync(t) ? t : a }
   const components: Record<string, string> = {}
-  for (const f of walk(src)) {
+  /* the theme's components and every module folder's (ui/), one registry: a module's screens are overridden by name as
+     the theme's are, and two of one name anywhere are refused (openspec: modules-as-packages) */
+  const modules = allModuleDirs((c && c.root) || process.cwd())
+  const uiFiles = modules.flatMap((d) => [path.join(d, 'ui'), ...(fs.existsSync(path.join(d, 'integrations')) ? fs.readdirSync(path.join(d, 'integrations')).map((o) => path.join(d, 'integrations', o)) : [])].flatMap((u) => fs.existsSync(u) && fs.statSync(u).isDirectory() ? walk(u) : []))
+  for (const f of [...walk(src), ...uiFiles]) {
     if (!f.endsWith('.vue')) continue
     const n = path.basename(f, '.vue')
     if (components[n]) throw new Error(`theme ${name}: two components named ${n} — ${path.relative(src, components[n])} and ${path.relative(src, f)}; names are the registry and must be unique`)
     components[n] = f
   }
-  return { package: name, ...m, src, main: abs(m.main || './main.js'), design: abs(m.design || './looks/design.css'), strings: abs(m.strings || './content/ui'), skills: abs(m.skills || './content/skills'), schemas: abs(m.schemas || './components/landing/schemas.js'), probe: m.probe || { allow: [] }, components }
+  return { package: name, ...m, src, main: abs(m.main || './main.js'), design: abs(m.design || './looks/design.css'), strings: abs(m.strings || './content/ui'), stringDirs: [abs(m.strings || './content/ui'), ...modules.map((d) => path.join(d, 'strings')).filter((d) => fs.existsSync(d))], skills: abs(m.skills || './content/skills'), schemas: abs(m.schemas || './components/landing/schemas.js'), probe: m.probe || { allow: [] }, components }
 }
 
 /* the site's overrides resolved against the registry: { Name: absolute path }; an unknown name is refused, so a typo never misses silently */

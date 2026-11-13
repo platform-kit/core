@@ -12,6 +12,7 @@
     "./vendor/*": "./vendor/*",
     "./theme": "./theme/src/main.ts",
     "./theme/*": "./theme/src/*",
+    "./modules/*": "./modules/*",
     "./*": "./src/*"
   },
   "imports": {

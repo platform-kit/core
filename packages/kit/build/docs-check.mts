@@ -329,7 +329,9 @@ const walk2 = (d: string, exts: string[]): string[] => fs.existsSync(d) ? fs.rea
 {
   const doc = page('running-a-site/settings/site-settings-and-strings')
   const dir = path.join(ROOT, 'packages/kit/theme/src/content/ui')
-  if (doc && fs.existsSync(dir)) for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.md'))) { const scope = f.replace(/\.md$/, ''); if (!ticks(doc.text).has(scope)) fault(doc.file, `the theme ships the ${scope} scope and the page does not list it`) }
+  const mods = path.join(ROOT, 'packages/kit/modules')
+  const scopeFiles = [...(fs.existsSync(dir) ? fs.readdirSync(dir) : []), ...(fs.existsSync(mods) ? fs.readdirSync(mods).flatMap((m) => { const s = path.join(mods, m, 'strings'); return fs.existsSync(s) ? fs.readdirSync(s) : [] }) : [])]
+  if (doc && fs.existsSync(dir)) for (const f of scopeFiles.filter((x) => x.endsWith('.md'))) { const scope = f.replace(/\.md$/, ''); if (!ticks(doc.text).has(scope)) fault(doc.file, `the theme ships the ${scope} scope and the page does not list it`) }
 }
 /* shared collection frontmatter fields: every schema key, on the page */
 {

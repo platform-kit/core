@@ -1467,7 +1467,7 @@ export async function kitConfig(): Promise<any> {
       if (Array.isArray(c)) collections[key] = c.filter((e) => !e || e.published !== false)
     }
     /* the UI strings: the site's over the theme's defaults, by key — a word the site leaves out is the theme's */
-    collections.ui = mergeUi(collections.ui, THEME.strings)
+    collections.ui = mergeUi(collections.ui, THEME.stringDirs)
     /* and the three that need no file: an absent one is its default, never an empty list */
     const settle = (key: string, empty: any) => { if (Array.isArray(collections[key])) collections[key] = collections[key][0] || empty }
     settle('comments', { kinds: [] })

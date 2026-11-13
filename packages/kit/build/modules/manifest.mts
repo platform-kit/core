@@ -92,6 +92,14 @@ export interface PageContribution {
   with?: string
   cmsOnly?: boolean
 }
+/*
+ * SLOTS AND FILLS (openspec: modules-as-packages). A module declares the named places others may add to (`slots`), and
+ * fills another's from its own manifest (`fills`, keyed '<owner>:<slot>'). Core's slots are core's (CORE_SLOTS). A fill is
+ * installed only while its module, the slot's owner and every module in its `with` are on; a fill naming a slot nobody
+ * declares is refused. What a fill carries is the slot's business: a component, a key, the words it is titled with.
+ */
+export const CORE_SLOTS = ['admin-screen']
+export type Fill = { key: string, with?: string[], [k: string]: unknown }
 export interface ModuleDeclaration {
   key: string
   what: string
@@ -103,6 +111,8 @@ export interface ModuleDeclaration {
   owns?: Owns
   paymentProviders?: PaymentProviderRegistration[]
   pages?: PageContribution[]
+  slots?: string[]
+  fills?: Record<string, Fill[]>
 }
 /* a declaration read: every `owns` kind present, a requirement always { module, why } */
 export interface Module {
@@ -116,13 +126,15 @@ export interface Module {
   owns: Required<Owns>
   paymentProviders: PaymentProviderRegistration[]
   pages: PageContribution[]
+  slots: string[]
+  fills: Record<string, Fill[]>
   where?: string
 }
 export type Modules = Map<string, Module>
 export type Switches = Record<string, boolean | undefined>
 
 /* every field a manifest may carry, so a typo is refused rather than ignored */
-export const FIELDS = ['key', 'what', 'needs', 'requires', 'static', 'git', 'cloud', 'owns', 'paymentProviders', 'pages']
+export const FIELDS = ['key', 'what', 'needs', 'requires', 'static', 'git', 'cloud', 'owns', 'paymentProviders', 'pages', 'slots', 'fills']
 export const PAGE_FIELDS = ['name', 'order', 'page', 'test', 'path', 'keyBy', 'props', 'eager', 'with', 'cmsOnly']
 
 /* a module's pages, each checked field by field */
@@ -376,6 +388,16 @@ export function readManifest(input: unknown, where = 'a manifest'): { manifest: 
   }
   const paymentProviders = paymentProvidersOf(m.paymentProviders, owns, where, faults)
   const pages = pagesOf(m.pages, where, faults)
+  const slots: string[] = m.slots == null ? [] : Array.isArray(m.slots) && m.slots.every((s: unknown) => typeof s === 'string' && /^[a-z][a-z0-9-]*$/.test(s)) ? m.slots : (faults.push(`${where}: \`slots\` is a list of lower-case names`), [])
+  const fills: Record<string, Fill[]> = {}
+  if (m.fills != null) {
+    if (typeof m.fills !== 'object' || Array.isArray(m.fills)) faults.push(`${where}: \`fills\` maps '<owner>:<slot>' to a list`)
+    else for (const [k, v] of Object.entries(m.fills)) {
+      if (!/^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*$/.test(k)) faults.push(`${where}: \`fills\` key ${k} is not '<owner>:<slot>'`)
+      else if (!Array.isArray(v) || !v.every((x: any) => x && typeof x === 'object' && typeof x.key === 'string' && (x.with == null || (Array.isArray(x.with) && x.with.every((w: unknown) => typeof w === 'string'))))) faults.push(`${where}: \`fills.${k}\` is a list of { key, with?, ... }`)
+      else fills[k] = v as Fill[]
+    }
+  }
 
   return {
     manifest: faults.length ? null : {
@@ -384,6 +406,8 @@ export function readManifest(input: unknown, where = 'a manifest'): { manifest: 
       owns: Object.fromEntries(OWNS.map((k) => [k, owns[k] || []])) as Required<Owns>,
       paymentProviders,
       pages,
+      slots,
+      fills,
     },
     faults,
   }
@@ -405,6 +429,12 @@ export function readManifests(entries: Array<{ manifest: unknown, where: string 
   }
   /* a module that needs one nobody declares can never be satisfied */
   for (const m of by.values()) for (const r of m.requires) if (!by.has(r.module)) faults.push(`\`${m.key}\` requires \`${r.module}\`, which no manifest declares`)
+  /* a fill names a slot its owner declares; a filled module that is not there, or a slot it never offered, is a typo */
+  for (const m of by.values()) for (const [k, list] of Object.entries(m.fills)) {
+    const [owner, slot] = k.split(':')
+    if (owner === 'core' ? !CORE_SLOTS.includes(slot) : !(by.get(owner)?.slots || []).includes(slot)) faults.push(`\`${m.key}\` fills ${k}, a slot no module declares`)
+    for (const x of list) for (const w of x.with || []) if (!by.has(w)) faults.push(`\`${m.key}\` fills ${k} with \`${w}\`, which no manifest declares`)
+  }
   /* two pages tried at one order would make which one shows an accident of loading; a page that waits on a module nobody declares never shows */
   const orders = new Map<number, string>()
   for (const m of by.values()) for (const p of m.pages) {
@@ -471,3 +501,13 @@ export function unmetRequirements(modules: Modules, config: Switches = {}): Arra
 }
 import path from 'node:path'
 import { PAYMENT_CAPABILITIES, PAYMENT_PROVIDER_WEBHOOK_PATH } from '../../src/payment-provider.mjs'
+
+/* the fills a slot gets on a site: each enabled module's, while the slot's owner and everything in its `with` are on */
+export function fillsOf(modules: Modules, switches: Switches, slot: string): Array<Fill & { module: string }> {
+  const on = (k: string) => k === 'core' || (modules.has(k) && isOn(k, switches))
+  const owner = slot.split(':')[0]
+  if (!on(owner)) return []
+  const out: Array<Fill & { module: string }> = []
+  for (const m of modules.values()) if (on(m.key)) for (const x of m.fills[slot] || []) if ((x.with || []).every(on)) out.push({ ...x, module: m.key })
+  return out
+}

@@ -8,7 +8,7 @@
  *
  * A module's tests move into its own folder with the module; until then they are here.
  */
-import { ROUTES, DOCS_ONLY, ENTRY_KEYS, MODELS_ON, isPageRoute, siteRouteOf, coursesRoute } from './router.js'
+import { ROUTES, DOCS_ONLY, ENTRY_KEYS, MODELS_ON, isPageRoute, siteRouteOf } from './router.js'
 
 export type PageContext = { CMS: boolean, DEV: boolean }
 export type PageTest = (route: string, ctx: PageContext) => boolean
@@ -50,7 +50,5 @@ export const support: PageTest = (r) => r === ROUTES.support
 /* spaces, and the feed it answers where the network is on too */
 export const spaces: PageTest = (r) => at(r, ROUTES.spaces)
 export const feed: PageTest = (r) => at(r, ROUTES.feed)
-/* courses */
-export const courses: PageTest = (r) => coursesRoute(r)
 /* models: a content model's own pages, where any model has pages on */
 export const entries: PageTest = (r) => !!MODELS_ON && ENTRY_KEYS.size > 0 && r.startsWith(ROUTES.entries + '/')

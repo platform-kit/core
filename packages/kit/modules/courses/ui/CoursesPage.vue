@@ -40,8 +40,8 @@ import { supabase } from 'platformkit/lib/supabase.js'
 import { setHead } from 'platformkit/lib/seo.js'
 import { certificatePdf } from 'platformkit/lib/certificate-pdf.js'
 import site from '#site'
-import SiteLayout from '../layouts/SiteLayout.vue'
-import CoursesView from '../components/courses/CoursesView.vue'
+import SiteLayout from 'platformkit/theme/layouts/SiteLayout.vue'
+import CoursesView from './CoursesView.vue'
 
 const SITE_NAME = (site && site.name) || ''
 const W = computed(() => us('courses').page || {})

@@ -50,6 +50,21 @@ export function moduleDirs(root: string): string[] {
   return subdirs(root).map((n) => path.join(root, n)).filter((d) => manifestFile(d))
 }
 
+/* a path a module names in its manifest ('./ui/X.vue') as the browser's bundle may name it: a kit module's by package
+   (platformkit/modules/<key>/...), a site module's from the site's root — never a path of the build machine. Left as written
+   where the folder is not on disk (a function). */
+export const inModule = (key: string, p: string): string => {
+  const d = MODULE_DIRS.get(key)
+  if (!d || !p.startsWith('./')) return p
+  if (d.startsWith(KIT_MODULES_DIR)) return 'platformkit/modules/' + path.relative(KIT_MODULES_DIR, path.join(d, p)).split(path.sep).join('/')
+  return './' + path.relative(process.cwd(), path.join(d, p)).split(path.sep).join('/')
+}
+
+/* every module folder a site has: the kit's, then the site's own (src/modules/<key>/) */
+export function allModuleDirs(siteRoot = process.cwd()): string[] {
+  return [...moduleDirs(KIT_MODULES_DIR), ...moduleDirs(path.join(siteRoot, 'src', 'modules'))]
+}
+
 /* what a module folder holds for the backend, by the name each file is assembled under */
 export function folderBackend(dir: string, key: string): FolderBackend {
   const out: FolderBackend = { schema: {}, glue: {}, rows: {}, seed: {}, functions: {}, shared: null }
