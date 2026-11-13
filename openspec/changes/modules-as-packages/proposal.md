@@ -1,5 +1,7 @@
 # Proposal
 
+The full write-up, with examples, is in [docs/proposals/modules-as-packages.md](../../../docs/proposals/modules-as-packages.md).
+
 ## Why
 
 A module is a naming habit, not a thing you can open. Courses is about 30 files in six folders: the theme, `src/lib`, `build`, `supabase/schemas`, `supabase/functions` and `content/emails`. Its manifest claims five kinds of file; the rest is courses' by name only. Kit pages are wired by hand into `App.vue` and `router.ts`, and a site's module takes four config entries. Any file may import any other, so modules depend on each other's insides, and a site depends on 41 internal kit files. The theme holds every module's screens, so it is every feature's front end as well as the look.
