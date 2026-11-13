@@ -9,7 +9,7 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { requireStack, moduleOn, notHere } from './test-stack.mjs'
-import { projectCourses, parseCourse } from './courses-io.mjs'
+import { projectCourses, parseCourse } from '../modules/courses/build/io.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const S: any = requireStack('course-workbook-db')

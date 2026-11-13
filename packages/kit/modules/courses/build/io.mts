@@ -28,7 +28,7 @@
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import matter from 'gray-matter'
-import { asStore } from './store/index.mjs'
+import { asStore } from '../../../build/store/index.mjs'
 
 export const COURSES_DIR = 'content/courses'
 export const KINDS = ['text', 'chapter', 'article', 'form', 'session']
@@ -43,7 +43,7 @@ const dateOf = (v: any) => { const d = v instanceof Date ? v : new Date(String(v
  * which refuses a malformed one; a root with no config registers nothing.
  */
 export async function siteKinds(root = process.cwd()) {
-  const { loadSite, courseKindsOf } = await import('./site.mjs')
+  const { loadSite, courseKindsOf } = await import('../../../build/site.mjs')
   let c
   try { c = await loadSite(root) } catch (e: any) { if (e && e.code === 'ERR_MODULE_NOT_FOUND' && /platformkit\.config\.js/.test(String(e.message))) return {}; throw e }
   const out: any = {}

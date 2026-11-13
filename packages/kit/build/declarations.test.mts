@@ -176,14 +176,22 @@ if (waiting.length) {
   const line = (cli.match(/case 'migrate':[^\n]*/) || [''])[0]
   /* the reset runs `supabase db reset`, then the seed steps (build/reset-seed.mjs), which the end-to-end runner runs too */
   ok('the reset line was found in the CLI', !!line && line.includes('supabase') && line.includes('runSeedSteps'), 'the shape of bin/platformkit.mjs changed')
-  const { SEED_STEPS } = await import('./reset-seed.mjs')
-  const seeded = SEED_STEPS.map(([script]) => script)
+  const { SEED_STEPS, seedStepKey } = await import('./reset-seed.mjs')
+  const seeded = SEED_STEPS.map(([script]) => seedStepKey(script))
   const scripts = [...new Set(Object.values(DECLARED).map((d: any) => d.by).filter(Boolean))].sort()
   ok('every projection says which script writes it',
     Object.entries(DECLARED).every(([, d]) => !!(d as any).by),
     Object.entries(DECLARED).filter(([, d]) => !(d as any).by).map(([t]) => t).join(', '))
+  /* a module's seed script knows its step, so a reset on a site with that module off leaves it out (openspec: modules-as-packages) */
+  {
+    const { SEED_STEP_KEYS } = await import('./reset-seed.mjs')
+    const { loadSteps } = await import('./steps.mjs')
+    const { loadSite } = await import('./site.mjs')
+    const owner = new Map((await loadSteps(await loadSite(process.cwd()))).map((x: any) => [x.key, x.module]))
+    for (const [script, key] of Object.entries(SEED_STEP_KEYS)) ok(`the seed script ${script} is the step ${key}, of a module`, !!owner.get(key), `no step ${key}, or it names no module: a reset with its module off would run it`)
+  }
   for (const s of scripts) {
-    ok('`' + s + '` runs on a reset', seeded.includes(`${s}.mjs`),
+    ok('`' + s + '` runs on a reset', seeded.includes(s),
       'a projection it writes would be empty after `platformkit migrate reset`, and nothing would say so')
   }
 }

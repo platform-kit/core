@@ -4,8 +4,9 @@
  * member card's Courses panel gated by the module, and the module's own declaration. The rules a reader meets — what is
  * open, who gets in, completion — are the database's, and courses-db.test.mjs holds them.
  */
-import { parseCourse, bodyParts, lessonHref, KINDS, quizAchievements, siteKinds, readCourses } from './courses-io.mjs'
-import model, { courseFile } from './models/core/courses.mjs'
+import { parseCourse, bodyParts, lessonHref, KINDS, quizAchievements, siteKinds, readCourses } from '../modules/courses/build/io.mjs'
+import models, { courseFile } from '../modules/courses/build/models.mjs'
+const [model] = models
 import { certificatePdf } from '../src/lib/certificate-pdf.js'
 import { gatesOf } from '../src/lib/member-panels.js'
 import { MODULES } from './modules/kit.mjs'

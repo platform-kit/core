@@ -26,7 +26,7 @@ import { isMain } from './is-main.mjs'
 const KIT = fileURLToPath(new URL('..', import.meta.url))
 const OUT = path.join(KIT, '.tsbuild')
 const LIST = path.join(KIT, '.compiled.json')
-const ROOTS = ['bin', 'build', 'src', 'vite']
+const ROOTS = ['bin', 'build', 'src', 'vite', 'modules']
 /* the theme's TypeScript, which tsc cannot build beside its components: stripped file by file, since a site's Node
    reads theme.js and its schemas at build time and Node strips nothing inside node_modules (Vite reads the .ts) */
 const THEME = 'theme/src'
@@ -34,7 +34,7 @@ const THEME = 'theme/src'
    node_modules: their JavaScript goes beside them, and assemble leaves it behind */
 const FUNCTIONS = 'supabase/functions/_shared'
 /* Deno's own TypeScript, run by deno test and copied into the functions as it is */
-const DENO = (rel) => /\.test\.ts$/.test(rel) || rel === 'build/hyperswitch-browser.steps.ts'
+const DENO = (rel) => /\.test\.ts$/.test(rel) || rel === 'build/hyperswitch-browser.steps.ts' || /^modules\/[^/]+\/functions\//.test(rel)   /* a module's functions are Deno's, assembled from their source */
 
 export function clean() {
   const was = fs.existsSync(LIST) ? JSON.parse(fs.readFileSync(LIST, 'utf8')) : []

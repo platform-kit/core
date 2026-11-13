@@ -14,7 +14,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { asStore } from './store/index.mjs'
 import matter from 'gray-matter'
-import { readCourses, quizAchievements } from './courses-io.mjs'
+import { readCourses, quizAchievements } from '../modules/courses/build/index.mjs'
 import { isMain } from './is-main.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 

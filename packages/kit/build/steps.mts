@@ -32,7 +32,8 @@ import { loadTheme } from './theme.mjs'
 import { isMain } from './is-main.mjs'
 
 export const PHASES = ['prepare', 'functions', 'site', 'after']
-const KIT = (f: string) => fileURLToPath(new URL('./' + f, import.meta.url))
+/* a kit script by its name under build/, or a module's own by its absolute path (openspec: modules-as-packages) */
+const KIT = (f: string) => path.isAbsolute(f) ? f : fileURLToPath(new URL('./' + f, import.meta.url))
 
 /* ---- the records ---- */
 function check(s: any, from: any) {

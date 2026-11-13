@@ -5,13 +5,13 @@ order: 16.5
 sources:
   [
     packages/kit/modules/courses/schema/46-courses.sql,
-    packages/kit/build/courses-io.mts,
+    packages/kit/modules/courses/build/io.mts,
     packages/kit/build/site.mts,
-    packages/kit/build/site-courses-node.mts,
+    packages/kit/modules/courses/build/site-node.mts,
     packages/kit/vite/index.mts,
-    packages/kit/build/courses-push.mts,
-    packages/kit/build/steps/courses.mts,
-    packages/kit/build/models/core/courses.mts,
+    packages/kit/modules/courses/build/push.mts,
+    packages/kit/modules/courses/build/steps.mts,
+    packages/kit/modules/courses/build/models.mts,
     packages/kit/modules/courses/functions/course-notify,
     packages/kit/src/lib/certificate-pdf.ts,
     packages/kit/theme/src/pages/CoursesPage.vue,

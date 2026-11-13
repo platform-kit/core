@@ -7,7 +7,7 @@ import { MODULES } from './modules/kit.mjs'
 import { readManifests } from './modules/manifest.mjs'
 import { inferenceOf } from './inference-config.mjs'
 import { paymentProviderPublicSettingsOf } from './payment-provider-registry.mjs'
-import { KINDS } from './courses-io.mjs'
+import { KINDS } from '../modules/courses/build/index.mjs'
 import { siteFile } from './site-file.mjs'
 
 /*

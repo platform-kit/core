@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 /*
  * The courses a site declares, made real: content/courses into the `courses`, `course_lessons` and `course_cohorts`
- * tables (courses-io.mjs projectCourses). It is the only writer — no client may write a course — and it goes one way.
+ * tables (./io.mts projectCourses). It is the only writer — no client may write a course — and it goes one way.
  * A course whose file has problems is left as it was, and named; one whose file has gone is unpublished.
  *
  * With no service key it says so and does nothing.
  *
- *   node build/courses-push.mjs            project
- *   node build/courses-push.mjs --check    say what it would do, and change nothing
+ *   node modules/courses/build/push.mjs            project
+ *   node modules/courses/build/push.mjs --check    say what it would do, and change nothing
  */
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, serviceKey } from './tts/storage.mjs'
-import { readCourses, projectCourses } from './courses-io.mjs'
-import { isMain } from './is-main.mjs'
-import type { Database } from '../supabase/functions/_shared/database.types.js'
+import { supabaseUrl, serviceKey } from '../../../build/tts/storage.mjs'
+import { readCourses, projectCourses } from './io.mjs'
+import { isMain } from '../../../build/is-main.mjs'
+import type { Database } from '../../../supabase/functions/_shared/database.types.js'
 
 export async function pushCourses({ root = process.cwd(), check = false, log = console.log, db: client = null } = {}) {
   const courses = await readCourses(root)

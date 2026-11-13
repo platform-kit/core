@@ -14,9 +14,14 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 
 export const SEED_STEPS = [
   ['spaces.mjs'], ['spaces-push.mjs', '--seed'], ['teams.mjs'], ['teams-push.mjs'], ['events.mjs'], ['events-push.mjs'],
-  ['comments-push.mjs'], ['providers-push.mjs'], ['achievements-push.mjs'], ['courses-push.mjs'], ['bots.mjs'], ['bots-push.mjs'], ['search-push.mjs'],
+  ['comments-push.mjs'], ['providers-push.mjs'], ['achievements-push.mjs'], ['../modules/courses/build/push.mjs'], ['bots.mjs'], ['bots-push.mjs'], ['search-push.mjs'],
   ['print/templates.mjs', '--fonts'], ['dev-account.mjs'],
 ]
+
+/* the build step a seed script is, by its key: a kit script is named for its step; a module's script lives in its folder
+   under a name of its own, so its key is said here (openspec: modules-as-packages) */
+export const SEED_STEP_KEYS: Record<string, string> = { '../modules/courses/build/push.mjs': 'courses-push' }
+export const seedStepKey = (script: string): string => SEED_STEP_KEYS[script] ?? path.basename(script, '.mjs')
 
 /* every step in the site's folder, with the stack's env; the first that fails stops the rest and is named. A step that
    is a build step of a module the site has off is left out: its tables are not in the site's declaration
@@ -29,7 +34,7 @@ export async function runSeedSteps({ cwd, env = process.env, stdio = 'inherit', 
   const owner = new Map<string, string | undefined>((await loadSteps(site)).map((s: { key: string; module?: string }) => [s.key, s.module]))
   for (const [script, ...args] of SEED_STEPS) {
     if (skip.includes(script)) continue
-    const module = owner.get(path.basename(script, '.mjs'))
+    const module = owner.get(seedStepKey(script))
     if (module && !isOn(module, site.modules || {})) continue
     const r = spawnSync(process.execPath, [path.join(HERE, script), ...args], { cwd, env, stdio, encoding: 'utf8' })
     if (r.status !== 0) return { ok: false, step: script, output: ((r.stdout || '') + (r.stderr || '')).trim().split('\n').slice(-12).join('\n') }

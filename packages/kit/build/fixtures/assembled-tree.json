@@ -1,7 +1,7 @@
 {
  "demo": {
   "all": {
-   ".assembled.json": "e167e46d5db91b92",
+   ".assembled.json": "411677f77ff4dc1e",
    "config.toml": "d0453df38821d350",
    "data.sql": "cb220bd71a0caaba",
    "functions/_shared/access.ts": "84cb877faa83e179",
@@ -97,7 +97,7 @@
    "functions/_shared/payment-provider.mts": "0c36c9f27c0df348",
    "functions/_shared/payouts.ts": "09db2d76b969aa23",
    "functions/_shared/permissions.ts": "582e8c59565667d9",
-   "functions/_shared/pipe/build/achievements-push.mjs": "2fee69fd6ecc8ce3",
+   "functions/_shared/pipe/build/achievements-push.mjs": "c687add07b83f406",
    "functions/_shared/pipe/build/admin-pipe.mjs": "d0e1505d24adc332",
    "functions/_shared/pipe/build/admin-schemas.mjs": "ad33df9a57dc712f",
    "functions/_shared/pipe/build/assets.mjs": "b67eb17fd3bfdaf6",
@@ -106,7 +106,6 @@
    "functions/_shared/pipe/build/catalog.mjs": "5a973b38715fd4c2",
    "functions/_shared/pipe/build/comments-push.mjs": "bbecd9fa3a822add",
    "functions/_shared/pipe/build/companion-io.mjs": "89fcb965189c978c",
-   "functions/_shared/pipe/build/courses-io.mjs": "5cade1809e58d519",
    "functions/_shared/pipe/build/emails-compile.mjs": "bd8a81fc3280ac8b",
    "functions/_shared/pipe/build/enrich-cache.mjs": "f0b785317d20026c",
    "functions/_shared/pipe/build/enrich/pipeline.mjs": "8522b419cd784126",
@@ -131,11 +130,10 @@
    "functions/_shared/pipe/build/models/core/blasts.mjs": "6661d8f599d89961",
    "functions/_shared/pipe/build/models/core/collections.mjs": "329ea47afb3e0845",
    "functions/_shared/pipe/build/models/core/comments.mjs": "bb1c77b81ad2a6a5",
-   "functions/_shared/pipe/build/models/core/courses.mjs": "144e90d9c95c0b7a",
    "functions/_shared/pipe/build/models/core/emails.mjs": "532cc19074c32fd8",
    "functions/_shared/pipe/build/models/core/forms.mjs": "3b922df57fbfac3f",
    "functions/_shared/pipe/build/models/core/funnels.mjs": "c35bf60cf0f25e45",
-   "functions/_shared/pipe/build/models/core/index.mjs": "eb9b9302db2540ea",
+   "functions/_shared/pipe/build/models/core/index.mjs": "41ecf00bd363f50a",
    "functions/_shared/pipe/build/models/core/models.mjs": "fee0801436432f55",
    "functions/_shared/pipe/build/models/core/policy.mjs": "33c88af7f76b4a0c",
    "functions/_shared/pipe/build/models/core/print.mjs": "b608f6351e7816be",
@@ -149,6 +147,7 @@
    "functions/_shared/pipe/build/models/yaml-keep.mjs": "042f4d1bd4fe15ba",
    "functions/_shared/pipe/build/modes.mjs": "54b6d183002eeaac",
    "functions/_shared/pipe/build/modules/folders.mjs": "e74fe717c41d44fb",
+   "functions/_shared/pipe/build/modules/in-place.mjs": "a1775cf9cb2b110f",
    "functions/_shared/pipe/build/modules/kit.mjs": "f37ad310461de2e0",
    "functions/_shared/pipe/build/modules/manifest.mjs": "7400234184c3c6c7",
    "functions/_shared/pipe/build/payment-provider-registry.mjs": "6a4ad9d4c6ea246a",
@@ -162,7 +161,7 @@
    "functions/_shared/pipe/build/search-db.mjs": "e6084f7857d3ece8",
    "functions/_shared/pipe/build/site-file.mjs": "bf530964133a3b8b",
    "functions/_shared/pipe/build/site-fonts.mjs": "eb9350a09cea43bc",
-   "functions/_shared/pipe/build/site.mjs": "b67dc0a0b201b900",
+   "functions/_shared/pipe/build/site.mjs": "8bd1677034d7487e",
    "functions/_shared/pipe/build/spaces-disk.mjs": "6c6e26a938e731ac",
    "functions/_shared/pipe/build/spaces-io.mjs": "9e407a88e78e03e8",
    "functions/_shared/pipe/build/spaces-push.mjs": "ab44a5ca6e60e3fd",
@@ -183,6 +182,11 @@
    "functions/_shared/pipe/build/write-if-changed.mjs": "01da1b178a775d25",
    "functions/_shared/pipe/enrichment-briefs.json": "5f36b2ea290645ee",
    "functions/_shared/pipe/kit-designs.json": "a9f41b677f290d7c",
+   "functions/_shared/pipe/modules/courses/build/index.mjs": "dd8c4d4844112fbf",
+   "functions/_shared/pipe/modules/courses/build/io.mjs": "8e813d731db03222",
+   "functions/_shared/pipe/modules/courses/build/models.mjs": "96caa5e1de3b1945",
+   "functions/_shared/pipe/modules/courses/build/steps.mjs": "b47878c454b83fa4",
+   "functions/_shared/pipe/modules/registry.mjs": "fae654a97763e87b",
    "functions/_shared/pipe/site.js": "e0ff2c96edc22259",
    "functions/_shared/pipe/site/build/admin-models.mts": "076566ed73b52d89",
    "functions/_shared/pipe/site/index.js": "5b4b51b3d4aff789",
@@ -449,7 +453,7 @@
      "schemas/85-api.sql"
     ],
     "changed": {
-     ".assembled.json": "fd2d436e0d423eb0",
+     ".assembled.json": "08d6eceea6847530",
      "config.toml": "20cacc6311e29e20",
      "data.sql": "27a089848975d57a",
      "functions/_shared/pipe/site.js": "3de0aaa1160d2df0"
@@ -459,7 +463,7 @@
    "articles": {
     "gone": [],
     "changed": {
-     ".assembled.json": "28b5a4bc6fa6737c",
+     ".assembled.json": "ac44847151d8bf9b",
      "functions/_shared/pipe/site.js": "1a7a9901df44a58d"
     },
     "added": {}
@@ -467,7 +471,7 @@
    "books": {
     "gone": [],
     "changed": {
-     ".assembled.json": "33b49ec57946b331",
+     ".assembled.json": "75a5f4d9c6c13e58",
      "functions/_shared/pipe/site.js": "6ea4698fb5dc6e28"
     },
     "added": {}
@@ -487,7 +491,7 @@
      "schemas/glue/bots+support.sql"
     ],
     "changed": {
-     ".assembled.json": "770393e4c000b8b9",
+     ".assembled.json": "3f2e62a98b7e9999",
      "config.toml": "522e26a9443d581d",
      "data.sql": "e29326bbdd2950ce",
      "functions/_shared/pipe/site.js": "9fddaea999054da9"
@@ -502,7 +506,7 @@
      "schemas/glue/coaching+sessions.sql"
     ],
     "changed": {
-     ".assembled.json": "f967d265ca7e2f86",
+     ".assembled.json": "728f573266d6b994",
      "data.sql": "114ab499f1f2a04b",
      "functions/_shared/pipe/site.js": "5440319303571d8f"
     },
@@ -515,7 +519,7 @@
      "schemas/95-copilot.sql"
     ],
     "changed": {
-     ".assembled.json": "0639f11400de22d8",
+     ".assembled.json": "f5bcd687fd4e8d4f",
      "config.toml": "522e26a9443d581d",
      "functions/_shared/pipe/site.js": "923cb1921e326170"
     },
@@ -531,7 +535,7 @@
      "schemas/glue/courses+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "05ae94aa18e08209",
+     ".assembled.json": "940a5324cbca5128",
      "data.sql": "79eb741aca949c79",
      "functions/_shared/pipe/site.js": "de1d061760dc2035"
     },
@@ -540,7 +544,7 @@
    "docs": {
     "gone": [],
     "changed": {
-     ".assembled.json": "3bd2fefb51c0c969",
+     ".assembled.json": "d8355998e6ed7586",
      "functions/_shared/pipe/site.js": "38e8e3b7702b5d78"
     },
     "added": {}
@@ -550,7 +554,7 @@
      "functions/send-email/index.ts"
     ],
     "changed": {
-     ".assembled.json": "afa2989300aeb3be",
+     ".assembled.json": "e5fd34b5a32cd160",
      "functions/_shared/pipe/site.js": "19cdc8ffa6617dc8"
     },
     "added": {}
@@ -558,7 +562,7 @@
    "enrichment": {
     "gone": [],
     "changed": {
-     ".assembled.json": "e9c2e35efb48937e",
+     ".assembled.json": "8329f0f5f1995e8c",
      "functions/_shared/pipe/site.js": "3ec4b99eaddf28bf"
     },
     "added": {}
@@ -570,7 +574,7 @@
      "schemas/glue/events+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "53a01da3a4c7ff74",
+     ".assembled.json": "c65a6a2f92b209db",
      "data.sql": "082ee14448a6cc3b",
      "functions/_shared/pipe/site.js": "912c9b73cc6217ba"
     },
@@ -592,7 +596,7 @@
      "schemas/glue/instrument+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "f333a4e0b2f859da",
+     ".assembled.json": "65a8e1fb0c6ca011",
      "config.toml": "b2753f8ba9e00017",
      "functions/_shared/pipe/site.js": "7d64f89e20900e0c"
     },
@@ -610,7 +614,7 @@
      "schemas/glue/funnels+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "a086bb5bafbc566c",
+     ".assembled.json": "e028d50a8a236c94",
      "config.toml": "1a1f541a5cede00a",
      "data.sql": "b7c5b51238febd7b",
      "functions/_shared/pipe/site.js": "6750067c15051839"
@@ -625,7 +629,7 @@
      "schemas/glue/instrument+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "c6d835c327cfb47a",
+     ".assembled.json": "23ab8258b76e8909",
      "functions/_shared/pipe/site.js": "c7972e30af91d620"
     },
     "added": {}
@@ -636,7 +640,7 @@
      "functions/hyperswitch-subscription-renewal/index.ts"
     ],
     "changed": {
-     ".assembled.json": "a867b28054b6b702",
+     ".assembled.json": "ce904432a6b8f298",
      "data.sql": "3fe1d3f639e4effa",
      "functions/_shared/pipe/site.js": "6ec3f1ba11c97509"
     },
@@ -645,7 +649,7 @@
    "models": {
     "gone": [],
     "changed": {
-     ".assembled.json": "10ee2f37f05420f5",
+     ".assembled.json": "d09d8b0ecde8031b",
      "functions/_shared/pipe/site.js": "acf959dedc9cc02f"
     },
     "added": {}
@@ -657,7 +661,7 @@
      "schemas/glue/network+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "2fa80b3c06583e01",
+     ".assembled.json": "a3ae480e245ad481",
      "config.toml": "873b8a023b695d91",
      "data.sql": "93b760abb5f05ef8",
      "functions/_shared/pipe/site.js": "4f5dc00a6cd4d542"
@@ -675,7 +679,7 @@
      "schemas/44-print-jobs.sql"
     ],
     "changed": {
-     ".assembled.json": "a95b0ffb3415e6a4",
+     ".assembled.json": "57e348b42d2be150",
      "config.toml": "d712e4cc6d67a7d7",
      "data.sql": "40e0e880edcc01a4",
      "functions/_shared/pipe/site.js": "764cd042203ff3ae"
@@ -690,7 +694,7 @@
      "schemas/glue/push+support.sql"
     ],
     "changed": {
-     ".assembled.json": "c4db412919008987",
+     ".assembled.json": "5be26e3d097ec02b",
      "config.toml": "5a86d93f912ef9e3",
      "functions/_shared/pipe/site.js": "f859aa8567fa5373"
     },
@@ -699,7 +703,7 @@
    "recommendations": {
     "gone": [],
     "changed": {
-     ".assembled.json": "2d7a42b77008a174",
+     ".assembled.json": "afdee0c1c8be1d9d",
      "functions/_shared/pipe/site.js": "3ee2498bd01ec552"
     },
     "added": {}
@@ -732,7 +736,7 @@
      "schemas/glue/sessions+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "0b9a4e0402ff4528",
+     ".assembled.json": "d40be367a77a087e",
      "config.toml": "ec3fc859d9d70688",
      "data.sql": "a76358134d21e286",
      "functions/_shared/pipe/site.js": "3b8202c9c293cbb5",
@@ -751,7 +755,7 @@
      "schemas/glue/bots+social-publishing.sql"
     ],
     "changed": {
-     ".assembled.json": "c896f893f7a7a0ac",
+     ".assembled.json": "190c7c17ed97cf2a",
      "config.toml": "01b908acc311fc20",
      "data.sql": "ce3315a1d4dce105",
      "functions/_shared/pipe/site.js": "a9631d33a1c5193d"
@@ -763,7 +767,7 @@
      "schemas/92-encryption.sql"
     ],
     "changed": {
-     ".assembled.json": "77e20f6d9ed2f2b1",
+     ".assembled.json": "0bedbe5617f573a2",
      "functions/_shared/pipe/site.js": "8961ce69942d451c"
     },
     "added": {}
@@ -790,7 +794,7 @@
      "schemas/glue/spaces+support.sql"
     ],
     "changed": {
-     ".assembled.json": "fc7ec6c566eadf49",
+     ".assembled.json": "7a8adaf921b50963",
      "config.toml": "48101cf6994cf84e",
      "data.sql": "2dca5926d9baea36",
      "functions/_shared/pipe/site.js": "84f7c1913b84a11e",
@@ -801,7 +805,7 @@
    "stockists": {
     "gone": [],
     "changed": {
-     ".assembled.json": "367b6db674b5ae7d",
+     ".assembled.json": "4f33a21da5d93d1d",
      "functions/_shared/pipe/site.js": "a60c9b39f55dce38"
     },
     "added": {}
@@ -820,7 +824,7 @@
      "schemas/glue/spaces+store.sql"
     ],
     "changed": {
-     ".assembled.json": "42b386a083ab55ea",
+     ".assembled.json": "1d8606d91bdee90f",
      "config.toml": "20cacc6311e29e20",
      "data.sql": "38ba10509a6a447b",
      "functions/_shared/pipe/site.js": "25b776ad315aff9e"
@@ -840,7 +844,7 @@
      "schemas/glue/spaces+support.sql"
     ],
     "changed": {
-     ".assembled.json": "49646ce0fab0bb0a",
+     ".assembled.json": "7c69a51cd9963914",
      "config.toml": "eefe5bb51c77932c",
      "data.sql": "51905b9016c0170e",
      "functions/_shared/pipe/site.js": "cffdf8a0b5135796"
@@ -850,7 +854,7 @@
    "tts": {
     "gone": [],
     "changed": {
-     ".assembled.json": "a2cf8982de289be9",
+     ".assembled.json": "c8e181d4a853a4d2",
      "functions/_shared/pipe/site.js": "04a3c6180e38eff1"
     },
     "added": {}
@@ -858,7 +862,7 @@
    "wiki": {
     "gone": [],
     "changed": {
-     ".assembled.json": "9a3fea1fe3e69473",
+     ".assembled.json": "fd67c73ad9f0618d",
      "functions/_shared/pipe/site.js": "d82681aace60a5a3"
     },
     "added": {}
@@ -867,7 +871,7 @@
  },
  "club": {
   "all": {
-   ".assembled.json": "4e4cb52446137bbb",
+   ".assembled.json": "6c33019abeec8f00",
    "config.toml": "86f6864f63b967d1",
    "data.sql": "2ac943679dbf742c",
    "functions/_shared/access.ts": "84cb877faa83e179",
@@ -963,7 +967,7 @@
    "functions/_shared/payment-provider.mts": "0c36c9f27c0df348",
    "functions/_shared/payouts.ts": "09db2d76b969aa23",
    "functions/_shared/permissions.ts": "582e8c59565667d9",
-   "functions/_shared/pipe/build/achievements-push.mjs": "2fee69fd6ecc8ce3",
+   "functions/_shared/pipe/build/achievements-push.mjs": "c687add07b83f406",
    "functions/_shared/pipe/build/admin-pipe.mjs": "d0e1505d24adc332",
    "functions/_shared/pipe/build/admin-schemas.mjs": "ad33df9a57dc712f",
    "functions/_shared/pipe/build/assets.mjs": "b67eb17fd3bfdaf6",
@@ -972,7 +976,6 @@
    "functions/_shared/pipe/build/catalog.mjs": "5a973b38715fd4c2",
    "functions/_shared/pipe/build/comments-push.mjs": "bbecd9fa3a822add",
    "functions/_shared/pipe/build/companion-io.mjs": "89fcb965189c978c",
-   "functions/_shared/pipe/build/courses-io.mjs": "5cade1809e58d519",
    "functions/_shared/pipe/build/emails-compile.mjs": "bd8a81fc3280ac8b",
    "functions/_shared/pipe/build/enrich-cache.mjs": "f0b785317d20026c",
    "functions/_shared/pipe/build/enrich/pipeline.mjs": "8522b419cd784126",
@@ -997,11 +1000,10 @@
    "functions/_shared/pipe/build/models/core/blasts.mjs": "6661d8f599d89961",
    "functions/_shared/pipe/build/models/core/collections.mjs": "329ea47afb3e0845",
    "functions/_shared/pipe/build/models/core/comments.mjs": "bb1c77b81ad2a6a5",
-   "functions/_shared/pipe/build/models/core/courses.mjs": "144e90d9c95c0b7a",
    "functions/_shared/pipe/build/models/core/emails.mjs": "532cc19074c32fd8",
    "functions/_shared/pipe/build/models/core/forms.mjs": "3b922df57fbfac3f",
    "functions/_shared/pipe/build/models/core/funnels.mjs": "c35bf60cf0f25e45",
-   "functions/_shared/pipe/build/models/core/index.mjs": "eb9b9302db2540ea",
+   "functions/_shared/pipe/build/models/core/index.mjs": "41ecf00bd363f50a",
    "functions/_shared/pipe/build/models/core/models.mjs": "fee0801436432f55",
    "functions/_shared/pipe/build/models/core/policy.mjs": "33c88af7f76b4a0c",
    "functions/_shared/pipe/build/models/core/print.mjs": "b608f6351e7816be",
@@ -1015,6 +1017,7 @@
    "functions/_shared/pipe/build/models/yaml-keep.mjs": "042f4d1bd4fe15ba",
    "functions/_shared/pipe/build/modes.mjs": "54b6d183002eeaac",
    "functions/_shared/pipe/build/modules/folders.mjs": "e74fe717c41d44fb",
+   "functions/_shared/pipe/build/modules/in-place.mjs": "a1775cf9cb2b110f",
    "functions/_shared/pipe/build/modules/kit.mjs": "f37ad310461de2e0",
    "functions/_shared/pipe/build/modules/manifest.mjs": "7400234184c3c6c7",
    "functions/_shared/pipe/build/payment-provider-registry.mjs": "6a4ad9d4c6ea246a",
@@ -1028,7 +1031,7 @@
    "functions/_shared/pipe/build/search-db.mjs": "e6084f7857d3ece8",
    "functions/_shared/pipe/build/site-file.mjs": "bf530964133a3b8b",
    "functions/_shared/pipe/build/site-fonts.mjs": "eb9350a09cea43bc",
-   "functions/_shared/pipe/build/site.mjs": "b67dc0a0b201b900",
+   "functions/_shared/pipe/build/site.mjs": "8bd1677034d7487e",
    "functions/_shared/pipe/build/spaces-disk.mjs": "6c6e26a938e731ac",
    "functions/_shared/pipe/build/spaces-io.mjs": "9e407a88e78e03e8",
    "functions/_shared/pipe/build/spaces-push.mjs": "ab44a5ca6e60e3fd",
@@ -1049,6 +1052,11 @@
    "functions/_shared/pipe/build/write-if-changed.mjs": "01da1b178a775d25",
    "functions/_shared/pipe/enrichment-briefs.json": "5f36b2ea290645ee",
    "functions/_shared/pipe/kit-designs.json": "a9f41b677f290d7c",
+   "functions/_shared/pipe/modules/courses/build/index.mjs": "dd8c4d4844112fbf",
+   "functions/_shared/pipe/modules/courses/build/io.mjs": "8e813d731db03222",
+   "functions/_shared/pipe/modules/courses/build/models.mjs": "96caa5e1de3b1945",
+   "functions/_shared/pipe/modules/courses/build/steps.mjs": "b47878c454b83fa4",
+   "functions/_shared/pipe/modules/registry.mjs": "fae654a97763e87b",
    "functions/_shared/pipe/site.js": "f2d670aea2d1ce75",
    "functions/_shared/pipe/site/index.js": "9afa7060d2fb5bb3",
    "functions/_shared/pipe/src/lib/agents/loop.js": "bb7f75becd6584c2",
@@ -1217,7 +1225,7 @@
    "articles": {
     "gone": [],
     "changed": {
-     ".assembled.json": "ad40536abe881b34",
+     ".assembled.json": "e110d4693120a673",
      "functions/_shared/pipe/site.js": "55d576aa34d79e9c"
     },
     "added": {}
@@ -1232,7 +1240,7 @@
      "schemas/glue/forms+support.sql"
     ],
     "changed": {
-     ".assembled.json": "f6a381a82d04cb27",
+     ".assembled.json": "ebdf34baaffd56ad",
      "config.toml": "54129a9899b3b54a",
      "functions/_shared/pipe/site.js": "2401caf162771934"
     },
@@ -1244,7 +1252,7 @@
      "functions/hyperswitch-subscription-renewal/index.ts"
     ],
     "changed": {
-     ".assembled.json": "a0dbe1d19e713fe2",
+     ".assembled.json": "3caa014d4b394df4",
      "data.sql": "4b30e399afb005af",
      "functions/_shared/pipe/site.js": "c45251331f7b4bc1"
     },
@@ -1260,7 +1268,7 @@
      "schemas/glue/forms+support.sql"
     ],
     "changed": {
-     ".assembled.json": "b85fa104a2218817",
+     ".assembled.json": "226ca170fad3e807",
      "config.toml": "11ddabfd0b94994c",
      "data.sql": "e726ce2a56d156df",
      "functions/_shared/pipe/site.js": "77e04bcbc56b3e9d"

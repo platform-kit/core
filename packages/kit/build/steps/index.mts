@@ -32,9 +32,11 @@ import prerender from './prerender.mjs'
 import { webhooksConfigStep, webhooksPushStep } from './webhooks.mjs'
 import { spacesCompileStep, spacesPushStep } from './spaces.mjs'
 import { teamsCompileStep, teamsPushStep } from './teams.mjs'
-import coursesPushStep from './courses.mjs'
 import { eventsCompileStep, eventsPushStep } from './events.mjs'
 import { botsStep, botsPushStep } from './bots.mjs'
 import { searchPushStep } from './search.mjs'
-export const STEPS = [icons, tokens, embedContent, sales, funnels, chatEmailStrings, emails, print, printType, catalog, analyticsConfig,
-  cloudConfig, webhooksConfigStep, spacesCompileStep, teamsCompileStep, eventsCompileStep, botsStep, contentJson, forms, luluWebhook, authConfig, pushCatalog, webhooksPushStep, spacesPushStep, teamsPushStep, coursesPushStep, eventsPushStep, commentsPushStep, achievementsPushStep, botsPushStep, searchPushStep, funnelsRun, tts, rewrites, formEmbed, supportSdk, commentsSdk, analyticsSdk, modelsJson, prerender]
+/* a moved module's steps, at its place (openspec: modules-as-packages) */
+import { STEPS as MODULE_STEPS } from '../../modules/registry.mjs'
+import { inPlace } from '../modules/in-place.mjs'
+export const STEPS = inPlace([icons, tokens, embedContent, sales, funnels, chatEmailStrings, emails, print, printType, catalog, analyticsConfig,
+  cloudConfig, webhooksConfigStep, spacesCompileStep, teamsCompileStep, eventsCompileStep, botsStep, contentJson, forms, luluWebhook, authConfig, pushCatalog, webhooksPushStep, spacesPushStep, teamsPushStep, 'courses', eventsPushStep, commentsPushStep, achievementsPushStep, botsPushStep, searchPushStep, funnelsRun, tts, rewrites, formEmbed, supportSdk, commentsSdk, analyticsSdk, modelsJson, prerender], MODULE_STEPS, 'build steps')

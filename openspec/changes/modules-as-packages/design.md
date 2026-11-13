@@ -8,16 +8,16 @@ packages/kit/
     core/                  accounts, content, the ledger, comments, analytics: what every site has
     courses/
       module.ts            the manifest: key, what, requires, shapes, contributions, slots
-      index.ts             the front door: the only file another module, the theme or a site imports
+      index.ts             the browser's front door: what another module, the theme or a site imports
       schema/              its tables and SQL functions, in load order
       data/  seed/         its rows and its seed
       functions/           its edge functions; functions/_shared/ for code only its functions use
       lib/                 browser logic and its data layer
       ui/                  pages, components, admin screens
       strings/             its default wording (today theme/src/content/ui/courses.md)
-      models/              its content models (today build/models/core/courses.mts)
+      build/               its Node side: build/index.mts (the front door for the build and the functions),
+                           build/models.mts (its content models), build/steps.mts (its build steps), and the code they use
       emails/              its email designs
-      steps/               its build steps
       integrations/
         spaces/            what courses adds when spaces is on: schema, ui, functions
         forms/  sessions/
@@ -47,6 +47,10 @@ A disabled module contributes nothing. Its components are never imported, so the
 
 **Route precedence.** Today it is the order of the chain, and specificity cannot reproduce it: content claims addresses at run time (a landing page at `/p/<name>` wins over the profile page, and any content page wins over a site-registered route), and some routes depend on conditions such as `DOCS_ONLY` and `CMS`. So each contributed route carries an explicit `order` (numbers that keep today's chain order, with gaps for new routes), a declarative match (`exact`, `prefix` or `under`), an optional named test exported by the module (such as courses' `coursesRoute` or core's `isPageRoute`), and an optional condition. The first route, by order, whose match, test and condition all hold shows its page. Two routes with the same order are refused at build. The route census (`build/route-census.mts`) records, for every fixture site in dev and as built, which page each address shows, read from the chain as it stands, and `build/module-routes.test.mts` checks the registry reproduces it address by address.
 
+## The module registry
+
+The kit's ordered lists that a module contributes to (the content models, the build steps) are read by Edge Functions too, which cannot read folders. So `modules/registry.mts` imports each module folder's `build/models.mts` and `build/steps.mts` by name. It is generated from the folders and `manifests.test.mts` refuses one that disagrees with them. Each list names a moved module by its key at its old place, and `build/modules/in-place.mts` puts that module's entries there, as the module list itself does.
+
 ## Slots
 
 A module declares a slot in its manifest (`slots: { 'member-card': {...} }`) and renders whatever fills it. Another module fills it from an integration (`courses/integrations/spaces/` contributes to `spaces:member-card`). The filler is installed only when both modules are on. A fill naming an undeclared slot is refused at build.
@@ -57,8 +61,8 @@ A module declares a slot in its manifest (`slots: { 'member-card': {...} }`) and
 
 ## Front door and boundaries
 
-Each module's `index.ts` exports what others may use. A boundary check (part of `platformkit check` and the static lane) refuses:
-- any import into another module's folder except its `index.ts`;
+Each module has two front doors: `index.ts` for the browser and `build/index.mts` for the build and the functions, since the browser cannot load Node code and a function cannot load a component. Each exports what others may use. A boundary check (part of `platformkit check` and the static lane) refuses:
+- any import into another module's folder except its `index.ts` or `build/index.mts`;
 - any import from a site into the kit other than the package's declared exports.
 
 The package's `exports` shrinks from `./*` to the module front doors plus the named shared mechanics. That is audit item 1's public interface.

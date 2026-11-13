@@ -1,6 +1,6 @@
 /*
  * The courses (openspec: courses): the admin's course builder. A course is a file (content/courses/<slug>.md;
- * build/courses-io.mjs is the grammar) and everything people do with it is rows. This edits the declaration — what
+ * ./io.mts is the grammar) and everything people do with it is rows. This edits the declaration — what
  * it is about, who gets in, how it is released, its cohorts, and its lessons in order, dragged into place — and the
  * projection makes the tables agree.
  *
@@ -9,9 +9,12 @@
  */
 import { z } from 'zod/v4'
 import matter from 'gray-matter'
-import { Refusal } from '../util.mjs'
-import { COURSES_DIR, KINDS, bodyParts, parseCourse, readCourses, projectCourses, siteKinds } from '../../courses-io.mjs'
-import { loadSite, courseKindsOf } from '../../site.mjs'
+import { Refusal } from '../../../build/models/util.mjs'
+import { COURSES_DIR, KINDS, bodyParts, parseCourse, readCourses, projectCourses, siteKinds } from './io.mjs'
+import { loadSite, courseKindsOf } from '../../../build/site.mjs'
+import { fileURLToPath } from 'node:url'
+/* the projection this model's saves run (./push.mts) */
+const PUSH = fileURLToPath(new URL('./push.mjs', import.meta.url))
 
 const KIND_WORD: any = { text: 'Its own text', chapter: 'A book chapter', article: 'An article', form: 'A form or quiz', session: 'A session to book' }
 const clean = (o: any) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && !v.length)))
@@ -43,7 +46,7 @@ export function courseFile(d: any, about: string) {
   return matter.stringify([String(about || '').trim(), ...texts].filter(Boolean).join('\n\n') + '\n', fm)
 }
 
-export default {
+const course = {
   key: 'courses', name: 'Courses', dir: COURSES_DIR, title: 'title', module: 'courses',
   creates: true, body: true, bodyLabel: 'What the course is about',
   grammar: {
@@ -106,8 +109,8 @@ export default {
     },
   ],
   /* over a checkout the script writes the rows; over rows the store is holding a database, so the projection runs here */
-  after: async (rec: any, ctx: any) => { if (!(ctx.store && ctx.store.kind === 'rows')) await ctx.script('courses-push.mjs').catch((e: { message: string }) => console.warn('courses: not projected — ' + e.message)) },
-  afterRemove: async (name: any, ctx: any) => { if (!(ctx.store && ctx.store.kind === 'rows')) await ctx.script('courses-push.mjs').catch((e: { message: string }) => console.warn('courses: not projected — ' + e.message)) },
+  after: async (rec: any, ctx: any) => { if (!(ctx.store && ctx.store.kind === 'rows')) await ctx.script(PUSH).catch((e: { message: string }) => console.warn('courses: not projected — ' + e.message)) },
+  afterRemove: async (name: any, ctx: any) => { if (!(ctx.store && ctx.store.kind === 'rows')) await ctx.script(PUSH).catch((e: { message: string }) => console.warn('courses: not projected — ' + e.message)) },
   projected: async (ctx: any) => {
     const db = ctx.store && ctx.store.kind === 'rows' ? ctx.store.client : null
     if (!db) return
@@ -131,3 +134,6 @@ export default {
     },
   },
 }
+
+/* courses' content models, in the order the admin rail shows them (openspec: modules-as-packages) */
+export default [course]

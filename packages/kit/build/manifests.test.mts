@@ -466,6 +466,10 @@ if (CRON_SITE.deployment.backend) {
   })
   /* a job runs while its module is on, so the function it calls must be declared by that module or by core —
      never only by a module that may be off (payouts-sweep was the store's and called the sessions' function) */
+  const { registrySource, REGISTRY_FILE } = await import('./modules/registry.mjs')
+  t('the module registry says what the module folders hold (node build/modules/registry.mts --write)', () => {
+    assert.equal(nodeFs.readFileSync(REGISTRY_FILE, 'utf8'), registrySource())
+  })
   t('every cron job calls a function its own module or core declares', () => {
     /* a schema file from wherever it lives: the old layout, or its module's folder */
     const sources = kitBackend().sources.schema

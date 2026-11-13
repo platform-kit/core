@@ -29,6 +29,9 @@ sources:
     packages/kit/theme/src/pages/AdminPage.vue,
     packages/kit/build/modules/backend.mts,
     packages/kit/build/modules/folders.mts,
+    packages/kit/build/modules/registry.mts,
+    packages/kit/build/modules/in-place.mts,
+    packages/kit/modules/registry.mts,
     packages/kit/build/modules/core-pages.mts,
     packages/kit/src/lib/pages.ts,
     packages/kit/src/lib/page-routes.ts,
@@ -279,15 +282,17 @@ Which page an address shows is a table, not a list in the theme. Core's pages (`
 
 A module can live in a folder of its own, holding everything it is: `packages/kit/modules/<key>/` for the kit's, `src/modules/<key>/` for a site's. A folder is a module when it holds a `module.ts` manifest, and the folder is named for the manifest's key. What the folder holds for the backend is the module's, so its manifest names none of it:
 
-| In the folder                     | Assembled as                                                                                                     |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `schema/*.sql`                    | `schemas/<file>` (a site module's under `schemas/site/`)                                                         |
-| `data.sql`, `seed.sql`            | the module's rows and seed, after the others                                                                     |
-| `functions/<name>/`               | `functions/<name>/`                                                                                              |
-| `functions/_shared/`              | `functions/_shared/<key>/`, for that module's functions alone                                                    |
-| `integrations/<other>/schema.sql` | the glue file named for both modules in alphabetical order (`courses+spaces.sql`), loaded only while both are on |
+| In the folder                         | Assembled as                                                                                                     |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `schema/*.sql`                        | `schemas/<file>` (a site module's under `schemas/site/`)                                                         |
+| `data.sql`, `seed.sql`                | the module's rows and seed, after the others                                                                     |
+| `functions/<name>/`                   | `functions/<name>/`                                                                                              |
+| `functions/_shared/`                  | `functions/_shared/<key>/`, for that module's functions alone                                                    |
+| `integrations/<other>/schema.sql`     | the glue file named for both modules in alphabetical order (`courses+spaces.sql`), loaded only while both are on |
+| `build/models.mts`, `build/steps.mts` | its content models and its build steps, each a list, at its place in the kit's                                   |
+| `build/index.mts`                     | its door for the build and the functions: what the kit, another module or a site may import of its build side    |
 
-The kit's module list in `build/modules/kit.mts` keeps every module's place: a module that has moved into its folder is named there by its key alone, and the order the list gives (the cron block, the deployment matrix) is unchanged. A folder the list does not name, or a name with no folder, is refused. A site's module folders join the site's module set the same way. The functions never read the folders: the assembler gives the content pipe the module list already resolved, as data. Modules move into their folders one at a time; until a module has moved, it stays in the layout described above. `build/assembled-identical.test.mts` holds each move to the backend a site received before it, byte for byte.
+The kit's module list in `build/modules/kit.mts` keeps every module's place: a module that has moved into its folder is named there by its key alone, and the order the list gives (the cron block, the deployment matrix) is unchanged. A folder the list does not name, or a name with no folder, is refused. A site's module folders join the site's module set the same way. A module folder's models and steps reach the kit's ordered lists through the module registry, `modules/registry.mts`: one file importing each folder's `build/models.mts` and `build/steps.mts` by name, so an Edge Function, which cannot read folders, loads them like any other code. It is written from the folders (`node build/modules/registry.mts --write`) and `build/manifests.test.mts` refuses one that disagrees with them; the content models and the build steps keep a moved module's place by its key (`build/modules/in-place.mts`). The functions never read the folders: the assembler gives the content pipe the module list already resolved, as data. Modules move into their folders one at a time; until a module has moved, it stays in the layout described above. `build/assembled-identical.test.mts` holds each move to the backend a site received before it, byte for byte.
 
 ## Switching a module off removes its backend
 

@@ -76,8 +76,8 @@
       "default": "platformkit/build/site-avatar-node.mjs"
     },
     "#site/courses": {
-      "node": "platformkit/build/site-courses-node.mjs",
-      "default": "platformkit/build/site-courses-node.mjs"
+      "node": "platformkit/modules/courses/build/site-node.mjs",
+      "default": "platformkit/modules/courses/build/site-node.mjs"
     },
     "#site/member": {
       "node": "platformkit/build/site-member-node.mjs",
@@ -186,6 +186,7 @@
     "build",
     "content",
     "docker",
+    "modules",
     "src",
     "supabase",
     "vendor",
