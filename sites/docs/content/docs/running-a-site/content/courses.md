@@ -4,7 +4,7 @@ description: Lessons in order, released over time and tracked to completion, wit
 order: 16.5
 sources:
   [
-    packages/kit/supabase/schemas/46-courses.sql,
+    packages/kit/modules/courses/schema/46-courses.sql,
     packages/kit/build/courses-io.mts,
     packages/kit/build/site.mts,
     packages/kit/build/site-courses-node.mts,
@@ -12,7 +12,7 @@ sources:
     packages/kit/build/courses-push.mts,
     packages/kit/build/steps/courses.mts,
     packages/kit/build/models/core/courses.mts,
-    packages/kit/supabase/functions/course-notify,
+    packages/kit/modules/courses/functions/course-notify,
     packages/kit/src/lib/certificate-pdf.ts,
     packages/kit/theme/src/pages/CoursesPage.vue,
     packages/kit/theme/src/components/courses/CoursesView.vue,
@@ -29,7 +29,7 @@ sources:
     packages/kit/build/courses.test.mts,
     packages/kit/build/courses-db.test.mts,
     packages/kit/theme/src/components/courses/CourseWorkbook.vue,
-    packages/kit/supabase/schemas/glue/courses+forms.sql,
+    packages/kit/modules/courses/integrations/forms/schema.sql,
     packages/kit/build/course-workbook-db.test.mts,
   ]
 reviewed: 2026-11-13

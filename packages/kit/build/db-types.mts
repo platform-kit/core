@@ -61,7 +61,7 @@ async function schemaSql(): Promise<string> {
   const modules = await moduleSet({ modules: {} })
   const on = Object.fromEntries([...modules.keys()].map((k) => [k, true]))
   const b = backendFor(modules, on, path.join(KIT, 'supabase'))
-  const files = [...b.schema.map((f) => path.join(KIT, 'supabase', 'schemas', f)), ...b.glue.map((f) => path.join(KIT, 'supabase', 'schemas', 'glue', f))]
+  const files = [...b.schema.map((f) => b.sources.schema[f]), ...b.glue.map((f) => b.sources.glue[f])]
   return files.map((f) => `\n-- ${path.basename(f)}\n` + fs.readFileSync(f, 'utf8')).join('')
 }
 

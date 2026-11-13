@@ -9,8 +9,8 @@
  * pg_cron asks every fifteen minutes with the service bearer (`{ action: 'send' }`; `dry: true` lists what would go
  * without sending or writing anything).
  */
-import { admin, json, preflight } from '../_shared/lib.ts'
-import { sendEmail } from '../_shared/email.ts'
+import { admin, json, preflight } from '@pk/core/lib.ts'
+import { sendEmail } from '@pk/core/email.ts'
 
 const APP = () => (Deno.env.get('APP_URL') ?? '').replace(/\/$/, '')
 

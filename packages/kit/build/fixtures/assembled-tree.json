@@ -1,7 +1,7 @@
 {
  "demo": {
   "all": {
-   ".assembled.json": "c8776c11e095823b",
+   ".assembled.json": "e167e46d5db91b92",
    "config.toml": "d0453df38821d350",
    "data.sql": "cb220bd71a0caaba",
    "functions/_shared/access.ts": "84cb877faa83e179",
@@ -323,6 +323,7 @@
    "functions/content/index.ts": "84308fac439ec1bf",
    "functions/copilot-llm/index.ts": "27fef070f79c7466",
    "functions/copilot-speak/index.ts": "9de9c588170f2b99",
+   "functions/course-notify/deno.json": "decb7564543a0725",
    "functions/course-notify/index.ts": "c71dba6113c89840",
    "functions/create-checkout-session/index.ts": "9a0c375c315cf535",
    "functions/create-portal-session/index.ts": "8ff2d1cfa5c597bc",
@@ -448,7 +449,7 @@
      "schemas/85-api.sql"
     ],
     "changed": {
-     ".assembled.json": "86dbb4782792e8d1",
+     ".assembled.json": "fd2d436e0d423eb0",
      "config.toml": "20cacc6311e29e20",
      "data.sql": "27a089848975d57a",
      "functions/_shared/pipe/site.js": "3de0aaa1160d2df0"
@@ -458,7 +459,7 @@
    "articles": {
     "gone": [],
     "changed": {
-     ".assembled.json": "72204cf0e26aee50",
+     ".assembled.json": "28b5a4bc6fa6737c",
      "functions/_shared/pipe/site.js": "1a7a9901df44a58d"
     },
     "added": {}
@@ -466,7 +467,7 @@
    "books": {
     "gone": [],
     "changed": {
-     ".assembled.json": "5ff7a80b5ef8a832",
+     ".assembled.json": "33b49ec57946b331",
      "functions/_shared/pipe/site.js": "6ea4698fb5dc6e28"
     },
     "added": {}
@@ -486,7 +487,7 @@
      "schemas/glue/bots+support.sql"
     ],
     "changed": {
-     ".assembled.json": "1b5ab0630954fa30",
+     ".assembled.json": "770393e4c000b8b9",
      "config.toml": "522e26a9443d581d",
      "data.sql": "e29326bbdd2950ce",
      "functions/_shared/pipe/site.js": "9fddaea999054da9"
@@ -501,7 +502,7 @@
      "schemas/glue/coaching+sessions.sql"
     ],
     "changed": {
-     ".assembled.json": "d019ddf5b5cb9c28",
+     ".assembled.json": "f967d265ca7e2f86",
      "data.sql": "114ab499f1f2a04b",
      "functions/_shared/pipe/site.js": "5440319303571d8f"
     },
@@ -514,7 +515,7 @@
      "schemas/95-copilot.sql"
     ],
     "changed": {
-     ".assembled.json": "02ab97e15f00d8ed",
+     ".assembled.json": "0639f11400de22d8",
      "config.toml": "522e26a9443d581d",
      "functions/_shared/pipe/site.js": "923cb1921e326170"
     },
@@ -522,6 +523,7 @@
    },
    "courses": {
     "gone": [
+     "functions/course-notify/deno.json",
      "functions/course-notify/index.ts",
      "schemas/46-courses.sql",
      "schemas/glue/courses+forms.sql",
@@ -538,7 +540,7 @@
    "docs": {
     "gone": [],
     "changed": {
-     ".assembled.json": "ddc7aae1e5db0871",
+     ".assembled.json": "3bd2fefb51c0c969",
      "functions/_shared/pipe/site.js": "38e8e3b7702b5d78"
     },
     "added": {}
@@ -548,7 +550,7 @@
      "functions/send-email/index.ts"
     ],
     "changed": {
-     ".assembled.json": "2c27e65dec812297",
+     ".assembled.json": "afa2989300aeb3be",
      "functions/_shared/pipe/site.js": "19cdc8ffa6617dc8"
     },
     "added": {}
@@ -556,7 +558,7 @@
    "enrichment": {
     "gone": [],
     "changed": {
-     ".assembled.json": "cc1a42d0bf95c2b3",
+     ".assembled.json": "e9c2e35efb48937e",
      "functions/_shared/pipe/site.js": "3ec4b99eaddf28bf"
     },
     "added": {}
@@ -568,7 +570,7 @@
      "schemas/glue/events+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "1197599ab42d75b3",
+     ".assembled.json": "53a01da3a4c7ff74",
      "data.sql": "082ee14448a6cc3b",
      "functions/_shared/pipe/site.js": "912c9b73cc6217ba"
     },
@@ -590,7 +592,7 @@
      "schemas/glue/instrument+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "f7a632d6573fc124",
+     ".assembled.json": "f333a4e0b2f859da",
      "config.toml": "b2753f8ba9e00017",
      "functions/_shared/pipe/site.js": "7d64f89e20900e0c"
     },
@@ -608,7 +610,7 @@
      "schemas/glue/funnels+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "55e12c5fcae7d9ab",
+     ".assembled.json": "a086bb5bafbc566c",
      "config.toml": "1a1f541a5cede00a",
      "data.sql": "b7c5b51238febd7b",
      "functions/_shared/pipe/site.js": "6750067c15051839"
@@ -623,7 +625,7 @@
      "schemas/glue/instrument+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "528e347be7e005be",
+     ".assembled.json": "c6d835c327cfb47a",
      "functions/_shared/pipe/site.js": "c7972e30af91d620"
     },
     "added": {}
@@ -634,7 +636,7 @@
      "functions/hyperswitch-subscription-renewal/index.ts"
     ],
     "changed": {
-     ".assembled.json": "b68d86d6bbed4728",
+     ".assembled.json": "a867b28054b6b702",
      "data.sql": "3fe1d3f639e4effa",
      "functions/_shared/pipe/site.js": "6ec3f1ba11c97509"
     },
@@ -643,7 +645,7 @@
    "models": {
     "gone": [],
     "changed": {
-     ".assembled.json": "0ab56da90d21138f",
+     ".assembled.json": "10ee2f37f05420f5",
      "functions/_shared/pipe/site.js": "acf959dedc9cc02f"
     },
     "added": {}
@@ -655,7 +657,7 @@
      "schemas/glue/network+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "a3e7e9145569f18c",
+     ".assembled.json": "2fa80b3c06583e01",
      "config.toml": "873b8a023b695d91",
      "data.sql": "93b760abb5f05ef8",
      "functions/_shared/pipe/site.js": "4f5dc00a6cd4d542"
@@ -673,7 +675,7 @@
      "schemas/44-print-jobs.sql"
     ],
     "changed": {
-     ".assembled.json": "bc74e588738afef1",
+     ".assembled.json": "a95b0ffb3415e6a4",
      "config.toml": "d712e4cc6d67a7d7",
      "data.sql": "40e0e880edcc01a4",
      "functions/_shared/pipe/site.js": "764cd042203ff3ae"
@@ -688,7 +690,7 @@
      "schemas/glue/push+support.sql"
     ],
     "changed": {
-     ".assembled.json": "c62b6b2536e16901",
+     ".assembled.json": "c4db412919008987",
      "config.toml": "5a86d93f912ef9e3",
      "functions/_shared/pipe/site.js": "f859aa8567fa5373"
     },
@@ -697,7 +699,7 @@
    "recommendations": {
     "gone": [],
     "changed": {
-     ".assembled.json": "e9c1e1189c89b094",
+     ".assembled.json": "2d7a42b77008a174",
      "functions/_shared/pipe/site.js": "3ee2498bd01ec552"
     },
     "added": {}
@@ -730,7 +732,7 @@
      "schemas/glue/sessions+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "707c613cfb77fe03",
+     ".assembled.json": "0b9a4e0402ff4528",
      "config.toml": "ec3fc859d9d70688",
      "data.sql": "a76358134d21e286",
      "functions/_shared/pipe/site.js": "3b8202c9c293cbb5",
@@ -749,7 +751,7 @@
      "schemas/glue/bots+social-publishing.sql"
     ],
     "changed": {
-     ".assembled.json": "aa01c05f84452d9e",
+     ".assembled.json": "c896f893f7a7a0ac",
      "config.toml": "01b908acc311fc20",
      "data.sql": "ce3315a1d4dce105",
      "functions/_shared/pipe/site.js": "a9631d33a1c5193d"
@@ -761,7 +763,7 @@
      "schemas/92-encryption.sql"
     ],
     "changed": {
-     ".assembled.json": "c3b6760b3ce480b6",
+     ".assembled.json": "77e20f6d9ed2f2b1",
      "functions/_shared/pipe/site.js": "8961ce69942d451c"
     },
     "added": {}
@@ -788,7 +790,7 @@
      "schemas/glue/spaces+support.sql"
     ],
     "changed": {
-     ".assembled.json": "f042e2d1cefb72d9",
+     ".assembled.json": "fc7ec6c566eadf49",
      "config.toml": "48101cf6994cf84e",
      "data.sql": "2dca5926d9baea36",
      "functions/_shared/pipe/site.js": "84f7c1913b84a11e",
@@ -799,7 +801,7 @@
    "stockists": {
     "gone": [],
     "changed": {
-     ".assembled.json": "55c67b36163cd7ae",
+     ".assembled.json": "367b6db674b5ae7d",
      "functions/_shared/pipe/site.js": "a60c9b39f55dce38"
     },
     "added": {}
@@ -818,7 +820,7 @@
      "schemas/glue/spaces+store.sql"
     ],
     "changed": {
-     ".assembled.json": "e0c05471608d0671",
+     ".assembled.json": "42b386a083ab55ea",
      "config.toml": "20cacc6311e29e20",
      "data.sql": "38ba10509a6a447b",
      "functions/_shared/pipe/site.js": "25b776ad315aff9e"
@@ -838,7 +840,7 @@
      "schemas/glue/spaces+support.sql"
     ],
     "changed": {
-     ".assembled.json": "7453bab8bdd675c5",
+     ".assembled.json": "49646ce0fab0bb0a",
      "config.toml": "eefe5bb51c77932c",
      "data.sql": "51905b9016c0170e",
      "functions/_shared/pipe/site.js": "cffdf8a0b5135796"
@@ -848,7 +850,7 @@
    "tts": {
     "gone": [],
     "changed": {
-     ".assembled.json": "0ac9d048c8e3bbd5",
+     ".assembled.json": "a2cf8982de289be9",
      "functions/_shared/pipe/site.js": "04a3c6180e38eff1"
     },
     "added": {}
@@ -856,7 +858,7 @@
    "wiki": {
     "gone": [],
     "changed": {
-     ".assembled.json": "75f92959a929adb6",
+     ".assembled.json": "9a3fea1fe3e69473",
      "functions/_shared/pipe/site.js": "d82681aace60a5a3"
     },
     "added": {}

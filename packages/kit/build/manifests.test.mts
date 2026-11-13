@@ -442,7 +442,7 @@ if (CRON_SITE.deployment.backend) {
  * added to a copy of the tree, are refused by name.
  */
 {
-  const { ownership, CORE, KIT_SUPABASE } = await import('./modules/backend.mjs')
+  const { ownership, CORE, KIT_SUPABASE, kitBackend } = await import('./modules/backend.mjs')
   const MODS = await moduleSet(await loadSite())
   const TMP = (await import('node:os')).tmpdir()
   t('every schema file, glue, rows file and function is owned', () => {
@@ -467,7 +467,9 @@ if (CRON_SITE.deployment.backend) {
   /* a job runs while its module is on, so the function it calls must be declared by that module or by core —
      never only by a module that may be off (payouts-sweep was the store's and called the sessions' function) */
   t('every cron job calls a function its own module or core declares', () => {
-    const fileText = (f: string) => nodeFs.readFileSync(nodePath.join(KIT_SUPABASE, 'schemas', f), 'utf8')
+    /* a schema file from wherever it lives: the old layout, or its module's folder */
+    const sources = kitBackend().sources.schema
+    const fileText = (f: string) => nodeFs.readFileSync(sources[f] || nodePath.join(KIT_SUPABASE, 'schemas', f), 'utf8')
     const coreText = CORE.schema.map(fileText).join('\n')
     const wrong = []
     for (const m of MODS.values()) for (const j of m.owns.cron) {

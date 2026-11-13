@@ -35,6 +35,7 @@ const VENDOR = [
 const RUNTIME = [
   'packages/kit/src',
   'packages/kit/supabase/functions',
+  'packages/kit/modules',
   'packages/kit/theme/src',
   'src',
   'sites/demo/src',

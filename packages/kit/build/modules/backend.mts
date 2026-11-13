@@ -148,6 +148,13 @@ export function backendFor(modules: Modules, switches: Switches = {}, kit = KIT_
   }
 }
 
+/* every schema file of the kit, wherever it lives (the old layout or a module's folder), as the name a reader knows it by —
+   a glue file as glue/<a>+<b>.sql — and its path on disk */
+export function kitSchemaFiles(kit = KIT_SUPABASE): Array<{ name: string, path: string }> {
+  const b = kitBackend(kit)
+  return [...b.schema.map((n) => ({ name: n, path: b.sources.schema[n] })), ...b.glue.map((n) => ({ name: 'glue/' + n, path: b.sources.glue[n] }))]
+}
+
 /* the tables a schema file declares */
 export const tablesIn = (sql: string): string[] => [...String(sql).matchAll(/CREATE TABLE (?:IF NOT EXISTS )?"?public"?\."?([a-z_][a-z0-9_]*)"?/gi)].map((m) => m[1])
 

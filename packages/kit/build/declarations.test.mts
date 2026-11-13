@@ -31,7 +31,9 @@ console.log('\nDECLARATIONS\n')
 const schemaDir = join(KIT, 'supabase', 'schemas')
 /* the numbered files and the glue between modules (glue/<a>+<b>.sql), which declares tables too */
 const schemaFiles = (dir: any) => [...readdirSync(dir).filter((f) => f.endsWith('.sql')), ...readdirSync(join(dir, 'glue')).filter((f) => f.endsWith('.sql')).map((f) => 'glue/' + f)]
-const schemas = schemaFiles(schemaDir).map((f) => ({ f, sql: readFileSync(join(schemaDir, f), 'utf8') }))
+const { kitSchemaFiles } = await import('./modules/backend.mjs')
+/* every schema file of the kit, a module folder's included (openspec: modules-as-packages) */
+const schemas = kitSchemaFiles().map(({ name, path }) => ({ f: name, sql: readFileSync(path, 'utf8') }))
 const tables = new Map()
 for (const { f, sql } of schemas) {
   for (const m of sql.matchAll(/CREATE TABLE IF NOT EXISTS "public"\."([a-z_]+)"/g)) tables.set(m[1], f)
@@ -204,8 +206,8 @@ if (waiting.length) {
 {
   const dir = join(KIT, 'supabase', 'schemas')
   const open = []
-  for (const f of schemaFiles(dir)) {
-    const t = readFileSync(join(dir, f), 'utf8')
+  for (const { name: f, path: p } of kitSchemaFiles()) {
+    const t = readFileSync(p, 'utf8')
     const said = new Set()
     for (const m of t.matchAll(/^REVOKE ALL ON FUNCTION (.+) FROM "anon", "authenticated";$/gm)) said.add(m[1])
     /* a function DELIBERATELY open to a visitor grants anon by name, and needs nothing taken back */

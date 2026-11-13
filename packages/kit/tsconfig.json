@@ -23,6 +23,6 @@
     "paths": { "@typeform/api-client": ["./build/types/typeform-client.d.ts"] }
   },
   "files": ["supabase/functions/deno-shim.d.ts", "build/fixtures/e2e-probe.mts", "build/fixtures/social-adapter.mts", "build/fixtures/print-interior-browser.ts"],
-  "include": ["agent", "bin", "build", "src", "vite"],
-  "exclude": ["node_modules", "supabase/functions", "build/fixtures", "theme", "build/**/*.test.ts", "build/hyperswitch-browser.steps.ts"]
+  "include": ["agent", "bin", "build", "src", "vite", "modules"],
+  "exclude": ["node_modules", "supabase/functions", "modules/*/functions", "build/fixtures", "theme", "build/**/*.test.ts", "build/hyperswitch-browser.steps.ts"]
 }

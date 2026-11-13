@@ -82,6 +82,11 @@ const SURFACES: Array<[string, (e: fs.Dirent) => boolean]> = [
   ['packages/kit/src/sdk', (e: any) => true],
   ['packages/kit/theme/src/pages', (e: { isFile: () => any }) => e.isFile()],
   ['deploy', (e: any) => true],
+  /* each module folder's functions and schema files, as the old layout's are (openspec: modules-as-packages) */
+  ...(fs.existsSync(path.join(ROOT, 'packages/kit/modules')) ? fs.readdirSync(path.join(ROOT, 'packages/kit/modules'), { withFileTypes: true }).filter((d) => d.isDirectory()).flatMap((d) => [
+    ['packages/kit/modules/' + d.name + '/functions', (e: { isDirectory: () => any; name: string }) => e.isDirectory() && e.name !== '_shared'],
+    ['packages/kit/modules/' + d.name + '/schema', (e: { isFile: () => any; name: string }) => e.isFile() && e.name.endsWith('.sql')],
+  ] as Array<[string, (e: fs.Dirent) => boolean]>) : []),
 ]
 /* a source covers an entry when it names it, something inside it, or a directory below the surface's root — the surface root
    itself (`packages/kit/supabase/functions`) is the page that lists every function, and listing is not documenting one */
@@ -234,7 +239,7 @@ const walk2 = (d: string, exts: string[]): string[] => fs.existsSync(d) ? fs.rea
 {
   const doc = page('reference/environment-variables')
   if (doc) {
-    const codeFiles = ['packages/kit/build', 'packages/kit/src', 'packages/kit/vite', 'packages/kit/bin', 'packages/kit/agent', 'packages/kit/supabase/functions', 'packages/kit/theme/src']
+    const codeFiles = ['packages/kit/build', 'packages/kit/src', 'packages/kit/vite', 'packages/kit/bin', 'packages/kit/agent', 'packages/kit/supabase/functions', 'packages/kit/modules', 'packages/kit/theme/src']
       .flatMap((dir) => walk2(path.join(ROOT, dir), ['.mjs', '.mts', '.js', '.ts', '.vue']))
       .filter((file) => !/\.integration\.m[jt]s$/.test(file))
     const code = codeFiles.map((file) => fs.readFileSync(file, 'utf8')).join('\n')

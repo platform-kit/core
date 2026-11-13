@@ -18,8 +18,9 @@ console.log('\nONE PERSON, ONE FACE\n')
 {
   const dir = join(KIT, 'supabase', 'schemas')
   const missing = []
-  for (const f of readdirSync(dir).filter((x) => x.endsWith('.sql'))) {
-    const t = readFileSync(join(dir, f), 'utf8')
+  const { kitSchemaFiles } = await import('./modules/backend.mjs')
+  for (const { name: f, path: p } of kitSchemaFiles().filter((x) => !x.name.startsWith('glue/'))) {
+    const t = readFileSync(p, 'utf8')
     /* a read that hands out a STYLE is handing out a drawn face, and must hand out its parts too.
        The window is the object being built around it, either side: a few reads name the parts
        before the style and a few after, and both are the same answer. */
