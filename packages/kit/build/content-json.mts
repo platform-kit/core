@@ -115,6 +115,15 @@ const slug = (s: any) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').rep
 
 if (isMain(import.meta.url)) {
   const check = process.argv.includes('--check')
+  /* cloud mode reads the rows and the bucket at run time (_shared/content-index.ts) and never opens this file; shipping the whole
+     index would put it in every function that imports the content API, and a function bundled server-side may not pass 5 MB */
+  if (!check && process.env.CONTENT_STORE === 'cloud') {
+    const file = path.join(ROOT, OUT)
+    fs.mkdirSync(path.dirname(file), { recursive: true })
+    fs.writeFileSync(file, JSON.stringify({ note: 'CONTENT_STORE is cloud: the content function reads public.content and the content-assets bucket, not this file' }))
+    console.log(`${OUT} ← a stub: CONTENT_STORE is cloud, so the functions read the rows`)
+    process.exit(0)
+  }
   const index = await contentIndex()
   const by: any = {}; for (const r of index.records) by[(r as any).typeId] = (by[(r as any).typeId] || 0) + 1
   const line = `${index.records.length} records (${Object.entries(by).map(([k, n]) => k + ' ' + n).join(', ')}), ${index.assets.length} assets, ${index.types.length} content types, ${index.deleted.length} deletions${index.site.url ? '' : ' (no public address in content/site.md)'}`
