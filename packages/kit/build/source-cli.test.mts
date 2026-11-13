@@ -107,6 +107,16 @@ registerHooks({
   assert.ok(deploy.stdout.includes(pathToFileURL(fs.realpathSync(path.join(site, 'node_modules', 'platformkit', 'build', 'deploy.mjs'))).href), deploy.stdout)
   assert.match(deploy.stdout, /site dependency resolved/)
 
+  /* a site repo that happens to hold sites/ and packages/kit is still a site when the CLI comes from node_modules: no default "docs" site */
+  fs.mkdirSync(path.join(site, 'packages', 'kit'), { recursive: true })
+  fs.mkdirSync(path.join(site, 'sites'), { recursive: true })
+  const nested = spawnSync(process.execPath, [path.join(cached, 'packages', 'kit', 'bin', 'platformkit.mjs'), 'deploy'], { cwd: site, encoding: 'utf8' })
+  assert.equal(nested.status, 0, nested.stderr)
+  assert.doesNotMatch(nested.stderr, /default site/)
+  assert.match(nested.stdout, /site dependency resolved/)
+  fs.rmSync(path.join(site, 'packages'), { recursive: true, force: true })
+  fs.rmSync(path.join(site, 'sites'), { recursive: true, force: true })
+
   fs.mkdirSync(path.join(gitSource, 'bin'), { recursive: true })
   fs.writeFileSync(path.join(gitSource, 'package.json'), JSON.stringify({
     name: 'platformkit-source-fixture',

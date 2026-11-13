@@ -110,7 +110,12 @@ if (explicitSite && !requestedSite) {
 const cwd = process.cwd()
 const root = workspaceRoot(cwd)
 const inWorkspace = isWorkspace(root) || Boolean(sourceRoot && fs.existsSync(path.join(root, 'packages', 'kit')))
-const atWorkspaceRoot = inWorkspace && fs.realpathSync(cwd) === fs.realpathSync(root)
+/* the default site is for a PlatformKit workspace's own CLI. One run from node_modules (npx, or the site's dependency) is a site's:
+   its folder is the site, whatever else it holds, and a folder with its own platformkit.config is a site and not a workspace */
+const runsFromNodeModules = fileURLToPath(import.meta.url).split(path.sep).includes('node_modules')
+const holdsSiteConfig = ['ts', 'js'].some((e) => fs.existsSync(path.join(root, 'platformkit.config.' + e)))
+const atWorkspaceRoot = inWorkspace && !runsFromNodeModules && !(holdsSiteConfig && !isWorkspace(root))
+  && fs.realpathSync(cwd) === fs.realpathSync(root)
 let site = explicitSite ? path.resolve(requestedSite) : cwd
 if (!explicitSite && atWorkspaceRoot && cmd && !['help', '--help', 'dev', 'sites', 'stop'].includes(cmd)) {
   try {
@@ -118,7 +123,7 @@ if (!explicitSite && atWorkspaceRoot && cmd && !['help', '--help', 'dev', 'sites
     const env = { ...loadEnv('development', root, 'PLATFORMKIT_'), ...process.env }
     site = defaultSite(root, env).directory
   } catch (error) {
-    console.error(`✖ ${error.message}`)
+    console.error(`✖ ${error.message} (looked from ${cwd}, workspace root ${root})`)
     process.exit(1)
   }
 }
