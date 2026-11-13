@@ -97,6 +97,13 @@ Verified by: `build/dev-module-watch.test.mts`
 
 Verified by: `build/dev-module-watch.test.mts`, through the dev server's HMR channel
 
+#### Scenario: an edit made in the generated folder
+
+- **WHEN** a file in the assembled `supabase/` tree is edited while dev runs
+- **THEN** dev restores it from its module folder and names the module file to edit instead
+
+Verified by: `build/dev-module-watch.test.mts`
+
 #### Scenario: a destructive schema edit during dev
 
 - **WHEN** a schema edit would drop a column while dev runs

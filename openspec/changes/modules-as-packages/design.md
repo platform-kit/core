@@ -79,7 +79,7 @@ The Supabase CLI serves and deploys functions from one directory, `supabase/func
 
 ## Editing during dev
 
-The source is what a developer edits, so an edit there has to reach the running dev site without a restart. Today it does not for functions: `dev` assembles `supabase/` once at start, so an edit to a kit function is served only after a restart. This change closes that gap for every kind of file:
+Every module file is edited where it lives, in its module folder, and nowhere else; the assembled `supabase/` tree is output, like `dist/`, and an edit made there is restored from the module folder with a message naming the file to edit. The source is what a developer edits, so an edit there has to reach the running dev site without a restart. Today it does not for functions: `dev` assembles `supabase/` once at start, so an edit to a kit function is served only after a restart. This change closes that gap for every kind of file:
 
 - **Browser code** (pages, components, logic, wording): Vite loads it from the module folder itself, never from a copy, so HMR works as it does for the theme today. The kit's Vite plugin adds `packages/kit/modules/` and the site's `src/modules/` to the files it serves and watches.
 - **Functions and their shared code:** `dev` watches every enabled module's `functions/` and re-copies a changed file into the assembled tree at once, rewriting that function's `deno.json` if its imports changed. `supabase functions serve` already reloads when its folder changes, so the edit is live on the next request. Links instead of copies were rejected: the CLI serves functions from inside a container that mounts only the site's `supabase/functions/`, so a link pointing outside it does not resolve there.
