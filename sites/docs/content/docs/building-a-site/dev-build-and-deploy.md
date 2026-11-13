@@ -198,7 +198,7 @@ PlatformKit maintainers publish one package, `platformkit` (the engine with its 
 
 Each site maintainer owns the site repository, its exact PlatformKit package versions, and its committed lockfile. To upgrade, change the package versions and lockfile together, then run `npm ci`, `platformkit test`, and `platformkit build` from the site repository before merging. The production host checks out and builds the site repository commit; the machine-local site registry only supports developer workflows and is not part of production deployment. For a backend deployment, the host runs `platformkit deploy` from that same checkout with its production environment and explicit deployment confirmation.
 
-Before any production-facing deploy step, `platformkit deploy` checks that `package.json` directly pins both `platformkit` and `platformkit/theme` to exact versions and that `package-lock.json` resolves those same versions from an HTTPS package registry with integrity hashes. A missing lockfile, range, stale resolution, workspace link, or local package source refuses the deploy; release the packages and regenerate the site's lockfile before trying again.
+Before any production-facing deploy step, `platformkit deploy` checks that `package.json` directly pins both `platformkit` and `platformkit/theme` to exact versions and that `package-lock.json` resolves those same versions from an HTTPS package registry with integrity hashes. A missing lockfile, range, stale resolution, workspace link, or local package source refuses the deploy; release the packages and regenerate the site's lockfile before trying again. The other accepted route is the GitHub source: a site that declares `platformkit` as an exact version, or as the Core repository's GitHub address (`github:platform-kit/core#<ref>`), passes when the kit installed in its `node_modules` matches the receipt the source install recorded.
 
 ### Render build commands
 
@@ -223,7 +223,7 @@ For a production deployment, with the site's production environment configured, 
 DEPLOY=1 npx --yes --package=github:platform-kit/core platformkit deploy
 ```
 
-This avoids waiting for a release on npm; npm is still used to install the site's dependencies and fetch the GitHub-hosted CLI. The source route installs the kit and theme into the site's `node_modules` without changing its manifest or lockfile.
+This avoids waiting for a release on npm; npm is still used to install the site's dependencies and fetch the GitHub-hosted CLI. The source route installs the kit and theme into the site's `node_modules` without changing its manifest or lockfile. The GitHub checkout holds the kit's TypeScript uncompiled, so the CLI compiles it beside itself on first run (`build/compile.mjs`) before installing it into the site. A site that declares `platformkit` as a GitHub dependency has that whole checkout at `node_modules/platformkit`; the install copies the kit aside, replaces that folder with it, and the command carries on from the installed kit. So `npx github:platform-kit/core build` and `npx github:platform-kit/core deploy` run from the site's root with nothing before them. A host needs Node 22 (`.node-version` or `NODE_VERSION=22`); `dev` starts the development server and never finishes, so a build command is `build` or `deploy`.
 
 ## `platformkit build`
 

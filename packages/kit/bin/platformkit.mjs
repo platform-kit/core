@@ -74,10 +74,24 @@ if (process.versions.node.split('.')[0] !== '22') {
   process.exit(1)
 }
 
+/* RUN FROM A GITHUB SOURCE INSTALL (`npx github:platform-kit/core`): the package is the kit's raw TypeScript inside node_modules,
+   where Node strips no types and the hook above is not loaded. Compile it beside itself once, as a source install does (build/compile.mjs) */
+const KIT_DIR = fileURLToPath(new URL('..', import.meta.url))
+const KIT_COMPILER = path.join(KIT_DIR, 'build', 'compile.mjs')
+if (KIT_DIR.includes(path.sep + 'node_modules' + path.sep)
+  && fs.existsSync(path.join(KIT_DIR, 'build', 'verbose.mts')) && !fs.existsSync(path.join(KIT_DIR, 'build', 'verbose.mjs'))
+  && fs.existsSync(KIT_COMPILER)) {
+  const compiled = spawnSync(process.execPath, [KIT_COMPILER], { cwd: KIT_DIR, stdio: 'inherit' })
+  if (compiled.status !== 0) {
+    console.error('✖ PlatformKit could not compile its TypeScript from the GitHub source.')
+    process.exit(1)
+  }
+}
+
 /* the kit's own modules, once Node is 22 and the hook is in place */
 const { VERBOSE } = await import('../build/verbose.mjs')
 const { defaultSite, platformKitWorkspaceRoot, workspaceRoot } = await import('../build/sites.mjs')
-const { installPlatformKitSource } = await import('../build/source-install.mjs')
+const { installPlatformKitSource, sourceInsideSite } = await import('../build/source-install.mjs')
 
 let kitRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const KIT = (f) => path.join(kitRoot, 'build', f)
@@ -126,8 +140,15 @@ if (!['help', '--help', 'sites', 'stop'].includes(cmd)) {
   const usesWorkspaceSource = sourceRoot && (relativeSite === '' || (!relativeSite.startsWith(`..${path.sep}`) && relativeSite !== '..' && !path.isAbsolute(relativeSite)))
   if (sourceRoot && !usesWorkspaceSource) {
     try {
+      /* a CLI running from a copy under node_modules (npx's cache, or the site's own node_modules/platformkit) cannot import the kit's
+         dependencies, which the install put in the site: carry on from the kit the install left there */
+      const fromCopy = sourceInsideSite(site, sourceRoot) || sourceRoot.split(path.sep).includes('node_modules')
       installPlatformKitSource(site, sourceRoot)
       kitRoot = path.join(site, 'node_modules', 'platformkit')
+      if (fromCopy) {
+        const again = spawnSync(process.execPath, [path.join(kitRoot, 'bin', 'platformkit.mjs'), ...process.argv.slice(2)], { stdio: 'inherit', env: process.env })
+        process.exit(again.status ?? 1)
+      }
     }
     catch (error) { console.error(`✖ ${error.message}`); process.exit(1) }
   } else if (!sourceRoot) {

@@ -9,7 +9,10 @@ const SOURCE_DIR: any = { platformkit: 'kit' }
 const RECEIPT = 'node_modules/.cache/platformkit/source-install.json'
 const CORE_REPOSITORY = 'https://github.com/platform-kit/core'
 
+/* only the checkout's own repository speaks for it: a copy inside a site's git work tree must not report the site's commit */
 function gitOutput(sourceRoot: string, ...args: any[]) {
+  const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: sourceRoot, encoding: 'utf8' })
+  if (top.status !== 0 || fs.realpathSync(top.stdout.trim()) !== fs.realpathSync(sourceRoot)) return null
   const result = spawnSync('git', args, { cwd: sourceRoot, encoding: 'utf8' })
   return result.status === 0 ? result.stdout.trim() : null
 }
@@ -127,7 +130,33 @@ function writeReceipt(site: string, sourceRoot: string, { sourceClean: cleanBefo
   return receipt
 }
 
-export function installPlatformKitSource(site: string, sourceRoot: string, { env = process.env } = {}) {
+/* Where a site declares platformkit from GitHub, npm has put the whole Core checkout at node_modules/platformkit, the folder
+   the kit installs into: the install would delete its own source. So the checkout's kit is copied aside first. */
+export function sourceInsideSite(site: string, sourceRoot: string) {
+  const nodeModules = path.join(fs.realpathSync(site), 'node_modules')
+  return fs.realpathSync(sourceRoot).startsWith(nodeModules + path.sep)
+}
+
+function stageSource(site: string, sourceRoot: string) {
+  const staged = path.join(fs.realpathSync(site), 'node_modules', '.cache', 'platformkit', 'core')
+  fs.rmSync(staged, { recursive: true, force: true })
+  fs.mkdirSync(path.join(staged, 'packages'), { recursive: true })
+  fs.copyFileSync(path.join(sourceRoot, 'package.json'), path.join(staged, 'package.json'))
+  fs.cpSync(path.join(sourceRoot, 'packages', 'kit'), path.join(staged, 'packages', 'kit'), {
+    recursive: true,
+    filter: (source) => path.basename(source) !== 'node_modules',
+  })
+  return staged
+}
+
+export function installPlatformKitSource(site: string, sourceRoot: string, options: { env?: NodeJS.ProcessEnv } = {}) {
+  if (!sourceInsideSite(site, sourceRoot)) return installFrom(site, sourceRoot, options)
+  const staged = stageSource(site, sourceRoot)
+  try { return installFrom(site, staged, options) }
+  finally { fs.rmSync(staged, { recursive: true, force: true }) }
+}
+
+function installFrom(site: string, sourceRoot: string, { env = process.env } = {}) {
   for (const name of PACKAGES) {
     if (!fs.existsSync(path.join(sourceRoot, 'packages', SOURCE_DIR[name], 'package.json'))) {
       throw new Error(`PlatformKit source checkout is missing packages/${SOURCE_DIR[name]}`)
@@ -155,7 +184,8 @@ export function installPlatformKitSource(site: string, sourceRoot: string, { env
   ], { cwd: site, stdio: 'inherit', env })
   /* the receipt compares the installed package with the checkout, so it is taken while the compiled files are beside the
      sources, and they are removed after it */
-  const cleanUp = () => { if (fs.existsSync(compiler)) spawnSync(process.execPath, [compiler, '--clean'], { cwd: kitDir, stdio: 'ignore', env }) }
+  /* a source inside node_modules is an install copy, not a workspace: the CLI running from it still imports its compiled files */
+  const cleanUp = () => { if (fs.existsSync(compiler) && !kitDir.split(path.sep).includes('node_modules')) spawnSync(process.execPath, [compiler, '--clean'], { cwd: kitDir, stdio: 'ignore', env }) }
   let receipt
   try {
     if (result.error) throw new Error(`could not install PlatformKit from its source checkout: ${result.error.message}`)

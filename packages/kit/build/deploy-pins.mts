@@ -109,18 +109,22 @@ export function platformKitSourceInstall(root = process.cwd()) {
   for (const name of PACKAGES) {
     const declared = manifest.dependencies?.[name]
     const record = receipt.packages?.[name]
-    if (typeof declared !== 'string' || !EXACT_VERSION.test(declared)) {
+    /* a site that fetches Core from GitHub declares it as that address, with or without a ref, or declares nothing and lets
+       `npx github:platform-kit/core` install it: either way the installed package's own version is the version, and the receipt vouches for it */
+    const fromCore = declared === undefined
+      || (typeof declared === 'string' && normalizedSourceUrl(declared.split('#')[0]) === 'https://github.com/platform-kit/core')
+    if (!fromCore && (typeof declared !== 'string' || !EXACT_VERSION.test(declared))) {
       errors.push(`package.json: ${name} must declare an exact version matching the source-installed package`)
       continue
     }
-    if (!record || record.version !== declared || !HASH.test(record.sha256 || '')) {
+    if (!record || (!fromCore && record.version !== declared) || !HASH.test(record.sha256 || '')) {
       errors.push(`${SOURCE_RECEIPT}: ${name} does not match its declared version or has no valid content hash`)
       continue
     }
     const directory = path.join(root, 'node_modules', ...name.split('/'))
     try {
       const installed = JSON.parse(fs.readFileSync(path.join(directory, 'package.json'), 'utf8'))
-      if (installed.name !== name || installed.version !== declared || platformKitPackageHash(directory) !== record.sha256) {
+      if (installed.name !== name || installed.version !== record.version || platformKitPackageHash(directory) !== record.sha256) {
         errors.push(`node_modules: ${name} differs from the recorded source installation`)
       }
     } catch (error: any) {

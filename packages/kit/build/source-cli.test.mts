@@ -91,6 +91,14 @@ registerHooks({
   assert.equal(help.status, 0, help.stderr)
   assert.match(help.stdout, /platformkit/)
 
+  /* the GitHub route: npx puts the whole checkout, uncompiled, under node_modules, where Node strips no types */
+  const cached = path.join(fixture, 'npx', 'node_modules', '@platform-kit', 'workspace')
+  fs.cpSync(source, cached, { recursive: true })
+  assert.equal(fs.existsSync(path.join(cached, 'packages', 'kit', 'build', 'verbose.mjs')), false)
+  const fromGitHub = spawnSync(process.execPath, [path.join(cached, 'packages', 'kit', 'bin', 'platformkit.mjs'), '--help'], { cwd: site, encoding: 'utf8' })
+  assert.equal(fromGitHub.status, 0, fromGitHub.stderr)
+  assert.match(fromGitHub.stdout, /platformkit/)
+
   const deploy = spawnSync(process.execPath, [path.join(source, 'packages', 'kit', 'bin', 'platformkit.mjs'), 'deploy'], {
     cwd: site,
     encoding: 'utf8',

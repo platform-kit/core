@@ -22,14 +22,14 @@ sources:
     packages/kit/build/source-install.mts,
     packages/kit/build/admin-cms-mode.test.mts,
   ]
-reviewed: 2026-11-10
+reviewed: 2026-11-13
 ---
 
 `platformkit.config.js` is the one place the kit and the theme learn about a site. It exports a plain object. A change to it restarts the dev server. While it runs, the Vite plugin also watches Markdown edits and refreshes only the build steps whose declared inputs match the changed path.
 
 The file is `platformkit.config.ts` or `platformkit.config.js`, and TypeScript wins where both are there. In TypeScript, end it with `satisfies SiteConfig`, imported as a type from `platformkit/config.mjs`, so a misspelled setting is a type error. It needs Node 22.18 or later.
 
-From the Core checkout, a site command reads this config from the selected site. When that site is a separate checkout, the Git-source CLI installs the kit and theme into its `node_modules` from the same Core source, without writing the site's manifest or lockfile. Its receipt checks the files npm actually packs for each package, so development-only files in the Core checkout do not cause a false mismatch. A production host can do the same by running `npx --yes --package=github:platform-kit/core platformkit deploy` from the site checkout; deploying from Core source does not depend on publishing the packages to npm.
+From the Core checkout, a site command reads this config from the selected site. When that site is a separate checkout, the Git-source CLI installs the kit and theme into its `node_modules` from the same Core source, without writing the site's manifest or lockfile. Its receipt checks the files npm actually packs for each package, so development-only files in the Core checkout do not cause a false mismatch. A production host can do the same by running `npx github:platform-kit/core deploy` from the site checkout (or `npx --yes --package=github:platform-kit/core platformkit deploy`); deploying from Core source does not depend on publishing the packages to npm, and no version or branch needs pinning. The site may declare `platformkit` as `github:platform-kit/core` (with or without a `#ref`) or not at all; either way the receipt decides.
 
 ```js
 export default {

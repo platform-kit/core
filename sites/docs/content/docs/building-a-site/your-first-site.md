@@ -13,7 +13,7 @@ sources:
     package.json,
     packages/kit/build/sites.mts,
   ]
-reviewed: 2026-11-10
+reviewed: 2026-11-13
 ---
 
 A site is an independently configured project built with PlatformKit. It contains its own package manifest and lockfile, `platformkit.config.js`, content, and any code or data it registers. The PlatformKit workspace also contains generic example sites; copy one as a starting point, then keep the new project's code and content in its own repository.
@@ -103,10 +103,11 @@ npx platformkit build
 For a deployment, the site repository can invoke the Core CLI directly from GitHub:
 
 ```sh
-npx --yes --package=github:platform-kit/core platformkit deploy
+npx github:platform-kit/core build
+DEPLOY=1 npx github:platform-kit/core deploy
 ```
 
-This sources `platformkit` from the Core repository, so npm publication is not required and the site's manifest and lockfile are not changed. When using npm-published PlatformKit packages instead, pin their exact versions and commit the matching `package-lock.json`. A standalone site build uses its own repository and dependencies; it does not need files from a sibling site. See [Dev, build and deploy](/content/docs/building-a-site/dev-build-and-deploy) and the [multi-site guide](/content/docs/running-a-site/multiple-sites) for local workspace development and repository fetches.
+The longer `npx --yes --package=github:platform-kit/core platformkit deploy` form is equivalent. This sources `platformkit` from the Core repository, so npm publication is not required and the site's manifest and lockfile are not changed. The checkout holds the kit's TypeScript uncompiled; the CLI compiles it on first run and then continues from the copy it installs into the site's `node_modules`. When using npm-published PlatformKit packages instead, pin their exact versions and commit the matching `package-lock.json`. A standalone site build uses its own repository and dependencies; it does not need files from a sibling site. See [Dev, build and deploy](/content/docs/building-a-site/dev-build-and-deploy) and the [multi-site guide](/content/docs/running-a-site/multiple-sites) for local workspace development and repository fetches.
 
 Use Node 22 for every command. The `platformkit` executable uses nvm to restart under Node 22 when available; otherwise install Node 22 or use the PlatformKit devcontainer.
 

@@ -84,7 +84,7 @@ try {
   const install = assertPlatformKitForDeploy(process.cwd())
   console.log(install.kind === 'release'
     ? `PlatformKit releases: ${install.packages.map(({ name, version }: any) => `${name}@${version}`).join(', ')}`
-    : `PlatformKit source: ${install.source.ref}`)
+    : `PlatformKit source: ${install.source.ref ?? `package tree ${install.source.treeSha256}`}`)
 } catch (error: any) {
   die(error.message)
 }

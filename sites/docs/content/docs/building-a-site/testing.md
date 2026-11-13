@@ -175,7 +175,7 @@ CI installs Deno because `social-provider-matrix.test.mts` runs a real SDK capab
 
 In order:
 
-`deploy-pins.test.mts` checks that a production deploy refuses missing, ranged, stale, linked or non-registry PlatformKit pins before it reaches a Supabase or build command.
+`deploy-pins.test.mts` checks that a production deploy refuses missing, ranged, stale, linked or non-registry PlatformKit pins before it reaches a Supabase or build command. It also checks the GitHub-source route: a site that declares `platformkit` as `github:platform-kit/core` (with or without a ref) or not at all passes only while the installed kit matches its install receipt, including when npm has put the whole Core checkout at `node_modules/platformkit`. `source-cli.test.mts` runs the CLI from an uncompiled checkout under `node_modules`, as `npx github:platform-kit/core` leaves it.
 
 The docs check treats `reviewed:` as a human calendar date. When it runs in UTC, it accepts the adjacent date that could still be today in a timezone from UTC−12 to UTC+14; `docs-review-date.test.mts` pins those boundaries. Its environment reference check also accounts for settings whose names are assembled from a declared prefix, such as per-site Git URL variables, while requiring the reference to document the usable pattern.
 

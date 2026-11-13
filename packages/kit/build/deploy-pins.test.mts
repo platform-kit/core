@@ -105,6 +105,33 @@ try {
   assert.equal(receipt.source.clean, true)
   assert.deepEqual(assertPlatformKitForDeploy(root), { kind: 'source', source: receipt.source })
 
+  /* the site that declares Core from GitHub, as the deployment host's npm leaves it: the checkout at node_modules/platformkit, no .git */
+  const hosted = path.join(root, 'hosted')
+  fs.mkdirSync(hosted, { recursive: true })
+  fs.writeFileSync(path.join(hosted, 'package.json'), JSON.stringify({ name: 'site-fixture', dependencies: { platformkit: 'github:platform-kit/core#main' } }))
+  const checkout = path.join(hosted, 'node_modules', 'platformkit')
+  fs.mkdirSync(path.dirname(checkout), { recursive: true })
+  fs.cpSync(source, checkout, { recursive: true, filter: (from) => path.basename(from) !== '.git' })
+  const hostedReceipt = installPlatformKitSource(hosted, checkout)
+  assert.equal(hostedReceipt.source.ref, null)
+  assert.equal(JSON.parse(fs.readFileSync(path.join(checkout, 'package.json'), 'utf8')).name, 'platformkit')
+  assert.equal(fs.existsSync(path.join(hosted, 'node_modules', '.cache', 'platformkit', 'core')), false)
+  assert.equal(assertPlatformKitForDeploy(hosted).kind, 'source')
+  fs.appendFileSync(path.join(checkout, 'index.js'), '// changed after setup\n')
+  assert.throws(() => assertPlatformKitForDeploy(hosted), /platformkit differs from the recorded source installation/)
+
+  /* no ref on the address, and no declaration at all: the receipt still decides */
+  for (const dependencies of [{ platformkit: 'github:platform-kit/core' }, {}]) {
+    fs.writeFileSync(path.join(hosted, 'package.json'), JSON.stringify({ name: 'site-fixture', dependencies }))
+    fs.rmSync(path.join(hosted, 'node_modules'), { recursive: true, force: true })
+    fs.mkdirSync(path.dirname(checkout), { recursive: true })
+    fs.cpSync(source, checkout, { recursive: true, filter: (from) => path.basename(from) !== '.git' })
+    installPlatformKitSource(hosted, checkout)
+    assert.equal(assertPlatformKitForDeploy(hosted).kind, 'source')
+  }
+  fs.writeFileSync(path.join(hosted, 'package.json'), JSON.stringify({ name: 'site-fixture', dependencies: { platformkit: '^0.1.0' } }))
+  assert.throws(() => assertPlatformKitForDeploy(hosted), /must declare an exact version/)
+
   const installedFile = path.join(root, 'node_modules', 'platformkit', 'index.js')
   fs.appendFileSync(installedFile, '// changed after setup\n')
   assert.throws(() => assertPlatformKitForDeploy(root), /platformkit differs from the recorded source installation/)
