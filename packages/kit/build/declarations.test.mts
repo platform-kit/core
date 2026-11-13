@@ -47,6 +47,42 @@ for (const [t, f] of tables) {
     'add it to DECLARED, STATE or DERIVED in build/declarations.mjs — is it what the site IS, what people DID, or a cache of what is already here?')
   ok('`' + t + '` is in one list only', [d, s, v].filter(Boolean).length === 1)
 }
+/* ---- 1b. GRANTS ARE DECLARED, NOT INHERITED ----
+   Supabase used to grant every new table in `public` to anon, authenticated and service_role, and a project can now
+   be made without that (the default for new projects since 2026-05-30, for every project from 2026-10-30). A table
+   that leaned on it answers 42501 on such a project: for the service role, every function and every deploy step
+   that touches it; for a signed-in or signed-out reader, every policy written for them, because a policy only
+   filters rows of a table the role may already touch. So what each role may do is written in the schema:
+   the service role always, and a role a policy names. */
+const allSql = schemas.map((s) => s.sql).join('\n')
+const granted: Record<string, Set<string>> = { anon: new Set(), authenticated: new Set(), service_role: new Set() }
+for (const m of allSql.matchAll(/GRANT\s+[^;]*?\s+ON\s+(?!(?:FUNCTION|SEQUENCE|SCHEMA|ALL|TYPE|DOMAIN)\b)(?:TABLE\s+)?([^;]*?)\s+TO\s+([^;]*?);/gis)) {
+  const objects = [...m[1].matchAll(/"public"\."([a-z_]+)"/g)].map((x) => x[1])
+  for (const role of Object.keys(granted)) if (new RegExp('(^|[\\s,])"?' + role + '"?([\\s,]|$)').test(m[2])) objects.forEach((o) => granted[role].add(o))
+}
+const policyRoles = new Map<string, Set<string>>()
+for (const m of allSql.matchAll(/CREATE POLICY\s+"[^"]+"\s+ON\s+"public"\."([a-z_]+)"([^;]*?);/gis)) {
+  const body = m[2].replace(/\s+/g, ' ')
+  const to = /\sTO\s+((?:"?[a-z_]+"?\s*,?\s*)+?)(?=\s+(?:USING|WITH)\b|\s*$)/i.exec(body)
+  const roles = to ? [...to[1].matchAll(/"?([a-z_]+)"?/g)].map((x) => x[1].toLowerCase()) : ['public']
+  /* with no TO clause a policy is for everybody, but one that asks who the reader is (`auth.uid()`, `is_admin()`, `can_read_…()`, `my_…()`)
+     admits nobody signed out, and needs no anon grant */
+  const asksWho = /"auth"\."uid"\(\)|"public"\."(?:is|can|has|my)_[a-z_]+"\(/.test(body)
+  const set = policyRoles.get(m[1]) ?? new Set<string>()
+  for (const r of roles) {
+    if (r === 'public') { set.add('authenticated'); if (to || !asksWho) set.add('anon') } else set.add(r)
+  }
+  policyRoles.set(m[1], set)
+}
+for (const t of tables.keys()) {
+  ok('`' + t + '` grants the service role explicitly', granted.service_role.has(t),
+    'add `GRANT ALL ON TABLE "public"."' + t + '" TO "service_role";` beside the table — a new Supabase project grants nothing by default')
+  for (const role of ['anon', 'authenticated']) {
+    if (!policyRoles.get(t)?.has(role)) continue
+    ok('`' + t + '` grants ' + role + ' what its policies are written for', granted[role].has(t),
+      'a policy names ' + role + ' but no GRANT does, so ' + role + ' is refused the table before the policy is read: `GRANT SELECT ON TABLE "public"."' + t + '" TO "' + role + '";`')
+  }
+}
 for (const t of [...Object.keys(DECLARED), ...Object.keys(STATE), ...Object.keys(DERIVED)]) {
   ok('`' + t + '` is a table that exists', tables.has(t), 'it is classified but no schema declares it')
 }

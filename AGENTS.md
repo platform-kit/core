@@ -20,6 +20,10 @@ For a visible interface change, render and inspect the changed states at the rel
 
 Update the documentation site and repository references when platform behavior changes. Each documentation page names the code it describes, and `packages/kit/build/docs-check.mjs` verifies those sources and the reference material.
 
+## Database
+
+A table or function declares what each role may do with it in the schema file that declares it: `GRANT` and `REVOKE` statements and row-level security, never the platform's default privileges. Supabase no longer grants a new `public` table to `anon`, `authenticated` and `service_role` on every project, so a table that relied on that answers `42501` in production. Every table grants `service_role` explicitly, and grants `anon` or `authenticated` wherever a policy is written for them. `packages/kit/build/declarations.test.mts` fails a table that does not.
+
 ## Working through blockers
 
 The goal is the outcome the user asked for, not the design already in progress. When something fails, ask first whether the design is wrong, not only whether the surroundings are.

@@ -50,7 +50,6 @@ Tables that link people to records include a `source` field. For example, a memb
 Projection updates remove only rows owned by the declaration, preserving rows created manually.
 
 > A promotion's usage limit is a declaration; the number of redemptions is state in
-> `promotion_usage`. Keeping the count in a file would reset it on redeploy.
 
 ## Publishing declarations
 
@@ -73,6 +72,7 @@ table names the content path that produces it. `build/declarations.test.mts` che
 3. Kit and theme client code does not write to projected tables.
 4. Each projected table names a path produced by a content collection, or a content folder that a build script reads itself and `build/content-kinds.mjs` records with no collection. Courses are read that way, so a lesson's text never reaches the browser before it is open.
 5. The script that writes each projected table runs on a reset (`build/reset-seed.mjs`, the steps `platformkit migrate reset` and the end-to-end run share). A projection nothing restores is an empty table after a reset, and an empty table does not fail.
+6. Every table grants `service_role` explicitly, and grants `anon` or `authenticated` wherever a policy is written for them. A policy that asks who the reader is (`auth.uid()`, `is_…()`, `can_…()`, `has_…()`, `my_…()`) admits nobody signed out and needs no grant to `anon`. A project need not grant new tables by default, so a table that relied on that is refused in production ([the database](/content/docs/building-a-site/the-database)).
 
 Pending entries document an in-progress transition to file-backed declarations. Each names the
 change that will complete it; an entry whose change is no longer active fails the check. The

@@ -67,7 +67,7 @@ The public `platformkit/payment-provider` entry point defines the adapter operat
 The catalog carries a session type whole, including the hours it is bookable at by default — so the scheduler has an answer before any host has set their own.
 
 > The compile (`build/catalog.mjs`) runs **over the store**, so the same code answers from a checkout on a
-> machine and from the rows in an Edge Function — which is what lets a publish make this artefact
+>
 > where the deployment will never build again ([cloud mode](/content/docs/running-a-site/settings/cloud-mode)).
 
 ## What a payment decides
@@ -109,14 +109,19 @@ real decisions are how a cart of several offers resolves something that belongs 
 rather than to a line:
 
 - **trial** — the subscription's own, since a subscription session is one offer by construction. And
+
   **once per person per tier**: `subscriptions.trialed` is set the first time Stripe says _trialing_
   and never cleared, so a cancelled row is still the record that it happened; the tier is read from
   the catalogue through the row's `key`, so a weekly and a monthly offer of one tier share one trial
   and cancel-and-rejoin grants nothing.
+
 - **tax** — on if **any** offer in the cart asks. The alternative, every offer having to agree, would
+
   silently not charge tax on a mixed cart, and under-collecting tax is the mistake that costs money
   much later. With a remembered customer, `automatic_tax` also needs `customer_update: { address:
+
 'auto' }` or Stripe refuses.
+
 - **payments** — the **intersection**, so a cart never offers a method one of its offers does not
   accept. Empty means Stripe's own default, which is exactly what every session sent before this.
 - **adjustable** — a property of its own line, set per line. Named `adjustable` rather than
@@ -156,12 +161,17 @@ mechanism, so a shop that only needs sizes never meets the longer form.
 Three things about it are worth knowing because they are not obvious:
 
 - **The order of the options is the order of a variant's key.** `parts.black.gold` is contents,
+
   then cloth, then foil, because that is the order they are declared in. A cart line, a purchase
   and a print order all carry that key, so **reordering an offer's options changes them all** —
   the admin reorders _values_ freely and _options_ deliberately.
+
 - **A value's slug is its identity; its label is what a person reads.** Rename the label as often
+
   as you like; the slug is what was sold.
+
 - **A variant's sku and lookup key are derived once** from the offer's `sku` and `key`, which is
+
   why a sku may be renamed after it has sold without losing anything.
 
 The grammar lives in `supabase/functions/_shared/variants.ts` — plain JavaScript on nothing at all — so the **checkout function applies exactly the rule the build applied** when it wrote the catalog. Two implementations of "which combinations does this offer sell" is two answers the first time one of them is edited; the same arrangement as `ledger-rules.js` and the printers. `printVariant`, which print has used since before the store had options, is now a reading of that one rule in a book's words rather than a second copy of it. The print compatibility comparison runs when a site has published books set up for print; a generic site with printing switched off reports that comparison as skipped.
@@ -302,7 +312,7 @@ an order; as a supplier it needs none.
 ## What is left, and why `available` is never stored
 
 Three stored numbers per shape — `stocked`, `reserved`, `incoming` — in `public.inventory`, and
-`available` is `inventory_available()`, derived every time. A stored total and the rows it is a
+`available` is `inventory_available()`, derived every time. Shoppers may read these rows, since a card says "sold out" without a round trip through a function, and every write is the service role's; the grants for both are declared with the table. A stored total and the rows it is a
 total of are two sources that disagree the first time anything goes wrong, and the one that is
 wrong is the one every page reads. (Shopify stores eight names and cannot let even its own API
 write `committed`, which is what owning a derived number costs.)

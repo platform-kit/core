@@ -3209,6 +3209,7 @@ CREATE POLICY "space_pins_select" ON "public"."space_pins" FOR SELECT TO "authen
 GRANT ALL ON FUNCTION "public"."space_pinned"("uuid") TO "authenticated", "service_role";
 GRANT ALL ON FUNCTION "public"."space_pin"("uuid", boolean, "text") TO "authenticated", "service_role";
 GRANT SELECT ON TABLE "public"."space_pins" TO "authenticated";
+GRANT ALL ON TABLE "public"."space_pins" TO "service_role";
 
 -- ---------------------------------------------------------------------------------------------
 -- SENDING LATER: putting one down, taking it back, and the minute it goes.
@@ -3291,6 +3292,7 @@ CREATE POLICY "space_scheduled_drop" ON "public"."space_scheduled" FOR DELETE TO
   USING (("author_id" = "auth"."uid"()));
 
 GRANT SELECT, DELETE ON TABLE "public"."space_scheduled" TO "authenticated";
+GRANT ALL ON TABLE "public"."space_scheduled" TO "service_role";
 GRANT ALL ON FUNCTION "public"."space_schedule"("uuid", "text", timestamp with time zone, "uuid") TO "authenticated", "service_role";
 GRANT ALL ON FUNCTION "public"."space_scheduled_mine"() TO "authenticated", "service_role";
 REVOKE ALL ON FUNCTION "public"."run_space_scheduled"() FROM PUBLIC;

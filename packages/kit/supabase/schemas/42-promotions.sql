@@ -48,6 +48,12 @@ ALTER TABLE "public"."promotion_uses" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "promotion_usage_read" ON "public"."promotion_usage" FOR SELECT USING (true);
 CREATE POLICY "promotion_uses_staff" ON "public"."promotion_uses" FOR SELECT TO "authenticated" USING ("public"."is_admin"());
 
+-- GRANTS ARE DECLARED, NOT INHERITED: a new Supabase project grants nothing on a new table, so what a
+-- role may do is said here. Shoppers read what is left; staff read the uses; every write is the service role's.
+GRANT SELECT ON TABLE "public"."promotion_usage" TO "anon", "authenticated";
+GRANT SELECT ON TABLE "public"."promotion_uses" TO "authenticated";
+GRANT ALL ON TABLE "public"."promotion_usage", "public"."promotion_uses" TO "service_role";
+
 -- IS THERE BUDGET LEFT, AND TAKE IT — one statement, so two checkouts finishing together cannot
 -- both be the last one under the limit. Returns true where it was allowed.
 CREATE OR REPLACE FUNCTION "public"."promotion_take"("p_promotion" "text", "p_kind" "text", "p_limit" integer, "p_amount" integer DEFAULT 0, "p_about" "text" DEFAULT NULL, "p_user" "uuid" DEFAULT NULL)

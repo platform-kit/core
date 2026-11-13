@@ -73,6 +73,13 @@ ALTER TABLE "public"."inventory_movements" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "inventory_read" ON "public"."inventory" FOR SELECT USING (true);
 CREATE POLICY "inventory_movements_staff" ON "public"."inventory_movements" FOR SELECT TO "authenticated" USING ("public"."is_admin"());
 
+-- GRANTS ARE DECLARED, NOT INHERITED: a new Supabase project grants nothing on a new table, so what a
+-- role may do is said here. The policies above filter rows; these decide whether the role may touch the
+-- table at all. Shoppers read; every write is the service role's.
+GRANT SELECT ON TABLE "public"."inventory" TO "anon", "authenticated";
+GRANT SELECT ON TABLE "public"."inventory_movements" TO "authenticated";
+GRANT ALL ON TABLE "public"."inventory", "public"."inventory_movements" TO "service_role";
+
 -- available is DERIVED, here, once, so that nothing else is tempted to store it
 CREATE OR REPLACE FUNCTION "public"."inventory_available"("p_sku" "text", "p_variant" "text" DEFAULT ''::"text") RETURNS integer
     LANGUAGE "sql" STABLE

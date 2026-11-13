@@ -101,6 +101,17 @@ A site declares its own tables in `db/schemas/*.sql` (config `data.schemas`), lo
 
 > **`41-inventory.sql`** holds what is left: three stored numbers per shape, `available` derived and never stored, a movement per change with its reason, and `inventory_sweep()` on cron — the floor under a checkout that died without its payment provider reporting the outcome.
 
+## Who may touch a table
+
+**A table's grants are declared with it, never inherited.** Supabase used to grant every new table in
+`public` to `anon`, `authenticated` and `service_role`, and a project can now be made without that (the
+default for new projects, and from 2026-10-30 for every project). A table that leaned on it answers
+`42501 permission denied`: for the service role, every function and deploy step that reaches it; for a
+reader, every policy written for them, because a policy only filters the rows of a table the role may
+already touch. So each table's file says it: `GRANT ALL ON TABLE … TO "service_role"` always, and a
+`GRANT SELECT` (or more) to `anon` or `authenticated` wherever a policy is written for them. A table that
+no policy names them for stays closed to them. `declarations.test.mts` fails a table that does not.
+
 ## Who may call a function
 
 **Revoking PUBLIC alone is not a fence.** Postgres grants `EXECUTE` to `PUBLIC` on every new
@@ -163,12 +174,15 @@ The spaces and chat modules' `rpc()` reads the map itself. It takes only a funct
 Every database is brought to the declaration by a **plan** — `platformkit migrate` (`packages/kit/build/plan.mts`) — in three parts, applied in order, each in its own transaction:
 
 1. **Renames.** A table or column carries its former names on its own line:
+
    ```sql
    CREATE TABLE IF NOT EXISTS "public"."memos" ( -- renamed from: notes, scribbles
        "id" bigint …,
        "body" "text", -- renamed from: text
    ```
+
    The plan asks the database which names exist: the current alone → nothing; a former one alone → `ALTER … RENAME` for the object and for every index, constraint and sequence prefixed with the old name; more than one → refused, naming them. So a fresh database, one renamed already and one two names behind all end identical, and nobody writes a migration. Former names are kept as long as any database might still carry them. A change no declaration expresses — a value recomputed, a column split — is a one-off script, never a general mechanism.
+
 2. **The diff**, from the database to the declaration, by **pg-delta** (bundled in the Supabase CLI) over `public`, `storage` and `auth` — the managed schemas contributing their policies and triggers alone. The declaration becomes a **shadow** through the CLI: the assembled files, in order, written as the one file of a throwaway project under `node_modules/.cache/platformkit/shadow` (gitignored, fresh each run), then either the CLI's own Docker shadow (`db diff --to migrations`, a developer's machine) or — where there is no Docker, the deploy box — a **shadow database**: `PLATFORMKIT_SHADOW_DB_URL`, a Postgres kept for nothing else — a Supabase project (its user is `postgres`, which the diff needs), or a plain one whose user is `postgres` or can create that role (a managed Postgres whose cluster already owns `postgres`, Render's included, cannot), which the plan gives the platform's shape on first use (the roles the declaration grants to, `auth` and `storage` stubs with the one table and the functions the policies call, pgcrypto under `extensions`, the realtime publication, Supabase's default privileges) and marks as its own, or a Supabase project — brought to the declaration by the plan's own reset (`public` emptied object by object, our policies on `storage.objects` dropped, the declaration applied as `postgres`, since production's objects are owned by `postgres` and the diff compares owners; a plain shadow's user is named `postgres` or may create roles so the plan can become it) and diffed by url. The reset refuses any database holding users, applied migrations, or tables in `public` it did not make. Statements on a schema itself — its comment, its grants — are the platform's and left out. Same engine, same output either way. A shadow url that is the target's, or the local stack's when the target is not it, is refused: a reset empties what it is pointed at.
 3. **The data script**, verbatim.
 
