@@ -32,6 +32,7 @@ import assert from 'node:assert/strict'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import type { Switches } from './modules/manifest.mjs'
+import { hasSiteConfig } from './site-file.mjs'
 
 let n = 0, bad = 0
 const t = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void }) => { n++; try { fn() } catch (e: any) { bad++; console.log('  FAIL ' + name + '\n    ' + String(e.message || e).split('\n').slice(0, 4).join('\n    ')) } }
@@ -41,7 +42,7 @@ console.log('\nA SITE’S OWN MODULE\n')
 /* the fixture lives beside the kit, in the workspace — found from the kit rather than from cwd,
    since this runs in whatever site's root the suite was started in */
 const ROOT = path.resolve(new URL('.', import.meta.url).pathname, '../../../sites/demo')
-if (!existsSync(path.join(ROOT, 'platformkit.config.js'))) {
+if (!hasSiteConfig(ROOT)) {
   console.log('  ⚠ SKIPPED — sites/demo is not in this checkout\n    A SITE’S OWN MODULE is NOT covered by this run.\n')
   process.exit(0)
 }

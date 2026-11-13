@@ -28,6 +28,7 @@ sources:
     packages/kit/build/runtime-paths.test.mts,
     packages/kit/theme/src/pages/AdminPage.vue,
     packages/kit/build/modules/backend.mts,
+    packages/kit/build/modules/folders.mts,
     packages/kit/build/module-drop.mts,
     packages/kit/build/modules-off-db.test.mts,
   ]
@@ -265,6 +266,20 @@ very property [switching one module off breaks no other](/content/docs/building-
 there to prove. And there is no defensible way to resolve it automatically, because
 last-one-loaded would make the answer depend on the order a site's config happened to register
 things in. Same rule as a landing section registered under a name the theme already has.
+
+## A module is a folder
+
+A module can live in a folder of its own, holding everything it is: `packages/kit/modules/<key>/` for the kit's, `src/modules/<key>/` for a site's. A folder is a module when it holds a `module.ts` manifest, and the folder is named for the manifest's key. What the folder holds for the backend is the module's, so its manifest names none of it:
+
+| In the folder                     | Assembled as                                                                                                     |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `schema/*.sql`                    | `schemas/<file>` (a site module's under `schemas/site/`)                                                         |
+| `data.sql`, `seed.sql`            | the module's rows and seed, after the others                                                                     |
+| `functions/<name>/`               | `functions/<name>/`                                                                                              |
+| `functions/_shared/`              | `functions/_shared/<key>/`, for that module's functions alone                                                    |
+| `integrations/<other>/schema.sql` | the glue file named for both modules in alphabetical order (`courses+spaces.sql`), loaded only while both are on |
+
+The kit's module list in `build/modules/kit.mts` keeps every module's place: a module that has moved into its folder is named there by its key alone, and the order the list gives (the cron block, the deployment matrix) is unchanged. A folder the list does not name, or a name with no folder, is refused. A site's module folders join the site's module set the same way. The functions never read the folders: the assembler gives the content pipe the module list already resolved, as data. Modules move into their folders one at a time; until a module has moved, it stays in the layout described above. `build/assembled-identical.test.mts` holds each move to the backend a site received before it, byte for byte.
 
 ## Switching a module off removes its backend
 

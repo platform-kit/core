@@ -60,6 +60,12 @@ export async function moduleSet(site: any) {
     const mod = await import(pathToFileURL(path.resolve(site.root, m)).href)
     for (const one of [].concat(mod.default || mod.MODULES || [])) extra.push({ manifest: one, where: `the site (${m})` })
   }
+  /* and a site's module folders, src/modules/<key>/, each read exactly as a kit module's folder is (openspec: modules-as-packages) */
+  {
+    const { folderManifests } = await import('./modules/folders.mjs')
+    const root = path.join((site && site.root) || process.cwd(), 'src', 'modules')
+    for (const one of await folderManifests(root)) extra.push({ manifest: one, where: `the site (src/modules/${one.key}/)` })
+  }
   if (theme.modules != null && !Array.isArray(theme.modules)) throw new Error(`theme ${theme.package}: modules must be a list of manifest file paths`)
   for (const m of theme.modules || []) {
     if (typeof m !== 'string' || !m.trim()) throw new Error(`theme ${theme.package}: each module entry must be a manifest file path`)

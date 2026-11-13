@@ -27,6 +27,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { isOn, type Modules, type Switches } from './manifest.mjs'
+import { kitFolderBackend } from './folders.mjs'
+/* the module folders are read when the kit's list is: imported here so the backend never sees a folder module half-loaded */
+import './kit.mjs'
 
 export const KIT_SUPABASE = fileURLToPath(new URL('../../supabase/', import.meta.url))
 
@@ -53,16 +56,31 @@ const sqlIn = (dir: string): string[] => fs.existsSync(dir) ? fs.readdirSync(dir
 export const glueOwners = (name: string): string[] | null => { const parts = name.replace(/\.sql$/, '').split('+'); return parts.length > 1 ? parts : null }
 
 /* every file of the kit's backend, as names */
-export interface BackendFiles { schema: string[], glue: string[], rows: string[], seed: string[], functions: string[] }
+/* every file of the kit's backend, as names, with where each comes from: the old layout under supabase/, or a
+   module's own folder (openspec: modules-as-packages). A name in both is refused: one file, one place. */
+export type BackendKind = 'schema' | 'glue' | 'rows' | 'seed' | 'functions'
+export interface BackendFiles { schema: string[], glue: string[], rows: string[], seed: string[], functions: string[], sources: Record<BackendKind, Record<string, string>>, shared: Record<string, string> }
 export function kitBackend(kit = KIT_SUPABASE): BackendFiles {
   const fnDir = path.join(kit, 'functions')
-  return {
+  const old: Record<BackendKind, string[]> = {
     schema: sqlIn(path.join(kit, 'schemas')),
     glue: sqlIn(path.join(kit, 'schemas', 'glue')),
     rows: sqlIn(path.join(kit, 'data')),
     seed: sqlIn(path.join(kit, 'seed')),
     functions: fs.existsSync(fnDir) ? fs.readdirSync(fnDir, { withFileTypes: true }).filter((e) => e.isDirectory() && !e.name.startsWith('_')).map((e) => e.name).sort() : [],
   }
+  const at: Record<BackendKind, string> = { schema: path.join(kit, 'schemas'), glue: path.join(kit, 'schemas', 'glue'), rows: path.join(kit, 'data'), seed: path.join(kit, 'seed'), functions: fnDir }
+  const folders = kitFolderBackend()
+  const sources = { schema: {}, glue: {}, rows: {}, seed: {}, functions: {} } as Record<BackendKind, Record<string, string>>
+  for (const kind of Object.keys(old) as BackendKind[]) {
+    for (const n of old[kind]) sources[kind][n] = path.join(at[kind], n)
+    for (const [n, src] of Object.entries(folders[kind])) {
+      if (sources[kind][n]) throw new Error(`${kind} ${n} is in both ${sources[kind][n]} and ${src}: a moved file leaves the old layout`)
+      sources[kind][n] = src
+    }
+  }
+  const names = (k: BackendKind) => Object.keys(sources[k]).sort()
+  return { schema: names('schema'), glue: names('glue'), rows: names('rows'), seed: names('seed'), functions: names('functions'), sources, shared: folders.sharedByModule }
 }
 
 /*
@@ -125,6 +143,8 @@ export function backendFor(modules: Modules, switches: Switches = {}, kit = KIT_
     rows: own.files.rows.filter((f) => all(glueOwners(f) || [f.replace(/\.sql$/, '')])),
     seed: own.files.seed.filter((f) => all(glueOwners(f) || [f.replace(/\.sql$/, '')])),
     functions: own.files.functions.filter((f) => all(own.functions.get(f))),
+    sources: own.files.sources,
+    shared: Object.fromEntries(Object.entries(own.files.shared).filter(([k]) => on(k))),
   }
 }
 

@@ -16,8 +16,11 @@
  * holds the tree to: a schema file or a function nobody owns is refused by name.
  */
 import type { ModuleDeclaration } from './manifest.mjs'
+import { folderManifests, KIT_MODULES_DIR } from './folders.mjs'
 
-export const MODULES: ModuleDeclaration[] = [
+/* the modules in their order. A module moved into packages/kit/modules/<key>/ is named here by its key alone and read from its
+   folder, keeping its place, since the order is what the assembled cron block and the deployment matrix follow */
+const LISTED: Array<ModuleDeclaration | string> = [
   {
     key: 'articles', what: 'the magazine and its lane on the hub',
     static: true, git: true, cloud: true,
@@ -364,3 +367,13 @@ export const MODULES: ModuleDeclaration[] = [
     owns: {},
   },
 ]
+
+/* every module of the kit: the listed ones as written, and each named by key read from its own folder (openspec: modules-as-packages) */
+const FOLDERS = await folderManifests(KIT_MODULES_DIR)
+for (const f of FOLDERS) if (!LISTED.includes(f.key)) throw new Error(`packages/kit/modules/${f.key}/ is a module folder the list in build/modules/kit.mts does not name: add '${f.key}' where it belongs in the order`)
+export const MODULES: ModuleDeclaration[] = LISTED.map((e) => {
+  if (typeof e !== 'string') return e
+  const f = FOLDERS.find((m) => m.key === e)
+  if (!f) throw new Error(`build/modules/kit.mts names '${e}', which has no folder under packages/kit/modules/`)
+  return f
+})

@@ -39,7 +39,9 @@ import { createHash } from 'node:crypto'
 import { stripTypeScriptTypes } from 'node:module'
 import { loadSite, deploymentShape, pipeSiteConfigSource } from './site.mjs'
 import { moduleSet } from './steps.mjs'
-import { backendFor } from './modules/backend.mjs'
+import { backendFor, kitBackend } from './modules/backend.mjs'
+import { MODULES as KIT_MODULES } from './modules/kit.mjs'
+import { MODULE_DIRS, KIT_MODULES_DIR, folderBackend } from './modules/folders.mjs'
 import { assertNoManualCron, cronSql } from './cron.mjs'
 import { accessOf, accessSql, communityAccessOf } from './network-access.mjs'
 import { closure, PIPE_ROOTS, PIPE_SKIP, sourceOf , jsImports } from './pipe-closure.mjs'
@@ -106,12 +108,15 @@ const put = (to: string, from: string) => { if (plan.has(to)) throw new Error(`a
 /* what of the kit's data layer is this site's: core, the modules it has on, the glue between them */
 const modules = await moduleSet(c)
 const backend = backendFor(modules, c.modules || {}, KIT)
+/* the site's own module folders that are on (src/modules/<key>/), each the site's as db/ is: its schema with the
+   site's schema, its functions with the site's functions, its rows and seed after the site's (openspec: modules-as-packages) */
+const siteFolders = [...MODULE_DIRS].filter(([k, d]) => !d.startsWith(KIT_MODULES_DIR) && d.startsWith(path.resolve(ROOT) + path.sep) && backend.on(k)).map(([k, d]) => ({ key: k, ...folderBackend(d, k) }))
 /* the declaration: the kit's schema files by name, the glue under glue/, the site's under site/ */
-const kitSchemas = backend.schema.map((f) => path.join(KIT, 'schemas', f))
-const kitGlue = backend.glue.map((f) => path.join(KIT, 'schemas', 'glue', f))
-const siteSchemas = walk(path.resolve(ROOT, D.schemas)).filter((f: string) => f.endsWith('.sql')).sort()
-for (const f of kitSchemas) put('schemas/' + path.basename(f), f)
-for (const f of kitGlue) put('schemas/glue/' + path.basename(f), f)
+const kitSchemas = backend.schema.map((f) => backend.sources.schema[f])
+const kitGlue = backend.glue.map((f) => backend.sources.glue[f])
+const siteSchemas = [...walk(path.resolve(ROOT, D.schemas)).filter((f: string) => f.endsWith('.sql')).sort(), ...siteFolders.flatMap((m) => [...Object.values(m.schema), ...Object.values(m.glue)])]
+backend.schema.forEach((f, i) => put('schemas/' + f, kitSchemas[i]))
+backend.glue.forEach((f, i) => put('schemas/glue/' + f, kitGlue[i]))
 for (const f of siteSchemas) put('schemas/site/' + path.basename(f), f)
 /*
  * A SITE'S SCHEMA REDEFINES NO KIT FUNCTION. The site's files load after the kit's, so a function of the same name in
@@ -123,7 +128,7 @@ for (const f of siteSchemas) put('schemas/site/' + path.basename(f), f)
   const FN = /create\s+(?:or\s+replace\s+)?function\s+(?:"?public"?\.)?"?([a-z_][a-z0-9_]*)"?\s*\(/gi
   const namesIn = (files: string[]) => { const m = new Map(); for (const f of files) for (const x of fs.readFileSync(f, 'utf8').matchAll(FN)) m.set(x[1].toLowerCase(), f); return m }
   /* every function the kit declares, a module's that is off among them: switched on, it would be replaced */
-  const kitFns = namesIn(walk(path.join(KIT, 'schemas')).filter((f: string) => f.endsWith('.sql')))
+  const kitFns = namesIn([...new Set([...walk(path.join(KIT, 'schemas')).filter((f: string) => f.endsWith('.sql')), ...Object.values(kitBackend(KIT).sources.schema), ...Object.values(kitBackend(KIT).sources.glue)])])
   const clash = [...namesIn(siteSchemas)].filter(([n]) => kitFns.has(n))
   if (clash.length) {
     console.error('✖ the site\'s schema redefines functions the kit already has — the site\'s file would replace the kit\'s without a word:\n  ' + clash.map(([n, f]) => `public.${n} in ${rel(ROOT, f)} (the kit's is in ${path.basename(kitFns.get(n))})`).join('\n  ') + '\n  Remove the site\'s copy, or give the site\'s function a name of its own.')
@@ -132,9 +137,9 @@ for (const f of siteSchemas) put('schemas/site/' + path.basename(f), f)
 }
 /* the rows: the kit's data script and the rows of each module that is on, then the site's */
 const kitRows = [fs.readFileSync(path.join(KIT, 'data.sql'), 'utf8').trimEnd(),
-  ...backend.rows.map((f) => `-- the ${f.replace(/\.sql$/, '')} rows (packages/kit/supabase/data/${f})\n` + fs.readFileSync(path.join(KIT, 'data', f), 'utf8').trimEnd())].join('\n\n') + '\n'
+  ...backend.rows.map((f) => `-- the ${f.replace(/\.sql$/, '')} rows\n` + fs.readFileSync(backend.sources.rows[f], 'utf8').trimEnd())].join('\n\n') + '\n'
 const siteRowsFile = path.resolve(ROOT, D.rows)
-const siteRows = fs.existsSync(siteRowsFile) ? fs.readFileSync(siteRowsFile, 'utf8') : ''
+const siteRows = [fs.existsSync(siteRowsFile) ? fs.readFileSync(siteRowsFile, 'utf8').trimEnd() : '', ...siteFolders.flatMap((m) => Object.entries(m.rows).map(([n, src]) => `-- the ${n.replace(/\.sql$/, '')} rows\n` + fs.readFileSync(src, 'utf8').trimEnd()))].filter(Boolean).join('\n\n')
 assertNoManualCron(kitRows, 'packages/kit/supabase/data.sql')
 assertNoManualCron(siteRows, D.rows)
 const rows = kitRows.trimEnd() + (siteRows.trim() ? '\n\n-- the site\'s rows (' + D.rows + ')\n' + siteRows.trimEnd() : '')
@@ -155,8 +160,19 @@ const kitFunctions = new Set(['_shared', ...backend.functions])
 /* a packed kit also holds the JavaScript compile.mjs emits beside a module Node reads: Deno reads the source, so the emitted copy stays behind */
 const emitted = (f: string) => /(\.d\.m?ts|\.m?js)$/.test(f) && fs.existsSync(f.replace(/(\.d)?\.(m?)[jt]s$/, '.$2ts')) && f !== f.replace(/(\.d)?\.(m?)[jt]s$/, '.$2ts')
 for (const f of walk(path.join(KIT, 'functions'))) { const r = rel(path.join(KIT, 'functions'), f); if (kitFunctions.has(r.split('/')[0]) && !emitted(f)) put('functions/' + r, f) }
+/* a module folder's functions under their own names, and its shared code under _shared/<module>/ (openspec: modules-as-packages) */
+for (const name of backend.functions) {
+  const src = backend.sources.functions[name]
+  if (src.startsWith(path.join(KIT, 'functions') + path.sep)) continue
+  for (const f of walk(src)) if (!emitted(f)) put('functions/' + name + '/' + rel(src, f), f)
+}
+for (const [key, src] of Object.entries(backend.shared)) for (const f of walk(src)) if (!emitted(f)) put('functions/_shared/' + key + '/' + rel(src, f), f)
 const siteFn = path.resolve(ROOT, D.functions)
 for (const f of walk(siteFn)) { const r = rel(siteFn, f); if (path.basename(r) === '.gitkeep') continue; put('functions/' + r, f) }
+for (const m of siteFolders) {
+  for (const [name, src] of Object.entries(m.functions)) for (const f of walk(src)) put('functions/' + name + '/' + rel(src, f), f)
+  if (m.shared) for (const f of walk(m.shared)) put('functions/_shared/' + m.key + '/' + rel(m.shared, f), f)
+}
 plan.set('functions/_shared/payment-provider.d.ts', {
   from: 'the published server-side payment provider contract',
   content: Buffer.from(fs.readFileSync(path.join(KIT, '..', 'src', 'payment-provider.d.ts'))),
@@ -228,6 +244,13 @@ for (const [r, abs] of closure(KIT_PKG, PIPE_ROOTS, PIPE_SKIP)) {
   const target = 'functions/_shared/pipe/' + r
   /* a module the kit keeps as TypeScript is copied as the JavaScript its importers name */
   plan.set(target, { from: abs, content: /\.m?ts$/.test(abs) ? Buffer.from(jsImports(stripTypeScriptTypes(fs.readFileSync(abs, 'utf8'), { mode: 'strip' }))) : fs.readFileSync(abs) })
+}
+/* THE MODULE LIST, RESOLVED. The kit's list reads module folders from disk, which a function cannot: the pipe gets the
+   list as data, each manifest with its keys in one order, so a module moving into its folder changes nothing here
+   (openspec: modules-as-packages) */
+if (plan.has('functions/_shared/pipe/build/modules/kit.mjs')) {
+  const sorted = (v: any): any => Array.isArray(v) ? v.map(sorted) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, sorted(v[k])])) : v
+  plan.set('functions/_shared/pipe/build/modules/kit.mjs', { from: 'build/modules/kit.mjs, resolved', content: Buffer.from('/* the kit\'s modules, resolved by the assembler from build/modules/kit.mts and the module folders */\nexport const MODULES = ' + JSON.stringify(sorted(KIT_MODULES), null, 1) + '\n') })
 }
 
 /* THE PRINT FUNCTION'S OWN. print-render sets a book where there is no machine, and the three
@@ -397,9 +420,9 @@ for (const [target, entry] of plan) {
 
 /* the seed: the kit's shape, the site's rows */
 const kitSeed = [fs.readFileSync(path.join(KIT, 'seed.sql'), 'utf8').trimEnd(),
-  ...backend.seed.map((f) => `-- the ${f.replace(/\.sql$/, '')} seed (packages/kit/supabase/seed/${f})\n` + fs.readFileSync(path.join(KIT, 'seed', f), 'utf8').trimEnd())].join('\n\n')
+  ...backend.seed.map((f) => `-- the ${f.replace(/\.sql$/, '')} seed\n` + fs.readFileSync(backend.sources.seed[f], 'utf8').trimEnd())].join('\n\n')
 const siteSeedFile = path.resolve(ROOT, D.seed)
-const siteSeed = fs.existsSync(siteSeedFile) ? fs.readFileSync(siteSeedFile, 'utf8') : ''
+const siteSeed = [fs.existsSync(siteSeedFile) ? fs.readFileSync(siteSeedFile, 'utf8').trimEnd() : '', ...siteFolders.flatMap((m) => Object.entries(m.seed).map(([n, src]) => `-- the ${n.replace(/\.sql$/, '')} seed\n` + fs.readFileSync(src, 'utf8').trimEnd()))].filter(Boolean).join('\n\n')
 plan.set('seed.sql', { from: 'the kit\'s seed.sql + ' + D.seed, content: Buffer.from(kitSeed.trimEnd() + '\n\n' + siteSeed.trimEnd() + '\n') })
 
 /* a config.toml for a site that has none: the kit's template with the site's id, name and port base (data.ports, 54320 by default);
