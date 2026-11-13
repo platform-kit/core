@@ -14,7 +14,7 @@ With the `courses` module on, a site SHALL be able to publish courses, each with
 - **WHEN** a lesson points at a book chapter and the chapter is renamed
 - **THEN** the lesson still opens that chapter
 
-Verified by: `build/courses.test.mts`
+Verified by: `packages/kit/modules/courses/tests/courses.test.mts`
 
 ### Requirement: Getting into a course creates an enrollment
 
@@ -25,7 +25,7 @@ A course SHALL be reachable by purchase, by a membership tier that includes it, 
 - **WHEN** a buyer finishes three lessons, is refunded, then buys again
 - **THEN** the lessons close after the refund, and after the second purchase the same enrollment reopens with three lessons complete
 
-Verified by: `build/courses-db.test.mts`
+Verified by: `packages/kit/modules/courses/tests/courses-db.test.mts`
 
 ### Requirement: The server decides which lessons are open
 
@@ -36,7 +36,7 @@ A course SHALL release its lessons all at once, one lesson or section every N da
 - **WHEN** a reader enrolled yesterday requests a lesson that opens in a week
 - **THEN** the answer says when it opens, and none of its text or media is sent
 
-Verified by: `build/courses-db.test.mts`
+Verified by: `packages/kit/modules/courses/tests/courses-db.test.mts`
 
 ### Requirement: Lessons and courses are completed and certified
 
@@ -47,7 +47,7 @@ A lesson SHALL complete when the reader marks it done, passes its quiz, or finis
 - **WHEN** a reader completes the last required lesson
 - **THEN** the enrollment is complete, the achievement is awarded, and a certificate answers at its public address
 
-Verified by: `build/courses-db.test.mts` and `build/courses.test.mts` in a browser
+Verified by: `packages/kit/modules/courses/tests/courses-db.test.mts` and `packages/kit/modules/courses/tests/courses.test.mts` in a browser
 
 ### Requirement: Readers and staff see where everyone is
 
@@ -83,14 +83,14 @@ Administrators SHALL see each course's enrollments, each person's progress, comp
 - **WHEN** a drip course opens a lesson for somebody enrolled before it opened
 - **THEN** one email is owed for it, the next lesson waits until the following day, and no lesson is owed twice
 
-Verified by: `build/courses-db.test.mts`
+Verified by: `packages/kit/modules/courses/tests/courses-db.test.mts`
 
 #### Scenario: the library for a reader part way through
 
 - **WHEN** a signed-in reader who has started one course and finished another opens `/courses`
 - **THEN** the course in progress leads, naming its next lesson, the finished course is listed with its certificate, and the courses they are not in follow with what getting in takes
 
-Verified by: `build/courses-db.test.mts` (what `courses_list` answers) and the library rendered at 1280 and 390 px, light and dark
+Verified by: `packages/kit/modules/courses/tests/courses-db.test.mts` (what `courses_list` answers) and the library rendered at 1280 and 390 px, light and dark
 
 #### Scenario: complete and continue
 
@@ -104,7 +104,7 @@ Verified by: the player driven in a browser on the demo
 - **WHEN** somebody opens `/app/courses`, including on a site whose own place claims `/app`
 - **THEN** they arrive at `/courses`
 
-Verified by: `build/courses.test.mts`
+Verified by: `packages/kit/modules/courses/tests/courses.test.mts`
 
 ### Requirement: Courses live on their own pages and in the community
 
@@ -115,14 +115,14 @@ Courses SHALL have pages of their own at `/courses`. Where the spaces and networ
 - **WHEN** a site with the community on opens its community
 - **THEN** Courses is a row of its navigation, `<community>/courses/<slug>` draws the course in the community's frame with Courses selected, and `/courses/<slug>` still draws it on a page of its own
 
-Verified by: `build/courses.test.mts` (the place and its claim) and the demo rendered at 1280 and 390 px
+Verified by: `packages/kit/modules/courses/tests/courses.test.mts` (the place and its claim) and the demo rendered at 1280 and 390 px
 
 #### Scenario: a community with no network
 
 - **WHEN** a site has courses on and the network module off
 - **THEN** courses have their own pages only, and the community's navigation has no Courses row
 
-Verified by: `build/courses.test.mts`
+Verified by: `packages/kit/modules/courses/tests/courses.test.mts`
 
 ### Requirement: A lesson may be of a kind the site registers
 
@@ -133,14 +133,14 @@ A course file SHALL be able to name, as a lesson's `kind`, any kind the site reg
 - **WHEN** the demo registers its self-rating kind and a demo course names a lesson of it
 - **THEN** the build accepts the course, the player shows the self-rating where the lesson's words would be, finishing it marks the lesson complete, and the next lesson opens as after any other
 
-Verified by: `build/courses.test.mts` and the demo course in the player
+Verified by: `packages/kit/modules/courses/tests/courses.test.mts` and the demo course in the player
 
 #### Scenario: a kind nobody registered
 
 - **WHEN** a course names a kind that is neither the kit's nor registered
 - **THEN** the build refuses the course, naming the lesson and the kind
 
-Verified by: `build/courses.test.mts`
+Verified by: `packages/kit/modules/courses/tests/courses.test.mts`
 
 ### Requirement: A section can show a site kind's measure
 

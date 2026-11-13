@@ -29,6 +29,13 @@ const on = (m: string) => c.modules[m] !== false
 /* the kit's checks, each behind the module it belongs to */
 /* the site's supabase/ tree is generated, never committed: assembled fresh, then checked for what an
    assembly cannot fix (a hand-added file, a migrations folder, an unresolved import, the seed line) */
+/* a module folder's tests, named from build/ as the list names the kit's */
+function moduleTests(): string[][] {
+  const root = fileURLToPath(new URL('../modules/', import.meta.url))
+  if (!fs.existsSync(root)) return []
+  return fs.readdirSync(root, { withFileTypes: true }).filter((d) => d.isDirectory() && on(d.name) && fs.existsSync(path.join(root, d.name, 'tests')))
+    .flatMap((d) => fs.readdirSync(path.join(root, d.name, 'tests')).filter((f) => /\.test\.mts$/.test(f)).sort().map((f) => [`../modules/${d.name}/tests/${f}`]))
+}
 const KIT_TESTS = [
   ['assemble.mjs'],
   ['assemble.mjs', '--check'],
@@ -64,9 +71,10 @@ const KIT_TESTS = [
   ['one-package.test.mts'],
   ['check.test.mts'],         /* platformkit check: every problem at once, one list of needs, offline by default */
   ['generate.test.mts'],      /* platformkit generate: every kind at both levels into copies, held to the real checks; never overwrites */
-  on('courses') && ['courses.test.mts'],       /* courses without a database: the file grammar, the builder's round trip, lesson links, the certificate PDF */
-  on('courses') && ['courses-db.test.mts'],    /* and against the stack: who gets in, what opens when, completion, certificates, a refund and a return, the emails owed */
-  on('courses') && on('forms') && ['course-workbook-db.test.mts'],   /* a lesson's workbook form: answers required, private from administrators, shared with a coach and withdrawn; the list kept in order, a workbook revised */
+  /* every module folder's own tests (modules/<key>/tests/), while its module is on; a test that needs another module too
+     says so itself (openspec: modules-as-packages) */
+  ...moduleTests(),
+  /* and the ones still in the old layout */   /* a lesson's workbook form: answers required, private from administrators, shared with a coach and withdrawn; the list kept in order, a workbook revised */
   ['member-panels.test.mts'],   /* the member card's panels: the kit's three by module, a site's off, own panels and order, the theme's words, no site named */
   on('spaces') && ['member-panels-db.test.mts'],   /* the card's readings through may_see_member, refused as empty to anybody else, and the card and the admin agreeing on purchases */   /* PlatformKit is one package, platformkit: the retired names gone, the command and the theme packed, the command running from the packed copy */   /* a site's own adapter, registered through its own module and selected, with no change to the kit */
   on('store') && ['payment-provider-db.test.mts'],   /* provider references and event ids kept apart by provider, against the stack */
@@ -119,6 +127,7 @@ const KIT_TESTS = [
   ['manifests.test.mts'],   /* what a module declares about itself: a missing shape, a typo’d field, an exception with no reason and two manifests under one key are each refused rather than quietly meaning nothing */
   ['module-routes.test.mts'],   /* every address on every fixture site shows the page the recorded census says, in dev and as built (openspec: modules-as-packages) */
   ['module-slots.test.mts'],   /* modules meet through slots: a fill installed only while its module, the slot's owner and its `with` are on; one for a slot nobody declares refused (openspec: modules-as-packages) */
+  ['module-boundaries.test.mts'],   /* a module is reached only through its front doors: nothing in the kit or a fixture site imports past index.ts or build/index.mts (openspec: modules-as-packages) */
   ['site-module.test.mts'],   /* the extension model tried against a site that uses it: sites/demo registers a module the kit has never heard of, and it gets everything one of the kit's does — and loses all of it, and nothing of the kit's, when its switch says false. Skips loudly if the fixture is not in the checkout. */
   ['modules-off.test.mts'],   /* one module off at a time, every module: its own steps stop and its secrets stop being demanded, nothing else moves, every step is gated on a switch that exists, and a coupling that is real is NAMED rather than tolerated */                   /* the three shapes: every module declares what it does in each, and the code is derived to see whether it backs the claim */
   on('bots') && ['anthropic.test.mts'],    /* the second provider: the shape both ways, the order, and which failures are worth trying somebody else for */

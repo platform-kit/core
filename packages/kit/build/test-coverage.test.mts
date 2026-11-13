@@ -111,7 +111,11 @@ ok('no test but the helper\'s own reads the run\'s stack unverified', !unverifie
 
 /* ─── 3. every claim names a test that runs ─── */
 const runner = fs.readFileSync(path.join(HERE, 'test.mts'), 'utf8')
-const registered = new Set([...runner.matchAll(/\['([\w.-]+\.(?:test|integration)\.m[jt]s)'/g)].map((m) => m[1]).concat(['cloud-lane.test.mts', 'static-site.test.mts', 'e2e-runner.test.mts']))
+/* a module folder's tests are found by the runner itself (modules/<key>/tests/), so each is registered by being there */
+const MODULES_ROOT = path.join(HERE, '..', 'modules')
+const moduleTestFiles = fs.existsSync(MODULES_ROOT) ? fs.readdirSync(MODULES_ROOT).flatMap((m) => { const d = path.join(MODULES_ROOT, m, 'tests'); return fs.existsSync(d) ? fs.readdirSync(d).filter((f) => /\.test\.m[jt]s$/.test(f)).map((f) => path.join(d, f)) : [] }) : []
+const testExists = (name: string) => fs.existsSync(path.join(HERE, name)) || moduleTestFiles.some((f) => path.basename(f) === name)
+const registered = new Set([...runner.matchAll(/\['([\w.-]+\.(?:test|integration)\.m[jt]s)'/g)].map((m) => m[1]).concat(['cloud-lane.test.mts', 'static-site.test.mts', 'e2e-runner.test.mts'], moduleTestFiles.map((f) => path.basename(f))))
 const specFiles: any = []
 const walk = (d: any) => { if (!fs.existsSync(d)) return; for (const e of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, e.name); if (e.isDirectory() && e.name !== 'archive') walk(p); else if (e.name === 'spec.md') specFiles.push(p) } }
 walk(path.join(WORKSPACE, 'openspec'))
@@ -126,9 +130,9 @@ const KNOWN_GAPS: any = {
 const started = (f: string) => { const m = /openspec\/changes\/([^/]+)\//.exec(f.split(path.sep).join('/')); if (!m) return true; const t = path.join(WORKSPACE, 'openspec', 'changes', m[1], 'tasks.md'); return fs.existsSync(t) && /^- \[x\]/m.test(fs.readFileSync(t, 'utf8')) }
 for (const f of specFiles.filter(started)) {
   const text = fs.readFileSync(f, 'utf8')
-  for (const m of text.matchAll(/^Verified by:([^\n]*)$/gm)) for (const t of m[1].matchAll(/`(?:node )?(?:packages\/kit\/)?(?:build\/)?([\w.-]+\.(?:test|integration)\.m[jt]s)`/g)) {
+  for (const m of text.matchAll(/^Verified by:([^\n]*)$/gm)) for (const t of m[1].matchAll(/`(?:node )?(?:packages\/kit\/)?(?:build\/|modules\/[\w-]+\/tests\/)?([\w.-]+\.(?:test|integration)\.m[jt]s)`/g)) {
     const name = t[1]
-    if (!fs.existsSync(path.join(HERE, name))) claims.push(`${path.relative(WORKSPACE, f)}: ${name} does not exist`)
+    if (!testExists(name)) claims.push(`${path.relative(WORKSPACE, f)}: ${name} does not exist`)
     else if (!registered.has(name)) claims.push(`${path.relative(WORKSPACE, f)}: ${name} is not registered to run (test.mjs)`)
   }
 }

@@ -4,16 +4,16 @@
  * member card's Courses panel gated by the module, and the module's own declaration. The rules a reader meets — what is
  * open, who gets in, completion — are the database's, and courses-db.test.mjs holds them.
  */
-import { parseCourse, bodyParts, lessonHref, KINDS, quizAchievements, siteKinds, readCourses } from '../modules/courses/build/io.mjs'
-import models, { courseFile } from '../modules/courses/build/models.mjs'
+import { parseCourse, bodyParts, lessonHref, KINDS, quizAchievements, siteKinds, readCourses } from '../build/io.mjs'
+import models, { courseFile } from '../build/models.mjs'
 const [model] = models
-import { certificatePdf } from '../src/lib/certificate-pdf.js'
-import { fillsOf } from './modules/manifest.mjs'
-import { resolveModules } from './site.mjs'
-import { MODULES } from './modules/kit.mjs'
-import { coursesOf, communityOf, publicSite, courseKindsOf } from './site.mjs'
-import { forwardOf } from '../src/lib/community/places.js'
-import { libraryOf } from '../modules/courses/index.js'
+import { certificatePdf } from '../../../src/lib/certificate-pdf.js'
+import { fillsOf } from '../../../build/modules/manifest.mjs'
+import { resolveModules } from '../../../build/site.mjs'
+import { MODULES } from '../../../build/modules/kit.mjs'
+import { coursesOf, communityOf, publicSite, courseKindsOf } from '../../../build/site.mjs'
+import { forwardOf } from '../../../src/lib/community/places.js'
+import { libraryOf } from '../index.js'
 import fs from 'node:fs'
 
 let pass = 0, fail = 0
@@ -107,12 +107,12 @@ Cross out every word that does not change the meaning.
   const p = model.grammar.parse(file('stub', 'Are you sure?'))
   ok('the course builder carries a site kind to the file and back', JSON.stringify(parseCourse('s', model.grammar.serialise({ data: p.data, content: p.content }), { kinds })) === JSON.stringify(parseCourse('s', file('stub', 'Are you sure?'), { kinds })))
   /* the demo registers one: read from its config, its check imported from the site's own TypeScript */
-  const demo = new URL('../../../sites/demo', import.meta.url).pathname
+  const demo = new URL('../../../../../sites/demo', import.meta.url).pathname
   const own = await siteKinds(demo)
   ok('the demo\'s self-rating kind is read from its config, with its check', typeof (own['self-rating'] || {}).check === 'function' && own['self-rating'].check('How sure?') === null && !!own['self-rating'].check('Sure'))
   const courses = await readCourses(demo, { kinds: own })
   ok('…and the demo course using it is accepted', courses.every((x) => !x.problems.length) && courses.some((x) => x.lessons.some((l) => l.kind === 'self-rating')), courses.map((x) => x.problems).flat().join('; '))
-  ok('a root with no config registers nothing', JSON.stringify(await siteKinds(new URL('./fixtures', import.meta.url).pathname)) === '{}')
+  ok('a root with no config registers nothing', JSON.stringify(await siteKinds(new URL('../../../build/fixtures', import.meta.url).pathname)) === '{}')
   const options = await model.options['course-kinds']({ root: demo })
   ok('the builder offers the kit\'s kinds and then the site\'s, in its own word', options.map((o) => o.value).join() === 'text,chapter,article,form,session,self-rating' && options[5].label === 'Self-rating', JSON.stringify(options))
 }
@@ -159,7 +159,7 @@ ok('…owning its schema, its push, its function, its routes and its sweep', mod
   /* the app area once held the reader's courses: that address is the library, ahead of a place claiming /app */
   ok('/app/courses is the library', libraryOf('/app/courses') === '/courses' && libraryOf('/app/courses/writing-plainly') === '/courses/writing-plainly')
   ok('…and nothing else in the app area moves', libraryOf('/app/coursework') === null && libraryOf('/app') === null && libraryOf('/app/results') === null)
-  ok('…a rule the router asks before any place\'s claim', (() => { const r = fs.readFileSync(new URL('../src/lib/router.ts', import.meta.url), 'utf8'); return r.indexOf('appCourses(p)') > 0 && r.indexOf('appCourses(p)') < r.indexOf('forwardOf(p, CLAIMS') })())
+  ok('…a rule the router asks before any place\'s claim', (() => { const r = fs.readFileSync(new URL('../../../src/lib/router.ts', import.meta.url), 'utf8'); return r.indexOf('appCourses(p)') > 0 && r.indexOf('appCourses(p)') < r.indexOf('forwardOf(p, CLAIMS') })())
 }
 
 /* EVERY QUIZ PASSED EARNS AN ACHIEVEMENT (openspec: courses): declared from the course, one per scored form lesson */

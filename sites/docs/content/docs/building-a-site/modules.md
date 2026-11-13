@@ -33,6 +33,8 @@ sources:
     packages/kit/build/modules/in-place.mts,
     packages/kit/modules/registry.mts,
     packages/kit/build/module-slots.test.mts,
+    packages/kit/build/module-boundaries.test.mts,
+    packages/kit/build/modules/boundaries.mts,
     packages/kit/modules/courses/index.ts,
     packages/kit/modules/courses/build/index.mts,
     packages/kit/build/modules/core-pages.mts,
@@ -285,7 +287,7 @@ Which page an address shows is a table, not a list in the theme. Core's pages (`
 
 A module adds to another's screens without either importing the other. The one that offers declares a slot in its manifest (`slots`); the one that adds fills it (`fills`, keyed `<owner>:<slot>`). Core's slot is `core:admin-screen`, a screen in the admin ({ key, component }); spaces offers `spaces:member-card`, a panel on a member's card ({ key, component, words: { scope, group, mine, theirs } } naming where its title is worded), and `spaces:place`, a place in the community ({ key, word, icon, component, wide, shows, claims }). A fill is installed only while its module, the slot's owner and every module it names in `with` are on: courses' place in the community needs spaces and the network, its panel needs spaces, and its enrolment screen needs only courses. A fill naming a slot no module declares is refused when the manifests are read. Components a fill names are given to the browser by package (`platformkit/modules/<key>/...`) or from the site's root, never by a path of the build machine. `build/module-slots.test.mts` holds all of this.
 
-A module has two front doors: `index.ts`, what the browser may import of it, and `build/index.mts`, what the build and the functions may. Its screens, wording (`strings/<scope>.md`, beside the theme's defaults; one scope in two places is refused) and browser logic (`lib/`) are in its folder too, and its components join the theme's in one registry, so a site overrides a module's component by name exactly as it overrides the theme's.
+A module has two front doors: `index.ts`, what the browser may import of it, and `build/index.mts`, what the build and the functions may. Anything else in a module's folder is that module's own: `platformkit check` and `build/module-boundaries.test.mts` refuse an import from outside the folder that reaches past the doors (`build/modules/boundaries.mts`), naming it. A module's tests live in its `tests/` folder too, and the test runner finds them there and runs them while the module is on. Its screens, wording (`strings/<scope>.md`, beside the theme's defaults; one scope in two places is refused) and browser logic (`lib/`) are in its folder too, and its components join the theme's in one registry, so a site overrides a module's component by name exactly as it overrides the theme's.
 
 ## A module is a folder
 

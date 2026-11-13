@@ -8,9 +8,9 @@
  * It makes its own course (slug starting course-wb-) through the push's projection, and removes it and its rows after.
  */
 import { createClient } from '@supabase/supabase-js'
-import { requireStack, moduleOn, notHere } from './test-stack.mjs'
-import { projectCourses, parseCourse } from '../modules/courses/build/io.mjs'
-import type { Database } from '../supabase/functions/_shared/database.types.js'
+import { requireStack, moduleOn, notHere } from '../../../build/test-stack.mjs'
+import { projectCourses, parseCourse } from '../build/io.mjs'
+import type { Database } from '../../../supabase/functions/_shared/database.types.js'
 
 const S: any = requireStack('course-workbook-db')
 if (!(await moduleOn('courses')) || !(await moduleOn('forms'))) { notHere('course-workbook-db', 'the courses or the forms module is off'); process.exit(0) }

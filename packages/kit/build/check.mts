@@ -76,6 +76,13 @@ export async function siteChecks(root: any, { kitVersion = JSON.parse(fs.readFil
   } catch (e: any) {
     out.push(fail('modules', `the module list could not be read: ${String(e.message || e).split('\n')[0]}`))
   }
+  /* a module is reached only through its front doors (openspec: modules-as-packages): the site's own code, and the kit where it is a checkout */
+  try {
+    const { crossings, filesUnder, KIT_DIR } = await import('./modules/boundaries.mjs')
+    const checkout = !KIT_DIR.includes(path.sep + 'node_modules' + path.sep)
+    const found = crossings(filesUnder([path.join(root, 'src'), ...(checkout ? [KIT_DIR] : [])]))
+    out.push(found.length ? fail('module boundaries', `${found.length} import(s) past a module's front doors: ${found.slice(0, 3).join('; ')}`, 'import the module through its index.ts (the browser) or build/index.mts (the build)') : pass('module boundaries', 'every module reached through its front doors'))
+  } catch (e: any) { out.push(warn('module boundaries', `not checked: ${String(e.message || e).split('\n')[0]}`)) }
   const pkg = path.join(root, 'package.json')
   const pinned = fs.existsSync(pkg) ? (JSON.parse(fs.readFileSync(pkg, 'utf8')).dependencies || {}).platformkit : null
   if (!pinned) out.push(warn('PlatformKit version', 'the site\'s package.json names no platformkit dependency', 'npm install platformkit'))

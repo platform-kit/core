@@ -26,11 +26,11 @@ sources:
     packages/kit/modules/courses/ui/admin/CourseEnrollments.vue,
     packages/kit/modules/courses/integrations/spaces/MemberCourses.vue,
     packages/kit/modules/courses/strings/courses.md,
-    packages/kit/build/courses.test.mts,
-    packages/kit/build/courses-db.test.mts,
+    packages/kit/modules/courses/tests/courses.test.mts,
+    packages/kit/modules/courses/tests/courses-db.test.mts,
     packages/kit/modules/courses/ui/CourseWorkbook.vue,
     packages/kit/modules/courses/integrations/forms/schema.sql,
-    packages/kit/build/course-workbook-db.test.mts,
+    packages/kit/modules/courses/tests/course-workbook-db.test.mts,
   ]
 reviewed: 2026-11-13
 ---
