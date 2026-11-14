@@ -48,6 +48,8 @@ export function crossings(files: Array<{ file: string, text: string }>): string[
     if (path.resolve(file) === path.join(MODULES, 'registry.mts')) continue
     const from = inModule(path.resolve(file))
     for (const m of text.matchAll(SPECIFIERS)) {
+      /* a test may read a module's file by its path (new URL) to check its source; importing past the doors it may not */
+      if (m[3] && /\.test\.m?[jt]s$/.test(file)) continue
       const spec = m[1] || m[2] || m[3]
       const to = target(spec, path.resolve(file))
       if (!to) continue

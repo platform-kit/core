@@ -4,11 +4,11 @@
  * invoices all live there. A user with no Stripe customer yet has nothing to
  * manage (they subscribe through Checkout first).
  */
-import { stripeConfigured, stripeMock, isMockId, stripeUnconfigured, admin, json, preflight, getUser, appUrl, getPaymentProvider } from '../_shared/lib.ts'
-import { subscriptionDeleted } from '../_shared/ledger.ts'
-import { assertPaymentCapabilities, PaymentProviderError } from '../_shared/payment-provider.mts'
-import type { PaymentProviderAdapter } from '../_shared/payment-provider.d.ts'
-import { findProviderExternalIds, linkProviderEntity } from '../_shared/payment-provider-refs.ts'
+import { stripeConfigured, stripeMock, isMockId, stripeUnconfigured, admin, json, preflight, getUser, appUrl, getPaymentProvider } from '@pk/core/lib.ts'
+import { subscriptionDeleted } from '@pk/core/ledger.ts'
+import { assertPaymentCapabilities, PaymentProviderError } from '@pk/core/payment-provider.mts'
+import type { PaymentProviderAdapter } from '@pk/core/payment-provider.d.ts'
+import { findProviderExternalIds, linkProviderEntity } from '@pk/core/payment-provider-refs.ts'
 
 Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre

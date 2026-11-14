@@ -32,7 +32,7 @@ assert.doesNotMatch(webhook, /from\('stripe_events'\)/)
 assert.doesNotMatch(webhook, /Stripe webhook does not match selected payment provider/)
 assert.match(providerWebhook, /import '\.\.\/stripe-webhook\/index\.ts'/)
 const renewalWorker = readFileSync(
-  new URL('../supabase/functions/hyperswitch-subscription-renewal/index.ts', import.meta.url),
+  new URL('../modules/memberships/functions/hyperswitch-subscription-renewal/index.ts', import.meta.url),
   'utf8',
 )
 assert.match(renewalWorker, /settleMeteredUsage/)

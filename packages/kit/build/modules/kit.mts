@@ -72,17 +72,8 @@ const LISTED: Array<ModuleDeclaration | string> = [
       env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_PUBLISHABLE_KEY'],
     },
   },
-  {
-    key: 'memberships', what: 'tiers, the billing portal', needs: 'there is nowhere to keep a membership',
-    static: false, git: true, cloud: true,
-    owns: {
-      functions: ['hyperswitch-subscription-renewal', 'create-portal-session'],
-      cron: [
-        { name: 'hyperswitch-subscription-renewal', schedule: '*/15 * * * *', command: 'select public.run_hyperswitch_subscription_renewal()' },
-      ],
-      env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'],
-    },
-  },
+  /* memberships: in its own folder, packages/kit/modules/memberships/ */
+  'memberships',
   {
     key: 'sessions', what: 'booking types, the booker, the calendar', needs: 'there is nowhere to keep a booking',
     static: false, git: true, cloud: true,

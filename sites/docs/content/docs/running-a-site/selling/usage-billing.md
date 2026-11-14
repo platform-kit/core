@@ -27,7 +27,7 @@ sources:
     packages/kit/supabase/functions/_shared/inference-meter.mts,
     packages/kit/supabase/functions/_shared/usage-gate.mts,
     packages/kit/supabase/functions/_shared/usage.ts,
-    packages/kit/supabase/functions/hyperswitch-subscription-renewal/index.ts,
+    packages/kit/modules/memberships/functions/hyperswitch-subscription-renewal/index.ts,
     packages/kit/supabase/functions/_shared/usage-topup.mts,
     packages/kit/supabase/functions/_shared/offers.ts,
     packages/kit/supabase/functions/_shared/ledger.ts,

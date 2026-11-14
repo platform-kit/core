@@ -50,7 +50,7 @@ sources:
     packages/kit/build/product-keys.mts,
     packages/kit/build/sales.mts,
     packages/kit/theme/src/pages/StorePage.vue,
-    packages/kit/supabase/functions/create-portal-session,
+    packages/kit/modules/memberships/functions/create-portal-session,
     packages/kit/supabase/functions/push-catalog,
     packages/kit/supabase/functions/_shared/shipping.ts,
     packages/kit/supabase/functions/_shared/checkout-params.ts,
