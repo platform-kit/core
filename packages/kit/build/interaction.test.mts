@@ -426,6 +426,26 @@ await act('the dashboard remembers which view was open', async ({ page, clear }:
   if (back.trim() !== label) throw new Error(`chose "${label}", came back to "${back.trim() || 'nothing marked'}"`)
 })
 
+/*
+ * A MODULE'S PLACE IN THE ADMIN (openspec: modules-as-packages). The rail names no module's screen: courses adds its group
+ * and its enrolment screen through core's admin-rail and admin-screen slots. The rail must carry them and the screen open
+ * from them, or the module would be on with no way in.
+ */
+if (!(await moduleOn('courses'))) notHere('interaction: courses in the admin', 'the courses module is off')
+else await act('courses joins the admin rail through its slot, and its enrolment screen opens', async ({ page, clear }: any) => {
+  await go(page, '/', clear, '.pageshell')
+  await signIn(page, clear, 'admin@example.com')
+  await go(page, '/admin', clear, '.ad-rail')
+  const item = page.locator('.ad-navitem[data-key="course-enrollments"]').first()
+  await item.waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the rail carries no course-enrollments item') })
+  if (!(await page.locator('.ad-navitem[data-key="courses"]').count())) throw new Error('the rail carries the enrolments but not the course builder')
+  /* a group the rail has not opened is folded, as a person finds it: open it first */
+  const fold = item.locator('xpath=ancestor::div[contains(@class, "ad-navgroup")]/preceding-sibling::button[1]')
+  if ((await fold.getAttribute('aria-expanded')) !== 'true') await fold.click()
+  await item.click({ timeout: WAIT }).catch((e: any) => { throw new Error('the course-enrollments item would not take a click: ' + String(e.message).split('\n').filter(Boolean).slice(-5).join(' | ')) })
+  await page.locator('.ce').first().waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the enrolment screen never drew') })
+})
+
 
 /* ─── the reader's gate, and what a guest carries into an account ─── */
 

@@ -107,7 +107,9 @@ function site(c: any, theme: any, keys: string[] = [], pages: any[] = [], module
       const { fillsOf } = await import('../build/modules/manifest.mjs')
       const { inModule } = await import('../build/modules/folders.mjs')
       const fills = fillsOf(modules, c.modules || {}, 'core:admin-screen')
+      const rail = fillsOf(modules, c.modules || {}, 'core:admin-rail').map(({ with: _w, ...x }: any) => x)
       return `import { defineAsyncComponent } from 'vue'\nexport const SCREENS = {\n` + fills.map((x: any) => `  ${J(x.key)}: defineAsyncComponent(() => import(${J(from(inModule(x.module, String(x.component))))})),\n`).join('') + '}\n'
+        + `/* the rail sections modules add (core's admin-rail slot) */\nexport const SECTIONS = ${J(rail)}\n`
     }
     if (id === V['#site/page-tests'] || id === V['#site/pages']) {
       const { MODULE_DIRS } = await import('../build/modules/folders.mjs')

@@ -98,7 +98,7 @@ export interface PageContribution {
  * installed only while its module, the slot's owner and every module in its `with` are on; a fill naming a slot nobody
  * declares is refused. What a fill carries is the slot's business: a component, a key, the words it is titled with.
  */
-export const CORE_SLOTS = ['admin-screen']
+export const CORE_SLOTS = ['admin-screen', 'admin-rail']
 export type Fill = { key: string, with?: string[], [k: string]: unknown }
 export interface ModuleDeclaration {
   key: string

@@ -30,7 +30,11 @@ import ChapterEditor from '../components/admin/ChapterEditor.vue'
 import CompanionEditor from '../components/admin/CompanionEditor.vue'
 import TeamMembers from '../components/admin/TeamMembers.vue'
 import SpanField from '../components/admin/SpanField.vue'
-import { sections as SITE_SECTIONS } from '#site/admin'   /* the site's own sections (platformkit.config.js admin.sections) */
+import { sections as SITE_OWN_SECTIONS } from '#site/admin'   /* the site's own sections (platformkit.config.js admin.sections) */
+/* the sections modules add to the rail (core's admin-rail slot; openspec: modules-as-packages), joined as the site's are,
+   before them: each { key, sec, after?, icon?, needs?, module } */
+import { SECTIONS as MODULE_SECTIONS } from '#site/admin-screens'
+const SITE_SECTIONS: any[] = [...MODULE_SECTIONS, ...SITE_OWN_SECTIONS]
 import AnalyticsAdmin from '../components/AnalyticsAdmin.vue'
 import ContentAnalytics from '../components/ContentAnalytics.vue'
 import FormAnalytics from '../components/FormAnalytics.vue'
@@ -145,7 +149,7 @@ const parsed = computed(() => {
    bookings — nothing that needs the content pipe. A support agent, wherever, sees Notifications and Support and
    nothing else; a reader who is not on the staff sees the gate. */
 const LIVE = !CMS
-const LIVE_VIEWS = new Set(['analytics', 'content-analytics', 'form-analytics', 'funnel-analytics', 'notifications', 'api', 'support', 'comments', 'spaces', 'orders', 'print-orders', 'bookings', 'social', 'network', 'payments', 'course-enrollments'])
+const LIVE_VIEWS = new Set(['analytics', 'content-analytics', 'form-analytics', 'funnel-analytics', 'notifications', 'api', 'support', 'comments', 'spaces', 'orders', 'print-orders', 'bookings', 'social', 'network', 'payments', ...(MODULE_SECTIONS as any[]).filter((s) => s.live).map((s) => s.key)])   /* and the module sections that say they are live */
 const socialAccess = ref(false)
 const socialAccessKnown = ref(false)
 const socialAccessError = ref(false)
@@ -210,8 +214,8 @@ const NEEDS: any = {
      section; the server decides what is in it, which is the only place that decision is safe. */
   pages: 'content-or-own-page', ads: 'content', experiments: 'content',
   media: 'content', publishing: 'content', strings: 'content',
-  courses: 'content',
 }
+for (const s of MODULE_SECTIONS as any[]) if (s.needs) NEEDS[s.key] = s.needs   /* a module's section says whose it is */
 const CONTENT = 'content'
 const meets = (need: any) => {
   if (need === 'social') return socialAccessKnown.value && socialAccess.value
@@ -308,7 +312,7 @@ const inlineSlot = ref<any>(null)   /* the element the editor teleports into; it
    server) or one of the three views with their own editors. Any collection not
    named here still appears, under Other, so a new content type is never lost. */
 /* which module each view or collection belongs to: off in platformkit.config.js, it leaves the rail */
-const MODULE_OF: any = { notifications: 'push', api: 'api', articles: 'articles', books: 'books', companions: 'books', wiki: 'wiki', docs: 'docs', ...Object.fromEntries(SITE_SECTIONS.filter((s: any) => s.module).map((s: any) => [s.key, s.module])), emails: 'emails', funnels: 'funnels', blasts: 'funnels', 'funnel-analytics': 'funnels', support: 'support', social: 'social-publishing', spaces: 'spaces', community: 'spaces', network: 'network', forms: 'forms', 'form-responses': 'forms', 'form-analytics': 'forms', storefront: 'store', products: 'store', collections: 'store', sessions: 'sessions', teams: 'sessions', providers: 'sessions', print: 'print', 'print-orders': 'print', orders: 'store', bookings: 'sessions', payouts: 'sessions', models: 'models', courses: 'courses', 'course-enrollments': 'courses' }
+const MODULE_OF: any = { notifications: 'push', api: 'api', articles: 'articles', books: 'books', companions: 'books', wiki: 'wiki', docs: 'docs', ...Object.fromEntries(SITE_SECTIONS.filter((s: any) => s.module).map((s: any) => [s.key, s.module])), emails: 'emails', funnels: 'funnels', blasts: 'funnels', 'funnel-analytics': 'funnels', support: 'support', social: 'social-publishing', spaces: 'spaces', community: 'spaces', network: 'network', forms: 'forms', 'form-responses': 'forms', 'form-analytics': 'forms', storefront: 'store', products: 'store', collections: 'store', sessions: 'sessions', teams: 'sessions', providers: 'sessions', print: 'print', 'print-orders': 'print', orders: 'store', bookings: 'sessions', payouts: 'sessions', models: 'models' }
 const modelWords = (us('models').admin || {}).page || {}
 /* IS THE VIEW BEHIND THIS KEY AVAILABLE? A VIEW key, not a module id — `products` is a view and
    `store` is the module behind it (MODULE_OF). It was called moduleOn, which is the kit's own name
@@ -351,7 +355,6 @@ const NAV = [
   { key: 'sales', items: ['orders', 'bookings', 'payouts'] },   /* and what was: every order and what became of it — the printed ones are a FILTER of it rather than a page, since a parcel from a printer and a parcel off a shelf are the same fact about one sale — what cal.com mirrored, and what is owed */
   { key: 'marketing', items: ['emails', 'funnels', 'ads', 'experiments'] },   /* reaching people, and the tests of it; a blast is a tab of Emails and the funnels' numbers a tab of Funnels */
   { key: 'forms', items: ['forms', 'form-responses', 'form-analytics'] },
-  { key: 'courses', items: ['courses', 'course-enrollments'] },   /* the course builder is an editor's; who is enrolled, with names and addresses, an administrator's */
   { key: 'community', items: ['support', 'comments', 'community', 'network'] },   /* people reaching the desk, or each other; the policy is a tab of Comments and the spaces a tab of Community */
   { key: 'people', items: ['people', 'teams', 'providers'] },   /* everyone with an account, the teams they are in, and whoever sells through the site */
   { key: 'social', items: ['social'] },
@@ -482,8 +485,6 @@ const IC: any = {
   forms: '<rect x="3.5" y="3.5" width="13" height="13" rx="2"/><path d="M6.5 7.5h7M6.5 10.5h4"/><rect x="6.5" y="13" width="3" height="1.5" rx=".5"/>',
   models: '<path d="M10 3.5 16.5 7 10 10.5 3.5 7z"/><path d="M3.5 10.5 10 14l6.5-3.5"/><path d="M3.5 13.5 10 17l6.5-3.5"/>',
   entries: '<rect x="3.5" y="4" width="13" height="4" rx="1.2"/><rect x="3.5" y="11" width="13" height="4" rx="1.2"/><path d="M6 6h.01M6 13h.01"/>',
-  courses: '<path d="M3 7.5 10 4l7 3.5-7 3.5-7-3.5Z"/><path d="M6 9.2v3.6c0 1 1.8 2.2 4 2.2s4-1.2 4-2.2V9.2"/><path d="M17 7.5v4"/>',   /* a mortarboard */
-  'course-enrollments': '<circle cx="7.5" cy="7" r="2.3"/><path d="M3.5 15.5c0-2.3 1.8-3.8 4-3.8s4 1.5 4 3.8"/><path d="m12.5 9.5 1.6 1.6 3-3.4"/>',   /* a person, ticked */
   'form-responses': '<path d="M4 4.5h12v11H4z"/><path d="M7 8h6M7 11h6"/><path d="m5 15.5 2-2 2 2"/>',
   'form-analytics': '<path d="M3.5 16.5h13"/><path d="M6 13V9M10 13V5M14 13v-3"/>',
   'funnel-analytics': '<path d="M3.5 4.5h13"/><path d="M5 8.5h10"/><path d="M6.5 12.5h7"/><path d="M8 16.5h4"/>',   /* each step narrower than the one above */
@@ -592,6 +593,7 @@ async function loadList() {
      the files it would not ask for. */
   if (view.value === 'strings' || view.value === 'print') return
   if (SITE_BY_KEY[view.value] && SITE_BY_KEY[view.value].component) return   /* its editor loads its own files */
+  if ((SCREENS as any)[view.value]) return   /* a screen a module adds loads its own data: it is not a collection to list */
   if (['analytics', 'content-analytics', 'notifications', 'api', 'publishing', 'media', 'print-orders', 'orders', 'bookings', 'emails', 'funnels', 'blasts', 'support', 'comments', 'spaces', 'people', 'forms', 'form-responses', 'form-analytics', 'funnel-analytics', 'models', 'payouts', 'social', 'network'].includes(view.value)) return   /* the dashboards fetch their own data */
   loading.value = true; loadError.value = ''
   try { items.value = await pipe.items(view.value) }
@@ -1064,7 +1066,7 @@ onMounted(async () => {
                tab order, which overflow alone would not. -->
           <div class="ad-navgroup" :class="{ open: isOpen(g.key) || slim }" :inert="!(isOpen(g.key) || slim) || undefined">
             <div class="ad-navinner">
-              <button v-for="k in g.items" :key="k" type="button" class="ad-navitem" :class="{ on: railKey(view) === k }" :title="slim ? navLabel(k) : ''" @click="pick(k)">
+              <button v-for="k in g.items" :key="k" type="button" class="ad-navitem" :data-key="k" :class="{ on: railKey(view) === k }" :title="slim ? navLabel(k) : ''" @click="pick(k)">
                 <span class="ad-navico" v-html="icon(k)" />
                 <span class="ad-navlabel ad-fade">{{ navLabel(k) }}</span>
                 <span v-if="navCount(k) != null" class="ad-navcount ad-fade">{{ navCount(k) }}</span>
