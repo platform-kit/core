@@ -24,7 +24,7 @@ const walk = (d: string): string[] => !fs.existsSync(d) ? [] : fs.readdirSync(d,
 /* the files whose imports are checked: the kit's and every fixture site's own code */
 export const sourceFiles = (): string[] => [...walk(KIT).filter((f) => !f.endsWith('module-boundaries.test.mts')) /* its planted imports are text */, ...['demo', 'docs', 'brochure', 'club'].flatMap((s) => walk(path.join(WORKSPACE, 'sites', s, 'src')))]
 
-const SPECIFIERS = /(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/g
+const SPECIFIERS = /(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)|new URL\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*,\s*import\.meta\.url/g
 
 /* the module folder a path is in, and the path inside it */
 const inModule = (abs: string): { key: string, rel: string } | null => {
@@ -48,7 +48,7 @@ export function crossings(files: Array<{ file: string, text: string }>): string[
     if (path.resolve(file) === path.join(MODULES, 'registry.mts')) continue
     const from = inModule(path.resolve(file))
     for (const m of text.matchAll(SPECIFIERS)) {
-      const spec = m[1] || m[2]
+      const spec = m[1] || m[2] || m[3]
       const to = target(spec, path.resolve(file))
       if (!to) continue
       const at = inModule(to)
@@ -69,13 +69,14 @@ export const KIT_DIR = KIT
 
 /* every relative import in a module's folder that points at nothing — code, stylesheets and @import alike, since a moved
    file keeps the relative paths it had where it was, and a stylesheet's is checked by no type checker */
-const RELATIVE = /(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"](\.{1,2}\/[^'"]+)['"]|import\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*\)|@import\s+['"](\.{1,2}\/[^'"]+)['"]/g
+const RELATIVE = /(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"](\.{1,2}\/[^'"]+)['"]|import\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*\)|@import\s+['"](\.{1,2}\/[^'"]+)['"]|new URL\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*,\s*import\.meta\.url/g
 const exists = (p: string) => [p, p.replace(/\.(m?)js$/, '.$1ts'), p.replace(/\.js$/, '.vue')].some((x) => fs.existsSync(x))
 export function unresolved(): string[] {
   const out: string[] = []
-  for (const file of walk(MODULES)) {
+  for (const file of [...walk(MODULES), ...walk(path.join(KIT, 'src')), ...walk(path.join(KIT, 'theme', 'src'))]) {
     for (const m of fs.readFileSync(file, 'utf8').matchAll(RELATIVE)) {
-      const spec = m[1] || m[2] || m[3]
+      const spec = (m[1] || m[2] || m[3] || m[4]).replace(/\?.*$/, '')   /* a bundler's query (?url) is not part of the file */
+      if (spec.includes('…')) continue   /* a placeholder in prose */
       if (!exists(path.resolve(path.dirname(file), spec))) out.push(`${path.relative(WORKSPACE, file)} → ${spec}`)
     }
   }

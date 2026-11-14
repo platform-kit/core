@@ -129,7 +129,7 @@ const resolveFile = async (col: string, name: any) => { const m = await modelOf(
 /* one pipeline, modules/enrichment/build/enrich.mjs: 'enrich' runs every stage (the introduction first,
    then the companion); 'introduce' stops after the introduction */
 /* the enrichment's own script, in its module's folder (openspec: modules-as-packages) */
-const ENRICH = fileURLToPath(new URL('../modules/enrichment/build/enrich.mjs', import.meta.url))
+const { ENRICH_SCRIPT: ENRICH } = await import('../modules/enrichment/build/index.mjs')
 const SCRIPTS: any = { enrich: [[ENRICH]], introduce: [[ENRICH, '--stage', 'introduce']] }
 const jobs: any = []
 /* the print editions' draft renders, by book, while the server runs */

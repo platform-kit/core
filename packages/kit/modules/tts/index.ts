@@ -6,3 +6,6 @@
 export { ttsSupported, warmSpeech } from './lib/support.js'
 export { chunkText } from './lib/chunk.js'
 export const loadAudiobook = () => import('./lib/audiobook.js')
+/* the voice's own worker, for a reader that speaks somewhere other than the book reader (the copilot); written out here so
+   the bundler sees the worker it has to build */
+export const createSpeechWorker = () => new Worker(new URL('./lib/tts.worker.ts', import.meta.url), { type: 'module' })
