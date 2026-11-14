@@ -166,14 +166,14 @@ export function kitTables(modules: Modules, kit = KIT_SUPABASE): Map<string, str
   const own = ownership(modules, kit)
   const out = new Map<string, string[]>()
   const add = (owners: string[], file: string) => { for (const t of tablesIn(fs.readFileSync(file, 'utf8'))) out.set(t, owners) }
-  for (const f of own.files.schema) add(own.schema.get(f) || [], path.join(kit, 'schemas', f))
-  for (const f of own.files.glue) add(glueOwners(f) || [], path.join(kit, 'schemas', 'glue', f))
+  for (const f of own.files.schema) add(own.schema.get(f) || [], own.files.sources.schema[f])
+  for (const f of own.files.glue) add(glueOwners(f) || [], own.files.sources.glue[f])
   return out
 }
 
 /* the name of every table any kit schema or glue file declares, whatever a site has on */
 export function kitDeclaredTables(kit = KIT_SUPABASE): Set<string> {
   const files = kitBackend(kit)
-  return new Set([...files.schema.map((f) => path.join(kit, 'schemas', f)), ...files.glue.map((f) => path.join(kit, 'schemas', 'glue', f))]
+  return new Set([...files.schema.map((f) => files.sources.schema[f]), ...files.glue.map((f) => files.sources.glue[f])]
     .flatMap((f) => tablesIn(fs.readFileSync(f, 'utf8'))))
 }
