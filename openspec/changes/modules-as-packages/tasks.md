@@ -9,7 +9,7 @@
 - [ ] Named shared mechanics listed in `build/modules/shared.mts`. Verified by `manifests.test.mts`.
 
 ### Pilot: courses
-- [ ] Courses moved into `modules/courses/`: schema, the function, lib, ui (including admin enrolments), strings, models, emails, steps, tests. Its glue becomes `integrations/{spaces,forms,sessions}`, and `MemberCourses.vue` becomes a fill of the spaces member-card slot. Verified by assembled-tree with all modules on and each off, the route census, `courses*.test.mts`, `course-workbook-db.test.mts` and `modules-off-db.test.mts` under `platformkit test --e2e`, and the course pages rendered on the demo in both themes at phone and desktop width.
+- [x] Courses moved into `modules/courses/`: schema, the function, lib, ui (including admin enrolments), strings, models, emails, steps, tests. Its glue becomes `integrations/{spaces,forms,sessions}`, and `MemberCourses.vue` becomes a fill of the spaces member-card slot. Verified by assembled-tree with all modules on and each off, the route census, `courses*.test.mts`, `course-workbook-db.test.mts` and `modules-off-db.test.mts` under `platformkit test --e2e`, and the course pages rendered on the demo in both themes at phone and desktop width.
 - [x] Courses' `index.ts` front door, and the boundary check on. Verified by `module-boundaries.test.mts` with a planted import.
 
 ### The rest
