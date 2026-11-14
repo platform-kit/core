@@ -6,7 +6,7 @@
    Skipped with a note when the stack is down (DESK_TEST=0 skips it too). */
 import { createClient } from '@supabase/supabase-js'
 import { createHash } from 'node:crypto'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { sortDesk, sourcesOn, owedOf, deskBadge } from '../src/lib/desk/shape.js'
 import * as support from '../src/lib/desk/support.js'
 import * as coaching from '../src/lib/desk/coaching.js'

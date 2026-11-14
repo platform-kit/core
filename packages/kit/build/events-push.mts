@@ -17,7 +17,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { compileEvents, WINDOW_DAYS } from './events.mjs'
 import { projectEvents, projectEventComments } from './events-db.mjs'
-import { supabaseUrl, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, serviceKey } from './supabase-env.mjs'
 import { isMain } from './is-main.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 

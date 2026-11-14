@@ -12,6 +12,7 @@
  * should ever load it.
  */
 import * as ort from 'onnxruntime-web'
+import { chunkText } from './chunk.js'
 
 const AVAILABLE_LANGS = ['en', 'ko', 'ja', 'ar', 'bg', 'cs', 'da', 'de', 'el', 'es', 'et', 'fi', 'fr', 'hi', 'hr', 'hu', 'id', 'it', 'lt', 'lv', 'nl', 'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sv', 'tr', 'uk', 'vi', 'na']
 
@@ -144,22 +145,6 @@ export async function loadTextToSpeech({ buffers, cfgs, indexer, providers }: an
   return new TextToSpeech(cfgs, new UnicodeProcessor(indexer), dpOrt, textEncOrt, vectorEstOrt, vocoderOrt)
 }
 
-/* the Node example's chunkText, verbatim */
-export function chunkText(text: string, maxLen = 300) {
-  const paragraphs = text.trim().split(/\n\s*\n+/).filter((p: string) => p.trim())
-  const chunks = []
-  for (let paragraph of paragraphs) {
-    paragraph = paragraph.trim()
-    if (!paragraph) continue
-    const sentences = paragraph.split(/(?<!Mr\.|Mrs\.|Ms\.|Dr\.|Prof\.|Sr\.|Jr\.|Ph\.D\.|etc\.|e\.g\.|i\.e\.|vs\.|Inc\.|Ltd\.|Co\.|Corp\.|St\.|Ave\.|Blvd\.)(?<!\b[A-Z]\.)(?<=[.!?])\s+/)
-    let current = ''
-    for (const sentence of sentences) {
-      if (current.length + sentence.length + 1 <= maxLen) current += (current ? ' ' : '') + sentence
-      else { if (current) chunks.push(current.trim()); current = sentence }
-    }
-    if (current) chunks.push(current.trim())
-  }
-  return chunks
-}
+export { chunkText }
 
 export { ort }

@@ -6,7 +6,7 @@
    end. Skipped with a note when the stack is down (COMMUNITY_TEST=0 skips it too). */
 import { createClient } from '@supabase/supabase-js'
 import { createHash, randomBytes } from 'node:crypto'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 

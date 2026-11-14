@@ -22,7 +22,7 @@
  */
 import pg from 'pg'
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { leave, declared, notHere, moduleOn } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 import type { SupabaseClient } from '@supabase/supabase-js'

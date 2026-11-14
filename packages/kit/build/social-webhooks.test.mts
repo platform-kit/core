@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { createHmac, randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { normalizeSocialAutomationEvents } from '../supabase/functions/_shared/social/automation-events.mjs'
-import { localStack, serviceKey, supabaseUrl } from './tts/storage.mjs'
+import { localStack, serviceKey, supabaseUrl } from './supabase-env.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 

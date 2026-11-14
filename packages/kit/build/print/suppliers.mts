@@ -1,6 +1,6 @@
 /* the printers, bound to this process's environment (the modules are shared with the functions) */
 import { printers, PRINTER_IDS, FORMATS_PRINTED } from '../../supabase/functions/_shared/suppliers/index.js'
-import { loadDotEnv } from '../tts/storage.mjs'
+import { loadDotEnv } from '../supabase-env.mjs'
 loadDotEnv()   /* the keys from .env, for a process that has not read it (the admin server) */
 const P = printers((k: string|number) => process.env[k] || '')
 export const PRINTERS = P.PRINTERS

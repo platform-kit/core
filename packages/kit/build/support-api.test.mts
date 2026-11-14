@@ -13,7 +13,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import http from 'node:http'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { loadSite } from './site.mjs'
 import { messageOf, conversationOf, contactOf, clientContactOf, clientConversationOf, inboxOf, agentOf, webhookPayload, webhookOf, EVENTS, TYPE_WORD } from '../supabase/functions/_shared/api/chatwoot/shapes.js'
 import { context as browserContext } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */

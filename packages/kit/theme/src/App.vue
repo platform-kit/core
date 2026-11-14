@@ -3,7 +3,7 @@ import { moduleOn } from 'platformkit/lib/modules.js'
 import { mayInterrupt } from 'platformkit/lib/interrupt.js'
 import { watch, computed } from 'vue'
 import { route, ROUTES, INTERRUPT_ROUTES, DEV, CMS, STORE_ON, siteRouteOf } from './router.js'
-import { warmSpeech } from 'platformkit/lib/tts/support.js'
+import { warmSpeech } from 'platformkit/modules/tts/index.js'
 import AuthModal from './components/AuthModal.vue'
 import CtaHost from './components/CtaHost.vue'
 import CartDrawer from './components/store/CartDrawer.vue'
@@ -43,7 +43,7 @@ function applyRouteMeta(path: string) {
 
 /* every route change is a page view */
 /* the in-browser voice's weights start downloading, quietly, the first time a
-   reader is somewhere they might read from (src/lib/tts/support.js decides) */
+   reader is somewhere they might read from (the tts module decides) */
 watch(route, (path) => { applyRouteMeta(path); if (path !== ROUTES.preview) pageview(path); warmSpeech(path) }, { immediate: true })
 </script>
 

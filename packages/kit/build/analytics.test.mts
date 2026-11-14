@@ -44,7 +44,7 @@ ok('the whole arrival: families only, never a version, nothing beyond the six fa
 /* ---- the database's side ---- */
 if (process.env.ANALYTICS_TEST !== '0') {
   const { createClient } = await import('@supabase/supabase-js')
-  const { supabaseUrl, localStack, serviceKey } = await import('./tts/storage.mjs')
+  const { supabaseUrl, localStack, serviceKey } = await import('./supabase-env.mjs')
   const url = supabaseUrl(), anon = process.env.VITE_SUPABASE_ANON_KEY || ''
   let up = false
   try { up = !!(url && anon && localStack()) && (await fetch(url + '/auth/v1/health', { signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }

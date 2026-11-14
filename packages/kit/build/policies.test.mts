@@ -3,7 +3,7 @@
    rows, a reader on nothing (free@example.com) reads nothing, and admin_people answers a member nothing. Runs on the local stack only — the site's own,
    the seed's accounts — and is skipped with a note when it is not up (POLICY_TEST=0 skips it too). */
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { leave, moduleOn, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 

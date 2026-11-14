@@ -8,7 +8,7 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'node:crypto'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { leave, moduleOn, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 

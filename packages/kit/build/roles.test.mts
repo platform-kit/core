@@ -9,7 +9,7 @@
  * Run from a site's root with the stack's env; skipped with a note when it is down (ROLES_TEST=0 skips it).
  */
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { leave, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 /* a table the test names by a variable: one of the schema's */

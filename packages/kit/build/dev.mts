@@ -183,7 +183,7 @@ if (stackReadyFile) writeFileSync(stackReadyFile, `${port}\n`)
  * THE RUN’S OWN STACK, UNDER BOTH NAMES.
  *
  * `SUPABASE_URL` is set as well as `VITE_SUPABASE_URL` because the build scripts resolve
- * through `tts/storage.mjs`, which reads `SUPABASE_URL` FIRST and falls back to the Vite name.
+ * through `supabase-env.mjs`, which reads `SUPABASE_URL` FIRST and falls back to the Vite name.
  * With only the Vite name set, the root `.env`’s `SUPABASE_URL` won — and every projection a
  * site's dev server ran wrote into whatever stack that file named, not the one this run is
  * actually using.

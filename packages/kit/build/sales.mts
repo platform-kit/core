@@ -11,7 +11,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, serviceKey } from './supabase-env.mjs'
 import { isMain } from './is-main.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 

@@ -10,7 +10,7 @@
    demo's own members' call never counts against the run. */
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { openStarts, byDay, wallToUtc, dayOf } from '../supabase/functions/_shared/schedulers/times.js'
 import { leave, notHere } from './test-stack.mjs'
 

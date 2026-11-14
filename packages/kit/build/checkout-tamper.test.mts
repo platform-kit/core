@@ -17,7 +17,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, localStack } from './tts/storage.mjs'
+import { supabaseUrl, localStack } from './supabase-env.mjs'
 import { leave, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 

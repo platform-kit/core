@@ -101,7 +101,7 @@ if (browser) {
   await ctx.close()
 
   /* (3) the behaviours against the served door */
-  const { supabaseUrl, localStack, serviceKey } = await import('./tts/storage.mjs')
+  const { supabaseUrl, localStack, serviceKey } = await import('./supabase-env.mjs')
   const url = supabaseUrl()
   let served = false
   try { served = !!(url && localStack()) && (await fetch(url + '/functions/v1/ingest', { method: 'OPTIONS', signal: AbortSignal.timeout(2000) })).status < 500 } catch { /* down */ }

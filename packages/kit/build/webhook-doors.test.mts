@@ -24,7 +24,7 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
-import { loadDotEnv, serviceKey, supabaseUrl } from './tts/storage.mjs'
+import { loadDotEnv, serviceKey, supabaseUrl } from './supabase-env.mjs'
 import { statusOf, leave, served, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 /* a door of a module the site has off is not served, and not this site's to check (openspec: module-switch-removes-backend) */

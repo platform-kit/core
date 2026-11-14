@@ -11,7 +11,7 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { loadSite } from './site.mjs'
 import { storefrontOf, lineOf, findVariant, GID, money } from '../supabase/functions/_shared/api/shopify/products.js'
 import { optionsOf, variantsOf } from './variants.mjs'

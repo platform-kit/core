@@ -2,7 +2,7 @@
 /*
  * Fetch the Supertonic 3 weights (Supertone, OpenRAIL-M; the project is archived
  * and the weights are pinned to the archive's final revision) into
- * build/tts/models/supertonic-3 — about 380 MB, once. build/tts.mjs runs on
+ * modules/tts/build/models/supertonic-3 — about 380 MB, once. modules/tts/build/tts.mjs runs on
  * them with onnxruntime-node on the CPU; no Python, no GPU. Idempotent: a file
  * already present at the right size is left alone.
  *
@@ -17,7 +17,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { isMain } from '../is-main.mjs'
+import { isMain } from '../../../build/is-main.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 export const MODELS = path.join(HERE, 'models', 'supertonic-3')
@@ -54,7 +54,7 @@ export async function setup() {
    A hosted plan's file-size cap can refuse the largest one; that is reported,
    not fatal, since Hugging Face stays the first source. */
 export async function mirror() {
-  const { bucket, listAll, supabaseUrl } = await import('./storage.mjs')
+  const { bucket, listAll, supabaseUrl } = await import('../../../build/supabase-env.mjs')
   const st = await bucket('models')
   const prefix = 'supertonic-3/' + REV
   const have = new Set<string>()

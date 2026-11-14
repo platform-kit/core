@@ -21,7 +21,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, serviceKey } from './supabase-env.mjs'
 import { OUT } from './teams.mjs'
 import { projectTeams } from './teams-io.mjs'
 import { isMain } from './is-main.mjs'

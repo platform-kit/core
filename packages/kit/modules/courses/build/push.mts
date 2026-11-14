@@ -10,7 +10,7 @@
  *   node modules/courses/build/push.mjs --check    say what it would do, and change nothing
  */
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, serviceKey } from '../../../build/tts/storage.mjs'
+import { supabaseUrl, serviceKey } from '../../../build/supabase-env.mjs'
 import { readCourses, projectCourses } from './io.mjs'
 import { isMain } from '../../../build/is-main.mjs'
 import type { Database } from '../../../supabase/functions/_shared/database.types.js'

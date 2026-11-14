@@ -24,7 +24,7 @@
  *   node build/dev-account.mjs           (run by `platformkit migrate reset` at its end)
  */
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, serviceKey, loadDotEnv } from './tts/storage.mjs'
+import { supabaseUrl, serviceKey, loadDotEnv } from './supabase-env.mjs'
 import { isMain } from './is-main.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 

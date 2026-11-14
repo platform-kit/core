@@ -134,7 +134,7 @@ export function metaOf(rel: string, text: string) {
 
 if (isMain(import.meta.url)) {
   const { rowsStore } = await import('./store/rows.mjs')
-  const { supabaseUrl, serviceKey } = await import('./tts/storage.mjs')
+  const { supabaseUrl, serviceKey } = await import('./supabase-env.mjs')
   const url = supabaseUrl(), key = serviceKey()
   if (!url || !key) { console.error('content-export: no database in reach (SUPABASE_URL / VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)'); process.exit(1) }
   await exportRows(process.cwd(), rowsStore({ url, key, by: 'deploy' }), { dry: process.argv.includes('--dry'), log: console.log })

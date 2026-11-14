@@ -69,10 +69,10 @@ import { createHash } from 'node:crypto'
 import { spawn, execFileSync, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import matter from 'gray-matter'
-import { parseCompanionBody } from './companion-io.mjs'
+import { parseCompanionBody } from '../../../build/companion-io.mjs'
 /* the words a chapter is read with and the name its recording gets: one module,
    shared with the reader's in-browser engine, so both say and hash the same */
-import { ENGINE as DEFAULTS, INTRO_KEY, bookChapters, chapterSpeech, hashInput } from '../src/lib/speech.js'
+import { ENGINE as DEFAULTS, INTRO_KEY, bookChapters, chapterSpeech, hashInput } from '../../../src/lib/speech.js'
 
 const ROOT = process.cwd()   /* the site: its .env and its audio store */
 const HERE = path.dirname(fileURLToPath(import.meta.url))
@@ -123,11 +123,11 @@ const ENGINE = {
   gap: Number(process.env.TTS_GAP || DEFAULTS.gap),
 }
 const BITRATE = process.env.TTS_BITRATE || '128k'
-const WORKER = path.join(HERE, 'tts/worker.mjs')
-const WORK = path.join(HERE, 'tts/.work')
+const WORKER = path.join(HERE, 'worker.mjs')
+const WORK = path.join(HERE, '.work')
 
-/* ---- storage: the bucket readers are served from (build/tts/storage.mjs) ---- */
-import { supabaseUrl, bucket, listAll } from './tts/storage.mjs'
+/* ---- storage: the bucket readers are served from (build/supabase-env.mjs) ---- */
+import { supabaseUrl, bucket, listAll } from '../../../build/supabase-env.mjs'
 const BUCKET = 'audio'
 let storage: any = null
 async function getStorage() {
@@ -319,7 +319,7 @@ class Pool {
   constructor(n: number) { this.n = n }
   start() {
     if (!this.starting) this.starting = (async () => {
-      const { ready, setup } = await import('./tts/setup.mjs')
+      const { ready, setup } = await import('./setup.mjs')
       if (!ready()) { log('fetching the weights'); await setup() }
       await Promise.all(Array.from({ length: this.n }, (_, i) => this.spawn(i)))
       log(`${this.n} engine${this.n > 1 ? 's' : ''} ready (${SIZE.asked ? 'as asked' : SIZE.cores + ' cores, memory allows ' + SIZE.byMemory}; ${THREADS} thread${THREADS > 1 ? 's' : ''} each)`)

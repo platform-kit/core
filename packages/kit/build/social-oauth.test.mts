@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { createHash, randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
-import { localStack, serviceKey, supabaseUrl } from './tts/storage.mjs'
+import { localStack, serviceKey, supabaseUrl } from './supabase-env.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const url = supabaseUrl()

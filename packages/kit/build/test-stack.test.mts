@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const HELPER = fileURLToPath(new URL('./test-stack.mjs', import.meta.url))
-const STORAGE = fileURLToPath(new URL('./tts/storage.mjs', import.meta.url))
+const STORAGE = fileURLToPath(new URL('./supabase-env.mjs', import.meta.url))
 let pass = 0, fail = 0
 const ok = (msg: string, cond: unknown, detail: unknown = '') => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
 

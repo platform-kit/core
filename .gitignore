@@ -77,8 +77,8 @@ build/.cache/
 build/.*.mjs
 build/enrich-review.html
 
-packages/kit/build/tts/models/
-packages/kit/build/tts/.work/
+packages/kit/modules/tts/build/models/
+packages/kit/modules/tts/build/.work/
 .env.dev
 
 # the printed editions (build/print.mjs) — rendered, never committed

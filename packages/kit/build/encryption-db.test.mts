@@ -31,7 +31,7 @@ console.log('\nWHAT AN ENCRYPTED CHANNEL STORES\n')
 
 if (process.env.ENCRYPTION_TEST === '0') { console.log('  ⚠ SKIPPED — ENCRYPTION_TEST=0\n'); process.exit(0) }
 
-const { supabaseUrl, serviceKey } = await import('./tts/storage.mjs')
+const { supabaseUrl, serviceKey } = await import('./supabase-env.mjs')
 const url = supabaseUrl(), key = serviceKey()
 if (!url || !key) { console.log('  ⚠ SKIPPED — no local stack in the environment\n'); leave(0) }
 const db = createClient<Database>(url, key, { auth: { persistSession: false } })

@@ -8,8 +8,8 @@
  * the build's own browser (the prerender). IN_BROWSER_TTS=false switches it off
  * for everyone (vite.config.js exposes that one name to the client).
  */
-import { moduleOn } from '../modules.js'
-import { ROUTES, isPageRoute } from '../router.js'
+import { moduleOn } from 'platformkit/lib/modules.js'
+import { ROUTES, isPageRoute } from 'platformkit/lib/router.js'
 
 import { modules } from '#site'
 /* the tts module's switch (platformkit.config.js), and IN_BROWSER_TTS=false for one deployment */

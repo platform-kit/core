@@ -11,7 +11,7 @@
  * running length. stop() closes everything and gives { blob, seconds }.
  */
 import { reactive } from 'vue'
-import { Mp3Writer } from '../tts/mp3.js'
+import { Mp3Writer } from '../mp3.js'
 
 /* Is there a usable microphone? The same four checks the instrument's voice
    makes (engine/voice.js), kept here so the chat does not pull the instrument

@@ -20,9 +20,9 @@
  * of record.
  */
 import { reactive } from 'vue'
-import { ENGINE, hashInput } from '../speech.js'
-import { supabase } from '../supabase.js'
-import { session } from '../auth.js'
+import { ENGINE, hashInput } from 'platformkit/lib/speech.js'
+import { supabase } from 'platformkit/lib/supabase.js'
+import { session } from 'platformkit/lib/auth.js'
 
 const BUCKET = 'audio'
 const bucketUrl = (slug: string, hash: string) => (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '') + '/storage/v1/object/public/' + BUCKET + '/books/' + slug + '/' + hash + '.mp3'

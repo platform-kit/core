@@ -12,7 +12,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { isTestProcess, testApi } from '../test-guard.mjs'
+import { isTestProcess, testApi } from './test-guard.mjs'
 
 const ROOT = process.cwd()   /* the site: its .env */
 let loaded = false

@@ -18,7 +18,7 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { asStore } from './store/index.mjs'
-import { supabaseUrl, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, serviceKey } from './supabase-env.mjs'
 import matter from 'gray-matter'
 import { bookChapters } from '../src/lib/speech.js'
 import { isMain } from './is-main.mjs'

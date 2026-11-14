@@ -13,7 +13,7 @@
    served (npm run dev serves it). */
 import assert from 'node:assert/strict'
 import http from 'node:http'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { leave } from './test-stack.mjs'
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 
@@ -91,7 +91,7 @@ try {
     assert.equal((await call({ action: 'pull', uid: uids[2] }, anonKey)).status, 401, 'a guest at the pull')
   })
   await ta('cal-webhook: RECORDING_READY as cal.com sends it, signed, marks the booking pending; the transcript event keeps its link', async () => {
-    const { loadDotEnv } = await import('./tts/storage.mjs'); loadDotEnv()
+    const { loadDotEnv } = await import('./supabase-env.mjs'); loadDotEnv()
     const secret = process.env.CAL_WEBHOOK_SECRET || ''
     if (!secret) { console.log('  (the webhook part skipped — CAL_WEBHOOK_SECRET is unset in .env)'); return }
     const { createHmac } = await import('node:crypto')

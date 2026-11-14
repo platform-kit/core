@@ -13,7 +13,7 @@
  */
 import fs from 'node:fs'
 import path from 'node:path'
-import { LOCAL_SERVICE_KEY } from './tts/storage.mjs'
+import { LOCAL_SERVICE_KEY } from './supabase-env.mjs'
 import { notTheTestStack, refuse } from './test-guard.mjs'
 
 export const isE2E = () => process.env.PLATFORMKIT_E2E === '1'

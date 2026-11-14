@@ -64,7 +64,7 @@ export async function uploadFonts(store: any) {
    hand against a local stack, which loses the bucket on every `supabase start`. */
 if (process.argv[1] && process.argv[1].endsWith('templates.mjs')) {
   const { createClient } = await import('@supabase/supabase-js')
-  const { supabaseUrl, serviceKey } = await import('../tts/storage.mjs')
+  const { supabaseUrl, serviceKey } = await import('../supabase-env.mjs')
   const url = supabaseUrl()
   const key = serviceKey()
   if (!url || !key) {

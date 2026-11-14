@@ -6,7 +6,7 @@
    named. Everything it makes is removed at the end. Skipped with a note when the stack is down
    (AWARDS_TEST=0 skips it too). */
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { leave, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 

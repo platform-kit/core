@@ -15,7 +15,7 @@
  * Skipped with a note when the stack is down (RECOMMENDATIONS_TEST=0 skips it too).
  */
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, localStack, serviceKey } from '../../../build/tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from '../../../build/supabase-env.mjs'
 import { leave } from '../../../build/test-stack.mjs'
 import type { Database } from '../../../supabase/functions/_shared/database.types.js'
 

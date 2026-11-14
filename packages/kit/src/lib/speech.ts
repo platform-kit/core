@@ -1,7 +1,7 @@
 /*
  * The words a book is read aloud with, and the name a recording gets — the one
  * definition shared by the build script (build/tts.mjs, on the machine) and the
- * reader (src/lib/tts/, in the browser). Pure: no imports, no environment, no
+ * reader (the tts module's lib/, in the browser). Pure: no imports, no environment, no
  * side effects, so both can load it and both produce byte-identical text for a
  * chapter and the same hash for it. A recording made in the browser therefore
  * has the same name the script would give it, and a chapter the script later

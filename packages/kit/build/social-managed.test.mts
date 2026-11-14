@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { resolveSocialOutcome } from '../supabase/functions/_shared/social/outcome.mjs'
-import { localStack, serviceKey, supabaseUrl } from './tts/storage.mjs'
+import { localStack, serviceKey, supabaseUrl } from './supabase-env.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 

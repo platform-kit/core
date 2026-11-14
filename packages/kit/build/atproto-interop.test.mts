@@ -22,7 +22,7 @@ import { Firehose, MemoryRunner } from '@atproto/sync'
 import { IdResolver, MemoryCache } from '@atproto/identity'
 import { verifyJwt } from '@atproto/xrpc-server'
 import { AtpAgent } from '@atproto/api'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { leave, siteUnderTest, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 /* a table the test names by a variable: one of the schema's */

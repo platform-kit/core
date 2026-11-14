@@ -112,7 +112,7 @@ const gitText = fs.readFileSync(path.join(dir, 'content/funnels/welcome.md'), 'u
 let rows: any = null
 if (process.env.POLICY_TEST === '0') console.log('store: the rows skipped (POLICY_TEST=0)')
 else {
-  const { supabaseUrl, localStack, serviceKey } = await import('./tts/storage.mjs')
+  const { supabaseUrl, localStack, serviceKey } = await import('./supabase-env.mjs')
   const url = supabaseUrl(), anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''
   let up = false
   try { up = !!url && localStack() && (await fetch(url + '/rest/v1/', { headers: { apikey: anonKey }, signal: AbortSignal.timeout(2000) })).ok } catch { /* down */ }

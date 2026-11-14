@@ -6,7 +6,7 @@ sources:
   [
     packages/kit/src/lib/gated.ts,
     packages/kit/theme/src/components/content,
-    packages/kit/src/lib/tts,
+    packages/kit/modules/tts/lib,
     packages/kit/src/lib/interests.ts,
     packages/kit/src/lib/rank.ts,
     packages/kit/src/lib/records.ts,

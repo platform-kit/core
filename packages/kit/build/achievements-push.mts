@@ -94,7 +94,7 @@ export async function pushAchievements({ check = false, root = process.cwd(), st
      no .env to read and the caller has the client already; supabaseUrl() opens a file. */
   let db = client
   if (!db) {
-    const { supabaseUrl, serviceKey } = await import('./tts/storage.mjs')
+    const { supabaseUrl, serviceKey } = await import('./supabase-env.mjs')
     if (!supabaseUrl() || !serviceKey()) {
       if (!quiet) console.log('achievements: no service key — the declaration is not projected')
       return { achievements: want.length, traits: traits.length, slugs: want.map((r) => r.slug) }

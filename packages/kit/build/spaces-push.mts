@@ -63,7 +63,7 @@ export async function pushSpaces({ check = false, seed = false, root = ROOT, dec
   /* and the environment only where nobody handed a database in */
   let db = client
   if (!db) {
-    const { supabaseUrl, serviceKey } = await import('./tts/storage.mjs')
+    const { supabaseUrl, serviceKey } = await import('./supabase-env.mjs')
     const url = supabaseUrl(), key = serviceKey()
     if (!url || !key) { if (!quiet) console.log('spaces: no service key — the declaration is not projected'); return { spaces: 0 } }
     db = createClient<Database>(url, key, { auth: { persistSession: false } })

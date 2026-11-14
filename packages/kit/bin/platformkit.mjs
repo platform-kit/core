@@ -23,8 +23,8 @@
  *   module drop <key>  remove the tables of a module that is off, after showing them and their rows (`--linked`
  *               for production, `--plan` to only show; a table with rows needs PLATFORMKIT_ALLOW_DESTRUCTIVE)
  *   print       the printed editions (build/print.mjs)
- *   tts         the spoken books (build/tts.mjs)
- *   tts-setup   prepare the spoken-book engine and browser weights (build/tts/setup.mjs)
+ *   tts         the spoken books (modules/tts/build/tts.mjs)
+ *   tts-setup   prepare the spoken-book engine and browser weights (modules/tts/build/setup.mjs)
  *   enrich      the companions and introductions (modules/enrichment/build/enrich.mjs)
  *   share-images photograph the site's share cards and favicon (build/share-images.mjs)
  *   probe       the phone probe (build/phone-probe.mjs)
@@ -282,8 +282,8 @@ switch (cmd) {
   case 'functions': node('assemble.mjs'); npx(rest[0] === 'deploy' ? ['supabase', 'functions', 'deploy', ...rest.slice(1)] : ['supabase', 'functions', 'serve', '--env-file', '.env', ...rest]); break
   case 'module': if (rest[0] !== 'drop') { console.error('✖ platformkit module drop <key> — the one thing module does'); process.exit(2) } node('assemble.mjs'); node('module-drop.mjs', rest.slice(1)); break
   case 'print': node('print.mjs', rest); break
-  case 'tts': node('tts.mjs', rest); break
-  case 'tts-setup': node('tts/setup.mjs', rest); break
+  case 'tts': node('../modules/tts/build/tts.mjs', rest); break
+  case 'tts-setup': node('../modules/tts/build/setup.mjs', rest); break
   case 'enrich': node('../modules/enrichment/build/enrich.mjs', rest); break
   case 'share-images': node('share-images.mjs', rest); break
   case 'probe': node('phone-probe.mjs', rest); break

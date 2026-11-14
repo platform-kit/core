@@ -35,7 +35,7 @@ import { gitStore } from './store/index.mjs'
 import { loadTheme } from './theme.mjs'
 import { loadSite } from './site.mjs'
 import { VeliteFile } from 'velite'
-import { loadDotEnv } from './tts/storage.mjs'
+import { loadDotEnv } from './supabase-env.mjs'
 import { siteFile } from './site-file.mjs'
 import type { Plugin } from 'vite'
 

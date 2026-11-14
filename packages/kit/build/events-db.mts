@@ -2,7 +2,7 @@
  * THE EVENTS, MADE REAL — the half of the projection that needs a database and not a disk.
  *
  * It lives apart from events-push.mjs for one reason: that file reaches for the environment
- * (tts/storage.mjs, which opens .env with node:fs) to find a database, and a file that touches the
+ * (supabase-env.mjs, which opens .env with node:fs) to find a database, and a file that touches the
  * filesystem at import time cannot be in the admin's pipe. This half imports nothing of the sort,
  * so the Edge Function can run it when somebody publishes — which is the only way an event ever
  * becomes rows in a deployment where nothing rebuilds.

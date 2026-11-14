@@ -45,7 +45,7 @@ import { createHash } from 'node:crypto'
 import { makeEpub } from './print/epub.mjs'
 import { choose, pageOf } from './print/pages.mjs'
 import { raster } from './print/raster.mjs'
-import { bucket } from './tts/storage.mjs'
+import { bucket } from './supabase-env.mjs'
 import { commitAndPush } from './git-push.mjs'
 import { isMain } from './is-main.mjs'
 

@@ -14,7 +14,7 @@ import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import { searchRows } from '../src/lib/search-rows.js'
 import { projectSearch } from './search-db.mjs'
-import { supabaseUrl, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, serviceKey } from './supabase-env.mjs'
 import { isMain } from './is-main.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 

@@ -1,6 +1,6 @@
 import { runPhase } from './steps.mjs'
 import { functionsData } from './functions-data.mjs'
-import { isLocalSupabaseUrl, supabaseUrl } from './tts/storage.mjs'
+import { isLocalSupabaseUrl, supabaseUrl } from './supabase-env.mjs'
 
 export async function refreshContent({
   site,

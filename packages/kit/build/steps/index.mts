@@ -20,7 +20,6 @@ import luluWebhook from './lulu-webhook.mjs'
 import authConfig from './auth-config.mjs'
 import pushCatalog from './push-catalog.mjs'
 import funnelsRun from './funnels-run.mjs'
-import tts from './tts.mjs'
 import formEmbed from './form-embed.mjs'
 import supportSdk from './support-sdk.mjs'
 import commentsSdk from './comments-sdk.mjs'
@@ -39,4 +38,4 @@ import { searchPushStep } from './search.mjs'
 import { STEPS as MODULE_STEPS } from '../../modules/registry.mjs'
 import { inPlace } from '../modules/in-place.mjs'
 export const STEPS = inPlace([icons, tokens, embedContent, sales, funnels, chatEmailStrings, emails, print, printType, catalog, analyticsConfig,
-  cloudConfig, webhooksConfigStep, spacesCompileStep, teamsCompileStep, eventsCompileStep, botsStep, contentJson, forms, luluWebhook, authConfig, pushCatalog, webhooksPushStep, spacesPushStep, teamsPushStep, 'courses', eventsPushStep, commentsPushStep, achievementsPushStep, botsPushStep, searchPushStep, funnelsRun, tts, rewrites, formEmbed, supportSdk, commentsSdk, analyticsSdk, modelsJson, prerender], MODULE_STEPS, 'build steps')
+  cloudConfig, webhooksConfigStep, spacesCompileStep, teamsCompileStep, eventsCompileStep, botsStep, contentJson, forms, luluWebhook, authConfig, pushCatalog, webhooksPushStep, spacesPushStep, teamsPushStep, 'courses', eventsPushStep, commentsPushStep, achievementsPushStep, botsPushStep, searchPushStep, funnelsRun, 'tts', rewrites, formEmbed, supportSdk, commentsSdk, analyticsSdk, modelsJson, prerender], MODULE_STEPS, 'build steps')

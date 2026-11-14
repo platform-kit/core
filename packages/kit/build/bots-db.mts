@@ -8,7 +8,7 @@
  *
  * One way, and the files own it: a bot no file declares is removed.
  *
- * It lives apart from bots-push.mjs because that file reaches for the environment (tts/storage.mjs,
+ * It lives apart from bots-push.mjs because that file reaches for the environment (supabase-env.mjs,
  * which opens .env) to find a database, and a file that touches the filesystem at import time
  * cannot be in the admin's pipe. This half imports none, so a publish can run it where nothing
  * rebuilds.

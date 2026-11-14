@@ -16,7 +16,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import pg from 'pg'
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, localStack } from './tts/storage.mjs'
+import { supabaseUrl, localStack } from './supabase-env.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 

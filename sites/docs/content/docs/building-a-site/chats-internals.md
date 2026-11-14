@@ -4,6 +4,7 @@ description: The coaching chat's tables and policies, the support desk's functio
 order: 56
 sources:
   [
+    packages/kit/src/lib/mp3.ts,
     packages/kit/theme/src/components/chat/CoachingPanel.vue,
     packages/kit/theme/src/components/spaces/SpaceCoaching.vue,
     packages/kit/src/lib/desk,

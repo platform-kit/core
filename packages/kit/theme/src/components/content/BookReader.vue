@@ -14,7 +14,7 @@ import { masteryOf, chapterResult, masteryRev } from 'platformkit/lib/mastery.js
 /* the words a chapter is read with, and the name its recording has — shared with
    build/tts.mjs, so a recording made here has the name the script would give it */
 import { INTRO_KEY, bookChapters, chapterSpeech } from 'platformkit/lib/speech.js'
-import { ttsSupported } from 'platformkit/lib/tts/support.js'
+import { ttsSupported, loadAudiobook } from 'platformkit/modules/tts/index.js'
 /* the chapter quiz rides the instrument's runner; it loads only when opened */
 const BookQuiz = defineAsyncComponent(() => import('./BookQuiz.vue'))
 /* the player loads its waveform library only when a chapter has a file to play */
@@ -213,13 +213,13 @@ const audio = computed(() => {
 })
 
 /* ---- the chapter read aloud on this machine, when no recording exists ----
-   On a desktop that can run the voice (src/lib/tts/support.js), a chapter with
+   On a desktop that can run the voice (the tts module's support check), a chapter with
    no recording for its mode gets a Generate slot instead of the player; the
    reader's own words for the page (the same choice render() makes) are hashed
    to the name the build script would give the recording, made in a worker, kept
    in the browser under that name, and played through the ordinary player. */
 const canSpeak = ttsSupported()
-const speech = shallowRef<any>(null)   /* the lazily loaded module: src/lib/tts/audiobook.js (its own state is reactive) */
+const speech = shallowRef<any>(null)   /* the lazily loaded module: the tts module's audiobook player (its own state is reactive) */
 const speechHash = ref<any>({})        /* "<key>|<kind>" → hash, for every page in both modes */
 /* what one page is read with, in one mode: mirrors render() */
 function jobFor(i: any, summary: any) {
@@ -233,7 +233,7 @@ function jobFor(i: any, summary: any) {
 const hashKey = (j: any) => j.key + '|' + j.kind
 async function prepareSpeech() {
   if (!canSpeak || preview) return
-  const m = speech.value || (speech.value = await import('platformkit/lib/tts/audiobook.js'))
+  const m = speech.value || (speech.value = await loadAudiobook())
   const map: any = {}, all = []
   for (let i = 0; i < chapters.value.length; i++) for (const summary of [false, true]) {
     const j = jobFor(i, summary)

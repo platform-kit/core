@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { createHmac, createHash } from 'node:crypto'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { notHere, leave } from './test-stack.mjs'
 
 let n = 0, bad = 0

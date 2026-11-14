@@ -4,11 +4,11 @@ description: The text-to-speech pipeline — made locally, named by the text, st
 order: 58
 sources:
   [
-    packages/kit/build/tts.mts,
-    packages/kit/build/tts,
+    packages/kit/modules/tts/build/tts.mts,
+    packages/kit/modules/tts/build,
     packages/kit/src/lib/speech.ts,
     packages/kit/src/lib/speech/,
-    packages/kit/src/lib/tts,
+    packages/kit/modules/tts/lib,
     packages/kit/theme/src/components/content/BookAudio.vue,
     packages/kit/theme/src/components/content/BookGenerate.vue,
   ]
@@ -17,11 +17,11 @@ reviewed: 2026-11-10
 
 ## The step
 
-The deploy's side of it is a build step, `packages/kit/build/steps/tts.mts`: phase `after`, module `tts`, `when` `TTS=1`, needing the service key and `SUPABASE_URL`, `git-lfs` on the path and the packages `onnxruntime-node` and `ffmpeg-static` — optional peers of the kit that a site with the module on names in its own `package.json`. `platformkit steps` shows it, `platformkit run tts` runs it alone, and the deploy checks ask for its needs only while `TTS=1`. See [the build steps](/content/docs/building-a-site/dev-build-and-deploy#the-build-steps).
+The deploy's side of it is a build step, `packages/kit/modules/tts/build/steps.mts`: phase `after`, module `tts`, `when` `TTS=1`, needing the service key and `SUPABASE_URL`, `git-lfs` on the path and the packages `onnxruntime-node` and `ffmpeg-static` — optional peers of the kit that a site with the module on names in its own `package.json`. `platformkit steps` shows it, `platformkit run tts` runs it alone, and the deploy checks ask for its needs only while `TTS=1`. See [the build steps](/content/docs/building-a-site/dev-build-and-deploy#the-build-steps).
 
 ## The script
 
-`platformkit tts -- --book <slug>` (`--all`, `--chapter <title>`, `--summaries-only` / `--text-only`, `--dry`, `--local`, `--pull`, `--show`, `--workers N`, `--no-rebuild`) speaks every chapter of a book (none, for a book with `fullText: false`: its introduction and summaries only) and every chapter summary in its companion with **Supertonic 3** (Supertone; OpenRAIL-M weights, the archived project's final revision pinned by `build/tts/setup.mjs`) on the CPU through onnxruntime-node — the engine code is the project's own Node example, vendored in `build/tts/supertonic/`. No Python, no GPU, no API, no cost; about four times faster than real time per engine; `--workers` runs several. `TTS_VOICE` picks the voice (M5, the warm soft-spoken one made for audiobooks; F5 its counterpart), `TTS_STEPS`, `TTS_SPEED`, `TTS_THREADS`.
+`platformkit tts -- --book <slug>` (`--all`, `--chapter <title>`, `--summaries-only` / `--text-only`, `--dry`, `--local`, `--pull`, `--show`, `--workers N`, `--no-rebuild`) speaks every chapter of a book (none, for a book with `fullText: false`: its introduction and summaries only) and every chapter summary in its companion with **Supertonic 3** (Supertone; OpenRAIL-M weights, the archived project's final revision pinned by `modules/tts/build/setup.mjs`) on the CPU through onnxruntime-node — the engine code is the project's own Node example, vendored in `modules/tts/build/supertonic/`. No Python, no GPU, no API, no cost; about four times faster than real time per engine; `--workers` runs several. `TTS_VOICE` picks the voice (M5, the warm soft-spoken one made for audiobooks; F5 its counterpart), `TTS_STEPS`, `TTS_SPEED`, `TTS_THREADS`.
 
 `worker.mjs` is one engine speaking one chapter: the text cut into pieces at sentence ends (`chunkText`, 300 characters), each spoken whole, joined with the engine's gap of silence between. **Nothing is ever trimmed**: the model speaks in blocks of about 70 ms, a piece ends a fraction of a block early rather than mid-word, and summing those paddings and cutting them off the end of a chapter is the bug that once ate the last words of long chapters. A recording's length is the samples it holds.
 
@@ -58,7 +58,7 @@ A chosen one is cached like any other weight and paid for once.
 characters, speaks every piece at the engine's own steps, and posts one finished mp3 — and it must,
 because **a recording's name is a hash of the engine's settings**: a default changed here would
 quietly rename every file in the store and the next run would speak the whole library again.
-`build/speech.test.mts` reproduces every committed name and is what holds that.
+`packages/kit/modules/tts/tests/speech.test.mts` reproduces every committed name and is what holds that.
 
 **The bucket fills as people read.** Before a chapter is made in a browser, the bucket is asked for its name (a HEAD, once per name): a recording any reader has already made plays at once. A chapter a **signed-in** reader's browser finishes is uploaded to the same place with its metadata; guests generate for themselves only. The policy lets the authenticated role insert under exactly that name shape and nothing else — never update, never delete — so a name once taken is never replaced by a reader. The script's `adoptFromBucket` makes browser-made chapters the copy of record on the next local run. The reader never writes a manifest; the script owns it.
 

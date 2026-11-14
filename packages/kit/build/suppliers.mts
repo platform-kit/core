@@ -21,7 +21,7 @@ import { pathToFileURL } from 'node:url'
 import { printers, PRINTER_IDS, SUPPLIER_IDS, FORMATS_PRINTED } from '../supabase/functions/_shared/suppliers/index.js'
 import { kinds as registerKinds } from './kinds/index.js'
 import { storeOf } from './site.mjs'
-import { loadDotEnv } from './tts/storage.mjs'
+import { loadDotEnv } from './supabase-env.mjs'
 import { siteFile } from './site-file.mjs'
 
 loadDotEnv()   /* the keys from .env, for a process that has not read it (the admin server) */

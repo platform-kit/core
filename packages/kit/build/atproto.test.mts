@@ -10,7 +10,7 @@
    Skipped with a note when the stack or the function is down (ATPROTO_TEST=0 skips it too). */
 import { createClient } from '@supabase/supabase-js'
 import { AtpAgent } from '@atproto/api'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { leave, siteUnderTest, notHere } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 /* a table the test names by a variable: one of the schema's */

@@ -126,7 +126,7 @@ export const MAY_USE_FS = {
 
   /* not content at all, and in the function not reached */
   'build/theme.mjs':       "the theme PACKAGE's own files (its manifest, its overrides), which ship with the code and are never a row",
-  'build/tts/storage.mjs': 'reads .env on a machine that has one; in a function the environment is the environment',
+  'build/supabase-env.mjs': 'reads .env on a machine that has one; in a function the environment is the environment',
   'build/spaces-disk.mjs': 'the three things the spaces compile wants from a disk, in one place so spaces.mjs wants none: the catalog and the forms it checks a declaration against (both the BUILD\'s own outputs, never content) and its own output file. On the publish path spaces.mjs takes all three as data and never reaches for this module — st.kind === \'rows\' is the branch, and the projection writes to the database rather than a file',
   'build/write-if-changed.mjs': 'writes a build output only where the bytes differ, so the watched edge runtime is not restarted for nothing; reached only from the machine side of a compile',
 

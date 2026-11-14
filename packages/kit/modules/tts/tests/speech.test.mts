@@ -13,10 +13,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
 import matter from 'gray-matter'
-import { parseCompanionBody } from './companion-io.mjs'
-import { ENGINE, INTRO_KEY, bookChapters, chapterSpeech, hashInput } from '../src/lib/speech.js'
-import { REPO as SETUP_REPO, REV as SETUP_REV, BROWSER_FILES as SETUP_FILES } from './tts/setup.mjs'
-import { REPO, REV, BROWSER_FILES } from '../src/lib/tts/weights.js'
+import { parseCompanionBody } from '../../../build/companion-io.mjs'
+import { ENGINE, INTRO_KEY, bookChapters, chapterSpeech, hashInput } from '../../../src/lib/speech.js'
+import { REPO as SETUP_REPO, REV as SETUP_REV, BROWSER_FILES as SETUP_FILES } from '../build/setup.mjs'
+import { REPO, REV, BROWSER_FILES } from '../lib/weights.js'
 
 let pass = 0, fail = 0
 const ok = (name: string|boolean, cond: string|boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }

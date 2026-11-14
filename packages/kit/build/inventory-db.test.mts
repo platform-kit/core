@@ -12,7 +12,7 @@
  *   node packages/kit/build/inventory-db.test.mjs
  */
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 

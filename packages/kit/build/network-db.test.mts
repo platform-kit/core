@@ -6,7 +6,7 @@
    of them written down and none of them editable. Everything it makes is removed at the end.
    Skipped with a note when the stack is down (NETWORK_TEST=0 skips it too). */
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
 import { leave } from './test-stack.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 /* a table the test names by a variable: one of the schema's */

@@ -20,6 +20,6 @@ export async function ensureWebhook(url: string, id = 'lulu') {
 if (isMain(import.meta.url)) {
   const i = process.argv.indexOf('--url'), url = i > 0 ? process.argv[i + 1] : ''
   if (!url) { console.error('usage: node build/print/webhook.mjs --url https://<ref>.supabase.co/functions/v1/lulu-webhook'); process.exit(1) }
-  const { loadDotEnv } = await import('../tts/storage.mjs'); loadDotEnv()
+  const { loadDotEnv } = await import('../supabase-env.mjs'); loadDotEnv()
   await ensureWebhook(url)
 }

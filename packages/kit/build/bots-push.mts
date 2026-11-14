@@ -10,7 +10,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { compileBots } from './bots.mjs'
 import { projectBots } from './bots-db.mjs'
-import { supabaseUrl, serviceKey } from './tts/storage.mjs'
+import { supabaseUrl, serviceKey } from './supabase-env.mjs'
 import { isMain } from './is-main.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
