@@ -36,7 +36,7 @@
    both, so they cannot drift apart in silence. */
 /* the key's FACE is not crypto: it is how a person reads a secret off a screen, and the panel
    needs it without reaching for this module */
-import { spaceOut, tighten } from './model.js'
+import { spaceOut, tighten } from 'platformkit/lib/spaces/model.js'
 export { spaceOut, tighten }
 
 const pack = (id: string) => String(id || '').replace(/-/g, '').toLowerCase()
@@ -107,7 +107,7 @@ let injected: any = null
 export function useDb(client: any) { injected = client }
 async function database() {
   if (injected) return injected
-  const m = await import('../supabase.js')
+  const m = await import('platformkit/lib/supabase.js')
   injected = m.supabase
   return injected
 }

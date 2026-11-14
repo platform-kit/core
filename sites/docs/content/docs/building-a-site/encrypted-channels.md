@@ -4,22 +4,22 @@ description: A channel the server cannot read — what it costs, how a room is s
 order: 56.45
 sources:
   [
-    packages/kit/supabase/schemas/92-encryption.sql,
+    packages/kit/modules/space-encryption/schema/92-encryption.sql,
     packages/kit/supabase/functions/_shared/matrix/keys.ts,
-    packages/kit/build/encryption.test.mts,
-    packages/kit/build/encryption-db.test.mts,
+    packages/kit/modules/space-encryption/tests/encryption.test.mts,
+    packages/kit/modules/space-encryption/tests/encryption-db.test.mts,
     packages/kit/build/modules/kit.mts,
     packages/kit/build/spaces-io.mts,
     packages/kit/build/spaces.mts,
     packages/kit/build/spaces-push.mts,
     packages/kit/supabase/functions/matrix-api/index.ts,
     packages/kit/supabase/functions/_shared/matrix/state.ts,
-    packages/kit/src/lib/spaces/crypto.ts,
+    packages/kit/modules/space-encryption/lib/crypto.ts,
     packages/kit/src/lib/spaces/api.ts,
     packages/kit/src/lib/spaces/audio.ts,
     packages/kit/src/lib/spaces/model.ts,
     packages/kit/vite/index.mts,
-    packages/kit/theme/src/components/spaces/SpaceSealSetup.vue,
+    packages/kit/modules/space-encryption/ui/SpaceSealSetup.vue,
     packages/kit/theme/src/content/ui/spaces.md,
   ]
 reviewed: 2026-11-13
@@ -115,7 +115,7 @@ the target, so the fence is shared membership rather than account status.
 ## Reading a sealed room in the site's own interface
 
 The site is a Matrix client like any other, and holds its own device keys. All of the cryptography
-is in **one module**, `src/lib/spaces/crypto.js`, and nothing else in the project does anything
+is in **one module**, `modules/space-encryption/lib/crypto.ts`, and nothing else in the project does anything
 cryptographic — a check reads the files and fails if any other one so much as names the library or
 a key table, because a second place that knew how to seal would be a second place that could get it
 wrong without anything looking broken.

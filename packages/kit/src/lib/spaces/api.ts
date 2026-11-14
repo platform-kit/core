@@ -168,7 +168,7 @@ export const mayMention = (channelId: any) => {
 
 /*
  * THE ONE SEAM. A sealed room is read and written here exactly like any other, and NOTHING in this
- * file is cryptographic: it asks `./crypto.js` to turn a body into a cipher and a cipher back into
+ * file is cryptographic: it asks the space-encryption module to turn a body into a cipher and a cipher back into
  * a body, and holds what comes back. No key, no session, no device is named here — which is the
  * only way the guarantee stays checkable, because a second place that knew how to seal would be a
  * second place that could get it wrong.
@@ -178,7 +178,7 @@ export const mayMention = (channelId: any) => {
  */
 let crypt: any = null
 async function crypto_() {
-  if (!crypt) crypt = await import('./crypto.js')
+  if (!crypt) crypt = await import('platformkit/modules/space-encryption/index.js')
   return crypt
 }
 

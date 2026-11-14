@@ -12,8 +12,8 @@
  *
  * Run from a site's root; in npm test.
  */
-import { encryptedOf, sealedRooms, parseChannel, parseSpace, serialiseChannel, serialiseSpace } from './spaces-io.mjs'
-import { kitConfig } from './velite.mjs'
+import { encryptedOf, sealedRooms, parseChannel, parseSpace, serialiseChannel, serialiseSpace } from '../../../build/spaces-io.mjs'
+import { kitConfig } from '../../../build/velite.mjs'
 
 let pass = 0, fail = 0
 const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
@@ -147,7 +147,7 @@ ok('a channel handed over flat is read too', sealedRooms([{ slug: 'x', data: {},
 {
   const { readFileSync: rf, readdirSync: rd, statSync: stat } = await import('node:fs')
   const { join, relative } = await import('node:path')
-  const WORKSPACE = new URL('../../..', import.meta.url).pathname
+  const WORKSPACE = new URL('../../../../..', import.meta.url).pathname   /* the workspace, from modules/space-encryption/tests/ */
   const SITE = process.cwd()
   const dirs = [
     join(WORKSPACE, 'packages/kit/theme/src'),
@@ -211,7 +211,7 @@ ok('a channel handed over flat is read too', sealedRooms([{ slug: 'x', data: {},
 
 /*
  * The guarantee an encrypted room makes is only as good as the number of places that could break
- * it, so there is exactly one: `src/lib/spaces/crypto.ts`. Everything else — the surface, the
+ * it, so there is exactly one: `modules/space-encryption/lib/crypto.ts`. Everything else — the surface, the
  * state, the search, the admin — asks it. This check reads the files rather than trusting the
  * reading of them, because a second place that learned to seal would not fail any other test:
  * it would work, and it would be wrong in a way nobody could see from the outside.
@@ -219,7 +219,7 @@ ok('a channel handed over flat is read too', sealedRooms([{ slug: 'x', data: {},
 {
   const { readFileSync: rf, readdirSync: rd, statSync: st } = await import('node:fs')
   const { join, relative } = await import('node:path')
-  const ROOT = new URL('../../..', import.meta.url).pathname
+  const ROOT = new URL('../../../../..', import.meta.url).pathname   /* the workspace, from modules/space-encryption/tests/ */
 
   const walk = (dir: any, out: string[] = []) => {
     let entries = []
@@ -235,8 +235,9 @@ ok('a channel handed over flat is read too', sealedRooms([{ slug: 'x', data: {},
   const files = [
     ...walk(join(ROOT, 'packages/kit/src')),
     ...walk(join(ROOT, 'packages/kit/theme/src')),
+    ...walk(join(ROOT, 'packages/kit/modules')),
   ]
-  const THE_ONE = join(ROOT, 'packages/kit/src/lib/spaces/crypto.ts')
+  const THE_ONE = join(ROOT, 'packages/kit/modules/space-encryption/lib/crypto.ts')
   ok('there is a module whose job this is', files.includes(THE_ONE))
 
   /* the library itself */
@@ -254,8 +255,8 @@ ok('a channel handed over flat is read too', sealedRooms([{ slug: 'x', data: {},
 
   /* api.js is the one caller, and it holds a cipher without ever making one */
   const API = rf(join(ROOT, 'packages/kit/src/lib/spaces/api.ts'), 'utf8')
-  ok('api.js reaches the sealing through that module and no other way', /import\('\.\/crypto\.js'\)/.test(API))
-  ok('…and it is imported on demand, so an open room is what loads the wasm', !/^import .* from '\.\/crypto\.js'/m.test(API))
+  ok('api.js reaches the sealing through that module and no other way', /import\('platformkit\/modules\/space-encryption\/index\.js'\)/.test(API))
+  ok('…and it is imported on demand, so an open room is what loads the wasm', !/^import .* from 'platformkit\/modules\/space-encryption\/index\.js'/m.test(API))
   ok('…and api.js both seals and opens through it', /m\.seal\(/.test(API) && /m\.open\(/.test(API))
   ok('…and never sends the words when the sealing fails', /row\.cipher = await m\.seal\(/.test(API) && /row\.body = null/.test(API))
 }

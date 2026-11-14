@@ -18,8 +18,8 @@
  *   node packages/kit/build/encryption-db.test.mjs
  */
 import { createClient } from '@supabase/supabase-js'
-import { leave } from './test-stack.mjs'
-import type { Database } from '../supabase/functions/_shared/database.types.js'
+import { leave } from '../../../build/test-stack.mjs'
+import type { Database } from '../../../supabase/functions/_shared/database.types.js'
 import type { SupabaseClient } from '@supabase/supabase-js'
 /* a table the test names by a variable: one of the schema's */
 type TableName = keyof Database['public']['Tables']
@@ -31,7 +31,7 @@ console.log('\nWHAT AN ENCRYPTED CHANNEL STORES\n')
 
 if (process.env.ENCRYPTION_TEST === '0') { console.log('  ⚠ SKIPPED — ENCRYPTION_TEST=0\n'); process.exit(0) }
 
-const { supabaseUrl, serviceKey } = await import('./supabase-env.mjs')
+const { supabaseUrl, serviceKey } = await import('../../../build/supabase-env.mjs')
 const url = supabaseUrl(), key = serviceKey()
 if (!url || !key) { console.log('  ⚠ SKIPPED — no local stack in the environment\n'); leave(0) }
 const db = createClient<Database>(url, key, { auth: { persistSession: false } })
@@ -222,7 +222,7 @@ try {
 /*
  * THE ONLY HONEST PROOF THE TRANSPORT IS RIGHT. Everything above asks the database what it holds;
  * this asks the crypto library whether two devices can actually talk — because the transport in
- * `src/lib/spaces/crypto.ts` is a sequence of five request kinds answered against our own tables,
+ * `modules/space-encryption/lib/crypto.ts` is a sequence of five request kinds answered against our own tables,
  * and a mistake in any of them does not throw. It withholds the key and the room goes quiet.
  *
  * It runs under node by making two CONTEXTS: two people, two devices, two signed-in clients, the
@@ -241,7 +241,7 @@ try {
   if (!A || !B) {
     ok('two devices can seal and open a message (skipped: no anon key in the environment)', true)
   } else {
-    const { context } = await import('../src/lib/spaces/crypto.js')
+    const { context } = await import('../lib/crypto.js')
     const { data: a } = await db.from('profiles').select('id').eq('email', 'member@example.com').single()
     const { data: bb } = await db.from('profiles').select('id').eq('email', 'member2@example.com').single()
     const { data: shared } = await db.from('space_members').select('space_id').eq('user_id', (a as any).id)
@@ -350,7 +350,7 @@ try {
          * what the message said, and a row's own check refuses one beside a cipher anyway.
          */
         const bytes = new TextEncoder().encode('%PDF-1.4 the terms nobody else may read')
-        const { sealBytes, openBytes } = await import('../src/lib/spaces/crypto.js')
+        const { sealBytes, openBytes } = await import('../lib/crypto.js')
         const { data: sealedBytes, info } = await sealBytes(bytes)
         ok('a file is encrypted before it is uploaded, with a key of its own',
           !new TextDecoder().decode(sealedBytes).includes('nobody else may read'))
@@ -484,7 +484,7 @@ try {
            * under node there is no `location` and no `VITE_APP_URL` to ask, which produced an id
            * ending in a bare colon that the library refuses outright.
            */
-          const crypt = await import('../src/lib/spaces/crypto.js')
+          const crypt = await import('../lib/crypto.js')
           const host2 = mx.slice(mx.indexOf(':') + 1)
           const theirs = crypt.context({ me: (b2 as any).id, device: 'LIVE-B', db: B2, host: host2 })
           await theirs.ready()

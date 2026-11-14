@@ -8,7 +8,7 @@ sources:
     packages/kit/supabase/data.sql,
     packages/kit/supabase/schemas/87-api-rate.sql,
     packages/kit/supabase/schemas/91-matrix.sql,
-    packages/kit/supabase/schemas/92-encryption.sql,
+    packages/kit/modules/space-encryption/schema/92-encryption.sql,
     packages/kit/build/plan.mts,
     packages/kit/build/db-types.mts,
     packages/kit/build/db-types.test.mts,

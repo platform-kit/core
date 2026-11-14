@@ -37,7 +37,7 @@ export const filePath = (channelId: string, messageId: string, ext: string) => c
 async function opened(m: { attachment: any; media: any; attachment_type: any }) {
   const { data, error } = await supabase!.storage.from(BUCKET).download(m.attachment)
   if (error || !data) return null
-  const crypt = await import('./crypto.js')
+  const crypt = await import('platformkit/modules/space-encryption/index.js')
   const bytes = await crypt.openBytes(await data.arrayBuffer(), m.media)
   if (!bytes) return null
   return new Blob([bytes], { type: m.attachment_type || 'application/octet-stream' })

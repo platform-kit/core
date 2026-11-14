@@ -165,21 +165,8 @@ const LISTED: Array<ModuleDeclaration | string> = [
       ],
     },
   },
-  {
-    key: 'space-encryption', what: 'a channel whose messages the server cannot read', needs: 'a key lives on a device and the cipher in a row',
-    /*
-     * ITS OWN SWITCH, AND NOT PART OF SPACES. End-to-end encryption costs a site things it may
-     * want more than it wants secrecy: there is no search of an encrypted channel, no bot in one,
-     * and no moderating what nobody can read. A site that wants rooms should not have to take
-     * that bargain to get them, and a site that wants it should take it deliberately. So the
-     * module is separate, and `encrypted: true` with it off is refused at the build rather than
-     * quietly ignored — a channel a site believes is sealed and is not is the worst of the three
-     * possible states.
-     */
-    requires: [{ module: 'spaces', why: 'there is no channel to encrypt without the rooms it belongs to' }],
-    static: false, git: true, cloud: true,
-    owns: { schema: ['92-encryption.sql'] },
-  },
+  /* space-encryption: in its own folder, packages/kit/modules/space-encryption/ */
+  'space-encryption',
   /*
    * THE SITE'S OWN SOCIAL NETWORK: a page per person, follows, a timeline, posts each saying who may
    * read them — and the same served as an atproto server, so Bluesky's app signs in with the host

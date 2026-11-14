@@ -137,9 +137,9 @@ const KIT_TESTS = [
   on('spaces') && ['spaces.test.mts'],
   /* a channel's seal: the one resolution of the channel's answer against its space's, and the
      grammar that was carrying neither — behind its own module, which is separate from spaces */
-  on('space-encryption') && ['encryption.test.mts'],
+  /* (encryption.test.mts is the space-encryption module's own, in its folder) */
   /* and what a sealed message actually leaves in the row and in the index, against the stack */
-  on('space-encryption') && ['encryption-db.test.mts'],
+  /* (encryption-db.test.mts is the space-encryption module's own, in its folder) */
   ['comments.test.mts'],   /* the shape of a conversation, and the flagged list: whole words, so Scunthorpe is not held */
   ['reactions.test.mts'],  /* best is not top: 9 up and 1 down above 40 up and 30 down, on fixed numbers */
   ['comments-db.test.mts'],  /* who is held and who is not, against the stack: the flagged word beating trust, what an approval writes down, the embed's three declarations */
