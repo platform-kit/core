@@ -379,11 +379,8 @@ const LISTED: Array<ModuleDeclaration | string> = [
     static: false, git: true, cloud: true,
     owns: {},
   },
-  {
-    key: 'translation', what: 'reserved — a coming change', needs: 'not built',
-    static: false, git: false, cloud: false,
-    owns: {},
-  },
+  /* translation: in its own folder, packages/kit/modules/translation/ */
+  'translation',
 ]
 
 /* every module of the kit: the listed ones as written, and each named by key read from its own folder (openspec: modules-as-packages) */
