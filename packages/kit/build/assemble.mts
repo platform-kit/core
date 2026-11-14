@@ -436,6 +436,13 @@ plan.set('seed.sql', { from: 'the kit\'s seed.sql + ' + D.seed, content: Buffer.
 /* a config.toml for a site that has none: the kit's template with the site's id, name and port base (data.ports, 54320 by default);
    once written it is the site's own and never touched again but for the seed's paths (emails.mjs writes its block into it) */
 const cfg = path.join(OUT, 'config.toml')
+/* --explain <path>: where one file of the tree comes from, for dev's watcher when somebody edits the tree by hand */
+if (arg('--explain')) {
+  const entry = plan.get(arg('--explain'))
+  const from = entry && typeof entry.from === 'string' ? entry.from : null
+  console.log(from ? (path.isAbsolute(from) ? path.relative(ROOT, from) : from) : '')
+  process.exit(0)
+}
 const check = process.argv.includes('--check')
 if (!fs.existsSync(cfg) && !check) {
   const base = Number(D.ports || 54320)

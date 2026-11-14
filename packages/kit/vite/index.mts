@@ -29,6 +29,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { gatesOf } from '../src/lib/member-panels.js'
+import { allModuleDirs } from '../build/modules/folders.mjs'
 import { loadSite, publicSite, communityOf, courseKindsOf, avatarsOf, INSTRUMENT, RECOMMENDATIONS, PERMISSIONS, DESK, deskSourcesOf, navOf, ctaOf } from '../build/site.mjs'
 import { loadTheme, resolveOverrides } from '../build/theme.mjs'
 export { loadSite, publicSite, loadTheme, resolveOverrides }
@@ -300,8 +301,12 @@ function site(c: any, theme: any, keys: string[] = [], pages: any[] = [], module
       const modelsDir = abs('content/models')
       const isModel = (f: string) => f.startsWith(modelsDir + path.sep) && f.endsWith('.md') && !f.slice(modelsDir.length + 1).includes(path.sep)
       server.watcher.add(cfg)
+      /* a module's manifest is config too: its pages, slots and fills are composed when the server starts (openspec: modules-as-packages) */
+      const manifests = allModuleDirs(abs('.')).map((d) => path.join(d, 'module.ts')).filter((f) => fs.existsSync(f))
+      server.watcher.add(manifests)
       const changed = (f: string) => {
         if (f === cfg) { server.config.logger.info('platformkit.config.js changed, restarting server...', { timestamp: true }); server.restart(); return }
+        if (manifests.includes(f)) { server.config.logger.info('a module manifest changed, restarting server...', { timestamp: true }); server.restart(); return }
         if (isModel(f) && fs.existsSync(vcfg)) { server.config.logger.info('a content model changed, velite starts over...', { timestamp: true }); const now = new Date(); fs.utimesSync(vcfg, now, now) }
       }
       server.watcher.on('change', changed); server.watcher.on('add', changed); server.watcher.on('unlink', changed)

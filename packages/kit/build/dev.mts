@@ -120,6 +120,29 @@ process.on('exit', cleanupPort)
 /* Assemble only after the public port is known to be available. */
 { const r = spawnSync(process.execPath, [fileURLToPath(new URL('./assemble.mjs', import.meta.url))], { stdio: 'inherit' }); if (r.status !== 0) die('supabase/ could not be assembled') }
 
+/* AN EDIT IN A MODULE'S FOLDER REACHES THE RUNNING SITE (openspec: modules-as-packages): its functions and schema are
+   assembled again as they change, the schema applied to the dev database where nothing is lost, and an edit made in the
+   assembled tree put back with the name of the file to edit. Browser code is Vite's. Not for an installed kit: its folders
+   are not anybody's to edit. */
+if (!noStack) {
+  const { startDevWatch } = await import('./dev-watch.mjs')
+  const { allModuleDirs } = await import('./modules/folders.mjs')
+  const KIT_PKG = fileURLToPath(new URL('..', import.meta.url))
+  const editable = (d: string) => !d.includes(path.sep + 'node_modules' + path.sep)
+  const ASSEMBLE = fileURLToPath(new URL('./assemble.mjs', import.meta.url))
+  const stopWatch = startDevWatch({
+    moduleDirs: allModuleDirs(process.cwd()).filter(editable),
+    kitSupabase: editable(KIT_PKG) ? path.join(KIT_PKG, 'supabase') : null,
+    siteSupabase: path.join(process.cwd(), 'supabase'),
+  }, {
+    assemble: () => spawnSync(process.execPath, [ASSEMBLE], { stdio: 'inherit' }).status === 0,
+    migrate: () => { const r = spawnSync(process.execPath, [fileURLToPath(new URL('../bin/platformkit.mjs', import.meta.url)), 'migrate'], { encoding: 'utf8' }); return { ok: r.status === 0, output: ((r.stdout || '') + (r.stderr || '')).trim().split('\n').slice(-15).join('\n') } },
+    sourceOf: (rel: string) => { const r = spawnSync(process.execPath, [ASSEMBLE, '--explain', rel], { encoding: 'utf8' }); return r.status === 0 ? (r.stdout.trim().split('\n').pop() || null) : null },
+    log: (line: string) => console.log('[watch] ' + line),
+  })
+  process.on('exit', stopWatch)
+}
+
 if (ownRuntimeProject) {
   try {
     const runtimeRoot = platformkitRuntimePath(workspace, 'dev', 'single', siteName || path.basename(process.cwd()))

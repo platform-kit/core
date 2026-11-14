@@ -5,7 +5,7 @@
 - [x] The loader: reads `packages/kit/modules/*` and a site's `src/modules/*`, together with the old layout. Verified by an unchanged assembled tree and route census.
 - [ ] Contribution points composed by the kit: routes with precedence, admin sections, nav, places, member-card panels, steps, models, emails, strings, cron. Done so far: routes (the page table), community places and member-card panels (slots), admin screens (a slot; the rail still names each screen's key and icon, to be contributed), models, steps and strings (module folders), cron (the manifest). Left: the admin rail, nav, emails. Verified by `module-routes` and `module-slots` tests and an unchanged demo build.
 - [x] The assembler and override resolver read module folders. Integrations load after both modules' schema, and module function code is placed under `_shared/<module>/`. Verified by `assembled-tree.test.mts` byte-identical and `overrides.test.mts`.
-- [ ] Dev watches module folders: browser code through Vite from its own folder, functions and their shared code re-copied on change, schema re-planned and applied when non-destructive, manifests re-composed. Verified by `build/dev-module-watch.test.mts` (function, component, destructive schema edit).
+- [x] Dev watches module folders: browser code through Vite from its own folder, functions and their shared code re-copied on change, schema re-planned and applied when non-destructive, manifests re-composed. Verified by `build/dev-module-watch.test.mts` (function, component, destructive schema edit).
 - [ ] Named shared mechanics listed in `build/modules/shared.mts`. Verified by `manifests.test.mts`.
 
 ### Pilot: courses
