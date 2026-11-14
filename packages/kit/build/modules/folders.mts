@@ -60,6 +60,22 @@ export const inModule = (key: string, p: string): string => {
   return './' + path.relative(process.cwd(), path.join(d, p)).split(path.sep).join('/')
 }
 
+/* the kit's own email designs by kind: its content/emails/ and each kit module folder's emails/ (openspec: modules-as-packages);
+   one kind in two places is refused */
+export function kitEmailDesigns(): Record<string, string> {
+  const out: Record<string, string> = {}
+  const dirs = [fileURLToPath(new URL('../../content/emails/', import.meta.url)), ...moduleDirs(KIT_MODULES_DIR).map((d) => path.join(d, 'emails'))]
+  for (const dir of dirs) {
+    if (!fs.existsSync(dir)) continue
+    for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.json')).sort()) {
+      const kind = f.slice(0, -5)
+      if (out[kind]) throw new Error(`the email design ${kind} is in both ${out[kind]} and ${path.join(dir, f)}`)
+      out[kind] = path.join(dir, f)
+    }
+  }
+  return out
+}
+
 /* every module folder a site has: the kit's, then the site's own (src/modules/<key>/) */
 export function allModuleDirs(siteRoot = process.cwd()): string[] {
   return [...moduleDirs(KIT_MODULES_DIR), ...moduleDirs(path.join(siteRoot, 'src', 'modules'))]

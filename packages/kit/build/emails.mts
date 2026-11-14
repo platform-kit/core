@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url'
 import { KINDS, GOTRUE, SAMPLES } from '../supabase/functions/_shared/emails/tags.js'
 import { fill } from '../supabase/functions/_shared/emails/fill.js'
 import { emailWords } from './chat-email-strings.mjs'
+import { kitEmailDesigns } from './modules/folders.mjs'
 
 const ROOT = process.cwd()
 export const DESIGNS = 'content/emails'
@@ -42,12 +43,13 @@ import { isMain } from './is-main.mjs'
    arrangement the theme's strings have: the kit ships something that works and a site's own file
    under content/emails overrides it whole. Without it, adding a kind to the kit would break every
    site that had not yet drawn it — including the demo and the docs, which have no designer. */
-const KIT_DESIGNS = fileURLToPath(new URL('../content/emails/', import.meta.url))
+/* the kit's own designs by kind, a module folder's emails/ among them (openspec: modules-as-packages) */
+const KIT_DESIGNS = kitEmailDesigns()
 export function readDesign(kind: string) {
   const own = join(ROOT, DESIGNS, kind + '.json')
   if (existsSync(own)) return JSON.parse(readFileSync(own, 'utf8'))
-  const kit = KIT_DESIGNS + kind + '.json'
-  return existsSync(kit) ? JSON.parse(readFileSync(kit, 'utf8')) : null
+  const kit = KIT_DESIGNS[kind]
+  return kit && existsSync(kit) ? JSON.parse(readFileSync(kit, 'utf8')) : null
 }
 export async function compileEmails({ check = false } = {}) {
   const out: any = {}

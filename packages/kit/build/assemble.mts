@@ -41,7 +41,7 @@ import { loadSite, deploymentShape, pipeSiteConfigSource } from './site.mjs'
 import { moduleSet } from './steps.mjs'
 import { backendFor, kitBackend } from './modules/backend.mjs'
 import { MODULES as KIT_MODULES } from './modules/kit.mjs'
-import { MODULE_DIRS, KIT_MODULES_DIR, folderBackend } from './modules/folders.mjs'
+import { MODULE_DIRS, KIT_MODULES_DIR, folderBackend, kitEmailDesigns } from './modules/folders.mjs'
 import { assertNoManualCron, cronSql } from './cron.mjs'
 import { accessOf, accessSql, communityAccessOf } from './network-access.mjs'
 import { closure, PIPE_ROOTS, PIPE_SKIP, sourceOf , jsImports } from './pipe-closure.mjs'
@@ -420,9 +420,10 @@ for (const [target, entry] of plan) {
    package directory to fall back to, so they are bundled here — the same arrangement the theme's
    strings have, and for the same reason. */
 {
-  const dir = path.join(KIT, '..', 'content', 'emails')
   const out: any = {}
-  try { for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.json'))) out[f.slice(0, -5)] = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')) } catch { /* a kit with none */ }
+  /* the kit's own and each module folder's, by kind, in the order the kinds sort */
+  const designs = kitEmailDesigns()
+  for (const kind of Object.keys(designs).sort()) out[kind] = JSON.parse(fs.readFileSync(designs[kind], 'utf8'))
   plan.set('functions/_shared/pipe/kit-designs.json', { from: 'packages/kit/content/emails', content: Buffer.from(JSON.stringify(out) + '\n') })
 }
 
