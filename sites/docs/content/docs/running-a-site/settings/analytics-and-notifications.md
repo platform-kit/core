@@ -19,9 +19,9 @@ sources:
     packages/kit/src/lib/analytics.ts,
     packages/kit/supabase/schemas/30-analytics.sql,
     packages/kit/supabase/schemas/60-emails.sql,
-    packages/kit/theme/src/components/PushSettings.vue,
-    packages/kit/src/lib/push.ts,
-    packages/kit/supabase/functions/push,
+    packages/kit/modules/push/ui/PushSettings.vue,
+    packages/kit/modules/push/lib/push.ts,
+    packages/kit/modules/push/functions/push,
     packages/kit/build/vapid.mts,
   ]
 reviewed: 2026-11-13

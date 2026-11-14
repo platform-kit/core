@@ -15,10 +15,10 @@ sources:
     packages/kit/theme/src/components/support/SupportTickets.vue,
     packages/kit/supabase/schemas/50-chat.sql,
     packages/kit/supabase/schemas/70-support.sql,
-    packages/kit/supabase/schemas/80-push.sql,
+    packages/kit/modules/push/schema/80-push.sql,
     packages/kit/supabase/functions/support,
     packages/kit/supabase/functions/chat-notify,
-    packages/kit/supabase/functions/push,
+    packages/kit/modules/push/functions/push,
     packages/kit/src/lib/chat,
     packages/kit/src/lib/support,
   ]

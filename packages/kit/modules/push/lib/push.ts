@@ -6,8 +6,8 @@
  * The sending is the push function's, asked by the database as things happen.
  */
 import { ref } from 'vue'
-import { supabase, configured } from './supabase.js'
-import { session } from './auth.js'
+import { supabase, configured } from 'platformkit/lib/supabase.js'
+import { session } from 'platformkit/lib/auth.js'
 
 export const KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || ''
 export const TOPICS = ['support-new', 'support-message', 'users', 'purchases', 'subscriptions', 'bookings']

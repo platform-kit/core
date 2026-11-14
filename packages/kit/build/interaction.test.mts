@@ -446,6 +446,23 @@ else await act('courses joins the admin rail through its slot, and its enrolment
   await page.locator('.ce').first().waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the enrolment screen never drew') })
 })
 
+if (!(await moduleOn('push'))) notHere('interaction: push in the admin', 'the push module is off')
+else await act('push keeps its place in the settings and its screen opens', async ({ page, clear }: any) => {
+  await go(page, '/', clear, '.pageshell')
+  await signIn(page, clear, 'admin@example.com')
+  await go(page, '/admin', clear, '.ad-rail')
+  const item = page.locator('.ad-navitem[data-key="notifications"]').first()
+  await item.waitFor({ state: 'attached', timeout: WAIT * 2 }).catch(() => { throw new Error('the rail carries no notifications item') })
+  /* it names the item it follows, so it stands where the rail always had it: straight after the strings */
+  const order = await item.locator('xpath=..').locator('.ad-navitem').evaluateAll((els: any[]) => els.map((e) => e.dataset.key))
+  const at = order.indexOf('notifications')
+  if (at < 1 || order[at - 1] !== 'strings') throw new Error('the settings group reads ' + order.join(', '))
+  const fold = item.locator('xpath=ancestor::div[contains(@class, "ad-navgroup")]/preceding-sibling::button[1]')
+  if ((await fold.getAttribute('aria-expanded')) !== 'true') await fold.click()
+  await item.click({ timeout: WAIT })
+  await page.locator('.pu').first().waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the notifications screen never drew') })
+})
+
 
 /* ─── the reader's gate, and what a guest carries into an account ─── */
 

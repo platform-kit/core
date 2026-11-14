@@ -244,11 +244,8 @@ const LISTED: Array<ModuleDeclaration | string> = [
     static: false, git: true, cloud: true,
     owns: { steps: ['emails'], functions: ['send-email'], env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'], },
   },
-  {
-    key: 'push', what: 'web push to the staff', needs: 'there is nothing to send a notification from',
-    static: false, git: true, cloud: true,
-    owns: { schema: ['80-push.sql'], functions: ['push'], env: ['VAPID_PRIVATE_KEY', 'VAPID_SUBJECT', 'VITE_VAPID_PUBLIC_KEY'], },
-  },
+  /* push: in its own folder, packages/kit/modules/push/ */
+  'push',
   {
     key: 'models', what: 'content models and their entries', needs: 'an entry is edited through the admin, which needs a backend',
     static: false, git: true, cloud: true,

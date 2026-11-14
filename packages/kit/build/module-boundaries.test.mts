@@ -32,3 +32,9 @@ test('by package name too, and from another module', () => {
 test('inside its own folder a module imports what it likes', () => {
   assert.deepEqual(crossings([{ file: path.join(KIT, 'modules', 'courses', 'ui', 'CoursesView.vue'), text: `import X from './CoursePlayer.vue'\nimport { readCourses } from '../build/io.mjs'` }]), [])
 })
+
+test('every relative import inside a module folder points at a file', async () => {
+  const { unresolved } = await import('./modules/boundaries.mjs')
+  const found = unresolved()
+  assert.deepEqual(found, [], found.join('\n'))
+})

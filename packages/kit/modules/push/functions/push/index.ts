@@ -15,9 +15,9 @@
  * are counted on the row.
  */
 import webpush from 'npm:web-push@3.6.7'
-import { admin, json, preflight, getUser, isServiceBearer } from '../_shared/lib.ts'
-import { rolesOf, isSupport } from '../_shared/roles.ts'
-import strings from '../_shared/emails/strings.json' with { type: 'json' }
+import { admin, json, preflight, getUser, isServiceBearer } from '@pk/core/lib.ts'
+import { rolesOf, isSupport } from '@pk/core/roles.ts'
+import strings from '@pk/core/emails/strings.json' with { type: 'json' }
 
 const env = (k: string) => Deno.env.get(k) ?? ''
 const configured = () => !!(env('VAPID_PUBLIC_KEY') || env('VITE_VAPID_PUBLIC_KEY')) && !!env('VAPID_PRIVATE_KEY')

@@ -66,3 +66,18 @@ export const allCrossings = (): string[] => crossings(sourceFiles().map((file) =
 export const filesUnder = (dirs: string[]): Array<{ file: string, text: string }> =>
   dirs.flatMap((d) => walk(d)).filter((f) => !f.endsWith('module-boundaries.test.mts')).map((file) => ({ file, text: fs.readFileSync(file, 'utf8') }))
 export const KIT_DIR = KIT
+
+/* every relative import in a module's folder that points at nothing — code, stylesheets and @import alike, since a moved
+   file keeps the relative paths it had where it was, and a stylesheet's is checked by no type checker */
+const RELATIVE = /(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"](\.{1,2}\/[^'"]+)['"]|import\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*\)|@import\s+['"](\.{1,2}\/[^'"]+)['"]/g
+const exists = (p: string) => [p, p.replace(/\.(m?)js$/, '.$1ts'), p.replace(/\.js$/, '.vue')].some((x) => fs.existsSync(x))
+export function unresolved(): string[] {
+  const out: string[] = []
+  for (const file of walk(MODULES)) {
+    for (const m of fs.readFileSync(file, 'utf8').matchAll(RELATIVE)) {
+      const spec = m[1] || m[2] || m[3]
+      if (!exists(path.resolve(path.dirname(file), spec))) out.push(`${path.relative(WORKSPACE, file)} → ${spec}`)
+    }
+  }
+  return out
+}

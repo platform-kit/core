@@ -59,7 +59,6 @@ import PayoutsAdmin from '../components/admin/PayoutsAdmin.vue'
 import { SCREENS } from '#site/admin-screens'
 import PaymentsAdmin from '../components/admin/PaymentsAdmin.vue'
 import SpacesAdmin from '../components/SpacesAdmin.vue'
-import PushSettings from '../components/PushSettings.vue'
 import ApiAdmin from '../components/ApiAdmin.vue'
 import PublishingPage from '../components/PublishingPage.vue'
 const MediaPage = defineAsyncComponent(() => import('../components/MediaPage.vue'))   /* VueFinder rides with this page alone */
@@ -149,7 +148,7 @@ const parsed = computed(() => {
    bookings — nothing that needs the content pipe. A support agent, wherever, sees Notifications and Support and
    nothing else; a reader who is not on the staff sees the gate. */
 const LIVE = !CMS
-const LIVE_VIEWS = new Set(['analytics', 'content-analytics', 'form-analytics', 'funnel-analytics', 'notifications', 'api', 'support', 'comments', 'spaces', 'orders', 'print-orders', 'bookings', 'social', 'network', 'payments', ...(MODULE_SECTIONS as any[]).filter((s) => s.live).map((s) => s.key)])   /* and the module sections that say they are live */
+const LIVE_VIEWS = new Set(['analytics', 'content-analytics', 'form-analytics', 'funnel-analytics', 'api', 'support', 'comments', 'spaces', 'orders', 'print-orders', 'bookings', 'social', 'network', 'payments', ...(MODULE_SECTIONS as any[]).filter((s) => s.live).map((s) => s.key)])   /* and the module sections that say they are live */
 const socialAccess = ref(false)
 const socialAccessKnown = ref(false)
 const socialAccessError = ref(false)
@@ -196,7 +195,6 @@ watch([authSettled, isSignedIn, () => route.value], refreshSocialAccess, { immed
    convenience and never the fence — an address typed by hand answers nothing either. */
 const NEEDS: any = {
   /* anybody who runs any part of the site */
-  notifications: 'staff',
   social: 'social',
   payments: 'admin',
   /* the desk */
@@ -312,7 +310,7 @@ const inlineSlot = ref<any>(null)   /* the element the editor teleports into; it
    server) or one of the three views with their own editors. Any collection not
    named here still appears, under Other, so a new content type is never lost. */
 /* which module each view or collection belongs to: off in platformkit.config.js, it leaves the rail */
-const MODULE_OF: any = { notifications: 'push', api: 'api', articles: 'articles', books: 'books', companions: 'books', wiki: 'wiki', docs: 'docs', ...Object.fromEntries(SITE_SECTIONS.filter((s: any) => s.module).map((s: any) => [s.key, s.module])), emails: 'emails', funnels: 'funnels', blasts: 'funnels', 'funnel-analytics': 'funnels', support: 'support', social: 'social-publishing', spaces: 'spaces', community: 'spaces', network: 'network', forms: 'forms', 'form-responses': 'forms', 'form-analytics': 'forms', storefront: 'store', products: 'store', collections: 'store', sessions: 'sessions', teams: 'sessions', providers: 'sessions', print: 'print', 'print-orders': 'print', orders: 'store', bookings: 'sessions', payouts: 'sessions', models: 'models' }
+const MODULE_OF: any = { api: 'api', articles: 'articles', books: 'books', companions: 'books', wiki: 'wiki', docs: 'docs', ...Object.fromEntries(SITE_SECTIONS.filter((s: any) => s.module).map((s: any) => [s.key, s.module])), emails: 'emails', funnels: 'funnels', blasts: 'funnels', 'funnel-analytics': 'funnels', support: 'support', social: 'social-publishing', spaces: 'spaces', community: 'spaces', network: 'network', forms: 'forms', 'form-responses': 'forms', 'form-analytics': 'forms', storefront: 'store', products: 'store', collections: 'store', sessions: 'sessions', teams: 'sessions', providers: 'sessions', print: 'print', 'print-orders': 'print', orders: 'store', bookings: 'sessions', payouts: 'sessions', models: 'models' }
 const modelWords = (us('models').admin || {}).page || {}
 /* IS THE VIEW BEHIND THIS KEY AVAILABLE? A VIEW key, not a module id — `products` is a view and
    `store` is the module behind it (MODULE_OF). It was called moduleOn, which is the kit's own name
@@ -358,7 +356,7 @@ const NAV = [
   { key: 'community', items: ['support', 'comments', 'community', 'network'] },   /* people reaching the desk, or each other; the policy is a tab of Comments and the spaces a tab of Community */
   { key: 'people', items: ['people', 'teams', 'providers'] },   /* everyone with an account, the teams they are in, and whoever sells through the site */
   { key: 'social', items: ['social'] },
-  { key: 'settings', items: ['site', 'strings', 'notifications', 'api', 'payments'] },   /* what is SET, never what is read */
+  { key: 'settings', items: ['site', 'strings', 'api', 'payments'] },   /* what is SET, never what is read */
 ]
 /* the group's NAME, from the words — falling back to the key so a group a site invents still
    reads as something rather than as nothing */
@@ -385,7 +383,8 @@ for (const s of SITE_SECTIONS) {
   /* a site names a group by its key or by the name it reads under, since both have been written */
   const match = (x: any, want: any) => x.key === want || secName(x.key) === want
   const g = NAV.find((x) => match(x, s.sec))
-  if (g) { if (!g.items.includes(s.key)) g.items.push(s.key); continue }
+  /* an item that names the one it follows keeps its place in the group (afterItem), else it joins the end */
+  if (g) { if (!g.items.includes(s.key)) { const i = s.afterItem ? g.items.indexOf(s.afterItem) : -1; if (i >= 0) g.items.splice(i + 1, 0, s.key); else g.items.push(s.key) } continue }
   const at = s.after ? NAV.findIndex((x) => match(x, s.after)) : -1   /* a new group goes after the one it names, else last */
   NAV.splice(at >= 0 ? at + 1 : NAV.length, 0, { key: s.sec, items: [s.key] })
 }
@@ -474,7 +473,6 @@ const IC: any = {
   strings: '<path d="M3.5 5.5h6"/><path d="M6.7 5.5c0 3.5-1.6 6.6-3.2 8"/><path d="M4 9.5c.5 2 2.6 3.6 5 3.6"/><path d="M10.4 16.6l3.3-7 3.3 7"/><path d="M11.6 14.2h4"/>',
   analytics: '<path d="M4 16.5V11"/><path d="M10 16.5V5.5"/><path d="M16 16.5V9"/><path d="M2.5 16.5h15"/>',
   'content-analytics': '<path d="M3 16.5 8 10l3.5 3.5L17 6"/><path d="M13 6h4v4"/>',
-  notifications: '<path d="M5 13.5V9a5 5 0 0 1 10 0v4.5l1.5 1.5h-13z"/><path d="M8.5 17a1.5 1.5 0 0 0 3 0"/>',
   api: '<circle cx="7" cy="10" r="3"/><path d="M10 10h7M14 10v3M17 10v2"/>',
   'print-orders': '<path d="M3.5 7.5h13v7a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5Z"/><path d="M6 7.5V5a1.5 1.5 0 0 1 1.5-1.5h5A1.5 1.5 0 0 1 14 5v2.5"/><path d="M8 11h4"/>',
   orders: '<path d="M4 5.5h12l-1.2 7.5H5.6Z"/><path d="M4 5.5L3.4 3.5H2"/><circle cx="7" cy="16" r="1.2"/><circle cx="13.5" cy="16" r="1.2"/>',
@@ -594,7 +592,7 @@ async function loadList() {
   if (view.value === 'strings' || view.value === 'print') return
   if (SITE_BY_KEY[view.value] && SITE_BY_KEY[view.value].component) return   /* its editor loads its own files */
   if ((SCREENS as any)[view.value]) return   /* a screen a module adds loads its own data: it is not a collection to list */
-  if (['analytics', 'content-analytics', 'notifications', 'api', 'publishing', 'media', 'print-orders', 'orders', 'bookings', 'emails', 'funnels', 'blasts', 'support', 'comments', 'spaces', 'people', 'forms', 'form-responses', 'form-analytics', 'funnel-analytics', 'models', 'payouts', 'social', 'network'].includes(view.value)) return   /* the dashboards fetch their own data */
+  if (['analytics', 'content-analytics', 'api', 'publishing', 'media', 'print-orders', 'orders', 'bookings', 'emails', 'funnels', 'blasts', 'support', 'comments', 'spaces', 'people', 'forms', 'form-responses', 'form-analytics', 'funnel-analytics', 'models', 'payouts', 'social', 'network'].includes(view.value)) return   /* the dashboards fetch their own data */
   loading.value = true; loadError.value = ''
   try { items.value = await pipe.items(view.value) }
   catch (e) { loadError.value = (e as any).message; items.value = [] }
@@ -1190,9 +1188,6 @@ onMounted(async () => {
       </div>
       <div v-else-if="view === 'form-analytics'" class="ad-analytics">
         <FormAnalytics :name="parsed.name" @open="navigate(ROUTES.admin + '/form-analytics/' + $event)" @back="navigate(ROUTES.admin + '/form-analytics')" @responses="navigate(ROUTES.admin + '/form-responses')" />
-      </div>
-      <div v-else-if="view === 'notifications'" class="ad-analytics">
-        <PushSettings />
       </div>
       <div v-else-if="view === 'api'" class="ad-analytics">
         <ApiAdmin />

@@ -10,9 +10,9 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { us } from 'platformkit/lib/content.js'
 import { isSignedIn, isStaff, isAdmin, roleKnown } from 'platformkit/lib/auth.js'
-import { supported, permission, KEY, TOPICS, STAFF_TOPICS, mine, devices, enable, disable, setTopics, forget, test } from 'platformkit/lib/push.js'
-import './admin/admin-ui.css'
-import AdminHead from './admin/AdminHead.vue'
+import { supported, permission, KEY, TOPICS, STAFF_TOPICS, mine, devices, enable, disable, setTopics, forget, test } from '../lib/push.js'
+import 'platformkit/theme/components/admin/admin-ui.css'
+import AdminHead from 'platformkit/theme/components/admin/AdminHead.vue'
 
 const W = us('push').page
 const H = W.head, D = W.device, T = W.topics, O = W.devices
