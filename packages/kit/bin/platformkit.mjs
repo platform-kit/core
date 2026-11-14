@@ -25,7 +25,7 @@
  *   print       the printed editions (build/print.mjs)
  *   tts         the spoken books (build/tts.mjs)
  *   tts-setup   prepare the spoken-book engine and browser weights (build/tts/setup.mjs)
- *   enrich      the companions and introductions (build/enrich.mjs)
+ *   enrich      the companions and introductions (modules/enrichment/build/enrich.mjs)
  *   share-images photograph the site's share cards and favicon (build/share-images.mjs)
  *   probe       the phone probe (build/phone-probe.mjs)
  *   spec        OpenSpec validate over the site's specs (and the kit's, where they are)
@@ -284,7 +284,7 @@ switch (cmd) {
   case 'print': node('print.mjs', rest); break
   case 'tts': node('tts.mjs', rest); break
   case 'tts-setup': node('tts/setup.mjs', rest); break
-  case 'enrich': node('enrich.mjs', rest); break
+  case 'enrich': node('../modules/enrichment/build/enrich.mjs', rest); break
   case 'share-images': node('share-images.mjs', rest); break
   case 'probe': node('phone-probe.mjs', rest); break
   case 'check': node('check.mjs', rest); break

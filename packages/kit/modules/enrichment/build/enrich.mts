@@ -2,9 +2,9 @@
 /*
  * The enrichment pipeline: a book in, its introduction and companion out.
  *
- *   node build/enrich.mjs --book the-golden-key            plan: what would run
- *   node build/enrich.mjs --book the-golden-key --write    run it and write the files
- *   node build/enrich.mjs --all --write --review           every book, and a page to read
+ *   node modules/enrichment/build/enrich.mjs --book the-golden-key            plan: what would run
+ *   node modules/enrichment/build/enrich.mjs --book the-golden-key --write    run it and write the files
+ *   node modules/enrichment/build/enrich.mjs --all --write --review           every book, and a page to read
  *   --chapter <title>   only these chapters (repeatable) — the way to sample a change
  *   --stage introduce   stop after the introduction (the admin's Introductions button)
  *   --force             redo stages whose inputs have not changed
@@ -28,12 +28,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import * as llm from './llm.mjs'
-import { costLine } from './llm.mjs'
-import { pipeline } from './enrich/pipeline.mjs'
-import { loadSite } from './site.mjs'
-import { fileCache } from './enrich-cache.mjs'
-import { asStore } from './store/index.mjs'
+import * as llm from '../../../build/llm.mjs'
+import { costLine } from '../../../build/llm.mjs'
+import { pipeline } from './pipeline.mjs'
+import { loadSite } from '../../../build/site.mjs'
+import { fileCache } from './cache.mjs'
+import { asStore } from '../../../build/store/index.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = process.cwd()   /* the site */
@@ -64,7 +64,7 @@ const slugs = ALL ? await asStore(ROOT).list(BOOKS) : wantedBooks
 const { enrich } = pipeline({ briefs, llm, log: (...a: any[]) => console.log(...a),
   force: FORCE, writeModel: WRITE_MODEL, maxSpend: MAX_SPEND, stage: STAGE, chapters: wantedChapters, write: WRITE_OUT, review: REVIEW_ON })
 
-/* the cache is a FILE here and the agent run's own state in the cloud (build/enrich-cache.mjs).
+/* the cache is a FILE here and the agent run's own state in the cloud (./cache.mts).
    The stages read the loaded blob either way and never know which; only SAVING differs, which is
    why every stage that saves mid-way is handed a `save` rather than reaching for the disk. */
 const cacheFor = (slug: string) => fileCache(slug, { root: ROOT, fs, path })

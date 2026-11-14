@@ -18,9 +18,9 @@ export const PIPE_ROOTS = [
   'src/lib/forms/api-shape.js', /* the Forms API's shape of a form, for the forms in cloud mode */
   'src/lib/entry.js',           /* the ONE adapter from a row to the shape velite gives: print-render
                                    sets a book from rows and must see the same book the build does */
-  'build/enrich-cache.mjs',     /* and where a stage's result is kept between calls: the pipeline takes
+  'modules/enrichment/build/index.mjs',     /* and where a stage's result is kept between calls: the pipeline takes
                                    one rather than importing one, so it has to be named here itself */
-  'build/enrich/pipeline.mjs',  /* the enrichment's seven stages, for the worker that runs them where
+  /* (the enrichment's stages and its cache, both reached through its build door above) */  /* the enrichment's seven stages, for the worker that runs them where
                                    there is no machine: it reads its content through the same store
                                    everything else in here does, which is what put it in reach */
 ]

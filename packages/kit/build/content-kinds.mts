@@ -99,7 +99,7 @@ export const MAY_USE_FS = {
      backing and is handed fs and path by the script; `runCache`, which is the one a function uses,
      writes the agent run's own state and touches nothing. The module refuses outright when it is
      asked for a file cache with no fs, so the case this guard is really about cannot happen here. */
-  'build/enrich-cache.mjs': "the file backing takes fs as a parameter; the cloud backing is the run's own row, and the module refuses a file cache where there is no fs",
+  'modules/enrichment/build/cache.mjs': "the file backing takes fs as a parameter; the cloud backing is the run's own row, and the module refuses a file cache where there is no fs",
   /* IN THE PIPE FOR THE BUNDLER ALONE. catalog.mjs names it as a literal `import('./fonts.mjs')`
      inside its CLI guard, and the edge runtime resolves a literal specifier whether the branch runs
      or not — so the file has to be there or the runtime will not boot. Nothing in the function calls

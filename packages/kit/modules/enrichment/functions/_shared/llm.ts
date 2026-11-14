@@ -1,7 +1,7 @@
 /*
  * THE ENRICHMENT'S MODEL LAYER, WHERE THERE IS NO MACHINE.
  *
- * The pipeline (build/enrich/pipeline.mjs) asks for six things and does not care where they come
+ * The pipeline (modules/enrichment/build/pipeline.mts) asks for six things and does not care where they come
  * from: MODEL, THINKING_LEVEL, complete, ready, missingKey, spentUsd. On a machine that is
  * build/llm.mjs, which reads argv and process.env and keeps its own running total. Here it is this,
  * over the agent worker's own provider seam.
@@ -20,8 +20,8 @@
  * and an empty tool list, and what comes back is the assistant's text. Nothing about runs reaches
  * the provider, and nothing about providers reaches the stages.
  */
-import { ask, priceOf } from '../agents/provider.ts'
-import { costOf } from '../agents/loop.js'
+import { ask, priceOf } from '@pk/core/agents/provider.ts'
+import { costOf } from '@pk/core/agents/loop.js'
 
 /* the top-level keys of a reply that is JSON, and nothing of what it says: the one fact that tells a
    schema failure apart from a transport one, kept small and free of anybody's words */

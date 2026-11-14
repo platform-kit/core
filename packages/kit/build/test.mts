@@ -46,7 +46,7 @@ const KIT_TESTS = [
   on('store') && ['catalog.mjs', '--check'],
   on('emails') && ['emails.mjs', '--check'],
   on('funnels') && ['funnels.mjs', '--check'],
-  on('enrichment') && ['enrich.test.mts'],   /* where a stage's result is kept: a file in a checkout, the run's own state in the cloud, and the two are one shape */
+  /* (enrich.test.mts is the enrichment module's own, in its folder) */   /* where a stage's result is kept: a file in a checkout, the run's own state in the cloud, and the two are one shape */
   ['content.test.mts'],
   ['projection-safety.test.mts'],   /* a projection must surface errors before its declaration sweep can delete rows */
   ['content-rules.test.mts'],   /* and whether the record's fields make sense TOGETHER: velite checks each field's shape, drops what fails and exits 0, and the deploy runs the build and no tests — so a declaration that contradicts itself (a cal.com url beside the native scheduler's settings) throws from prepare and fails the build */   /* every record against its schema: velite drops what does not validate, silently, and the site is built without it */

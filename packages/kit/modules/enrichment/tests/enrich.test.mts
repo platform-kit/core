@@ -17,7 +17,7 @@ import fs from 'node:fs'
 import crypto from 'node:crypto'
 import path from 'node:path'
 import os from 'node:os'
-import { fileCache, runCache, EMPTY } from './enrich-cache.mjs'
+import { fileCache, runCache, EMPTY } from '../build/cache.mjs'
 
 let pass = 0, fail = 0
 const ok = async (name: string, fn: any) => { try { await fn(); pass++ } catch (e: any) { fail++; console.log('  FAIL ' + name + '\n    ' + (e && e.message ? e.message.split('\n').join('\n    ') : e)) } }
@@ -144,7 +144,7 @@ await ok('a cache written by one is readable by the other', async () => {
  * will take, so the whole pipeline runs — understand, extract, write, audit, lines, assemble — for
  * nothing.
  */
-const { pipeline } = await import('./enrich/pipeline.mjs')
+const { pipeline } = await import('../build/pipeline.mjs')
 
 const BOOK = `---
 title: A Short Book
@@ -246,7 +246,7 @@ await ok('an empty list of areas never becomes an enum', async () => {
   assert.equal(mk(['abundance']).safeParse({ statementArea: 'abundance' }).success, true)
   assert.equal(mk(['abundance']).safeParse({ statementArea: 'nonsense' }).success, false, 'with areas, the enum still bites')
   /* and the schema that caused it is gone: nothing in the pipeline reads the filesystem for them */
-  const src = (await import('node:fs')).readFileSync(new URL('./enrich/pipeline.mts', import.meta.url), 'utf8')
+  const src = (await import('node:fs')).readFileSync(new URL('../build/pipeline.mts', import.meta.url), 'utf8')
   assert.ok(!/z\.enum\(AREAS\.list\)/.test(src), 'the enum is not built from a directory read')
   assert.ok(/areaKeysFrom\(store\)/.test(src), 'the areas come from the store')
 })

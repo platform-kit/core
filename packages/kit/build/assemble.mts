@@ -227,6 +227,9 @@ const pipeImportMaps = [...plan, ...walk(path.join(KIT, 'functions')).filter((f:
   })
 const sharedSpecifier = (specifier: string, importer: string, { lenient = false, only = null as string | null } = {}) => {
   if (/^(?:\.{1,2}\/|\/|npm:|jsr:|node:|https?:|data:)/.test(specifier)) return specifier
+  /* a module's names for shared code (openspec: modules-as-packages): @pk/core/ is the kit's _shared, @pk/<key>/ a module's own */
+  const pk = /^@pk\/([a-z][a-z0-9-]*)\/(.+)$/.exec(specifier)
+  if (pk) { let r = path.posix.relative(path.posix.dirname(importer), 'functions/_shared/' + (pk[1] === 'core' ? '' : pk[1] + '/') + pk[2]); if (!r.startsWith('.')) r = './' + r; return r }
   const matches = pipeImportMaps.filter(({ file }) => !only || file === only).filter(({ key }) => specifier === key || specifier.startsWith(key.endsWith('/') ? key : key + '/'))
   if (!matches.length && lenient) return specifier
   if (!matches.length) throw new Error(`assemble: shared Edge module ${importer} imports "${specifier}" but no function deno.json maps it`)

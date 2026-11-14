@@ -22,8 +22,8 @@
  */
 import matter from 'gray-matter'
 import { z } from 'zod'
-import { parseCompanion, serialiseCompanion, bookChapterTitles, chapterHash, LEVELS } from '../companion-io.mjs'
-import { asStore } from '../store/index.mjs'
+import { parseCompanion, serialiseCompanion, bookChapterTitles, chapterHash, LEVELS } from '../../../build/companion-io.mjs'
+import { asStore } from '../../../build/store/index.mjs'
 
 const BOOKS = 'content/books', COMPANIONS = 'content/companions'   /* the store's paths: relative to the site, never a disk's */
 /* js-yaml's dump option: gray-matter hands its options to the yaml engine, but declares only its own */

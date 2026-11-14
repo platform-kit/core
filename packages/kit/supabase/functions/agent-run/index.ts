@@ -27,10 +27,9 @@ import { next, messagesFor, costOf, limitsOf, endingOf, openedSkills, memoryOf }
 import { roomAsProse } from '../_shared/agents/model.js'
 import { occurrences } from '../_shared/recurrence.js'
 import { ask, providersFrom, priceOf } from '../_shared/agents/provider.ts'
-import { pipeline, Paused } from '../_shared/pipe/build/enrich/pipeline.mjs'
-import { runCache } from '../_shared/pipe/build/enrich-cache.mjs'
+import { pipeline, Paused, runCache } from '../_shared/pipe/modules/enrichment/build/index.mjs'
 import { rowsStore } from '../_shared/pipe/build/store/rows.mjs'
-import { runLlm } from '../_shared/enrich/llm.ts'
+import { runLlm } from '@pk/enrichment/llm.ts'
 import BRIEFS from '../_shared/pipe/enrichment-briefs.json' with { type: 'json' }
 import { BUILTINS, toolsFor, callHttp } from '../_shared/agents/tools.ts'
 import {

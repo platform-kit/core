@@ -19,14 +19,14 @@ Verified by: the working rule (no automation; by design)
 
 ### Requirement: Seven stages, each cached
 
-`build/enrich.mjs` SHALL run understand → introduce → extract → write → audit → book lines → assemble, each stage's output cached in `build/.cache/<slug>.json` under a hash of its inputs and prompt version, so a rerun redoes only what changed; chapters travel together up to `SOURCE_CAP` words of source; the audit loop runs until clean and at most two more rounds on style, capped at eight write calls and `--max-spend` (default $1.00) per book per run, keeping the best-audited draft with its residual findings in the log and the review page.
+`modules/enrichment/build/enrich.mjs` SHALL run understand → introduce → extract → write → audit → book lines → assemble, each stage's output cached in `build/.cache/<slug>.json` under a hash of its inputs and prompt version, so a rerun redoes only what changed; chapters travel together up to `SOURCE_CAP` words of source; the audit loop runs until clean and at most two more rounds on style, capped at eight write calls and `--max-spend` (default $1.00) per book per run, keeping the best-audited draft with its residual findings in the log and the review page.
 
 #### Scenario: a dropped connection
 
 - **WHEN** a run fails mid-book
 - **THEN** the next run resumes from the stage that failed, paying for nothing already cached
 
-Verified by: `build/enrich.test.mts` — a stage whose inputs have not moved is read back and costs nothing; an edited chapter invalidates its own stage and NOT the reading of the whole book; a changed prompt version invalidates everything under it; and a run that died halfway keeps every stage it finished and invents none it did not
+Verified by: `packages/kit/modules/enrichment/tests/enrich.test.mts` — a stage whose inputs have not moved is read back and costs nothing; an edited chapter invalidates its own stage and NOT the reading of the whole book; a changed prompt version invalidates everything under it; and a run that died halfway keeps every stage it finished and invents none it did not
 
 ### Requirement: The output is in the file's own shape
 
@@ -59,7 +59,7 @@ An enrichment run SHALL be an `agent_runs` row carrying a job (the script and it
 - **WHEN** the worker holding an enrichment run stops between stages
 - **THEN** its lease expires, another worker picks the run up, keeps every stage already done, and carries on from the first one that is not
 
-Verified by: `build/agents-db.test.mts` (the job branch against the stack — a job run is queued, walks its stages in order, finishes, and its cache is the run's own state rather than a file); `build/enrich.test.mts` ("a second worker does not discard what the first one paid for", "a run that died halfway keeps every stage it finished")
+Verified by: `build/agents-db.test.mts` (the job branch against the stack — a job run is queued, walks its stages in order, finishes, and its cache is the run's own state rather than a file); `packages/kit/modules/enrichment/tests/enrich.test.mts` ("a second worker does not discard what the first one paid for", "a run that died halfway keeps every stage it finished")
 
 #### Scenario: an administrator stops a run
 
@@ -77,7 +77,7 @@ A stage's result SHALL be cached by a hash of its inputs and the prompt version,
 - **WHEN** a book is enriched again with one chapter edited
 - **THEN** only that chapter's stages are made again, in either mode
 
-Verified by: `build/enrich.test.mts` — "a stage whose inputs have not moved is read back rather than bought again", "a cache written by one is readable by the other", and both backings exercised through the one accessor (a mangled cache file reads as empty rather than stopping a run)
+Verified by: `packages/kit/modules/enrichment/tests/enrich.test.mts` — "a stage whose inputs have not moved is read back rather than bought again", "a cache written by one is readable by the other", and both backings exercised through the one accessor (a mangled cache file reads as empty rather than stopping a run)
 
 ### Requirement: The spend rule holds wherever the run happens
 
@@ -88,7 +88,7 @@ A run started from the admin SHALL be one book; its cost SHALL be recorded on it
 - **WHEN** somebody tries to start a library-wide pass from the admin
 - **THEN** it is refused, and the refusal says where that is run instead
 
-Verified by: `build/enrich.test.mts` ("a book cannot spend more than its budget" — the per-book guard checked before every paid call) and the one-book-per-run rule in `agent_job`. NOT VERIFIED: the library-wide refusal itself has no pinned test — it is the admin's own action and was checked by hand.
+Verified by: `packages/kit/modules/enrichment/tests/enrich.test.mts` ("a book cannot spend more than its budget" — the per-book guard checked before every paid call) and the one-book-per-run rule in `agent_job`. NOT VERIFIED: the library-wide refusal itself has no pinned test — it is the admin's own action and was checked by hand.
 
 ### Requirement: A deployment says yes to spending before a job starts
 

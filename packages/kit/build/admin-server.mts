@@ -126,9 +126,11 @@ const resolveFile = async (col: string, name: any) => { const m = await modelOf(
    One child process at a time (each call costs money, and two runs on one book
    would race on the file); its output is kept so the admin can show it live and
    a reload can pick a running job back up. */
-/* one pipeline, build/enrich.mjs: 'enrich' runs every stage (the introduction first,
+/* one pipeline, modules/enrichment/build/enrich.mjs: 'enrich' runs every stage (the introduction first,
    then the companion); 'introduce' stops after the introduction */
-const SCRIPTS: any = { enrich: [[KIT('enrich.mjs')]], introduce: [[KIT('enrich.mjs'), '--stage', 'introduce']] }
+/* the enrichment's own script, in its module's folder (openspec: modules-as-packages) */
+const ENRICH = fileURLToPath(new URL('../modules/enrichment/build/enrich.mjs', import.meta.url))
+const SCRIPTS: any = { enrich: [[ENRICH]], introduce: [[ENRICH, '--stage', 'introduce']] }
 const jobs: any = []
 /* the print editions' draft renders, by book, while the server runs */
 const drafts = new Map()
