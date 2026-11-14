@@ -1,7 +1,9 @@
 <!--
   A COURSE'S OVERVIEW (openspec: courses): what it is, where this reader stands in it and the one thing to do next, and
   its curriculum as modules that fold, each saying how much of it is done and when it opens. The card beside the
-  curriculum is the reader's: their progress and next step, or what getting in takes, then the course's facts.
+  curriculum is the reader's: their progress and next step, or what getting in takes, then the course's facts. A course
+  whose page says more than its opening paragraph shows that description and the curriculum as two tabs, Overview and
+  Contents: Overview first for someone not enrolled, Contents for someone enrolled, the open one kept in the address.
 -->
 <template>
   <div class="crs-wrap crs-ov">
@@ -75,8 +77,17 @@
         </div>
 
         <div class="crs-ov-main">
+          <div v-if="rest" class="crs-tabs" role="tablist" :aria-label="state.title">
+            <button v-for="t in TABS" :id="'crs-tab-' + t" :key="t" type="button" role="tab" class="tab" :class="{ on: tab === t }" :aria-selected="tab === t" :aria-controls="'crs-panel-' + t" :tabindex="tab === t ? 0 : -1" @click="choose(t)" @keydown="onTabKey">{{ K['tab-' + t] }}</button>
+          </div>
+
+          <div v-if="rest" v-show="tab === 'overview'" id="crs-panel-overview" class="crs-ov-panel" role="tabpanel" aria-labelledby="crs-tab-overview" tabindex="0">
+            <div class="crs-prose"><MarkdownDoc :source="rest" marks /></div>
+          </div>
+
+          <div v-show="!rest || tab === 'contents'" :id="rest ? 'crs-panel-contents' : undefined" :role="rest ? 'tabpanel' : undefined" :aria-labelledby="rest ? 'crs-tab-contents' : undefined">
           <div class="crs-bar-head">
-            <h2>{{ K.curriculum }}</h2>
+            <h2 v-if="!rest">{{ K.curriculum }}</h2>
             <span class="crs-bar-head-meta">{{ metaLine }}</span>
             <button v-if="modules.length > 1" type="button" class="crs-text-btn" @click="toggleAll">{{ allOpen ? K.collapse : K.expand }}</button>
           </div>
@@ -122,10 +133,6 @@
               </ol>
             </div>
           </div>
-
-          <div v-if="rest" class="crs-ov-about">
-            <h2>{{ K.about }}</h2>
-            <div class="crs-prose"><MarkdownDoc :source="rest" marks /></div>
           </div>
         </div>
       </div>
@@ -201,5 +208,29 @@ function toggle(m: any) {
   shut.value = s
 }
 const allOpen = computed(() => modules.value.every(isOpen))
+
+/* the page's two tabs, where it has a description: the reader's choice, else the address, else Overview for someone
+   not yet in the course and Contents for someone in it */
+const TABS = ['overview', 'contents'] as const
+type Tab = (typeof TABS)[number]
+const fromAddress = (): Tab | null => { if (typeof location === 'undefined') return null; const h = location.hash.slice(1); return (TABS as readonly string[]).includes(h) ? (h as Tab) : null }
+const chosen = ref<Tab | null>(fromAddress())
+watch(() => props.state && props.state.slug, () => { chosen.value = fromAddress() })
+const tab = computed<Tab>(() => chosen.value || (props.state && props.state.enrollment ? 'contents' : 'overview'))
+function choose(t: Tab) {
+  chosen.value = t
+  if (typeof history !== 'undefined') history.replaceState(history.state, '', location.pathname + location.search + '#' + t)
+}
+/* arrow keys, Home and End move between the tabs, as a tab list does */
+function onTabKey(e: KeyboardEvent) {
+  const keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End']
+  if (!keys.includes(e.key)) return
+  e.preventDefault()
+  const i = TABS.indexOf(tab.value)
+  const n = e.key === 'Home' ? 0 : e.key === 'End' ? TABS.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + TABS.length) % TABS.length
+  choose(TABS[n])
+  const el = document.getElementById('crs-tab-' + TABS[n])
+  if (el) el.focus()
+}
 function toggleAll() { shut.value = allOpen.value ? new Set(modules.value.map((m: any) => m.n)) : new Set() }
 </script>

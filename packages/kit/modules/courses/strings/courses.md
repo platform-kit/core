@@ -61,7 +61,8 @@ complete: Course complete
 certificate: Your certificate
 outline: What's in it
 curriculum: Curriculum
-about: About this course
+tab-overview: Overview
+tab-contents: Contents
 back: All courses
 module-n: Module {n}
 module-done: {done} of {total} done

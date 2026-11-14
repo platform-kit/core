@@ -165,8 +165,11 @@
 .crs-lesson-when { font-family: var(--m); font-size: 11.5px; color: var(--ink3); white-space: nowrap; }
 .crs-lesson-go { color: var(--ink3); opacity: 0; transition: opacity .15s; }
 .crs-lesson-row:hover .crs-lesson-go { opacity: 1; }
-.crs-ov-about { margin-top: 48px; }
-.crs-ov-about h2 { margin-bottom: 14px; }
+/* the page's tabs: the theme's tab, in a bar of the course's own */
+.crs-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--hair); margin-bottom: 22px; overflow-x: auto; scrollbar-width: none; }
+.crs-tabs::-webkit-scrollbar { display: none; }
+.crs-tabs .tab { padding: 12px 14px; margin-bottom: -1px; }
+.crs-ov-panel:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; }
 .crs-prose { font-size: 17px; line-height: 1.7; color: var(--ink2); }
 .crs-prose .purpose { padding: 0; border: 0; }
 .crs-prose p:last-child { margin-bottom: 0; }
