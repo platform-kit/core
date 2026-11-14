@@ -28,9 +28,9 @@
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
-import { frame } from 'platformkit/lib/copilot/levels.js'
+import { frame } from '../lib/levels.js'
 import VoiceAura from './VoiceAura.vue'
-import { paintShape, SHAPES } from 'platformkit/lib/copilot/visual.js'
+import { paintShape, SHAPES } from '../lib/visual.js'
 
 const props = defineProps({
   shape: { type: String, default: 'aura' },      /* aura · wave · radial · grid · bar */

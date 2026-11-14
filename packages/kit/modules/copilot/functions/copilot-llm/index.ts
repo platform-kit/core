@@ -24,15 +24,15 @@
  * another product) reach the same bot with no further work.
  */
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { cors, json } from '../_shared/lib.ts'
-import { open as openGrant, sign as signGrant, grantExpiry } from '../_shared/copilot/grant.ts'
-import { speechTelemetryRecord } from '../_shared/copilot/speech-proxy.ts'
-import { livekit } from '../_shared/video/livekit.ts'
-import { recalls } from '../_shared/agents/loop.js'
-import { fresh, of } from '../_shared/compiled.ts'
-import bots from '../_shared/bots.json' with { type: 'json' }
-import themeStrings from '../_shared/pipe/theme-strings.json' with { type: 'json' }
-import type { Database } from '../_shared/database.types.ts'
+import { cors, json } from '@pk/core/lib.ts'
+import { open as openGrant, sign as signGrant, grantExpiry } from '@pk/copilot/grant.ts'
+import { speechTelemetryRecord } from '@pk/copilot/speech-proxy.ts'
+import { livekit } from '@pk/core/video/livekit.ts'
+import { recalls } from '@pk/core/agents/loop.js'
+import { fresh, of } from '@pk/core/compiled.ts'
+import bots from '@pk/core/bots.json' with { type: 'json' }
+import themeStrings from '@pk/core/pipe/theme-strings.json' with { type: 'json' }
+import type { Database } from '@pk/core/database.types.ts'
 
 const URL_ = Deno.env.get('SUPABASE_URL') ?? ''
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''

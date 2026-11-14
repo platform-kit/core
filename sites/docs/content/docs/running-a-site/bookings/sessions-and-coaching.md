@@ -5,7 +5,7 @@ order: 26
 sources:
   [
     packages/kit/supabase/functions/_shared/video,
-    packages/kit/supabase/functions/copilot-llm,
+    packages/kit/modules/copilot/functions/copilot-llm,
     packages/kit/supabase/functions/session-room,
     packages/kit/supabase/functions/livekit-webhook,
     packages/kit/src/lib/room.ts,

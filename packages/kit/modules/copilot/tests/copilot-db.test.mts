@@ -8,9 +8,9 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { randomUUID } from 'node:crypto'
-import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
-import { leave, moduleOn, notHere } from './test-stack.mjs'
-import type { Database } from '../supabase/functions/_shared/database.types.js'
+import { supabaseUrl, localStack, serviceKey } from '../../../build/supabase-env.mjs'
+import { leave, moduleOn, notHere } from '../../../build/test-stack.mjs'
+import type { Database } from '../../../supabase/functions/_shared/database.types.js'
 
 const note = (m: string) => console.log('copilot-db: ' + m)
 if (process.env.COPILOT_TEST === '0') { note('skipped (COPILOT_TEST=0)'); process.exit(0) }

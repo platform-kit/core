@@ -315,7 +315,7 @@ const toolStep = (name: string, result: any, call = 'c1') => ({ kind: 'tool', na
   const summonSql = agentSql.slice(agentSql.indexOf('"public"."agent_summon"'), agentSql.indexOf('$$;', agentSql.indexOf('"public"."agent_summon"')))
   ok('agent_summon keeps the per-person ceiling and defers billable authorization to the worker',
     summonSql.includes('agent_over_cap') && summonSql.includes('usage-subject-required') && !summonSql.includes('usage_admit'))
-  const copilotSql = readFileSync(join(HERE, '..', 'supabase', 'schemas', '95-copilot.sql'), 'utf8')
+  const copilotSql = readFileSync(join(HERE, '..', 'modules', 'copilot', 'schema', '95-copilot.sql'), 'utf8')
   const turnSql = copilotSql.slice(copilotSql.indexOf('"public"."copilot_turn"'), copilotSql.indexOf('$$;', copilotSql.indexOf('"public"."copilot_turn"')))
   ok('copilot_turn keeps its per-turn spend ceiling and defers billing to the same worker gate',
     turnSql.includes('turn_budget') && turnSql.includes('agent_over_cap') && !turnSql.includes('usage_admit'))

@@ -83,8 +83,6 @@ const KIT_TESTS = [
     ['hyperswitch-local.integration.mts', process.env.HYPERSWITCH_LOCAL_INTEGRATION_CONFIG],
   on('store') && ['usage.test.mts'],
   ['usage-incremental-recovery.test.mts'],
-  ['copilot.test.mts'],  /* a spoken conversation's grant: one bot, one person, one room, a ceiling it cannot raise and a clock it cannot wind back — every field altered in turn */
-  ['copilot-db.test.mts'],  /* what a person told an assistant is theirs: they read their own and nobody else's, delete their own, and no client may write a word into somebody's mouth the assistant would recall as theirs */
   ['fonts.test.mts'],   /* the three faces: the families the kit offers, a name nobody serves refused, a face left unset falling to the theme's, and every stack ending in a generic so a face that never loads still sets type */
   ['first-party.test.mts'],   /* the site runs on its own code: a product's client is driven by the tests and imported by nothing that runs */
   ['declarations.test.mts'],   /* the line between a declaration and state, held mechanically: every table classified, no projection a client can write */

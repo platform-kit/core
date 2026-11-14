@@ -508,7 +508,8 @@ const PUBLIC_FUNCTIONS = [...fs.readFileSync(path.join(KIT, 'config.toml.templat
 /* AND THE OTHER WAY: the CLI refuses to start a stack whose config names a function that is not in the tree, so the
    section the kit added for one of its own functions goes when the site stops serving it — a module switched off. Only
    the kit's own form is taken back; a section the site wrote with anything else in it is the site's. */
-const KIT_FUNCTIONS = new Set(fs.readdirSync(path.join(KIT, 'functions')).filter((d) => !d.startsWith('_')))
+/* every function the kit has, a module folder's among them (openspec: modules-as-packages) */
+const KIT_FUNCTIONS = new Set(kitBackend(KIT).functions)
 function withPublicFunctions(toml: string) {
   const missing = PUBLIC_FUNCTIONS.filter((fn) => plan.has(`functions/${fn}/index.ts`) && !new RegExp(`^\\[functions\\.${fn}\\]`, 'm').test(toml))
   const unserved = [...toml.matchAll(/^\[functions\.([a-z0-9-]+)\]\nverify_jwt = false[^\n]*\n/gm)].map((m) => m[1]).filter((fn) => KIT_FUNCTIONS.has(fn) && !plan.has(`functions/${fn}/index.ts`))

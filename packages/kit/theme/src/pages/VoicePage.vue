@@ -20,20 +20,12 @@
   belongs to the site rather than to a demo. Every colour is a look token; there is not one literal.
 -->
 <script setup lang="ts">
+/* the copilot, through its door (openspec: modules-as-packages) */
+import { conversation, speaker, speakerIdOf, hearPerson, echoGuard, player, voiceWorker, threads as threadStore, whenOf, readPrefs, writePrefs, voiceSettings, voicesFor, OWN_DEFAULT, VoiceVisual, VoiceSettings } from 'platformkit/modules/copilot/index.js'
 import { ref, shallowRef, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import { Room, RoomEvent } from 'livekit-client'
 import { supabase, functionsBase } from 'platformkit/lib/supabase.js'
 import { us } from 'platformkit/lib/content.js'
-import { conversation } from 'platformkit/lib/copilot/converse.js'
-import { speaker, speakerIdOf } from 'platformkit/lib/copilot/speak.js'
-import { hearPerson } from 'platformkit/lib/copilot/levels.js'
-import { echoGuard } from 'platformkit/lib/copilot/echo.js'
-import { player } from 'platformkit/lib/copilot/play.js'
-import { voiceWorker } from 'platformkit/lib/copilot/engine.js'
-import { threads as threadStore, whenOf } from 'platformkit/lib/copilot/threads.js'
-import { readPrefs, writePrefs, voiceSettings, voicesFor, OWN_DEFAULT } from 'platformkit/lib/copilot/prefs.js'
-import VoiceVisual from '../components/copilot/VoiceVisual.vue'
-import VoiceSettings from '../components/copilot/VoiceSettings.vue'
 
 const W = computed(() => ((us('copilot').page || {}).head || {}))
 const WHEN = computed(() => ((us('copilot').page || {}).when || {}))
@@ -120,7 +112,7 @@ const heard = ref('')
  * assistant is audible the recogniser is STOPPED — half-duplex, which is what every agent built
  * on the Web Speech API does, because there is nothing else to do. Barge-in is then taken from
  * the stream we DO control, which has echo cancellation and a learned noise floor
- * (lib/copilot/echo.js), and from the press of the microphone button.
+ * (the copilot module's echo guard), and from the press of the microphone button.
  */
 const ear = echoGuard()
 /*

@@ -1,7 +1,7 @@
 {
  "demo": {
   "all": {
-   ".assembled.json": "eeb7decdede827e2",
+   ".assembled.json": "ecec9941a119728f",
    "config.toml": "d0453df38821d350",
    "data.sql": "cb220bd71a0caaba",
    "functions/_shared/access.ts": "84cb877faa83e179",
@@ -234,7 +234,7 @@
    "functions/_shared/pipe/supabase/functions/_shared/variants.js": "0345f9a9885bb849",
    "functions/_shared/pipe/theme-brand.json": "75dd9e0fd2344d7f",
    "functions/_shared/pipe/theme-skills.json": "9865f51e6f4d821c",
-   "functions/_shared/pipe/theme-strings.json": "bb5d49de1f6f3cb9",
+   "functions/_shared/pipe/theme-strings.json": "75260345c5a65e35",
    "functions/_shared/pipe/vendor/formsmd/composer.js": "d612e3c072b8f601",
    "functions/_shared/pipe/vendor/formsmd/data-blocks-parse.js": "fa894f37b384f778",
    "functions/_shared/pipe/vendor/formsmd/field-parse.js": "a5ddef78fad219a2",
@@ -327,7 +327,9 @@
    "functions/confirm-checkout/index.ts": "5cb86d6586c17b70",
    "functions/content/deno.json": "74ce3bdcf705f185",
    "functions/content/index.ts": "84308fac439ec1bf",
+   "functions/copilot-llm/deno.json": "7cef92b8a173f4be",
    "functions/copilot-llm/index.ts": "27fef070f79c7466",
+   "functions/copilot-speak/deno.json": "7cef92b8a173f4be",
    "functions/copilot-speak/index.ts": "9de9c588170f2b99",
    "functions/course-notify/deno.json": "decb7564543a0725",
    "functions/course-notify/index.ts": "c71dba6113c89840",
@@ -456,7 +458,7 @@
      "schemas/85-api.sql"
     ],
     "changed": {
-     ".assembled.json": "9d171617b7f0f8f5",
+     ".assembled.json": "227fcde6a1b15924",
      "config.toml": "20cacc6311e29e20",
      "data.sql": "27a089848975d57a",
      "functions/_shared/pipe/site.js": "3de0aaa1160d2df0"
@@ -466,7 +468,7 @@
    "articles": {
     "gone": [],
     "changed": {
-     ".assembled.json": "2f6633c8a2a46021",
+     ".assembled.json": "ada87b93b4f70ec1",
      "functions/_shared/pipe/site.js": "1a7a9901df44a58d"
     },
     "added": {}
@@ -474,16 +476,20 @@
    "books": {
     "gone": [],
     "changed": {
-     ".assembled.json": "5468e31c3081f804",
+     ".assembled.json": "2a7b42f8f6f1d7ef",
      "functions/_shared/pipe/site.js": "6ea4698fb5dc6e28"
     },
     "added": {}
    },
    "bots": {
     "gone": [
+     "functions/_shared/copilot/grant.ts",
+     "functions/_shared/copilot/speech-proxy.ts",
      "functions/agent-run/deno.json",
      "functions/agent-run/index.ts",
+     "functions/copilot-llm/deno.json",
      "functions/copilot-llm/index.ts",
+     "functions/copilot-speak/deno.json",
      "functions/copilot-speak/index.ts",
      "schemas/95-copilot.sql",
      "schemas/96-agents.sql",
@@ -494,7 +500,7 @@
      "schemas/glue/bots+support.sql"
     ],
     "changed": {
-     ".assembled.json": "0317b2abaabf97c9",
+     ".assembled.json": "3706b5244983bdf3",
      "config.toml": "522e26a9443d581d",
      "data.sql": "e29326bbdd2950ce",
      "functions/_shared/pipe/site.js": "9fddaea999054da9"
@@ -509,7 +515,7 @@
      "schemas/glue/coaching+sessions.sql"
     ],
     "changed": {
-     ".assembled.json": "c3429372269a9a2f",
+     ".assembled.json": "ccbfd7c727bd90c0",
      "data.sql": "114ab499f1f2a04b",
      "functions/_shared/pipe/site.js": "5440319303571d8f"
     },
@@ -517,12 +523,16 @@
    },
    "copilot": {
     "gone": [
+     "functions/_shared/copilot/grant.ts",
+     "functions/_shared/copilot/speech-proxy.ts",
+     "functions/copilot-llm/deno.json",
      "functions/copilot-llm/index.ts",
+     "functions/copilot-speak/deno.json",
      "functions/copilot-speak/index.ts",
      "schemas/95-copilot.sql"
     ],
     "changed": {
-     ".assembled.json": "f1b385803dd2e98e",
+     ".assembled.json": "9066afe6d27b27fa",
      "config.toml": "522e26a9443d581d",
      "functions/_shared/pipe/site.js": "923cb1921e326170"
     },
@@ -538,7 +548,7 @@
      "schemas/glue/courses+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "d61610ecd95fefa3",
+     ".assembled.json": "bca3e94255cad960",
      "data.sql": "79eb741aca949c79",
      "functions/_shared/pipe/site.js": "de1d061760dc2035"
     },
@@ -547,7 +557,7 @@
    "docs": {
     "gone": [],
     "changed": {
-     ".assembled.json": "6a05902a036cbefc",
+     ".assembled.json": "1bc4c68e9999e862",
      "functions/_shared/pipe/site.js": "38e8e3b7702b5d78"
     },
     "added": {}
@@ -557,7 +567,7 @@
      "functions/send-email/index.ts"
     ],
     "changed": {
-     ".assembled.json": "c802b5f2dcc0ed69",
+     ".assembled.json": "fa32f9c7d0f6445c",
      "functions/_shared/pipe/site.js": "19cdc8ffa6617dc8"
     },
     "added": {}
@@ -572,7 +582,7 @@
      "schemas/glue/events+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "13651ccf159cd57c",
+     ".assembled.json": "c147d4e6fd61d6b5",
      "data.sql": "082ee14448a6cc3b",
      "functions/_shared/pipe/site.js": "912c9b73cc6217ba"
     },
@@ -594,7 +604,7 @@
      "schemas/glue/instrument+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "9bc1a6a6a54f2c48",
+     ".assembled.json": "f811812a4040d3fb",
      "config.toml": "b2753f8ba9e00017",
      "functions/_shared/pipe/site.js": "7d64f89e20900e0c"
     },
@@ -612,7 +622,7 @@
      "schemas/glue/funnels+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "3e62ed4645a9a80a",
+     ".assembled.json": "683afd385acfec2e",
      "config.toml": "1a1f541a5cede00a",
      "data.sql": "b7c5b51238febd7b",
      "functions/_shared/pipe/site.js": "6750067c15051839"
@@ -627,7 +637,7 @@
      "schemas/glue/instrument+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "9a438586b6d295df",
+     ".assembled.json": "205474eae10b5659",
      "functions/_shared/pipe/site.js": "c7972e30af91d620"
     },
     "added": {}
@@ -638,7 +648,7 @@
      "functions/hyperswitch-subscription-renewal/index.ts"
     ],
     "changed": {
-     ".assembled.json": "e5052fc87c62de80",
+     ".assembled.json": "647b2e3a203a426a",
      "data.sql": "3fe1d3f639e4effa",
      "functions/_shared/pipe/site.js": "6ec3f1ba11c97509"
     },
@@ -647,7 +657,7 @@
    "models": {
     "gone": [],
     "changed": {
-     ".assembled.json": "87094aeed52ef4ff",
+     ".assembled.json": "88071c0436a3b4b0",
      "functions/_shared/pipe/site.js": "acf959dedc9cc02f"
     },
     "added": {}
@@ -659,7 +669,7 @@
      "schemas/glue/network+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "36bbd5db2d8d68ef",
+     ".assembled.json": "d574da5016b06aec",
      "config.toml": "873b8a023b695d91",
      "data.sql": "93b760abb5f05ef8",
      "functions/_shared/pipe/site.js": "4f5dc00a6cd4d542"
@@ -677,7 +687,7 @@
      "schemas/44-print-jobs.sql"
     ],
     "changed": {
-     ".assembled.json": "00e3f0203dd6621c",
+     ".assembled.json": "70499f9843a7ff4f",
      "config.toml": "d712e4cc6d67a7d7",
      "data.sql": "40e0e880edcc01a4",
      "functions/_shared/pipe/site.js": "764cd042203ff3ae"
@@ -693,7 +703,8 @@
      "schemas/glue/push+support.sql"
     ],
     "changed": {
-     ".assembled.json": "38d5633ca64a524a",
+     ".assembled.json": "9cc20af1cb376ceb",
+     "config.toml": "5a86d93f912ef9e3",
      "functions/_shared/pipe/site.js": "f859aa8567fa5373"
     },
     "added": {}
@@ -701,7 +712,7 @@
    "recommendations": {
     "gone": [],
     "changed": {
-     ".assembled.json": "3df1ae92655aa66d",
+     ".assembled.json": "431474e530217f07",
      "functions/_shared/pipe/site.js": "3ee2498bd01ec552"
     },
     "added": {}
@@ -734,7 +745,7 @@
      "schemas/glue/sessions+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "1d8e6d604df0c5aa",
+     ".assembled.json": "4b94a3d8fd47cd70",
      "config.toml": "ec3fc859d9d70688",
      "data.sql": "a76358134d21e286",
      "functions/_shared/pipe/site.js": "3b8202c9c293cbb5",
@@ -753,7 +764,7 @@
      "schemas/glue/bots+social-publishing.sql"
     ],
     "changed": {
-     ".assembled.json": "7b2aec10d4d76a5f",
+     ".assembled.json": "ba39fce86ab4ab7c",
      "config.toml": "01b908acc311fc20",
      "data.sql": "ce3315a1d4dce105",
      "functions/_shared/pipe/site.js": "a9631d33a1c5193d"
@@ -765,7 +776,7 @@
      "schemas/92-encryption.sql"
     ],
     "changed": {
-     ".assembled.json": "67e05ed468b23975",
+     ".assembled.json": "e5b8a0d7543f9e75",
      "functions/_shared/pipe/site.js": "8961ce69942d451c"
     },
     "added": {}
@@ -792,7 +803,7 @@
      "schemas/glue/spaces+support.sql"
     ],
     "changed": {
-     ".assembled.json": "651ab1d2b6bd07da",
+     ".assembled.json": "39a86ba3ed0b1db5",
      "config.toml": "48101cf6994cf84e",
      "data.sql": "2dca5926d9baea36",
      "functions/_shared/pipe/site.js": "84f7c1913b84a11e",
@@ -803,7 +814,7 @@
    "stockists": {
     "gone": [],
     "changed": {
-     ".assembled.json": "895dcc94f48c932a",
+     ".assembled.json": "71d4fcdfbd255914",
      "functions/_shared/pipe/site.js": "a60c9b39f55dce38"
     },
     "added": {}
@@ -822,7 +833,7 @@
      "schemas/glue/spaces+store.sql"
     ],
     "changed": {
-     ".assembled.json": "3e1829cf6a36d4cc",
+     ".assembled.json": "0c04ba1b41449513",
      "config.toml": "20cacc6311e29e20",
      "data.sql": "38ba10509a6a447b",
      "functions/_shared/pipe/site.js": "25b776ad315aff9e"
@@ -842,7 +853,7 @@
      "schemas/glue/spaces+support.sql"
     ],
     "changed": {
-     ".assembled.json": "a11039b58348a208",
+     ".assembled.json": "53db2f6caa1c6ca5",
      "config.toml": "eefe5bb51c77932c",
      "data.sql": "51905b9016c0170e",
      "functions/_shared/pipe/site.js": "cffdf8a0b5135796"
@@ -852,7 +863,7 @@
    "tts": {
     "gone": [],
     "changed": {
-     ".assembled.json": "df35ee72a3dd2a45",
+     ".assembled.json": "097c34f425fe1560",
      "functions/_shared/pipe/site.js": "04a3c6180e38eff1"
     },
     "added": {}
@@ -860,7 +871,7 @@
    "wiki": {
     "gone": [],
     "changed": {
-     ".assembled.json": "4e0193bb027e4b2e",
+     ".assembled.json": "dec6f8f6c658853d",
      "functions/_shared/pipe/site.js": "d82681aace60a5a3"
     },
     "added": {}
@@ -869,8 +880,8 @@
  },
  "club": {
   "all": {
-   ".assembled.json": "a4ff4a637cb4c3a2",
-   "config.toml": "0aa48003f46b99b0",
+   ".assembled.json": "f7898b2a4d55c7b1",
+   "config.toml": "86f6864f63b967d1",
    "data.sql": "2ac943679dbf742c",
    "functions/_shared/access.ts": "84cb877faa83e179",
    "functions/_shared/agents/anthropic.ts": "a6a7370d4eb41461",
@@ -928,8 +939,6 @@
    "functions/_shared/compiled.ts": "ca3ddf4c23940265",
    "functions/_shared/content-ids.ts": "99e13d1a945af21c",
    "functions/_shared/content-index.ts": "946490ba71c8a08b",
-   "functions/_shared/copilot/grant.ts": "8c0b3e0f81681af5",
-   "functions/_shared/copilot/speech-proxy.ts": "662696cc0c1aa44b",
    "functions/_shared/database.types.ts": "f4634e43f41b0210",
    "functions/_shared/doors.ts": "f0a51aaf040cc21c",
    "functions/_shared/email.ts": "92a1a8116790f1a6",
@@ -1100,7 +1109,7 @@
    "functions/_shared/pipe/supabase/functions/_shared/variants.js": "0345f9a9885bb849",
    "functions/_shared/pipe/theme-brand.json": "75dd9e0fd2344d7f",
    "functions/_shared/pipe/theme-skills.json": "9865f51e6f4d821c",
-   "functions/_shared/pipe/theme-strings.json": "bb5d49de1f6f3cb9",
+   "functions/_shared/pipe/theme-strings.json": "75260345c5a65e35",
    "functions/_shared/pipe/vendor/formsmd/composer.js": "d612e3c072b8f601",
    "functions/_shared/pipe/vendor/formsmd/data-blocks-parse.js": "fa894f37b384f778",
    "functions/_shared/pipe/vendor/formsmd/field-parse.js": "a5ddef78fad219a2",
@@ -1224,7 +1233,7 @@
    "articles": {
     "gone": [],
     "changed": {
-     ".assembled.json": "d96ea5f0f64c6a4a",
+     ".assembled.json": "bd1f2354eaf819c2",
      "functions/_shared/pipe/site.js": "55d576aa34d79e9c"
     },
     "added": {}
@@ -1239,8 +1248,8 @@
      "schemas/glue/forms+support.sql"
     ],
     "changed": {
-     ".assembled.json": "f958a900a8d0b69d",
-     "config.toml": "8e9f1a7828effbb8",
+     ".assembled.json": "1e94c5de2dae72c2",
+     "config.toml": "54129a9899b3b54a",
      "functions/_shared/pipe/site.js": "2401caf162771934"
     },
     "added": {}
@@ -1251,7 +1260,7 @@
      "functions/hyperswitch-subscription-renewal/index.ts"
     ],
     "changed": {
-     ".assembled.json": "ab5df508251cec46",
+     ".assembled.json": "89364c659b913357",
      "data.sql": "4b30e399afb005af",
      "functions/_shared/pipe/site.js": "c45251331f7b4bc1"
     },
@@ -1267,8 +1276,8 @@
      "schemas/glue/forms+support.sql"
     ],
     "changed": {
-     ".assembled.json": "8db7cf40e81a2381",
-     "config.toml": "3ecc1902978f7e1e",
+     ".assembled.json": "72cc3a829f4a5939",
+     "config.toml": "11ddabfd0b94994c",
      "data.sql": "e726ce2a56d156df",
      "functions/_shared/pipe/site.js": "77e04bcbc56b3e9d"
     },

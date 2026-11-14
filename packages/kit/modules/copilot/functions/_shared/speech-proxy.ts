@@ -1,5 +1,5 @@
 import { open as openGrant } from './grant.ts'
-import { unitsForCost } from '../usage-stripe.mts'
+import { unitsForCost } from '@pk/core/usage-stripe.mts'
 
 const MICROS = 1_000_000n
 

@@ -28,8 +28,8 @@
  */
 import { fetchWeight, BROWSER_FILES } from './weights.js'
 import { ENGINE } from 'platformkit/lib/speech.js'
-import { talkPieces, stepsFor, TALK } from 'platformkit/lib/copilot/chunk.js'
-import { OWN_VOICES, OWN_DEFAULT } from 'platformkit/lib/copilot/prefs.js'
+import { talkPieces, stepsFor, TALK } from './chunks.js'
+import { OWN_VOICES, OWN_DEFAULT } from './voices.js'
 import { Mp3Writer, KBPS } from 'platformkit/lib/mp3.js'
 import wasmMjsUrl from 'onnxruntime-web/ort-wasm-simd-threaded.jsep.mjs?url'
 import wasmUrl from 'onnxruntime-web/ort-wasm-simd-threaded.jsep.wasm?url'

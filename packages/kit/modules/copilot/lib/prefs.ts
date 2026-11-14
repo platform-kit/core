@@ -18,6 +18,8 @@
 /* the one list of shapes, borrowed rather than copied: two lists of one decided set is how one
    of them falls behind */
 import { SHAPES } from './visual.js'
+import { OWN_VOICES, OWN_DEFAULT } from 'platformkit/modules/tts/index.js'
+export { OWN_VOICES, OWN_DEFAULT }
 
 export const KEY = 'dl.copilot.prefs'
 export { SHAPES }
@@ -28,8 +30,6 @@ export { SHAPES }
  * worth counting. M5 is the default because it is the one the project already speaks its
  * audiobooks in — the warm, soft-spoken one the model's authors made for exactly that.
  */
-export const OWN_VOICES = ['F1', 'F2', 'F3', 'F4', 'F5', 'M1', 'M2', 'M3', 'M4', 'M5']
-export const OWN_DEFAULT = 'M5'
 
 /* what the model can say, in the model's own codes. The names are words and live in markdown. */
 export const LANGS = ['en', 'ar', 'bg', 'cs', 'da', 'de', 'el', 'es', 'et', 'fi', 'fr', 'hi', 'hr',

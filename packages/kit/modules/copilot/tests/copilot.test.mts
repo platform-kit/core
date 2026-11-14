@@ -7,24 +7,24 @@
  * altered in turn — because "it is signed" is a claim, and a claim about security that nobody
  * tried to break is a hope.
  */
-import { sign, open, grantExpiry, GRANT_MINUTES } from '../supabase/functions/_shared/copilot/grant.js'
+import { sign, open, grantExpiry, GRANT_MINUTES } from '../build/index.mjs'
 import { stripTypeScriptTypes } from 'node:module'   /* the libraries are TypeScript: a page or an eval is handed their JavaScript */
-import { MEMORIES, memoryOf, recalls } from '../src/lib/agents/loop.js'
-import { speakerIdOf, speaker, engineOf } from '../src/lib/copilot/speak.js'
-import { STATES, isState, frame, loudness } from '../src/lib/copilot/levels.js'
-import { SHAPES } from '../src/lib/copilot/visual.js'
-import { titleOf, whenOf, TITLE_MAX } from '../src/lib/copilot/threads.js'
-import { talkPieces, openingCut, stepsFor, TALK, FIRST_WORDS, PACK } from '../src/lib/copilot/chunk.js'
-import { echoGuard } from '../src/lib/copilot/echo.js'
-import { chunkText } from '../modules/tts/build/index.mjs'
-import { createSpeechHandler } from '../supabase/functions/_shared/copilot/speech-proxy.js'
-import { callHttp, fromOpenApi } from '../supabase/functions/_shared/agents/tools.js'
-import { SURFACES } from './bots.mjs'
+import { MEMORIES, memoryOf, recalls } from '../../../src/lib/agents/loop.js'
+import { speakerIdOf, speaker, engineOf } from '../lib/speak.js'
+import { STATES, isState, frame, loudness } from '../lib/levels.js'
+import { SHAPES } from '../lib/visual.js'
+import { titleOf, whenOf, TITLE_MAX } from '../lib/threads.js'
+import { talkPieces, openingCut, stepsFor, TALK, FIRST_WORDS, PACK } from '../../tts/build/index.mjs'
+import { echoGuard } from '../lib/echo.js'
+import { chunkText } from '../../tts/build/index.mjs'
+import { createSpeechHandler } from '../build/index.mjs'
+import { callHttp, fromOpenApi } from '../../../supabase/functions/_shared/agents/tools.js'
+import { SURFACES } from '../../../build/bots.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
-import { loadSite } from './site.mjs'
+import { loadSite } from '../../../build/site.mjs'
 
 let pass = 0, fail = 0
 const ok = (m: string, c: boolean, d?: string|undefined) => { if (c) pass++; else { fail++; console.log('  FAIL  ' + m + (d ? ' — ' + d : '')) } }
@@ -73,7 +73,7 @@ for (const [what, patch] of [
 /* The ceiling is enforced by the RPC, not by trusting the worker's per-turn request. Pin the
    locking, clock and reservation points here too; the local-stack suite drives their refusals. */
 {
-  const sql = fs.readFileSync(new URL('../supabase/schemas/95-copilot.sql', import.meta.url), 'utf8')
+  const sql = fs.readFileSync(new URL('../schema/95-copilot.sql', import.meta.url), 'utf8')
   const turn = sql.slice(sql.indexOf('CREATE OR REPLACE FUNCTION "public"."copilot_turn"'), sql.indexOf('CREATE OR REPLACE FUNCTION "public"."copilot_remember"'))
   ok('a signed room has a service-role-only ceiling row', /CREATE TABLE IF NOT EXISTS "public"\."copilot_sessions"/.test(sql)
     && /REVOKE ALL ON TABLE "public"\."copilot_sessions" FROM PUBLIC, "anon", "authenticated"/.test(sql))
@@ -122,7 +122,7 @@ ok('another deployment\'s key opens nothing', (await open(good, 'a-different-ser
 /* An API may require identifying headers without requiring credentials. Keep those headers with
    the operation compiled from its spec, not in the browser or the kit's provider secrets. */
 {
-  const spec = JSON.parse(fs.readFileSync(new URL('../../../sites/demo/content/tools/forecast-api.openapi.json', import.meta.url), 'utf8'))
+  const spec = JSON.parse(fs.readFileSync(new URL('../../../../../sites/demo/content/tools/forecast-api.openapi.json', import.meta.url), 'utf8'))
   const headers = { 'User-Agent': 'PlatformKit demo assistant (contact: hello@example.com)' }
   const tools = fromOpenApi(spec, { name: 'sample', only: ['point', 'gridpoint_forecast'], headers })
   let request: any
@@ -161,7 +161,7 @@ ok('and an unknown setting still falls back to the conversation', memoryOf({ mem
 {
   if (SITE.modules.bots !== false) {
     const f = 'content/bots/zz-voice-probe.md'
-    const run = () => { try { execFileSync(process.execPath, [fileURLToPath(new URL('./bots.mjs', import.meta.url)), '--check'], { stdio: ['ignore', 'pipe', 'pipe'] }); return { ok: true, out: '' } } catch (e: any) { return { ok: false, out: String(e.stdout || '') + String(e.stderr || '') } } }
+    const run = () => { try { execFileSync(process.execPath, [fileURLToPath(new URL('../../../build/bots.mjs', import.meta.url)), '--check'], { stdio: ['ignore', 'pipe', 'pipe'] }); return { ok: true, out: '' } } catch (e: any) { return { ok: false, out: String(e.stdout || '') + String(e.stderr || '') } } }
     const bot = (front: string) => `---\nname: Voice probe\n${front}---\n\nYou answer briefly.\n`
     try {
       fs.writeFileSync(f, bot('surfaces: [spaces]\nvoice: { say: alloy, greeting: Hello }\n'))
@@ -441,7 +441,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
 
 /* the silent trap, asserted on the source because only pixels and ears catch it otherwise */
 {
-  const src = stripTypeScriptTypes(fs.readFileSync(new URL('../src/lib/copilot/levels.ts', import.meta.url), 'utf8'), { mode: 'strip' })
+  const src = stripTypeScriptTypes(fs.readFileSync(new URL('../lib/levels.ts', import.meta.url), 'utf8'), { mode: 'strip' })
   ok('the assistant\'s audio is connected on to the speakers', /hearAssistant[\s\S]*toSpeakers: true/.test(src))
   ok('and the microphone is NOT, because that is feedback', /hearPerson[\s\S]*toSpeakers: false/.test(src))
 }
@@ -456,7 +456,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
  */
 {
   const fs2 = fs
-  const src = stripTypeScriptTypes(fs2.readFileSync(new URL('../src/lib/copilot/visual.ts', import.meta.url), 'utf8'), { mode: 'strip' })
+  const src = stripTypeScriptTypes(fs2.readFileSync(new URL('../lib/visual.ts', import.meta.url), 'utf8'), { mode: 'strip' })
   ok('the five shapes are named in one place', SHAPES.join(',') === 'aura,wave,radial,grid,bar')
   ok('DIRECTION: the person draws inward, the assistant outward', /const out = them \? 1 : me \? -1 : 0/.test(src))
   ok('WEIGHT: the assistant is filled, the person an outline', /const filled = them/.test(src))
@@ -467,7 +467,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
 
 /* connecting and thinking both have nobody speaking, so without this they are drawn identically */
 {
-  const src = stripTypeScriptTypes(fs.readFileSync(new URL('../src/lib/copilot/visual.ts', import.meta.url), 'utf8'), { mode: 'strip' })
+  const src = stripTypeScriptTypes(fs.readFileSync(new URL('../lib/visual.ts', import.meta.url), 'utf8'), { mode: 'strip' })
   ok('connecting is slower than thinking', /const pace = state === 'connecting' \? 0\.45 : state === 'thinking' \? 1\.6/.test(src))
   ok('and deliberately INCOMPLETE, which is what "not joined up yet" looks like',
     /const whole = state === 'connecting' \? 0\.6 : 1/.test(src))
@@ -477,14 +477,14 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
 
 /* a state nobody can see is a state that is not being shown */
 {
-  const src = stripTypeScriptTypes(fs.readFileSync(new URL('../src/lib/copilot/visual.ts', import.meta.url), 'utf8'), { mode: 'strip' })
+  const src = stripTypeScriptTypes(fs.readFileSync(new URL('../lib/visual.ts', import.meta.url), 'utf8'), { mode: 'strip' })
   ok('the grid has a visible floor on a dark ground', /Math\.max\(0\.3,/.test(src),
     'the grid vanished into a dark background at 0.08 — right arithmetic, blank pixels')
 }
 
 /* the component shows; lib decides */
 {
-  const sfc = fs.readFileSync(new URL('../theme/src/components/copilot/VoiceVisual.vue', import.meta.url), 'utf8')
+  const sfc = fs.readFileSync(new URL('../ui/VoiceVisual.vue', import.meta.url), 'utf8')
   /* it may CHOOSE a renderer — the aura is a shader and the other four are drawn — but it must
      not contain drawing: no path commands, no arithmetic about shapes. That all lives in lib so
      every combination can be rendered headless and looked at. */
@@ -503,7 +503,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
  * through that, with no browser anywhere near it.
  */
 {
-  const { conversation } = await import('../src/lib/copilot/converse.js')
+  const { conversation } = await import('../lib/converse.js')
   const spoken: any = []
   const mkSpeaker = () => {
     let n = 0
@@ -713,7 +713,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
  * its file was written — which looks exactly like a working feature until somebody changes it.
  */
 {
-  const src = fs.readFileSync(new URL('./velite.mts', import.meta.url), 'utf8')
+  const src = fs.readFileSync(new URL('../../../build/velite.mts', import.meta.url), 'utf8')
   const block = src.slice(src.indexOf('voice: s.object({'), src.indexOf('extends: s.string()'))
   for (const f of ['say', 'voices', 'greeting', 'wait', 'visual', 'steps', 'opening', 'words', 'gap']) {
     ok(`the compile carries a bot's voice.${f}`, new RegExp('\\b' + f + ':\\s*s\\.').test(block))
@@ -811,7 +811,7 @@ ok('a loud voice reads clearly louder than a quiet one', loudness(tone(0.9)) - l
  * run against a deliberately unplugged copy of the same module to show the check bites.
  */
 {
-  const src = stripTypeScriptTypes(fs.readFileSync(new URL('../src/lib/copilot/play.ts', import.meta.url), 'utf8'), { mode: 'strip' })
+  const src = stripTypeScriptTypes(fs.readFileSync(new URL('../lib/play.ts', import.meta.url), 'utf8'), { mode: 'strip' })
     .replace(/export function/g, 'function')
   const unplugged = src.replace('analyser.connect(ctx.destination)', '/* unplugged */')
   ok('the mutation the check is measured against applies', unplugged !== src)

@@ -23,8 +23,19 @@ const typescriptOf = (url) => {
   return fs.existsSync(ts) ? pathToFileURL(ts).href : null
 }
 
+/* a function's names for shared code (openspec: modules-as-packages): @pk/core/ is the kit's _shared, @pk/<key>/ a module
+   folder's functions/_shared/ — what the assembler writes as relative paths, read here for the tests that import that code */
+const KIT_ROOT = fileURLToPath(new URL('..', import.meta.url))
+const pkName = (specifier) => {
+  const m = /^@pk\/([a-z][a-z0-9-]*)\/(.+)$/.exec(specifier)
+  if (!m) return null
+  return pathToFileURL(m[1] === 'core' ? KIT_ROOT + 'supabase/functions/_shared/' + m[2] : KIT_ROOT + 'modules/' + m[1] + '/functions/_shared/' + m[2]).href
+}
+
 registerHooks({
   resolve(specifier, context, nextResolve) {
+    const pk = pkName(specifier)
+    if (pk) specifier = pk
     try { return nextResolve(specifier, context) } catch (e) {
       if (e?.code !== 'ERR_MODULE_NOT_FOUND') throw e
       /* the file the resolution reached and did not find — the specifier itself, or the target of an exports or a

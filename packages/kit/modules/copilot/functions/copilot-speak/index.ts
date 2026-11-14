@@ -20,9 +20,9 @@
  * back to the kit's own voice — an assistant that sounds ordinary is better than one that says
  * nothing, and the fallback is the designed path rather than a rescue.
  */
-import { cors, json } from '../_shared/lib.ts'
-import { createSpeechHandler } from '../_shared/copilot/speech-proxy.ts'
-import { authorizeUsage } from '../_shared/usage.ts'
+import { cors, json } from '@pk/core/lib.ts'
+import { createSpeechHandler } from '@pk/copilot/speech-proxy.ts'
+import { authorizeUsage } from '@pk/core/usage.ts'
 
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const TTS_URL = (Deno.env.get('COPILOT_TTS_URL') ?? '').replace(/\/$/, '')

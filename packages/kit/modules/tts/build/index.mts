@@ -3,4 +3,6 @@
  * the engine's pinned weights. The browser's door is ../index.ts.
  */
 export { chunkText } from '../lib/chunk.js'
+export { talkPieces, stepsFor, openingCut, TALK, FIRST_WORDS, PACK } from '../lib/chunks.js'
+export { OWN_VOICES, OWN_DEFAULT } from '../lib/voices.js'
 export { REPO, REV, BROWSER_FILES, MODELS } from './setup.mjs'

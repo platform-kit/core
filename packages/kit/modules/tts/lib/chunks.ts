@@ -18,7 +18,7 @@
  * semicolon, a colon, a dash — at or before N words, and where there is none the whole sentence
  * is spoken. A slower start is better than a sentence that sounds broken.
  *
- * Pure: no imports, no environment. The worker uses it and `copilot.test.mjs` pins it.
+ * Pure: no imports, no environment. The worker uses it and the copilot's test pins it.
  */
 
 /* the audiobook chunker's own sentence split, abbreviation-aware, kept identical on purpose */

@@ -21,7 +21,7 @@ import type { PropType } from 'vue'
 import { computed, ref, watch } from 'vue'
 import { us } from 'platformkit/lib/content.js'
 import VoiceVisual from './VoiceVisual.vue'
-import { LANGS, SPEEDS, SHAPES } from 'platformkit/lib/copilot/prefs.js'
+import { LANGS, SPEEDS, SHAPES } from '../lib/prefs.js'
 
 const props = defineProps({
   prefs: { type: Object as PropType<any>, required: true },
