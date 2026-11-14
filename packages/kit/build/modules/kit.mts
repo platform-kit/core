@@ -312,11 +312,8 @@ const LISTED: Array<ModuleDeclaration | string> = [
     static: false, git: true, cloud: true,
     owns: { schema: ['20-instrument.sql'] },
   },
-  {
-    key: 'recommendations', what: 'Recommended For You, and the recommendations tab', needs: 'it is derived from what an account has read and bought',
-    static: false, git: true, cloud: true,
-    owns: {},
-  },
+  /* recommendations: in its own folder, packages/kit/modules/recommendations/ */
+  'recommendations',
   /*
    * PRINT WORKS IN THE CLOUD, PICTURES AND ALL, and this is the claim the whole derivation is tested
    * with — because a debt that has been PAID and is still listed is the exact failure it prevents.

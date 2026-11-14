@@ -15,9 +15,9 @@
  * Skipped with a note when the stack is down (RECOMMENDATIONS_TEST=0 skips it too).
  */
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, localStack, serviceKey } from './tts/storage.mjs'
-import { leave } from './test-stack.mjs'
-import type { Database } from '../supabase/functions/_shared/database.types.js'
+import { supabaseUrl, localStack, serviceKey } from '../../../build/tts/storage.mjs'
+import { leave } from '../../../build/test-stack.mjs'
+import type { Database } from '../../../supabase/functions/_shared/database.types.js'
 
 const note = (m: string) => console.log('recommendations: ' + m)
 if (process.env.RECOMMENDATIONS_TEST === '0') { note('skipped (RECOMMENDATIONS_TEST=0)'); process.exit(0) }
@@ -50,7 +50,7 @@ const made = { events: [] as number[], purchases: [] as string[] }
 
 /* what my_interests weighs a read by, read off the declaration so the test and the function cannot
    drift apart silently */
-const sql = await (await import('node:fs/promises')).readFile(new URL('../supabase/schemas/13-search.sql', import.meta.url), 'utf8')
+const sql = await (await import('node:fs/promises')).readFile(new URL('../../../supabase/schemas/13-search.sql', import.meta.url), 'utf8')
 const floor = Number(/([\d.]+)::numeric as read_floor/.exec(sql)?.[1])
 const ceil = Number(/([\d.]+)::numeric as read_ceil/.exec(sql)?.[1])
 const buy = Number(/([\d.]+)::numeric as buy_weight/.exec(sql)?.[1])
@@ -79,7 +79,7 @@ const ours = (rows: any) => Object.fromEntries(Object.entries(rows).filter(([k])
    and the wiring with it, because the control looking right is exactly what hid the gap. */
 {
   const os = await import('node:os'), nodefs = await import('node:fs'), np = await import('node:path')
-  const { learnTags, readTags, normalise } = await import('./tags.mjs')
+  const { learnTags, readTags, normalise } = await import('../../../build/tags.mjs')
   const dir = nodefs.mkdtempSync(np.join(os.tmpdir(), 'tags-'))
   nodefs.mkdirSync(np.join(dir, 'content'), { recursive: true })
   const put = (free: string|boolean, list: any) => nodefs.writeFileSync(np.join(dir, 'content/tags.md'),
@@ -106,7 +106,7 @@ const ours = (rows: any) => Object.fromEntries(Object.entries(rows).filter(([k])
   ok('a tag already in the list keeps working after the switch is turned off', after.values.join() === 'astrology' && !after.refused.length)
   nodefs.rmSync(dir, { recursive: true, force: true })
 
-  const wiring = nodefs.readFileSync(new URL('./models/index.mts', import.meta.url), 'utf8')
+  const wiring = nodefs.readFileSync(new URL('../../../build/models/index.mts', import.meta.url), 'utf8')
   ok('every save that carries tags goes through it, in one place rather than per collection',
     /learnTags/.test(wiring), 'models/index.mjs does not call learnTags — the switch would be decoration')
 }
@@ -118,8 +118,8 @@ const ours = (rows: any) => Object.fromEntries(Object.entries(rows).filter(([k])
    reason the interests are a join rather than a trait written when the piece was read. Derived
    rather than listed: every collection whose editor offers Tags must project into that index. */
 {
-  const { registry } = await import('./models/index.mjs')
-  const { loadSite } = await import('./site.mjs')
+  const { registry } = await import('../../../build/models/index.mjs')
+  const { loadSite } = await import('../../../build/site.mjs')
   const models = await registry(process.cwd(), { site: await loadSite(process.cwd()) })
   /* the vocabulary's own record is not a piece of content: its tags field IS the list */
   const tagged = models.filter((m: any) => m.key !== 'tags' && m.fields && m.fields.def && 'tags' in (m.fields.def.shape || {}))
@@ -130,7 +130,7 @@ const ours = (rows: any) => Object.fromEntries(Object.entries(rows).filter(([k])
 
 /* ---- THE RANKING ITSELF, pure: what the weights do to an order ---- */
 {
-  const { scoreRow, profileText, WEIGHT_LIFT, RX_LIFT } = await import('../src/lib/rank.js')
+  const { scoreRow, profileText, WEIGHT_LIFT, RX_LIFT } = await import('../../../src/lib/rank.js')
   const at = { weights: { meditation: 3, gardening: 0.2 } }
   const same = { sem: 0.5 }
   const a = scoreRow({ ...same, tags: ['meditation'] }, at)

@@ -61,8 +61,8 @@
       "default": "platformkit/build/content-file-node.mjs"
     },
     "#site/recommendations": {
-      "node": "platformkit/build/site-recommendations-node.mjs",
-      "default": "platformkit/build/site-recommendations-node.mjs"
+      "node": "platformkit/modules/recommendations/build/site-node.mjs",
+      "default": "platformkit/modules/recommendations/build/site-node.mjs"
     },
     "#site/permissions": {
       "node": "platformkit/build/site-permissions-node.mjs",

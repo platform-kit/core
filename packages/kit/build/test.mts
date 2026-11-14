@@ -119,7 +119,6 @@ const KIT_TESTS = [
   on('support') && ['tickets.test.mts'],   /* the work as against the conversation: what is owed on a ticket, the order, the narrowing */
   on('bots') && ['agents.test.mts'],       /* what a run does next: cancelled mid-flight, out of money, a model asking for two tools at once */
   ['search.test.mts'],
-  ['recommendations.test.mts'],  /* what a reader is interested in, derived rather than stored: a re-tagged piece changes it with nothing re-run, a partial read counts, and a purchase outweighs any amount of browsing */                  /* a landing page's words are its sections', and what the palette leaves out */
   ['content-kinds.test.mts'],           /* every content type can be edited with no checkout, and no build script opens content with fs */
   ['artefacts.test.mts'],               /* every compiled artefact says how it reaches a deployment that does not build, and compiles the same from content alone */
   ['modes.test.mts'],

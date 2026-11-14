@@ -86,7 +86,7 @@ Verified by: `build/scheduling.test.mts` with the seed's accounts
 - **WHEN** a signed-in reader asks for their interests
 - **THEN** they get their own and no others, and an attempt to set one is refused
 
-Verified by: `build/recommendations.test.mts` against the local stack — another account seeing none of it, the call refused when given an argument naming somebody, a guest getting nothing, and the index itself not writable by a reader
+Verified by: `packages/kit/modules/recommendations/tests/recommendations.test.mts` against the local stack — another account seeing none of it, the call refused when given an argument naming somebody, a guest getting nothing, and the index itself not writable by a reader
 
 ### Requirement: The buckets
 
