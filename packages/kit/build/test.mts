@@ -89,7 +89,7 @@ const KIT_TESTS = [
   ['first-party.test.mts'],   /* the site runs on its own code: a product's client is driven by the tests and imported by nothing that runs */
   ['declarations.test.mts'],   /* the line between a declaration and state, held mechanically: every table classified, no projection a client can write */
   ['sql-columns.test.mts'],   /* every column a SQL function names, against the declaration: postgres resolves NEW at runtime, so `new.printer` after a rename to `supplier` compiled and raised on every insert — and a site's own SQL reads the kit's columns, which makes them an API across the boundary */
-  on('api') && ['webhooks.test.mts'],   /* the subscriptions a deployment ships: declared, pushed, and never holding a secret */   /* the line between a declaration and state, held mechanically: every table classified, no projection a client can write */
+  /* (webhooks.test.mts is the api module's own, in its folder) */   /* the subscriptions a deployment ships: declared, pushed, and never holding a secret */   /* the line between a declaration and state, held mechanically: every table classified, no projection a client can write */
   ['transcript.test.mts'],   /* what the browser writes down while somebody speaks: the arithmetic, with no browser in it */
   ['interrupt.test.mts'],
   ['identity.test.mts'],

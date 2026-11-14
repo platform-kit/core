@@ -8,9 +8,9 @@ import { createClient } from '@supabase/supabase-js'
 import { writeFileSync, readFileSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
-import { leave } from './test-stack.mjs'
-import type { Database } from '../supabase/functions/_shared/database.types.js'
+import { supabaseUrl, localStack, serviceKey } from '../../../build/supabase-env.mjs'
+import { leave } from '../../../build/test-stack.mjs'
+import type { Database } from '../../../supabase/functions/_shared/database.types.js'
 /* a table the test names by a variable: one of the schema's */
 type TableName = keyof Database['public']['Tables']
 
@@ -31,7 +31,7 @@ const rows = async (t: any): Promise<any[]> => ((await svc.from(t).select('*')).
    serves, and every write there reloaded every function mid-run */
 const SCRATCH = mkdtempSync(join(tmpdir(), 'webhooks-test-'))
 const F = join(SCRATCH, 'webhooks.json')
-const { pushWebhooks } = await import('./webhooks-push.mjs')
+const { pushWebhooks } = await import('../../../build/webhooks-push.mjs')
 process.env.SUPABASE_URL = url
 process.env.WH_TEST_SECRET = 'shhh-' + Math.random().toString(36).slice(2, 8)
 

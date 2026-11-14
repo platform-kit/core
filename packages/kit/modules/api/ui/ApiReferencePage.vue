@@ -7,9 +7,9 @@
 import { ref, shallowRef, onMounted, onBeforeUnmount } from 'vue'
 import { us } from 'platformkit/lib/strings.js'
 import { setHead } from 'platformkit/lib/seo.js'
-import { ROUTES } from '../router.js'
+import { ROUTES } from 'platformkit/lib/router.js'
 import { site as SITE } from '#content'
-import SiteMark from '../components/SiteMark.vue'
+import SiteMark from 'platformkit/theme/components/SiteMark.vue'
 
 const W = (us('api').reference || {}).head || {}
 const S = Array.isArray(SITE) ? SITE[0] : SITE

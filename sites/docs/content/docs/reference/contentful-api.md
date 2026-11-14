@@ -26,7 +26,7 @@ sources:
     packages/kit/supabase/functions/_shared/content-index.ts,
     packages/kit/build/content-api.test.mts,
     packages/kit/build/management.test.mts,
-    packages/kit/supabase/schemas/85-api.sql,
+    packages/kit/modules/api/schema/85-api.sql,
   ]
 reviewed: 2026-11-14
 ---

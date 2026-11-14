@@ -463,6 +463,25 @@ else await act('push keeps its place in the settings and its screen opens', asyn
   await page.locator('.pu').first().waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the notifications screen never drew') })
 })
 
+if (!(await moduleOn('api'))) notHere('interaction: the API in the admin', 'the api module is off')
+else await act('the API keeps its place before the payments and its screen opens', async ({ page, clear }: any) => {
+  await go(page, '/', clear, '.pageshell')
+  await signIn(page, clear, 'admin@example.com')
+  await go(page, '/admin', clear, '.ad-rail')
+  const item = page.locator('.ad-navitem[data-key="api"]').first()
+  await item.waitFor({ state: 'attached', timeout: WAIT * 2 }).catch(() => { throw new Error('the rail carries no api item') })
+  /* it names the item it precedes: before the payments, and after push's notifications where push is on */
+  const order = await item.locator('xpath=..').locator('.ad-navitem').evaluateAll((els: any[]) => els.map((e) => e.dataset.key))
+  const at = order.indexOf('api')
+  if (order[at + 1] !== 'payments' && order.includes('payments')) throw new Error('the settings group reads ' + order.join(', '))
+  if (order.includes('notifications') && order.indexOf('notifications') > at) throw new Error('the settings group reads ' + order.join(', '))
+  const fold = item.locator('xpath=ancestor::div[contains(@class, "ad-navgroup")]/preceding-sibling::button[1]')
+  if ((await fold.getAttribute('aria-expanded')) !== 'true') await fold.click()
+  await item.click({ timeout: WAIT })
+  await page.waitForURL(/\/admin\/api$/, { timeout: WAIT })
+  await page.locator('.ak').first().waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the API screen never drew') })
+})
+
 
 /* ─── the reader's gate, and what a guest carries into an account ─── */
 

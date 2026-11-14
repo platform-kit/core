@@ -43,8 +43,6 @@ export const store: PageTest = (r) => at(r, ROUTES.store)
 export const cartHandoff: PageTest = (r) => r.startsWith(ROUTES.cart + '/c/')
 /* forms */
 export const form: PageTest = (r) => r.startsWith(ROUTES.form + '/') || r.startsWith(ROUTES.to + '/')
-/* api */
-export const apiReference: PageTest = (r) => r === ROUTES.api
 /* support */
 export const support: PageTest = (r) => r === ROUTES.support
 /* spaces, and the feed it answers where the network is on too */

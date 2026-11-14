@@ -9,7 +9,7 @@ sources:
     packages/kit/build/cloud-config.mts,
     packages/kit/build/webhooks-config.mts,
     packages/kit/build/webhooks-push.mts,
-    packages/kit/build/webhooks.test.mts,
+    packages/kit/modules/api/tests/webhooks.test.mts,
   ]
 reviewed: 2026-11-13
 ---

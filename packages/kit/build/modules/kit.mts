@@ -254,20 +254,8 @@ const LISTED: Array<ModuleDeclaration | string> = [
     ],
     owns: { steps: ['models-json'] },
   },
-  {
-    key: 'api', what: 'the content API', needs: 'the API is Edge Functions',
-    static: false, git: true, cloud: true,
-    pages: [
-      { name: 'ApiReferencePage', order: 130, page: 'theme:pages/ApiReferencePage.vue', test: 'platformkit/lib/page-routes.js#apiReference' },
-    ],
-    owns: {
-      schema: ['85-api.sql'],
-      cron: [
-        { name: 'content-push', schedule: '* * * * *', command: 'select public.run_content_push()' },
-        { name: 'sweep-uploads', schedule: '50 4 * * *', command: 'select public.sweep_uploads()' },
-      ],
-    },
-  },
+  /* api: in its own folder, packages/kit/modules/api/ */
+  'api',
   {
     key: 'bots', what: 'bots, tools and commands', needs: 'an agent run is rows and a function',
     static: false, git: true, cloud: true,

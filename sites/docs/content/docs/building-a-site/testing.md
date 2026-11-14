@@ -34,7 +34,7 @@ sources:
     packages/kit/build/sales.test.mts,
     packages/kit/build/reads-db.test.mts,
     packages/kit/build/money-db.test.mts,
-    packages/kit/build/webhooks.test.mts,
+    packages/kit/modules/api/tests/webhooks.test.mts,
     packages/kit/build/interaction.test.mts,
     packages/kit/build/signed-in-as.test.mts,
     packages/kit/build/webhook-doors.test.mts,

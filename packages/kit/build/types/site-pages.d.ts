@@ -11,5 +11,5 @@ declare module '#site/pages' {
 declare module '#site/admin-screens' {
   import type { Component } from 'vue'
   export const SCREENS: Record<string, Component>
-  export const SECTIONS: Array<{ key: string, sec: string, module: string, after?: string, icon?: string, needs?: string, live?: boolean, afterItem?: string }>
+  export const SECTIONS: Array<{ key: string, sec: string, module: string, after?: string, icon?: string, needs?: string, live?: boolean, afterItem?: string, beforeItem?: string }>
 }

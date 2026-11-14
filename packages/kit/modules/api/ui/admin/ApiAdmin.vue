@@ -14,7 +14,7 @@ import { isSignedIn, isAdmin, roleKnown, user } from 'platformkit/lib/auth.js'
 import { api as API, modules } from '#site'
 import { site as SITE } from '#content'
 import { ROUTES } from 'platformkit/lib/router.js'
-import './admin/admin-ui.css'
+import 'platformkit/theme/components/admin/admin-ui.css'
 
 const W = us('api').page
 const H = W.head || {}, K = W.keys || {}, WH = W.webhooks || {}, R = (us('api').reference || {}).head || {}
@@ -35,7 +35,7 @@ async function load() {
 }
 onMounted(() => { if (state.value === 'ok') load() })
 import { watch } from 'vue'
-import AdminHead from './admin/AdminHead.vue'
+import AdminHead from 'platformkit/theme/components/admin/AdminHead.vue'
 watch(state, (s) => { if (s === 'ok') load() })
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
