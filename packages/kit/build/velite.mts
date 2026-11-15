@@ -758,7 +758,7 @@ export async function kitConfig(): Promise<any> {
            never sold — the offer the catalog means to make was never made. */
         cost: s.record(s.string(), s.any()).optional(),
         /* true or false as it always was, or a block saying HOW the asking works — the answers
-           offered, whether a reason is asked for, which answer counts as going (build/events.mjs
+           offered, whether a reason is asked for, which answer counts as going (modules/events/build/events.mjs
            `rsvpOf`). The schema said boolean alone, so an event that used the block never
            reached the bundle at all. */
         rsvp: s.union([s.boolean(), s.record(s.string(), s.any())]).default(true),

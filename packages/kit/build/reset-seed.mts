@@ -13,14 +13,14 @@ import { fileURLToPath } from 'node:url'
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 
 export const SEED_STEPS = [
-  ['spaces.mjs'], ['spaces-push.mjs', '--seed'], ['teams.mjs'], ['teams-push.mjs'], ['events.mjs'], ['events-push.mjs'],
+  ['spaces.mjs'], ['spaces-push.mjs', '--seed'], ['teams.mjs'], ['teams-push.mjs'], ['../modules/events/build/events.mjs'], ['../modules/events/build/events-push.mjs'],
   ['comments-push.mjs'], ['providers-push.mjs'], ['achievements-push.mjs'], ['../modules/courses/build/push.mjs'], ['bots.mjs'], ['bots-push.mjs'], ['search-push.mjs'],
   ['print/templates.mjs', '--fonts'], ['dev-account.mjs'],
 ]
 
 /* the build step a seed script is, by its key: a kit script is named for its step; a module's script lives in its folder
    under a name of its own, so its key is said here (openspec: modules-as-packages) */
-export const SEED_STEP_KEYS: Record<string, string> = { '../modules/courses/build/push.mjs': 'courses-push' }
+export const SEED_STEP_KEYS: Record<string, string> = { '../modules/courses/build/push.mjs': 'courses-push', '../modules/events/build/events.mjs': 'events', '../modules/events/build/events-push.mjs': 'events-push' }
 export const seedStepKey = (script: string): string => SEED_STEP_KEYS[script] ?? path.basename(script, '.mjs')
 
 /* every step in the site's folder, with the stack's env; the first that fails stops the rest and is named. A step that

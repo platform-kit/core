@@ -49,7 +49,7 @@ A disabled module contributes nothing. Its components are never imported, so the
 
 ## The module registry
 
-The kit's ordered lists that a module contributes to (the content models, the build steps) are read by Edge Functions too, which cannot read folders. So `modules/registry.mts` imports each module folder's `build/models.mts` and `build/steps.mts` by name. It is generated from the folders and `manifests.test.mts` refuses one that disagrees with them. Each list names a moved module by its key at its old place, and `build/modules/in-place.mts` puts that module's entries there, as the module list itself does.
+The kit's ordered lists that a module contributes to (the content models, the build steps) are read by Edge Functions too, which cannot read folders. So `modules/registry.mts` imports each module folder's `build/models.mts` and `build/steps.mts` by name. It is generated from the folders and `manifests.test.mts` refuses one that disagrees with them. Each list names a moved module by its key at its old place, and `build/modules/in-place.mts` puts that module's entries there — or, where a module's entries stood apart, each by `<module>#<key>` at its own place, as the module list itself does.
 
 ## Slots
 

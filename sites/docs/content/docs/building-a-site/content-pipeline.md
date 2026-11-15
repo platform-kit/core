@@ -27,7 +27,7 @@ sources:
     packages/kit/build/content-refresh.mts,
     packages/kit/build/content-refresh.test.mts,
     packages/kit/build/projection-safety.test.mts,
-    packages/kit/build/events-db.mts,
+    packages/kit/modules/events/build/events-db.mts,
     packages/kit/build/search-db.mts,
     packages/kit/build/teams-io.mts,
     packages/kit/vite/index.mts,

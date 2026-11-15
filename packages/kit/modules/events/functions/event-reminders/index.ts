@@ -13,10 +13,10 @@
  * pg_cron asks every five minutes with the service bearer (`{ action: 'send' }`; `dry: true` lists
  * what would go without sending or writing anything).
  */
-import { admin, json, preflight } from '../_shared/lib.ts'
-import { POLICY } from '../_shared/marketing.ts'
-import { sendEmail } from '../_shared/email.ts'
-import strings from '../_shared/emails/strings.json' with { type: 'json' }
+import { admin, json, preflight } from '@pk/core/lib.ts'
+import { POLICY } from '@pk/core/marketing.ts'
+import { sendEmail } from '@pk/core/email.ts'
+import strings from '@pk/core/emails/strings.json' with { type: 'json' }
 
 const W = (strings.session ?? {}) as Record<string, string>
 const APP = () => (Deno.env.get('APP_URL') ?? '').replace(/\/$/, '')

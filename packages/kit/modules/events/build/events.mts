@@ -17,10 +17,10 @@
  * a repeat that is not a repeat, a space or channel the site does not have, an audience written
  * in a grammar nothing reads, a booking type named that is not sold.
  */
-import { asStore } from './store/index.mjs'
-import { occurrences, problems, describe } from '../src/lib/recurrence.js'
+import { asStore } from '../../../build/store/index.mjs'
+import { occurrences, problems, describe } from '../../../src/lib/recurrence.js'
 import matter from 'gray-matter'
-import { isMain } from './is-main.mjs'
+import { isMain } from '../../../build/is-main.mjs'
 
 export const OUT = '.velite/events.json'
 /* how far ahead the projection reaches. A year is long enough that a community always shows the

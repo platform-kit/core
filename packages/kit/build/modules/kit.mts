@@ -186,17 +186,8 @@ const LISTED: Array<ModuleDeclaration | string> = [
       ],
     },
   },
-  {
-    key: 'events', what: 'what is on, and who says they are coming', needs: 'there is nowhere to keep who is coming',
-    /* an event's audience and its place's entry rule are the community's, and an event happens in a space or beside one */
-    requires: [{ module: 'spaces', why: 'an event is the community\u2019s: its place, its rooms and its audience are the spaces\u2019' }],
-    static: false, git: true, cloud: true,
-    owns: {
-      steps: ['events', 'events-push'],
-      schema: ['95-events.sql'], functions: ['event-reminders'],
-      cron: [{ name: 'event-reminders', schedule: '*/5 * * * *', command: 'select public.run_event_reminders()' }],
-    },
-  },
+  /* events: in its own folder, packages/kit/modules/events/ */
+  'events',
   /* courses: in its own folder, packages/kit/modules/courses/ */
   'courses',
   {

@@ -10,7 +10,7 @@
  *
  * Each of these is drawn by the admin's default editor from the zod below (a field's .meta()
  * carries its label, widget and help), so there is no component to write. The grammars they are
- * checked against are build/bots.mjs and build/events.mjs — the same ones the compile uses.
+ * checked against are build/bots.mjs and modules/events/build/events.mjs — the same ones the compile uses.
  */
 import { z } from 'zod'
 import { EVENTS } from '../../spaces-io.mjs'
@@ -358,7 +358,7 @@ async function projectedBots(ctx: any) {
    nothing is projected until it is published — see `projected` below */
 async function onEventWrite(ctx: any) {
   if (ctx.store && ctx.store.kind === 'rows') return
-  await ctx.script('events-push.mjs').catch((e: { message: string }) => console.warn('events: not projected — ' + e.message))
+  await ctx.script((await import('../../../modules/events/build/index.mjs')).EVENTS_PUSH).catch((e: { message: string }) => console.warn('events: not projected — ' + e.message))
 }
 
 export const events = {
@@ -397,8 +397,7 @@ export const events = {
   projected: async (ctx: any) => {
     const db = ctx.store && ctx.store.kind === 'rows' ? ctx.store.client : null
     if (!db) return
-    const { compileEvents } = await import('../../events.mjs')
-    const { projectEvents } = await import('../../events-db.mjs')
+    const { compileEvents, projectEvents } = await import('../../../modules/events/build/index.mjs')
     const { events, rows } = await compileEvents({ store: ctx.store, write: false })
     await projectEvents({ events, rows, db })
   },

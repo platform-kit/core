@@ -22,8 +22,8 @@ import type { PropType } from 'vue'
 import { ref, computed, onMounted, watch } from 'vue'
 import { us } from 'platformkit/lib/content.js'
 import { loadCalendar, calendar, whenWord, clockOf, rsvp } from 'platformkit/lib/spaces/calendar.js'
-import SpaceAvatar from './SpaceAvatar.vue'
-import SpaceIcon from './SpaceIcon.vue'
+import SpaceAvatar from 'platformkit/theme/components/spaces/SpaceAvatar.vue'
+import SpaceIcon from 'platformkit/theme/components/spaces/SpaceIcon.vue'
 
 const props = defineProps({ space: { type: Object as PropType<any>, default: null } })
 const emit = defineEmits(['open', 'join', 'book'])

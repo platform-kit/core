@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { projectEventComments, projectEvents } from './events-db.mjs'
+import { projectEventComments, projectEvents } from '../modules/events/build/index.mjs'
 import { projectSearch } from './search-db.mjs'
 
 let pass = 0, fail = 0

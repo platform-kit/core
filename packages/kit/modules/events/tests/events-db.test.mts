@@ -14,8 +14,8 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
-import { statusOf, leave, notHere } from './test-stack.mjs'
-import type { Database } from '../supabase/functions/_shared/database.types.js'
+import { statusOf, leave, notHere } from '../../../build/test-stack.mjs'
+import type { Database } from '../../../supabase/functions/_shared/database.types.js'
 
 const SITE = process.cwd()
 let pass = 0, fail = 0
@@ -31,9 +31,9 @@ const db = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { p
 { const { error } = await db.from('calendar_events').select('id', { head: true, count: 'exact' }); if (error) skip('calendar_events is not there — npm run db:reset (' + error.message + ')') }
 
 /* the module the Edge Function can run: no filesystem at import, so the pipe may carry it */
-const { projectEvents } = await import('./events-db.mjs')
-const { compileEvents } = await import('./events.mjs')
-const { gitStore } = await import('./store/git.mjs')
+const { projectEvents } = await import('../build/events-db.mjs')
+const { compileEvents } = await import('../build/events.mjs')
+const { gitStore } = await import('../../../build/store/git.mjs')
 
 const store = gitStore(SITE)
 const { events, rows } = await compileEvents({ store, write: false })
@@ -67,7 +67,7 @@ ok('nothing that was there is lost', before.every((b) => !want.has(b.slug) || af
 
 /* --- A SAVE OVER ROWS MOVES NOTHING --- */
 {
-  const { AGENT_MODELS } = await import('./models/core/agents.mjs')
+  const { AGENT_MODELS } = await import('../../../build/models/core/agents.mjs')
   const model: any = AGENT_MODELS.find((m) => m.key === 'events')
   ok('the events model is there', !!model)
   ok('it answers projected()', typeof model.projected === 'function')

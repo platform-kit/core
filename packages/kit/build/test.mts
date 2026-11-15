@@ -107,7 +107,6 @@ const KIT_TESTS = [
   on('sessions') && ['teams.test.mts'],      /* a team is a file: the grammar, and what the compile refuses — a fill that means nothing, a booking type naming a team that is gone */
   ['share-cloud.test.mts'],   /* the nginx config is valid with a prerender sidecar and without one; the stack itself behind PLATFORMKIT_SHARE_STACK=1 */
   on('bots') && ['bots-db.test.mts'],   /* the bots reach the surface on a publish, and the theme's skills with no package directory to read them from */
-  on('events') && ['events-db.test.mts'],   /* the calendar reaches the database on a publish, with no machine: a save over rows moves nothing */
   on('sessions') && ['teams-db.test.mts'],   /* and its membership is rows: the rule filling it, an invitation surviving a change to the rule, and a membership that is not a directory */
   on('sessions') && ['holds-db.test.mts'],   /* nobody's time is taken twice: the hold written with the booking, two at the same instant with one refused, a group holding its host once */
   on('sessions') && ['times.test.mts'],   /* the native scheduler's arithmetic: wall time in a zone, the open starts of a host */

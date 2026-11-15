@@ -142,7 +142,7 @@ cloud path came to be read back off a stale list and repeated as fact.
   community, the calendar, a bot's runner, the awards, the booker — show it without anything else
   happening
 
-Verified by: `build/spaces-db.test.mts`, `build/events-db.test.mts`, `build/agents-db.test.mts`,
+Verified by: `build/spaces-db.test.mts`, `packages/kit/modules/events/tests/events-db.test.mts`, `build/agents-db.test.mts`,
 `build/awards-db.test.mts` and `build/teams-db.test.mts`, each against a publish through the admin
 function in cloud mode on the demo
 
