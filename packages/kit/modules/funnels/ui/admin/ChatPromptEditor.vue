@@ -10,12 +10,12 @@ import type { PropType } from 'vue'
  * (src/lib/support/when.js: splitChoices / joinChoices, parseWhen / serialiseWhen), so the
  * markdown is never typed by hand and can never be bent out of shape.
  */
-import pipe from '../../lib/admin/api.js'
-import { useMediaPick } from '../../lib/admin/media-pick.js'
+import pipe from 'platformkit/theme/lib/admin/api.js'
+import { useMediaPick } from 'platformkit/theme/lib/admin/media-pick.js'
 import { us } from 'platformkit/lib/strings.js'
 import { computed, ref } from 'vue'
 import { parseWhen, serialiseWhen, splitChoices, joinChoices, TRIGGER_KEYS } from 'platformkit/lib/support/when.js'
-import ChoiceTree from './ChoiceTree.vue'
+import ChoiceTree from 'platformkit/theme/components/admin/ChoiceTree.vue'
 
 const props = defineProps({ step: { type: Object as PropType<any>, required: true } })
 

@@ -45,3 +45,11 @@ test('with courses off, nothing of it is in any slot', () => {
   const off = { courses: false }
   for (const slot of ['core:admin-screen', 'spaces:member-card', 'spaces:place']) assert.ok(!fillsOf(MODULES, off, slot).some((f) => f.module === 'courses'), slot)
 })
+
+test('funnels fills the admin with editors handed their path, and its numbers and blasts are tabs of other items', () => {
+  const screens = fillsOf(MODULES, {}, 'core:admin-screen').filter((f) => f.module === 'funnels')
+  assert.deepEqual(screens.map((f) => [f.key, !!f.path, !!f.bare]), [['funnels', true, true], ['blasts', true, true], ['funnel-analytics', true, false]])
+  const rail = fillsOf(MODULES, {}, 'core:admin-rail').filter((f) => f.module === 'funnels')
+  assert.deepEqual(rail.map((f) => [f.key, f.sec || null, f.tabOf || null]), [['funnels', 'marketing', null], ['funnel-analytics', null, 'funnels'], ['blasts', null, 'emails']])
+  for (const slot of ['core:admin-screen', 'core:admin-rail']) assert.ok(!fillsOf(MODULES, { funnels: false }, slot).some((f) => f.module === 'funnels'), slot)
+})

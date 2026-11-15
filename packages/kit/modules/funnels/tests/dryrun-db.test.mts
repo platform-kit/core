@@ -22,8 +22,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { execSync } from 'node:child_process'
 import fs from 'node:fs'
-import { statusOf, leave, notHere } from './test-stack.mjs'
-import type { Database } from '../supabase/functions/_shared/database.types.js'
+import { statusOf, leave, notHere } from '../../../build/test-stack.mjs'
+import type { Database } from '../../../supabase/functions/_shared/database.types.js'
 
 let pass = 0, fail = 0
 const ok = (name: string, cond: boolean, detail?: string|null|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + name + (detail ? ' — ' + detail : '')) } }

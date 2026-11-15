@@ -198,16 +198,8 @@ const LISTED: Array<ModuleDeclaration | string> = [
     ],
     owns: { steps: ['form-embed', 'forms'], schema: ['25-forms.sql'], functions: ['form', 'forms-api'] },
   },
-  {
-    key: 'funnels', what: 'funnels, blasts, audiences, the runner', needs: 'there is nobody to send to and nowhere to record it',
-    static: false, git: true, cloud: true,
-    owns: {
-      steps: ['funnels-run', 'funnels'],
-      schema: ['60-emails.sql'], functions: ['email-blast', 'email-track', 'email-unsubscribe', 'funnels-run'],
-      cron: [{ name: 'email-funnels', schedule: '7 * * * *', command: 'select public.run_email_funnels()' }],
-      env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'],
-    },
-  },
+  /* funnels: in its own folder, packages/kit/modules/funnels/ */
+  'funnels',
   {
     key: 'emails', what: 'the designs and the send function', needs: 'there is nothing to send with',
     static: false, git: true, cloud: true,

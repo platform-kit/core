@@ -1,7 +1,7 @@
 {
  "demo": {
   "all": {
-   ".assembled.json": "77b71c94f5572d2f",
+   ".assembled.json": "7b15634a304a23ae",
    "config.toml": "d0453df38821d350",
    "data.sql": "cb220bd71a0caaba",
    "functions/_shared/access.ts": "84cb877faa83e179",
@@ -108,8 +108,6 @@
    "functions/_shared/pipe/build/fonts.mjs": "e0de8bf6ffb2b386",
    "functions/_shared/pipe/build/form-io.mjs": "1bf9d255d195eea8",
    "functions/_shared/pipe/build/forms.mjs": "4b24a83e784b8fa1",
-   "functions/_shared/pipe/build/funnel-io.mjs": "f50b6d87eb95a4b0",
-   "functions/_shared/pipe/build/funnels.mjs": "1eb7b880c3d9852e",
    "functions/_shared/pipe/build/google-font.mjs": "ca1bafa146d4b0c2",
    "functions/_shared/pipe/build/google-fonts.json": "18da00c3e9171323",
    "functions/_shared/pipe/build/images/index.js": "7446009492ff1946",
@@ -121,28 +119,25 @@
    "functions/_shared/pipe/build/model-io.mjs": "3973d3c2fca2fc1b",
    "functions/_shared/pipe/build/models.mjs": "ce7f67d88984c096",
    "functions/_shared/pipe/build/models/core/agents.mjs": "91442918a1e918b6",
-   "functions/_shared/pipe/build/models/core/blasts.mjs": "6661d8f599d89961",
    "functions/_shared/pipe/build/models/core/collections.mjs": "329ea47afb3e0845",
    "functions/_shared/pipe/build/models/core/comments.mjs": "bb1c77b81ad2a6a5",
    "functions/_shared/pipe/build/models/core/emails.mjs": "532cc19074c32fd8",
    "functions/_shared/pipe/build/models/core/forms.mjs": "3b922df57fbfac3f",
-   "functions/_shared/pipe/build/models/core/funnels.mjs": "c35bf60cf0f25e45",
-   "functions/_shared/pipe/build/models/core/index.mjs": "41ecf00bd363f50a",
+   "functions/_shared/pipe/build/models/core/index.mjs": "3dfeb50c81b8488c",
    "functions/_shared/pipe/build/models/core/models.mjs": "fee0801436432f55",
-   "functions/_shared/pipe/build/models/core/policy.mjs": "33c88af7f76b4a0c",
    "functions/_shared/pipe/build/models/core/print.mjs": "b608f6351e7816be",
    "functions/_shared/pipe/build/models/core/providers.mjs": "e31124c0092adb2b",
    "functions/_shared/pipe/build/models/core/spaces.mjs": "1c67152af60027fd",
    "functions/_shared/pipe/build/models/core/strings.mjs": "5622e86f46bb4e57",
    "functions/_shared/pipe/build/models/core/teams.mjs": "729ea378c99f16c7",
    "functions/_shared/pipe/build/models/custom.mjs": "912e51c4b4622942",
-   "functions/_shared/pipe/build/models/index.mjs": "90d49d696e6e51df",
+   "functions/_shared/pipe/build/models/index.mjs": "10613b372fa5a316",
    "functions/_shared/pipe/build/models/util.mjs": "e990937bea772bb4",
    "functions/_shared/pipe/build/models/yaml-keep.mjs": "042f4d1bd4fe15ba",
    "functions/_shared/pipe/build/modes.mjs": "54b6d183002eeaac",
    "functions/_shared/pipe/build/modules/folders.mjs": "4464354dd08ed987",
    "functions/_shared/pipe/build/modules/in-place.mjs": "eb3c869efb926f5a",
-   "functions/_shared/pipe/build/modules/kit.mjs": "548a053ed60b07b6",
+   "functions/_shared/pipe/build/modules/kit.mjs": "33b5ebcf46a25124",
    "functions/_shared/pipe/build/modules/manifest.mjs": "7eb3ca096e012462",
    "functions/_shared/pipe/build/payment-provider-registry.mjs": "6a4ad9d4c6ea246a",
    "functions/_shared/pipe/build/print/block.mjs": "75d17f6e86473c37",
@@ -191,7 +186,17 @@
    "functions/_shared/pipe/modules/events/build/events.mjs": "33d1eee2f5607050",
    "functions/_shared/pipe/modules/events/build/index.mjs": "2b9f517cf4775c6f",
    "functions/_shared/pipe/modules/events/build/steps.mjs": "d1338fdaf5b9777b",
-   "functions/_shared/pipe/modules/registry.mjs": "f60c62492b348360",
+   "functions/_shared/pipe/modules/funnels/build/funnel-io.mjs": "dc9faea30fbcf917",
+   "functions/_shared/pipe/modules/funnels/build/funnels.mjs": "da7e565fc447944b",
+   "functions/_shared/pipe/modules/funnels/build/index.mjs": "8f19be3bfc72faeb",
+   "functions/_shared/pipe/modules/funnels/build/models.mjs": "d36dcfacd5ff4a61",
+   "functions/_shared/pipe/modules/funnels/build/models/blasts.mjs": "88d59f2791197a62",
+   "functions/_shared/pipe/modules/funnels/build/models/funnels.mjs": "86f8ff52bf9c02a0",
+   "functions/_shared/pipe/modules/funnels/build/models/policy.mjs": "155984cadab6aa8a",
+   "functions/_shared/pipe/modules/funnels/build/steps.mjs": "c514e4b1c4d5fa89",
+   "functions/_shared/pipe/modules/funnels/build/steps/funnels.mjs": "fd47902ec3e321b9",
+   "functions/_shared/pipe/modules/funnels/build/steps/run.mjs": "765006d2125f29a3",
+   "functions/_shared/pipe/modules/registry.mjs": "3da265ad602a7660",
    "functions/_shared/pipe/modules/tts/build/steps.mjs": "a6e9c16de02a523e",
    "functions/_shared/pipe/site.js": "e0ff2c96edc22259",
    "functions/_shared/pipe/site/build/admin-models.mts": "076566ed73b52d89",
@@ -340,8 +345,11 @@
    "functions/create-checkout-session/index.ts": "9a0c375c315cf535",
    "functions/create-portal-session/deno.json": "840c8f7b315846cc",
    "functions/create-portal-session/index.ts": "8ff2d1cfa5c597bc",
+   "functions/email-blast/deno.json": "930d45c12fc94f6c",
    "functions/email-blast/index.ts": "e67d51c092e40cd4",
+   "functions/email-track/deno.json": "930d45c12fc94f6c",
    "functions/email-track/index.ts": "f8378c8119bc21bb",
+   "functions/email-unsubscribe/deno.json": "930d45c12fc94f6c",
    "functions/email-unsubscribe/index.ts": "6f840adfd6b27657",
    "functions/event-reminders/deno.json": "0e6b653fb77c5498",
    "functions/event-reminders/index.ts": "78b1346e3e002a1c",
@@ -349,6 +357,7 @@
    "functions/form/index.ts": "ddd650ca27b4c5f7",
    "functions/forms-api/deno.json": "d9cd119bd6ca762c",
    "functions/forms-api/index.ts": "79b66e466a01d506",
+   "functions/funnels-run/deno.json": "930d45c12fc94f6c",
    "functions/funnels-run/index.ts": "e4ba783572ac80d5",
    "functions/hyperswitch-subscription-renewal/deno.json": "840c8f7b315846cc",
    "functions/hyperswitch-subscription-renewal/index.ts": "651831e77aaf54e2",
@@ -465,7 +474,7 @@
      "schemas/85-api.sql"
     ],
     "changed": {
-     ".assembled.json": "6d66729f2ceb8db0",
+     ".assembled.json": "ea13476efcedcd2b",
      "config.toml": "20cacc6311e29e20",
      "data.sql": "27a089848975d57a",
      "functions/_shared/pipe/site.js": "3de0aaa1160d2df0"
@@ -475,7 +484,7 @@
    "articles": {
     "gone": [],
     "changed": {
-     ".assembled.json": "61b5a404aaad62ad",
+     ".assembled.json": "1c0fd82cc1af00fc",
      "functions/_shared/pipe/site.js": "1a7a9901df44a58d"
     },
     "added": {}
@@ -483,7 +492,7 @@
    "books": {
     "gone": [],
     "changed": {
-     ".assembled.json": "6011a9a364d56219",
+     ".assembled.json": "f51f118cd422d9d6",
      "functions/_shared/pipe/site.js": "6ea4698fb5dc6e28"
     },
     "added": {}
@@ -508,7 +517,7 @@
      "schemas/glue/bots+support.sql"
     ],
     "changed": {
-     ".assembled.json": "360736956c725bd3",
+     ".assembled.json": "9b1966466019f967",
      "config.toml": "522e26a9443d581d",
      "data.sql": "e29326bbdd2950ce",
      "functions/_shared/pipe/site.js": "9fddaea999054da9"
@@ -523,7 +532,7 @@
      "schemas/glue/coaching+sessions.sql"
     ],
     "changed": {
-     ".assembled.json": "a0297069a937518c",
+     ".assembled.json": "ec5c16b62558bf5b",
      "data.sql": "114ab499f1f2a04b",
      "functions/_shared/pipe/site.js": "5440319303571d8f"
     },
@@ -540,7 +549,7 @@
      "schemas/95-copilot.sql"
     ],
     "changed": {
-     ".assembled.json": "4d04f73306f52cdd",
+     ".assembled.json": "585cc056d01626a0",
      "config.toml": "522e26a9443d581d",
      "functions/_shared/pipe/site.js": "923cb1921e326170"
     },
@@ -556,7 +565,7 @@
      "schemas/glue/courses+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "45489028f0fff0e6",
+     ".assembled.json": "13f40b360991c4a3",
      "data.sql": "79eb741aca949c79",
      "functions/_shared/pipe/site.js": "de1d061760dc2035"
     },
@@ -565,7 +574,7 @@
    "docs": {
     "gone": [],
     "changed": {
-     ".assembled.json": "37e393cd6c3fbaa6",
+     ".assembled.json": "61d2e502c5d2e070",
      "functions/_shared/pipe/site.js": "38e8e3b7702b5d78"
     },
     "added": {}
@@ -575,7 +584,7 @@
      "functions/send-email/index.ts"
     ],
     "changed": {
-     ".assembled.json": "6f5938270dc6d96a",
+     ".assembled.json": "efe77c4111d142e9",
      "functions/_shared/pipe/site.js": "19cdc8ffa6617dc8"
     },
     "added": {}
@@ -583,7 +592,7 @@
    "enrichment": {
     "gone": [],
     "changed": {
-     ".assembled.json": "98bf3eef7845e27a",
+     ".assembled.json": "b675a0edb8eba7ab",
      "functions/_shared/pipe/site.js": "3ec4b99eaddf28bf"
     },
     "added": {}
@@ -596,7 +605,7 @@
      "schemas/glue/events+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "08d46568bc1d0b99",
+     ".assembled.json": "d0b00cfaea1f4085",
      "data.sql": "082ee14448a6cc3b",
      "functions/_shared/pipe/site.js": "912c9b73cc6217ba"
     },
@@ -618,7 +627,7 @@
      "schemas/glue/instrument+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "59903e6e047cc396",
+     ".assembled.json": "6139f1d5ae817a66",
      "config.toml": "b2753f8ba9e00017",
      "functions/_shared/pipe/site.js": "7d64f89e20900e0c"
     },
@@ -626,9 +635,13 @@
    },
    "funnels": {
     "gone": [
+     "functions/email-blast/deno.json",
      "functions/email-blast/index.ts",
+     "functions/email-track/deno.json",
      "functions/email-track/index.ts",
+     "functions/email-unsubscribe/deno.json",
      "functions/email-unsubscribe/index.ts",
+     "functions/funnels-run/deno.json",
      "functions/funnels-run/index.ts",
      "schemas/60-emails.sql",
      "schemas/glue/funnels+instrument.sql",
@@ -636,7 +649,7 @@
      "schemas/glue/funnels+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "0604e20b60fa0321",
+     ".assembled.json": "301fc85327ab541f",
      "config.toml": "1a1f541a5cede00a",
      "data.sql": "b7c5b51238febd7b",
      "functions/_shared/pipe/site.js": "6750067c15051839"
@@ -651,7 +664,7 @@
      "schemas/glue/instrument+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "e468f421ce589622",
+     ".assembled.json": "ab43436d714b23b8",
      "functions/_shared/pipe/site.js": "c7972e30af91d620"
     },
     "added": {}
@@ -664,7 +677,7 @@
      "functions/hyperswitch-subscription-renewal/index.ts"
     ],
     "changed": {
-     ".assembled.json": "70c9e37751ae0848",
+     ".assembled.json": "caa7255c66052d69",
      "data.sql": "3fe1d3f639e4effa",
      "functions/_shared/pipe/site.js": "6ec3f1ba11c97509"
     },
@@ -673,7 +686,7 @@
    "models": {
     "gone": [],
     "changed": {
-     ".assembled.json": "936695a9ff6a1a48",
+     ".assembled.json": "d3d99bb15280dc1d",
      "functions/_shared/pipe/site.js": "acf959dedc9cc02f"
     },
     "added": {}
@@ -685,7 +698,7 @@
      "schemas/glue/network+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "e0a42e5c5e5e5fed",
+     ".assembled.json": "292a5350dd24d0c0",
      "config.toml": "873b8a023b695d91",
      "data.sql": "93b760abb5f05ef8",
      "functions/_shared/pipe/site.js": "4f5dc00a6cd4d542"
@@ -703,7 +716,7 @@
      "schemas/44-print-jobs.sql"
     ],
     "changed": {
-     ".assembled.json": "f8b32a09a490992e",
+     ".assembled.json": "cefa10f301fb02e4",
      "config.toml": "d712e4cc6d67a7d7",
      "data.sql": "40e0e880edcc01a4",
      "functions/_shared/pipe/site.js": "764cd042203ff3ae"
@@ -719,7 +732,7 @@
      "schemas/glue/push+support.sql"
     ],
     "changed": {
-     ".assembled.json": "e8d983d898d9b531",
+     ".assembled.json": "19f5d8767f0db6ad",
      "config.toml": "5a86d93f912ef9e3",
      "functions/_shared/pipe/site.js": "f859aa8567fa5373"
     },
@@ -728,7 +741,7 @@
    "recommendations": {
     "gone": [],
     "changed": {
-     ".assembled.json": "89be55777e6f7364",
+     ".assembled.json": "f0d0dbe24349d4eb",
      "functions/_shared/pipe/site.js": "3ee2498bd01ec552"
     },
     "added": {}
@@ -761,7 +774,7 @@
      "schemas/glue/sessions+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "1b5385e9816b0a4a",
+     ".assembled.json": "2065511330bee6d0",
      "config.toml": "ec3fc859d9d70688",
      "data.sql": "a76358134d21e286",
      "functions/_shared/pipe/site.js": "3b8202c9c293cbb5",
@@ -780,7 +793,7 @@
      "schemas/glue/bots+social-publishing.sql"
     ],
     "changed": {
-     ".assembled.json": "0ad58af0ca74d99e",
+     ".assembled.json": "557da34c55aac9e1",
      "config.toml": "01b908acc311fc20",
      "data.sql": "ce3315a1d4dce105",
      "functions/_shared/pipe/site.js": "a9631d33a1c5193d"
@@ -792,7 +805,7 @@
      "schemas/92-encryption.sql"
     ],
     "changed": {
-     ".assembled.json": "352466740bfa2cdd",
+     ".assembled.json": "9a6b73496cce0775",
      "functions/_shared/pipe/site.js": "8961ce69942d451c"
     },
     "added": {}
@@ -820,7 +833,7 @@
      "schemas/glue/spaces+support.sql"
     ],
     "changed": {
-     ".assembled.json": "d090d899aaab30fb",
+     ".assembled.json": "13959af616bc0e06",
      "config.toml": "48101cf6994cf84e",
      "data.sql": "2dca5926d9baea36",
      "functions/_shared/pipe/site.js": "84f7c1913b84a11e",
@@ -831,7 +844,7 @@
    "stockists": {
     "gone": [],
     "changed": {
-     ".assembled.json": "f4455b7179b9fc94",
+     ".assembled.json": "d6629cf2cd7ee055",
      "functions/_shared/pipe/site.js": "a60c9b39f55dce38"
     },
     "added": {}
@@ -850,7 +863,7 @@
      "schemas/glue/spaces+store.sql"
     ],
     "changed": {
-     ".assembled.json": "5b5b0656f3898ad1",
+     ".assembled.json": "d2e885af937b1e40",
      "config.toml": "20cacc6311e29e20",
      "data.sql": "38ba10509a6a447b",
      "functions/_shared/pipe/site.js": "25b776ad315aff9e"
@@ -870,7 +883,7 @@
      "schemas/glue/spaces+support.sql"
     ],
     "changed": {
-     ".assembled.json": "73a9bb8c7529ee1c",
+     ".assembled.json": "5f912e06f7e003c0",
      "config.toml": "eefe5bb51c77932c",
      "data.sql": "51905b9016c0170e",
      "functions/_shared/pipe/site.js": "cffdf8a0b5135796"
@@ -880,7 +893,7 @@
    "tts": {
     "gone": [],
     "changed": {
-     ".assembled.json": "ec658063621fbbf2",
+     ".assembled.json": "0c1a2029f1c0208f",
      "functions/_shared/pipe/site.js": "04a3c6180e38eff1"
     },
     "added": {}
@@ -888,7 +901,7 @@
    "wiki": {
     "gone": [],
     "changed": {
-     ".assembled.json": "824bea9cfc4babbb",
+     ".assembled.json": "d91976dbb22f6d8f",
      "functions/_shared/pipe/site.js": "d82681aace60a5a3"
     },
     "added": {}
@@ -897,7 +910,7 @@
  },
  "club": {
   "all": {
-   ".assembled.json": "a83b0357fef08c00",
+   ".assembled.json": "bb89386311aa1cc2",
    "config.toml": "86f6864f63b967d1",
    "data.sql": "2ac943679dbf742c",
    "functions/_shared/access.ts": "84cb877faa83e179",
@@ -1001,8 +1014,6 @@
    "functions/_shared/pipe/build/fonts.mjs": "e0de8bf6ffb2b386",
    "functions/_shared/pipe/build/form-io.mjs": "1bf9d255d195eea8",
    "functions/_shared/pipe/build/forms.mjs": "4b24a83e784b8fa1",
-   "functions/_shared/pipe/build/funnel-io.mjs": "f50b6d87eb95a4b0",
-   "functions/_shared/pipe/build/funnels.mjs": "1eb7b880c3d9852e",
    "functions/_shared/pipe/build/google-font.mjs": "ca1bafa146d4b0c2",
    "functions/_shared/pipe/build/google-fonts.json": "18da00c3e9171323",
    "functions/_shared/pipe/build/images/index.js": "7446009492ff1946",
@@ -1014,28 +1025,25 @@
    "functions/_shared/pipe/build/model-io.mjs": "3973d3c2fca2fc1b",
    "functions/_shared/pipe/build/models.mjs": "ce7f67d88984c096",
    "functions/_shared/pipe/build/models/core/agents.mjs": "91442918a1e918b6",
-   "functions/_shared/pipe/build/models/core/blasts.mjs": "6661d8f599d89961",
    "functions/_shared/pipe/build/models/core/collections.mjs": "329ea47afb3e0845",
    "functions/_shared/pipe/build/models/core/comments.mjs": "bb1c77b81ad2a6a5",
    "functions/_shared/pipe/build/models/core/emails.mjs": "532cc19074c32fd8",
    "functions/_shared/pipe/build/models/core/forms.mjs": "3b922df57fbfac3f",
-   "functions/_shared/pipe/build/models/core/funnels.mjs": "c35bf60cf0f25e45",
-   "functions/_shared/pipe/build/models/core/index.mjs": "41ecf00bd363f50a",
+   "functions/_shared/pipe/build/models/core/index.mjs": "3dfeb50c81b8488c",
    "functions/_shared/pipe/build/models/core/models.mjs": "fee0801436432f55",
-   "functions/_shared/pipe/build/models/core/policy.mjs": "33c88af7f76b4a0c",
    "functions/_shared/pipe/build/models/core/print.mjs": "b608f6351e7816be",
    "functions/_shared/pipe/build/models/core/providers.mjs": "e31124c0092adb2b",
    "functions/_shared/pipe/build/models/core/spaces.mjs": "1c67152af60027fd",
    "functions/_shared/pipe/build/models/core/strings.mjs": "5622e86f46bb4e57",
    "functions/_shared/pipe/build/models/core/teams.mjs": "729ea378c99f16c7",
    "functions/_shared/pipe/build/models/custom.mjs": "912e51c4b4622942",
-   "functions/_shared/pipe/build/models/index.mjs": "90d49d696e6e51df",
+   "functions/_shared/pipe/build/models/index.mjs": "10613b372fa5a316",
    "functions/_shared/pipe/build/models/util.mjs": "e990937bea772bb4",
    "functions/_shared/pipe/build/models/yaml-keep.mjs": "042f4d1bd4fe15ba",
    "functions/_shared/pipe/build/modes.mjs": "54b6d183002eeaac",
    "functions/_shared/pipe/build/modules/folders.mjs": "4464354dd08ed987",
    "functions/_shared/pipe/build/modules/in-place.mjs": "eb3c869efb926f5a",
-   "functions/_shared/pipe/build/modules/kit.mjs": "548a053ed60b07b6",
+   "functions/_shared/pipe/build/modules/kit.mjs": "33b5ebcf46a25124",
    "functions/_shared/pipe/build/modules/manifest.mjs": "7eb3ca096e012462",
    "functions/_shared/pipe/build/payment-provider-registry.mjs": "6a4ad9d4c6ea246a",
    "functions/_shared/pipe/build/print/block.mjs": "75d17f6e86473c37",
@@ -1084,7 +1092,17 @@
    "functions/_shared/pipe/modules/events/build/events.mjs": "33d1eee2f5607050",
    "functions/_shared/pipe/modules/events/build/index.mjs": "2b9f517cf4775c6f",
    "functions/_shared/pipe/modules/events/build/steps.mjs": "d1338fdaf5b9777b",
-   "functions/_shared/pipe/modules/registry.mjs": "f60c62492b348360",
+   "functions/_shared/pipe/modules/funnels/build/funnel-io.mjs": "dc9faea30fbcf917",
+   "functions/_shared/pipe/modules/funnels/build/funnels.mjs": "da7e565fc447944b",
+   "functions/_shared/pipe/modules/funnels/build/index.mjs": "8f19be3bfc72faeb",
+   "functions/_shared/pipe/modules/funnels/build/models.mjs": "d36dcfacd5ff4a61",
+   "functions/_shared/pipe/modules/funnels/build/models/blasts.mjs": "88d59f2791197a62",
+   "functions/_shared/pipe/modules/funnels/build/models/funnels.mjs": "86f8ff52bf9c02a0",
+   "functions/_shared/pipe/modules/funnels/build/models/policy.mjs": "155984cadab6aa8a",
+   "functions/_shared/pipe/modules/funnels/build/steps.mjs": "c514e4b1c4d5fa89",
+   "functions/_shared/pipe/modules/funnels/build/steps/funnels.mjs": "fd47902ec3e321b9",
+   "functions/_shared/pipe/modules/funnels/build/steps/run.mjs": "765006d2125f29a3",
+   "functions/_shared/pipe/modules/registry.mjs": "3da265ad602a7660",
    "functions/_shared/pipe/modules/tts/build/steps.mjs": "a6e9c16de02a523e",
    "functions/_shared/pipe/site.js": "f2d670aea2d1ce75",
    "functions/_shared/pipe/site/index.js": "9afa7060d2fb5bb3",
@@ -1256,7 +1274,7 @@
    "articles": {
     "gone": [],
     "changed": {
-     ".assembled.json": "88eb8d3763102103",
+     ".assembled.json": "7e69b37fcf6bd9e2",
      "functions/_shared/pipe/site.js": "55d576aa34d79e9c"
     },
     "added": {}
@@ -1271,7 +1289,7 @@
      "schemas/glue/forms+support.sql"
     ],
     "changed": {
-     ".assembled.json": "fbea0fa856eded36",
+     ".assembled.json": "c4ac3edcdbeabd09",
      "config.toml": "54129a9899b3b54a",
      "functions/_shared/pipe/site.js": "2401caf162771934"
     },
@@ -1285,7 +1303,7 @@
      "functions/hyperswitch-subscription-renewal/index.ts"
     ],
     "changed": {
-     ".assembled.json": "a75273abca242861",
+     ".assembled.json": "7b6442b90571e520",
      "data.sql": "4b30e399afb005af",
      "functions/_shared/pipe/site.js": "c45251331f7b4bc1"
     },
@@ -1301,7 +1319,7 @@
      "schemas/glue/forms+support.sql"
     ],
     "changed": {
-     ".assembled.json": "18f84d15c3a289ee",
+     ".assembled.json": "2339583a3bad5f34",
      "config.toml": "11ddabfd0b94994c",
      "data.sql": "e726ce2a56d156df",
      "functions/_shared/pipe/site.js": "77e04bcbc56b3e9d"

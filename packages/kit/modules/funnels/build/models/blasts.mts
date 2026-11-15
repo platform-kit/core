@@ -1,8 +1,8 @@
 /* The blasts: markdown under content/blasts (build/funnel-io.mjs); a sent blast is the record and is never edited; the
    identity is the file's, whatever the form sent. `sent` is the send's record written back; every write compiles. */
-import { Refusal } from '../util.mjs'
-import { parseBlast, serialiseBlast, BLASTS_DIR, slugOk, goalOk, readBlast, blastNames, writeBlast } from '../../funnel-io.mjs'
-import { normalizeRules, describeRules } from '../../../supabase/functions/_shared/emails/rules.js'
+import { Refusal } from '../../../../build/models/util.mjs'
+import { parseBlast, serialiseBlast, BLASTS_DIR, slugOk, goalOk, readBlast, blastNames, writeBlast } from '../funnel-io.mjs'
+import { normalizeRules, describeRules } from '../../../../supabase/functions/_shared/emails/rules.js'
 
 export default {
   key: 'blasts', name: 'Blasts', dir: BLASTS_DIR, title: 'title', module: 'funnels', editor: 'BlastsAdmin', creates: true,

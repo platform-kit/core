@@ -139,7 +139,10 @@ if (docker.status === 0) {
   try {
     fs.rmSync(scratch, { recursive: true, force: true })
     fs.mkdirSync(path.join(scratch, 'supabase'), { recursive: true })
-    fs.cpSync(path.join(kitRoot, 'schemas'), path.join(scratch, 'supabase', 'schemas'), { recursive: true })
+    /* every numbered schema file of the kit, a module folder's included, by the name it is assembled under (openspec: modules-as-packages) */
+    const { kitSchemaFiles } = await import('./modules/backend.mjs')
+    fs.mkdirSync(path.join(scratch, 'supabase', 'schemas'), { recursive: true })
+    for (const { name, path: p } of kitSchemaFiles().filter((x: { name: string }) => !x.name.startsWith('glue/'))) fs.cpSync(p, path.join(scratch, 'supabase', 'schemas', name))
     fs.writeFileSync(path.join(scratch, 'supabase', 'config.toml'), `project_id = "pk-cron-registration-test"
 [db]
 port = ${port}

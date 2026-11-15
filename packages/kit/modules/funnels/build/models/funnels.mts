@@ -1,9 +1,9 @@
 /* The funnels: markdown under content/funnels, a step per heading (build/funnel-io.mjs) — the grammar; the funnel editor
    is the editor; every write compiles them beside the functions (build/funnels.mjs). The record: data the frontmatter,
    parsed { steps }; the list carries each funnel's audience rules described. */
-import { Refusal } from '../util.mjs'
-import { parseFunnel, serialiseFunnel, FUNNELS_DIR, slugOk, goalOk } from '../../funnel-io.mjs'
-import { normalizeRules, describeRules } from '../../../supabase/functions/_shared/emails/rules.js'
+import { Refusal } from '../../../../build/models/util.mjs'
+import { parseFunnel, serialiseFunnel, FUNNELS_DIR, slugOk, goalOk } from '../funnel-io.mjs'
+import { normalizeRules, describeRules } from '../../../../supabase/functions/_shared/emails/rules.js'
 
 export default {
   key: 'funnels', name: 'Funnels', dir: FUNNELS_DIR, title: 'title', module: 'funnels', editor: 'FunnelsAdmin', creates: true,
@@ -21,7 +21,7 @@ export default {
   afterRemove: (name: any, ctx: any) => ctx.script('funnels.mjs'),
   actions: {
     /* the markdown as the email carries it (html), for the editor's preview */
-    preview: async ({ body }: any) => { const { mdToEmailHtml } = await import('../../../supabase/functions/_shared/emails/markdown.js'); return { html: mdToEmailHtml(String(body || '')) } },
+    preview: async ({ body }: any) => { const { mdToEmailHtml } = await import('../../../../supabase/functions/_shared/emails/markdown.js'); return { html: mdToEmailHtml(String(body || '')) } },
   },
   options: {
     /* the compiled email designs a funnel or a blast may be piped through */

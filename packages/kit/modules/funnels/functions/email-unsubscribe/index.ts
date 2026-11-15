@@ -6,11 +6,11 @@
  * the emails about an order still come.
  * Answers a small page in the site's words (strings.json ## unsubscribe).
  */
-import { admin } from '../_shared/lib.ts'
-import * as SITE from '../_shared/pipe/site.js'
+import { admin } from '@pk/core/lib.ts'
+import * as SITE from '@pk/core/pipe/site.js'
 const SITE_NAME = String(SITE.name || '')
-import { unsubscribeOk } from '../_shared/marketing.ts'
-import strings from '../_shared/emails/strings.json' with { type: 'json' }
+import { unsubscribeOk } from '@pk/core/marketing.ts'
+import strings from '@pk/core/emails/strings.json' with { type: 'json' }
 
 const W = (strings.unsubscribe ?? {}) as Record<string, string>
 const site = () => (Deno.env.get('APP_URL') ?? Deno.env.get('VITE_APP_URL') ?? 'http://localhost:5173').replace(/\/+$/, '')

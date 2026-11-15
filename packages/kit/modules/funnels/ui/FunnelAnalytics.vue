@@ -13,13 +13,13 @@
  */
 import { ref, computed, onMounted, watch } from 'vue'
 import VChart from 'vue-echarts'
-import { base, tokens, PALETTE, chartKind, timeSeries, timeAxis } from '../lib/charts-theme.js'
-import ChartKind from './ChartKind.vue'
-import './analytics.css'
+import { base, tokens, PALETTE, chartKind, timeSeries, timeAxis } from 'platformkit/theme/lib/charts-theme.js'
+import ChartKind from 'platformkit/theme/components/ChartKind.vue'
+import 'platformkit/theme/components/analytics.css'
 import { us } from 'platformkit/lib/content.js'
 import { supabase, configured } from 'platformkit/lib/supabase.js'
 import { isSignedIn } from 'platformkit/lib/auth.js'
-import AdminHead from './admin/AdminHead.vue'
+import AdminHead from 'platformkit/theme/components/admin/AdminHead.vue'
 
 const props = defineProps({ name: { type: String, default: '' }, kind: { type: String, default: 'funnel' } })
 const emit = defineEmits(['open', 'back', 'edit'])

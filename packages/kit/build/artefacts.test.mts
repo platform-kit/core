@@ -98,7 +98,7 @@ if (SITE.deployment.backend) {
   }
   await both('catalog', async (store: any, theme: any) => (await import('./catalog.mjs')).compileCatalog({ store, theme, root: ROOT }))
   await both('forms', async (store: string|undefined) => (await (await import('./forms.mjs')).compileForms(store)).forms)
-  await both('funnels', async (store: any) => (await import('./funnels.mts')).compileFunnels({ store, write: false, offers: (() => { try { return JSON.parse(readFileSync(join(ROOT, 'supabase/functions/_shared/catalog.json'), 'utf8')).offers } catch { return null } })() }))
+  await both('funnels', async (store: any) => (await import('../modules/funnels/build/index.mjs')).compileFunnels({ store, write: false, offers: (() => { try { return JSON.parse(readFileSync(join(ROOT, 'supabase/functions/_shared/catalog.json'), 'utf8')).offers } catch { return null } })() }))
 }
 
 console.log('\nartefacts: ' + pass + ' passed' + (fail ? ', ' + fail + ' FAILED' : '') + '\n')

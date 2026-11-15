@@ -10,9 +10,9 @@
  * app_settings with its own url, so a hosted project's cron learns where its functions are.
  * `{ dry: true }` says what it would send and sends nothing.
  */
-import { admin, json, preflight, getUser, isServiceBearer } from '../_shared/lib.ts'
-import { rolesOf, isAdmin } from '../_shared/roles.ts'
-import { FUNNELS, POLICY, audience, recentSends, cooled, sendMarketing, functionsUrl } from '../_shared/marketing.ts'
+import { admin, json, preflight, getUser, isServiceBearer } from '@pk/core/lib.ts'
+import { rolesOf, isAdmin } from '@pk/core/roles.ts'
+import { FUNNELS, POLICY, audience, recentSends, cooled, sendMarketing, functionsUrl } from '@pk/core/marketing.ts'
 
 const DAY = 86400e3
 const env = (k: string) => Deno.env.get(k) ?? ''

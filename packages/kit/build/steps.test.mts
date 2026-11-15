@@ -182,7 +182,7 @@ await ta('a failing step stops the phase naming itself; a change list runs the m
     try {
       mkdirSync(path.join(root, 'content/funnels'), { recursive: true })
       mkdirSync(path.join(root, 'content/blasts'), { recursive: true })
-      const stepUrl = pathToFileURL(path.join(path.dirname(fileURLToPath(import.meta.url)), 'steps/funnels.mjs')).href
+      const stepUrl = pathToFileURL(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'modules', 'funnels', 'build', 'steps', 'funnels.mjs')).href
       const script = `
         import { existsSync, readFileSync } from 'node:fs'
         import step from ${JSON.stringify(stepUrl)}

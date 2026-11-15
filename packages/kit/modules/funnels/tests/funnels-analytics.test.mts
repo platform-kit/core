@@ -8,9 +8,9 @@
 import fs from 'node:fs'
 import { createHmac } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
-import { leave } from './test-stack.mjs'
-import type { Database } from '../supabase/functions/_shared/database.types.js'
+import { supabaseUrl, localStack, serviceKey } from '../../../build/supabase-env.mjs'
+import { leave } from '../../../build/test-stack.mjs'
+import type { Database } from '../../../supabase/functions/_shared/database.types.js'
 
 const note = (m: string) => console.log('funnels-analytics: ' + m)
 if (process.env.FUNNELS_TEST === '0') { note('skipped (FUNNELS_TEST=0)'); process.exit(0) }

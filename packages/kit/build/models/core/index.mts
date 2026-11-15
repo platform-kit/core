@@ -2,9 +2,6 @@
    their own. A site's join them from platformkit.config.js admin.models; the custom models from content/models. */
 import { COLLECTION_MODELS } from './collections.mjs'
 import forms from './forms.mjs'
-import funnels from './funnels.mjs'
-import blasts from './blasts.mjs'
-import policy from './policy.mjs'
 import emails from './emails.mjs'
 import strings from './strings.mjs'
 import models from './models.mjs'
@@ -17,4 +14,4 @@ import { AGENT_MODELS } from './agents.mjs'
 /* a moved module's models, at its place (openspec: modules-as-packages) */
 import { MODELS as MODULE_MODELS } from '../../../modules/registry.mjs'
 import { inPlace } from '../../modules/in-place.mjs'
-export const CORE = inPlace([...COLLECTION_MODELS, forms, funnels, blasts, policy, emails, strings, models, print, spaces, teams, 'courses', providers, commentPolicy, ...AGENT_MODELS], MODULE_MODELS, 'content models')
+export const CORE = inPlace([...COLLECTION_MODELS, forms, 'funnels', emails, strings, models, print, spaces, teams, 'courses', providers, commentPolicy, ...AGENT_MODELS], MODULE_MODELS, 'content models')

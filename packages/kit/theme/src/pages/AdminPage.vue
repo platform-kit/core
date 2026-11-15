@@ -38,7 +38,6 @@ const SITE_SECTIONS: any[] = [...MODULE_SECTIONS, ...SITE_OWN_SECTIONS]
 import AnalyticsAdmin from '../components/AnalyticsAdmin.vue'
 import ContentAnalytics from '../components/ContentAnalytics.vue'
 import FormAnalytics from '../components/FormAnalytics.vue'
-import FunnelAnalytics from '../components/FunnelAnalytics.vue'
 import ContentPiece from '../components/ContentPiece.vue'
 import SiteMark from '../components/SiteMark.vue'
 import { modules } from '#site'
@@ -48,15 +47,13 @@ import PrintOrders from '../components/PrintOrders.vue'
 import Orders from '../components/Orders.vue'
 import Bookings from '../components/Bookings.vue'
 import EmailsAdmin from '../components/admin/EmailsAdmin.vue'
-import FunnelsAdmin from '../components/admin/FunnelsAdmin.vue'
-import BlastsAdmin from '../components/admin/BlastsAdmin.vue'
 import SupportAdmin from '../components/SupportAdmin.vue'
 import CommentsAdmin from '../components/CommentsAdmin.vue'
 import NetworkAdmin from '../components/NetworkAdmin.vue'
 import PeopleAdmin from '../components/admin/PeopleAdmin.vue'
 import PayoutsAdmin from '../components/admin/PayoutsAdmin.vue'
 /* the screens other modules add to the admin (core's admin-screen slot; openspec: modules-as-packages) */
-import { SCREENS } from '#site/admin-screens'
+import { SCREENS, PATHED, BARE } from '#site/admin-screens'
 import PaymentsAdmin from '../components/admin/PaymentsAdmin.vue'
 import SpacesAdmin from '../components/SpacesAdmin.vue'
 import PublishingPage from '../components/PublishingPage.vue'
@@ -147,7 +144,7 @@ const parsed = computed(() => {
    bookings — nothing that needs the content pipe. A support agent, wherever, sees Notifications and Support and
    nothing else; a reader who is not on the staff sees the gate. */
 const LIVE = !CMS
-const LIVE_VIEWS = new Set(['analytics', 'content-analytics', 'form-analytics', 'funnel-analytics', 'support', 'comments', 'spaces', 'orders', 'print-orders', 'bookings', 'social', 'network', 'payments', ...(MODULE_SECTIONS as any[]).filter((s) => s.live).map((s) => s.key)])   /* and the module sections that say they are live */
+const LIVE_VIEWS = new Set(['analytics', 'content-analytics', 'form-analytics', 'support', 'comments', 'spaces', 'orders', 'print-orders', 'bookings', 'social', 'network', 'payments', ...(MODULE_SECTIONS as any[]).filter((s) => s.live).map((s) => s.key)])   /* and the module sections that say they are live */
 const socialAccess = ref(false)
 const socialAccessKnown = ref(false)
 const socialAccessError = ref(false)
@@ -201,7 +198,7 @@ const NEEDS: any = {
   /* the figures — the dashboards, and nothing with a person's name in it. What was sold is NOT a
      dashboard: an order carries the buyer's name and the address a parcel goes to, so Orders, Print
      orders and Bookings need an administrator and the policies behind them still ask is_admin(). */
-  analytics: 'figures', 'content-analytics': 'figures', 'form-analytics': 'figures', 'funnel-analytics': 'figures',
+  analytics: 'figures', 'content-analytics': 'figures', 'form-analytics': 'figures',
   /* WHAT AN EDITOR WRITES, named one by one. Everything not named here needs an administrator —
      the default is the strict one, because a section added later and forgotten should be out of
      an editor's reach rather than in it. Getting this the other way round let an editor see Sales. */
@@ -309,7 +306,7 @@ const inlineSlot = ref<any>(null)   /* the element the editor teleports into; it
    server) or one of the three views with their own editors. Any collection not
    named here still appears, under Other, so a new content type is never lost. */
 /* which module each view or collection belongs to: off in platformkit.config.js, it leaves the rail */
-const MODULE_OF: any = { articles: 'articles', books: 'books', companions: 'books', wiki: 'wiki', docs: 'docs', ...Object.fromEntries(SITE_SECTIONS.filter((s: any) => s.module).map((s: any) => [s.key, s.module])), emails: 'emails', funnels: 'funnels', blasts: 'funnels', 'funnel-analytics': 'funnels', support: 'support', social: 'social-publishing', spaces: 'spaces', community: 'spaces', network: 'network', forms: 'forms', 'form-responses': 'forms', 'form-analytics': 'forms', storefront: 'store', products: 'store', collections: 'store', sessions: 'sessions', teams: 'sessions', providers: 'sessions', print: 'print', 'print-orders': 'print', orders: 'store', bookings: 'sessions', payouts: 'sessions', models: 'models' }
+const MODULE_OF: any = { articles: 'articles', books: 'books', companions: 'books', wiki: 'wiki', docs: 'docs', ...Object.fromEntries(SITE_SECTIONS.filter((s: any) => s.module).map((s: any) => [s.key, s.module])), emails: 'emails', support: 'support', social: 'social-publishing', spaces: 'spaces', community: 'spaces', network: 'network', forms: 'forms', 'form-responses': 'forms', 'form-analytics': 'forms', storefront: 'store', products: 'store', collections: 'store', sessions: 'sessions', teams: 'sessions', providers: 'sessions', print: 'print', 'print-orders': 'print', orders: 'store', bookings: 'sessions', payouts: 'sessions', models: 'models' }
 const modelWords = (us('models').admin || {}).page || {}
 /* IS THE VIEW BEHIND THIS KEY AVAILABLE? A VIEW key, not a module id — `products` is a view and
    `store` is the module behind it (MODULE_OF). It was called moduleOn, which is the kit's own name
@@ -350,7 +347,7 @@ const NAV = [
   { key: 'content', items: ['models', 'media', 'publishing', 'articles', 'books', 'wiki', 'docs', 'pages'] },   /* the machinery first — the builder, the library, and in cloud mode alone the drafts and where a publish goes (navGroups leaves Publishing out of a git-mode admin) — then the kinds; the content models' own rows close the group (navGroups) */
   { key: 'store', items: ['storefront', 'products', 'collections', 'prices', 'promotions', 'print', 'sessions'] },   /* what is for sale */
   { key: 'sales', items: ['orders', 'bookings', 'payouts'] },   /* and what was: every order and what became of it — the printed ones are a FILTER of it rather than a page, since a parcel from a printer and a parcel off a shelf are the same fact about one sale — what cal.com mirrored, and what is owed */
-  { key: 'marketing', items: ['emails', 'funnels', 'ads', 'experiments'] },   /* reaching people, and the tests of it; a blast is a tab of Emails and the funnels' numbers a tab of Funnels */
+  { key: 'marketing', items: ['emails', 'ads', 'experiments'] },   /* reaching people, and the tests of it; a blast is a tab of Emails and the funnels' numbers a tab of Funnels */
   { key: 'forms', items: ['forms', 'form-responses', 'form-analytics'] },
   { key: 'community', items: ['support', 'comments', 'community', 'network'] },   /* people reaching the desk, or each other; the policy is a tab of Comments and the spaces a tab of Community */
   { key: 'people', items: ['people', 'teams', 'providers'] },   /* everyone with an account, the teams they are in, and whoever sells through the site */
@@ -379,6 +376,7 @@ const VIEWS = {
 /* the site's sections join the rail: under their group where it exists, else in a group of their own after the theme's */
 const SITE_BY_KEY = Object.fromEntries(SITE_SECTIONS.map((s: any) => [s.key, s]))
 for (const s of SITE_SECTIONS) {
+  if (s.tabOf) continue   /* a tab joins its item below, not the rail */
   /* a site names a group by its key or by the name it reads under, since both have been written */
   const match = (x: any, want: any) => x.key === want || secName(x.key) === want
   const g = NAV.find((x) => match(x, s.sec))
@@ -412,9 +410,9 @@ const TABBED: any = {
   books: ['books', 'companions'],
   comments: ['comments', 'comment-policy'],   /* the queue, and the rules it is judged by */
   community: ['community', 'spaces'],         /* the place, and the rooms in it */
-  emails: ['emails', 'blasts'],               /* the designs, and what was sent through them */
-  funnels: ['funnels', 'funnel-analytics'],   /* the campaigns, and what they did */
 }
+/* and the tabs modules add: a rail fill with tabOf joins that item's tabs (the funnels' numbers under Funnels, a blast under Emails) */
+for (const s of SITE_SECTIONS) if (s.tabOf) (TABBED[s.tabOf] ||= [s.tabOf]).push(s.key)
 const tabsOf = (v: any) => Object.values(TABBED).find((t) => (t as any).includes(v)) || null
 const railKey = (v: any) => Object.keys(TABBED).find((k) => TABBED[k].includes(v)) || v
 const navGroups = computed(() => {
@@ -476,14 +474,11 @@ const IC: any = {
   orders: '<path d="M4 5.5h12l-1.2 7.5H5.6Z"/><path d="M4 5.5L3.4 3.5H2"/><circle cx="7" cy="16" r="1.2"/><circle cx="13.5" cy="16" r="1.2"/>',
   bookings: '<rect x="3" y="4.5" width="14" height="12" rx="2"/><path d="M3 8.5h14M7 3v3M13 3v3"/><path d="M7.5 12.5l1.8 1.8 3.4-3.6"/>',
   emails: '<rect x="3" y="5" width="14" height="10" rx="1.6"/><path d="M3.5 6l6.5 5 6.5-5"/>',
-  funnels: '<path d="M3 4.5h14l-5.5 6.5v4l-3 1.5v-5.5Z"/>',
-  blasts: '<path d="M3 10l14-6-4 13-3-5.5Z"/><path d="M10 11.5 17 4"/>',
   forms: '<rect x="3.5" y="3.5" width="13" height="13" rx="2"/><path d="M6.5 7.5h7M6.5 10.5h4"/><rect x="6.5" y="13" width="3" height="1.5" rx=".5"/>',
   models: '<path d="M10 3.5 16.5 7 10 10.5 3.5 7z"/><path d="M3.5 10.5 10 14l6.5-3.5"/><path d="M3.5 13.5 10 17l6.5-3.5"/>',
   entries: '<rect x="3.5" y="4" width="13" height="4" rx="1.2"/><rect x="3.5" y="11" width="13" height="4" rx="1.2"/><path d="M6 6h.01M6 13h.01"/>',
   'form-responses': '<path d="M4 4.5h12v11H4z"/><path d="M7 8h6M7 11h6"/><path d="m5 15.5 2-2 2 2"/>',
   'form-analytics': '<path d="M3.5 16.5h13"/><path d="M6 13V9M10 13V5M14 13v-3"/>',
-  'funnel-analytics': '<path d="M3.5 4.5h13"/><path d="M5 8.5h10"/><path d="M6.5 12.5h7"/><path d="M8 16.5h4"/>',   /* each step narrower than the one above */
   support: '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v5a2.5 2.5 0 0 1-2.5 2.5H9l-3.5 3v-3h-.5A2.5 2.5 0 0 1 2.5 11.5v-5Z"/><path d="M7 8.5h6M7 11h3.5"/>',
   spaces: '<path d="M6.5 3.5 5 16.5M12 3.5l-1.5 13M3.5 7.5h13M3 12.5h13"/>',
   teams: '<circle cx="10" cy="7" r="2.4"/><path d="M5.6 16c0-2.4 2-4 4.4-4s4.4 1.6 4.4 4"/><circle cx="4.6" cy="8.4" r="1.7"/><circle cx="15.4" cy="8.4" r="1.7"/><path d="M2 14.6c0-1.7 1.2-2.8 2.6-2.8M18 14.6c0-1.7-1.2-2.8-2.6-2.8"/>',
@@ -590,7 +585,7 @@ async function loadList() {
   if (view.value === 'strings' || view.value === 'print') return
   if (SITE_BY_KEY[view.value] && SITE_BY_KEY[view.value].component) return   /* its editor loads its own files */
   if ((SCREENS as any)[view.value]) return   /* a screen a module adds loads its own data: it is not a collection to list */
-  if (['analytics', 'content-analytics', 'publishing', 'media', 'print-orders', 'orders', 'bookings', 'emails', 'funnels', 'blasts', 'support', 'comments', 'spaces', 'people', 'forms', 'form-responses', 'form-analytics', 'funnel-analytics', 'models', 'payouts', 'social', 'network'].includes(view.value)) return   /* the dashboards fetch their own data */
+  if (['analytics', 'content-analytics', 'publishing', 'media', 'print-orders', 'orders', 'bookings', 'emails', 'support', 'comments', 'spaces', 'people', 'forms', 'form-responses', 'form-analytics', 'models', 'payouts', 'social', 'network'].includes(view.value)) return   /* the dashboards fetch their own data */
   loading.value = true; loadError.value = ''
   try { items.value = await pipe.items(view.value) }
   catch (e) { loadError.value = (e as any).message; items.value = [] }
@@ -622,7 +617,9 @@ const columnDefs = computed(() => {
   const fields = col.value.fields.filter((f: any) => f.grid)
   void companionsIndex.value   /* the Companion column reads the index; recompute when it loads */
   return [
-    { field: 'name', headerName: 'File', pinned: 'left', flex: 1.4, minWidth: 190, valueGetter: (p: any) => (p.data && p.data.draft ? '\u0000' : '') + (p.data ? p.data.name : ''),   /* the draft mark is part of the value, so the cell redraws when it flips */
+    /* (a second valueGetter here, which folded the draft mark into the value so the cell would redraw when it flipped, was
+       always overridden by this one: an object keeps the last of two keys) */
+    { field: 'name', headerName: 'File', pinned: 'left', flex: 1.4, minWidth: 190,
       valueGetter: (p: any) => p.data.name,
       cellRenderer: (p: any) => `${p.data && p.data.draft ? `<i class="ad-draftpill">${FW.draft}</i>` : ''}<span class="ad-file">${p.data ? p.data.name : ''}</span>` },
     ...fields.map((f: any) => {
@@ -1181,9 +1178,6 @@ onMounted(async () => {
         <ContentPiece v-if="parsed.name" :kind="parsed.name.split('/')[0]" :id="parsed.name.split('/').slice(1).join('/')" @back="navigate(ROUTES.admin + '/content-analytics')" @open="navigate(ROUTES.admin + '/content-analytics/' + $event.kind + '/' + $event.id)" />
         <ContentAnalytics v-else @open="navigate(ROUTES.admin + '/content-analytics/' + $event.kind + '/' + $event.id)" />
       </div>
-      <div v-else-if="view === 'funnel-analytics'" class="ad-analytics">
-        <FunnelAnalytics :kind="parsed.name.startsWith('blast/') ? 'blast' : 'funnel'" :name="parsed.name.replace(/^blast\//, '')" @open="navigate(ROUTES.admin + '/funnel-analytics/' + ($event.kind === 'blast' ? 'blast/' : '') + $event.name)" @back="navigate(ROUTES.admin + '/funnel-analytics')" @edit="navigate(ROUTES.admin + ($event.kind === 'blast' ? '/blasts/' : '/funnels/') + $event.name)" />
-      </div>
       <div v-else-if="view === 'form-analytics'" class="ad-analytics">
         <FormAnalytics :name="parsed.name" @open="navigate(ROUTES.admin + '/form-analytics/' + $event)" @back="navigate(ROUTES.admin + '/form-analytics')" @responses="navigate(ROUTES.admin + '/form-responses')" />
       </div>
@@ -1205,12 +1199,6 @@ onMounted(async () => {
       <div v-else-if="view === 'bookings'" class="ad-analytics">
         <Bookings />
       </div>
-      <template v-else-if="view === 'funnels'">
-        <FunnelsAdmin :name="parsed.name" @open="navigate(ROUTES.admin + '/funnels/' + $event)" @back="navigate(ROUTES.admin + '/funnels')" @analytics="navigate(ROUTES.admin + '/funnel-analytics/' + $event)" />
-      </template>
-      <template v-else-if="view === 'blasts'">
-        <BlastsAdmin :name="parsed.name" @open="navigate(ROUTES.admin + '/blasts/' + $event)" @back="navigate(ROUTES.admin + '/blasts')" @analytics="navigate(ROUTES.admin + '/funnel-analytics/blast/' + $event)" />
-      </template>
       <div v-else-if="view === 'spaces'" class="ad-analytics">
         <SpacesAdmin />
       </div>
@@ -1231,8 +1219,11 @@ onMounted(async () => {
       <div v-else-if="view === 'payouts'" class="ad-analytics">
         <PayoutsAdmin />
       </div>
+      <!-- a module's screen (core:admin-screen): the rest of the path when it takes one, and wherever it asks to go; an editor
+           over the whole admin is drawn bare, everything else in the dashboards' frame -->
+      <component v-else-if="(SCREENS as any)[view] && BARE.includes(view)" :is="(SCREENS as any)[view]" v-bind="PATHED.includes(view) ? { name: parsed.name } : {}" @navigate="(p: string) => navigate(ROUTES.admin + p)" />
       <div v-else-if="(SCREENS as any)[view]" class="ad-analytics">
-        <component :is="(SCREENS as any)[view]" />
+        <component :is="(SCREENS as any)[view]" v-bind="PATHED.includes(view) ? { name: parsed.name } : {}" @navigate="(p: string) => navigate(ROUTES.admin + p)" />
       </div>
       <div v-else-if="view === 'payments'" class="ad-analytics">
         <PaymentsAdmin />

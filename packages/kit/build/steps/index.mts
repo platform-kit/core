@@ -4,7 +4,6 @@
 import icons from './icons.mjs'
 import embedContent from './embed-content.mjs'
 import sales from './sales.mjs'
-import funnels from './funnels.mjs'
 import tokens from './tokens.mjs'
 import chatEmailStrings from './chat-email-strings.mjs'
 import emails from './emails.mjs'
@@ -19,7 +18,6 @@ import rewrites from './rewrites.mjs'
 import luluWebhook from './lulu-webhook.mjs'
 import authConfig from './auth-config.mjs'
 import pushCatalog from './push-catalog.mjs'
-import funnelsRun from './funnels-run.mjs'
 import formEmbed from './form-embed.mjs'
 import supportSdk from './support-sdk.mjs'
 import commentsSdk from './comments-sdk.mjs'
@@ -35,5 +33,5 @@ import { searchPushStep } from './search.mjs'
 /* a moved module's steps, at its place (openspec: modules-as-packages) */
 import { STEPS as MODULE_STEPS } from '../../modules/registry.mjs'
 import { inPlace } from '../modules/in-place.mjs'
-export const STEPS = inPlace([icons, tokens, embedContent, sales, funnels, chatEmailStrings, emails, print, printType, catalog, analyticsConfig,
-  cloudConfig, webhooksConfigStep, spacesCompileStep, teamsCompileStep, 'events#events', 'bots#bots', contentJson, forms, luluWebhook, authConfig, pushCatalog, webhooksPushStep, spacesPushStep, teamsPushStep, 'courses', 'events#events-push', commentsPushStep, achievementsPushStep, 'bots#bots-push', searchPushStep, funnelsRun, 'tts', rewrites, formEmbed, supportSdk, commentsSdk, analyticsSdk, modelsJson, prerender], MODULE_STEPS, 'build steps')
+export const STEPS = inPlace([icons, tokens, embedContent, sales, 'funnels#funnels', chatEmailStrings, emails, print, printType, catalog, analyticsConfig,
+  cloudConfig, webhooksConfigStep, spacesCompileStep, teamsCompileStep, 'events#events', 'bots#bots', contentJson, forms, luluWebhook, authConfig, pushCatalog, webhooksPushStep, spacesPushStep, teamsPushStep, 'courses', 'events#events-push', commentsPushStep, achievementsPushStep, 'bots#bots-push', searchPushStep, 'funnels#funnels-run', 'tts', rewrites, formEmbed, supportSdk, commentsSdk, analyticsSdk, modelsJson, prerender], MODULE_STEPS, 'build steps')

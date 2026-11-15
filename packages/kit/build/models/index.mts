@@ -172,7 +172,7 @@ const COMPILE: Record<string, (store: any, made: any, extra?: any) => Promise<un
   },
   /* the funnels lean on the catalog for a book's skus, so they are compiled after it and given what
      it made rather than reading a file neither of them has */
-  funnels: async (store: any, made: any) => (await import('../funnels.mjs')).compileFunnels({ store, write: false, offers: (made.catalog || {}).offers || null }),
+  funnels: async (store: any, made: any) => (await import('../../modules/funnels/build/index.mjs')).compileFunnels({ store, write: false, offers: (made.catalog || {}).offers || null }),
   /* a design is compiled the way the admin's own Test compiles one — @templatical/renderer and
      MJML's browser build, neither of which is a Node package. The kit's fallbacks are bundled
      beside the pipe, since there is no package directory to read in a function. */

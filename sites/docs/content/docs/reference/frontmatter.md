@@ -5,7 +5,7 @@ order: 83
 sources:
   [
     packages/kit/build/velite.mts,
-    packages/kit/build/funnel-io.mts,
+    packages/kit/modules/funnels/build/funnel-io.mts,
     packages/kit/build/quiz-io.mts,
     packages/kit/build/models/core/agents.mts,
     packages/kit/build/statement-keys.mts,

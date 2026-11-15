@@ -18,7 +18,7 @@ sources:
     packages/kit/supabase/functions/_shared/compiled.ts,
     packages/kit/supabase/schemas/12-compiled.sql,
     packages/kit/build/catalog.mts,
-    packages/kit/build/funnels.mts,
+    packages/kit/modules/funnels/build/funnels.mts,
     packages/kit/build/forms.mts,
     packages/kit/supabase/functions/_shared/mjml.ts,
     packages/kit/build/emails-compile.mts,

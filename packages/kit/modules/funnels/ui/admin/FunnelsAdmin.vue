@@ -15,17 +15,17 @@ import { supabase, configured as supabaseOn } from 'platformkit/lib/supabase.js'
 import { isSignedIn, session, onIdentity } from 'platformkit/lib/auth.js'
 import AudienceEditor from './AudienceEditor.vue'
 import ChatPromptEditor from './ChatPromptEditor.vue'
-import SpanField from './SpanField.vue'
-import MarkdownEditor from './MarkdownEditor.vue'
+import SpanField from 'platformkit/theme/components/admin/SpanField.vue'
+import MarkdownEditor from 'platformkit/theme/components/admin/MarkdownEditor.vue'
 import { parseWhen, describeWhen, splitChoices } from 'platformkit/lib/support/when.js'
-import './admin-ui.css'
+import 'platformkit/theme/components/admin/admin-ui.css'
 
 const props = defineProps({ name: { type: String, default: '' } })
 const emit = defineEmits(['open', 'back', 'analytics'])
-import pipe from '../../lib/admin/api.js'
+import pipe from 'platformkit/theme/lib/admin/api.js'
 import { us, ug } from 'platformkit/lib/strings.js'
 import { modules } from '#site'
-import AdminHead from './AdminHead.vue'
+import AdminHead from 'platformkit/theme/components/admin/AdminHead.vue'
 /* the page's own name and its one line, from the admin's words — the same two the shell reads
    when it draws a head, so a page is never named twice in two files */
 const PAGE = { title: (ug('admin', 'rail').views || {})['funnels'] || '', lead: (ug('admin', 'leads').main || {})['funnels'] || '' }

@@ -4,14 +4,14 @@ description: Drip campaigns, one-off sends, the audience rules, the policy, chat
 order: 36
 sources:
   [
-    packages/kit/build/funnels.mts,
-    packages/kit/build/funnel-io.mts,
+    packages/kit/modules/funnels/build/funnels.mts,
+    packages/kit/modules/funnels/build/funnel-io.mts,
     packages/kit/supabase/functions/_shared/emails/rules.ts,
-    packages/kit/supabase/functions/funnels-run,
-    packages/kit/supabase/functions/email-blast,
-    packages/kit/theme/src/components/admin/FunnelsAdmin.vue,
-    packages/kit/theme/src/components/admin/BlastsAdmin.vue,
-    packages/kit/theme/src/components/admin/AudienceEditor.vue,
+    packages/kit/modules/funnels/functions/funnels-run,
+    packages/kit/modules/funnels/functions/email-blast,
+    packages/kit/modules/funnels/ui/admin/FunnelsAdmin.vue,
+    packages/kit/modules/funnels/ui/admin/BlastsAdmin.vue,
+    packages/kit/modules/funnels/ui/admin/AudienceEditor.vue,
   ]
 reviewed: 2026-11-10
 ---

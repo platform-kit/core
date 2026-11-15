@@ -21,7 +21,7 @@
  * content/emails/policy.md: `daily`, `weekly`, `monthly` (the most marketing emails one person
  * gets), `blasts-respect-cooldown`.
  */
-import { asStore } from './store/index.mjs'
+import { asStore } from '../../../build/store/index.mjs'
 import { randomUUID } from 'node:crypto'
 import matter from 'gray-matter'
 

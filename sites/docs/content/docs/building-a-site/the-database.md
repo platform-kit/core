@@ -40,7 +40,7 @@ sources:
     packages/kit/build/module-drop.mts,
     packages/kit/build/modules-off-db.test.mts,
   ]
-reviewed: 2026-11-15
+reviewed: 2026-11-14
 ---
 
 The platform runs on Supabase — Postgres with auth, storage and edge functions. Locally a copy runs in Docker (`supabase start`, which `platformkit dev` does for you). The kit ships the whole data layer; a site adds to it.

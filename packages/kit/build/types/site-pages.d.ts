@@ -11,5 +11,9 @@ declare module '#site/pages' {
 declare module '#site/admin-screens' {
   import type { Component } from 'vue'
   export const SCREENS: Record<string, Component>
-  export const SECTIONS: Array<{ key: string, sec: string, module: string, after?: string, icon?: string, needs?: string, live?: boolean, afterItem?: string, beforeItem?: string }>
+  /* a rail section; one with tabOf joins that item's tabs instead of the rail */
+  export const SECTIONS: Array<{ key: string, sec?: string, module: string, after?: string, icon?: string, needs?: string, live?: boolean, afterItem?: string, beforeItem?: string, tabOf?: string }>
+  /* the screens handed the rest of the admin path as `name`, and the ones drawn without the dashboards' frame */
+  export const PATHED: string[]
+  export const BARE: string[]
 }

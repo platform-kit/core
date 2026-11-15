@@ -10,8 +10,8 @@
  * tags the author wrote are kept), so the visit is the email's on the site's dashboard and never a
  * referral from the functions' host.
  */
-import { admin } from '../_shared/lib.ts'
-import { FUNNELS, BLASTS } from '../_shared/marketing.ts'
+import { admin } from '@pk/core/lib.ts'
+import { FUNNELS, BLASTS } from '@pk/core/marketing.ts'
 
 const GIF = Uint8Array.from(atob('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'), (c) => c.charCodeAt(0))
 const site = () => (Deno.env.get('APP_URL') ?? Deno.env.get('VITE_APP_URL') ?? 'http://localhost:5173').replace(/\/+$/, '')

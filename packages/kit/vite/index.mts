@@ -110,6 +110,7 @@ function site(c: any, theme: any, keys: string[] = [], pages: any[] = [], module
       const rail = fillsOf(modules, c.modules || {}, 'core:admin-rail').map(({ with: _w, ...x }: any) => x)
       return `import { defineAsyncComponent } from 'vue'\nexport const SCREENS = {\n` + fills.map((x: any) => `  ${J(x.key)}: defineAsyncComponent(() => import(${J(from(inModule(x.module, String(x.component))))})),\n`).join('') + '}\n'
         + `/* the rail sections modules add (core's admin-rail slot) */\nexport const SECTIONS = ${J(rail)}\n`
+        + `/* the screens handed the rest of the admin path (path), and the ones drawn over the whole admin rather than in the dashboards' frame (bare) */\nexport const PATHED = ${J(fills.filter((x: any) => x.path).map((x: any) => x.key))}\nexport const BARE = ${J(fills.filter((x: any) => x.bare).map((x: any) => x.key))}\n`
     }
     if (id === V['#site/page-tests'] || id === V['#site/pages']) {
       const { MODULE_DIRS } = await import('../build/modules/folders.mjs')

@@ -482,6 +482,46 @@ else await act('the API keeps its place before the payments and its screen opens
   await page.locator('.ak').first().waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the API screen never drew') })
 })
 
+if (!(await moduleOn('funnels'))) notHere('interaction: the funnels in the admin', 'the funnels module is off')
+else await act('the funnels keep their place in Marketing, open by their address, and their numbers and the blasts are tabs', async ({ page, clear }: any) => {
+  await go(page, '/', clear, '.pageshell')
+  await signIn(page, clear, 'admin@example.com')
+  await go(page, '/admin', clear, '.ad-rail')
+  const item = page.locator('.ad-navitem[data-key="funnels"]').first()
+  await item.waitFor({ state: 'attached', timeout: WAIT * 2 }).catch(() => { throw new Error('the rail carries no funnels item') })
+  /* it names the item it precedes, so it stands where the rail always had it: before the ads, after the emails where they are on */
+  const order: string[] = await item.locator('xpath=..').locator('.ad-navitem').evaluateAll((els: any[]) => els.map((e) => e.dataset.key))
+  const at = order.indexOf('funnels')
+  if (order[at + 1] !== 'ads' || (order.includes('emails') && order[at - 1] !== 'emails')) throw new Error('the marketing group reads ' + order.join(', '))
+  if (order.includes('funnel-analytics') || order.includes('blasts')) throw new Error('a tab took a place of its own in the rail: ' + order.join(', '))
+  const fold = item.locator('xpath=ancestor::div[contains(@class, "ad-navgroup")]/preceding-sibling::button[1]')
+  if ((await fold.getAttribute('aria-expanded')) !== 'true') await fold.click()
+  await item.click({ timeout: WAIT })
+  await page.locator('.fn-list').first().waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the funnels screen never drew its list') })
+  /* the screen is drawn bare, as the editor always was, not inside the dashboards' frame */
+  if (await page.locator('.ad-analytics .fn').count()) throw new Error('the funnels editor is drawn inside the dashboards\' frame')
+  /* opening one goes to its address, and the screen is handed the rest of it */
+  const first = page.locator('.fn-item').first()
+  if (await first.count()) {
+    await first.click({ timeout: WAIT })
+    await page.waitForURL(/\/admin\/funnels\/[^/]+$/, { timeout: WAIT * 2 }).catch(() => { throw new Error('opening a funnel did not go to its address: ' + page.url()) })
+    await page.locator('.fn-list').first().waitFor({ state: 'detached', timeout: WAIT * 2 }).catch(() => { throw new Error('the funnel opened at its address but the screen still shows the list') })
+  }
+  /* back on the list, its numbers are its second tab */
+  await go(page, '/admin/funnels', clear, '.fn-list')
+  const tabs: string[] = await page.locator('.ui-pagetabs button').allInnerTexts()
+  if (tabs.length !== 2) throw new Error('the funnels set has the tabs ' + JSON.stringify(tabs))
+  await page.locator('.ui-pagetabs button').nth(1).click({ timeout: WAIT })
+  await page.waitForURL(/\/admin\/funnel-analytics/, { timeout: WAIT * 2 })
+  await page.locator('.ad-analytics .an').first().waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the funnels\' numbers never drew') })
+  /* and a blast is a tab of Emails */
+  await go(page, '/admin/blasts', clear, '.bl')
+  if (await moduleOn('emails')) {
+    const et: string[] = await page.locator('.ui-pagetabs button').allInnerTexts()
+    if (et.length !== 2) throw new Error('the emails set has the tabs ' + JSON.stringify(et))
+  }
+})
+
 
 /* ─── the reader's gate, and what a guest carries into an account ─── */
 

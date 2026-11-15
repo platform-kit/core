@@ -23,14 +23,14 @@
 /* NOTHING HERE OPENS A DISK AT IMPORT. The admin's pipe reaches this module — an Edge Function
    compiles it where the deployment cannot rebuild — and the pipe's guard refuses a `node:fs` import
    for exactly that reason. What writes files is the script at the foot, which loads fs when it runs. */
-import { asStore } from './store/index.mjs'
+import { asStore } from '../../../build/store/index.mjs'
 import { join, dirname } from 'node:path'
 import { createHash } from 'node:crypto'
 import { funnelNames, blastNames, readFunnel, readBlast, readPolicy, keyAll, goalOk } from './funnel-io.mjs'
-import { mdToEmailHtml, mdToText } from '../supabase/functions/_shared/emails/markdown.js'
-import { normalizeRules, normalizePolicy, days, RULE_KEYS } from '../supabase/functions/_shared/emails/rules.js'
-import { parseWhen, splitChoices } from '../src/lib/support/when.js'
-import { isMain } from './is-main.mjs'
+import { mdToEmailHtml, mdToText } from '../../../supabase/functions/_shared/emails/markdown.js'
+import { normalizeRules, normalizePolicy, days, RULE_KEYS } from '../../../supabase/functions/_shared/emails/rules.js'
+import { parseWhen, splitChoices } from '../../../src/lib/support/when.js'
+import { isMain } from '../../../build/is-main.mjs'
 
 const ROOT = process.cwd()
 export const OUT = 'supabase/functions/_shared/emails/funnels.json'

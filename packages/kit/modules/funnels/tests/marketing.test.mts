@@ -27,8 +27,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { RULE_KEYS, normalizeRules, describeRules, span } from '../supabase/functions/_shared/emails/rules.js'
-import { keyed, serialiseFunnel, parseFunnel } from './funnel-io.mjs'
+import { RULE_KEYS, normalizeRules, describeRules, span } from '../../../supabase/functions/_shared/emails/rules.js'
+import { keyed, serialiseFunnel, parseFunnel } from '../build/funnel-io.mjs'
 
 const ROOT = process.cwd()
 let n = 0, bad = 0
@@ -124,7 +124,7 @@ else {
     broken.invitation = String(broken.invitation).split('{{ .ConfirmationURL }}').join('https://example.com/somewhere-else')
     fs.writeFileSync(COMPILED, JSON.stringify(broken))
     try {
-      const r = spawnSync(process.execPath, [fileURLToPath(new URL('./auth-config.mjs', import.meta.url)), '--dry'], {
+      const r = spawnSync(process.execPath, [fileURLToPath(new URL('../../../build/auth-config.mjs', import.meta.url)), '--dry'], {
         cwd: ROOT, encoding: 'utf8',
         env: { ...process.env, APP_URL: 'https://example.com', VITE_APP_URL: 'https://example.com' },
       })
@@ -133,7 +133,7 @@ else {
     } finally { fs.writeFileSync(COMPILED, backup) }
   })
   t('and passes with the link in place', () => {
-    const r = spawnSync(process.execPath, [fileURLToPath(new URL('./auth-config.mjs', import.meta.url)), '--dry'], {
+    const r = spawnSync(process.execPath, [fileURLToPath(new URL('../../../build/auth-config.mjs', import.meta.url)), '--dry'], {
       cwd: ROOT, encoding: 'utf8',
       env: { ...process.env, APP_URL: 'https://example.com', VITE_APP_URL: 'https://example.com' },
     })

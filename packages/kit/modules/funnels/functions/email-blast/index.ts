@@ -5,9 +5,9 @@
  * skipped, so a second press finishes a run that was cut short rather than sending twice.
  * `dry` counts and sends nothing. The admin server marks the file sent afterwards.
  */
-import { admin, json, preflight, getUser } from '../_shared/lib.ts'
-import { rolesOf, isAdmin } from '../_shared/roles.ts'
-import { BLASTS, POLICY, audience, recentSends, cooled, sendMarketing, alreadyHad } from '../_shared/marketing.ts'
+import { admin, json, preflight, getUser } from '@pk/core/lib.ts'
+import { rolesOf, isAdmin } from '@pk/core/roles.ts'
+import { BLASTS, POLICY, audience, recentSends, cooled, sendMarketing, alreadyHad } from '@pk/core/marketing.ts'
 
 Deno.serve(async (req: Request) => {
   const pf = preflight(req); if (pf) return pf

@@ -11,16 +11,16 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { supabase, configured as supabaseOn } from 'platformkit/lib/supabase.js'
 import { isSignedIn, session, onIdentity } from 'platformkit/lib/auth.js'
 import AudienceEditor from './AudienceEditor.vue'
-import MarkdownEditor from './MarkdownEditor.vue'
-import './admin-ui.css'
+import MarkdownEditor from 'platformkit/theme/components/admin/MarkdownEditor.vue'
+import 'platformkit/theme/components/admin/admin-ui.css'
 
 const props = defineProps({ name: { type: String, default: '' } })
 const emit = defineEmits(['open', 'back', 'analytics'])
 const GW = (us('emails').funnel || {}).editor || {}
 const goalOk = (g: any) => !String(g || '').trim() || /^\/[^\s]*$/.test(String(g).trim())
-import pipe from '../../lib/admin/api.js'
+import pipe from 'platformkit/theme/lib/admin/api.js'
 import { us, ug } from 'platformkit/lib/strings.js'
-import AdminHead from './AdminHead.vue'
+import AdminHead from 'platformkit/theme/components/admin/AdminHead.vue'
 /* the page's own name and its one line, from the admin's words — the same two the shell reads
    when it draws a head, so a page is never named twice in two files */
 const PAGE = { title: (ug('admin', 'rail').views || {})['blasts'] || '', lead: (ug('admin', 'leads').main || {})['blasts'] || '' }

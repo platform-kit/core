@@ -45,7 +45,7 @@ const KIT_TESTS = [
   ['functions-data.mjs'],
   on('store') && ['catalog.mjs', '--check'],
   on('emails') && ['emails.mjs', '--check'],
-  on('funnels') && ['funnels.mjs', '--check'],
+  on('funnels') && ['../modules/funnels/build/funnels.mjs', '--check'],
   /* (enrich.test.mts is the enrichment module's own, in its folder) */   /* where a stage's result is kept: a file in a checkout, the run's own state in the cloud, and the two are one shape */
   ['content.test.mts'],
   ['projection-safety.test.mts'],   /* a projection must surface errors before its declaration sweep can delete rows */
@@ -156,7 +156,7 @@ const KIT_TESTS = [
   on('spaces') && ['community-db.test.mts'],
   on('spaces') && ['desk-db.test.mts'],   /* the staff's one list against the stack: three sources, each answered where it lives, and nothing for a reader */
   (on('spaces') || on('sessions')) && ['huddle.test.mts'],   /* a call that needs no account: the ICE servers and where they came from, the standard's credential against a known vector, the provider a room gets, the mesh's own answers, and no vendor named anywhere */   /* the spaces against the local stack: the fill sweep, the isolation, the counters against a walk, the cursor, mentions, the edit guard, the live topic; skipped when the stack is down */   /* the spaces' arithmetic: unread as a subtraction, the cursor, the divider, mentions as tokens, what notifies, the search grammar */
-  on('funnels') && ['funnels-analytics.test.mts'],   /* the funnel reads against the seed, and the unsubscribe link marking its send; skipped when the stack is down */
+  /* (funnels-analytics, marketing and dryrun-db are the funnels module's own, in its folder) */
   on('forms') && ['forms.test.mts'],
   on('forms') && ['forms.mjs', '--check'],
   on('forms') && c.modules.api !== false && ['forms-api.test.mts'],
@@ -204,7 +204,6 @@ const KIT_TESTS = [
   ['permissions-db.test.mts'],
   ['ledger.test.mts'],   /* what a payment means: who paid, which offer, what it grants — the decisions apart from the writing */   /* and the policies asked the same question as the rules, per account per table */   /* the four vocabularies under one ability, answering exactly as they did, and a site that adds, narrows and revokes */   /* the second content engine, held to the shape of the first: a relative directory, the body from the parser, an eager plain, a single that is a record */   /* cloud mode's adapter against velite: every built entry made again from its file as a row, field for field */
   on('print') && ['suppliers.test.mts'],   /* the plug-in seam: every printer wears the same shape, its statuses land in our words, and nothing outside its own file chooses one by name */
-  on('funnels') && ['marketing.test.mts'],   /* who marketing mail goes to and that it goes once: a misspelt rule dropped rather than becoming everybody, an email’s uuid surviving a rename and a reorder, and the sign-in design keeping Supabase’s own link */
   on('print') && ['edition-id.test.mts'],   /* what makes an edition an edition: too sensitive and every deploy pays a setup fee again and voids every proof; too blunt and a changed word ships under the old id — every input and every non-input, and the order, since the hash is a join */
   ['interaction.test.mts'],   /* a browser that USES the site rather than only looking at it: the palette typed into, a guest’s line sent and shown, a diagnostic answered, the bag opened — the class of fault a route walk cannot see, since the page renders perfectly and dies on the first keystroke. Skips loudly with no dev server. */
   ['signed-in-as.test.mts'],   /* the same kinds of person as who-can.test.mjs, but signed in through a real browser: the set of admin sections each one reaches BY ADDRESS (a missing link proves nothing about a missing lock), and one thing their role exists for actually carried out. Skips loudly with no dev server. */
@@ -222,7 +221,6 @@ const KIT_TESTS = [
   ['abuse-limits.test.mts'],   /* one visitor's flood refused and another still served at guest checkout, form answers, analytics intake and the support widget, counted by the address the proxy wrote; a compressed body opened only to a megabyte — skipped when the stack is down or ABUSE_LIMITS_TEST=0 */
   ['doors-db.test.mts'],   /* the refusals to somebody who is NEARLY allowed: a password session claiming a confirmed address, a member asking for the figures, a membership that lapsed yesterday, a forged tracking token — the boundary a change quietly moves */
   on('store') && ['money-db.test.mts'],   /* the database half of a payment arriving twice: one session is one purchase, one grant is one row, and three credits from one payment are THREE — the per-unit source id exists because a shared one folds them into one and nobody is told */
-  on('funnels') && ['dryrun-db.test.mts'],   /* “see who would get this” must send nothing: the rows counted either side of a dry run against the served function — and a loud skip where no PUBLISHED funnel has an email step, since nothing moves there whatever the guards do */
   on('store') && ['prices.test.mts'],   /* a price list is a contextual ABSOLUTE price, Medusa's model read off its source: an override always wins and may be dearer; a sale is min(sale, default) */
   on('store') && ['promotions.test.mts'],   /* and a discount is a different thing entirely — percentage or flat, off items, the order or the shipping, spread each/across/once */   /* most specific wins, not cheapest, and the base list loses every tie — both counter-intuitive, both got wrong first time */
   on('store') && ['stock.test.mts'],   /* sold out is not the same as not sold, and unknown is BUYABLE — a shop that stops selling when it cannot reach its database fails silently and in the one direction nobody notices */
