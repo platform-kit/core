@@ -254,7 +254,7 @@ A reset also empties `auth.users`, which takes the account you signed up with wh
 
 | Gone                                           | Put back by the reset?                                           | What breaks if it is not                                                                            |
 | ---------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| **The typesetting fonts** (the `print` bucket) | yes — `build/print/templates.mjs --fonts`                        | a book cannot be set in the cloud: _"there is no type in the bucket"_                               |
+| **The typesetting fonts** (the `print` bucket) | yes — `modules/print/build/templates.mjs --fonts`                | a book cannot be set in the cloud: _"there is no type in the bucket"_                               |
 | **The projections the files own**              | yes — spaces, teams, events, comment subjects, bots, search rows | a bot with no tools, a library its own search cannot find                                           |
 | **Your own account**                           | yes — from `DEV_ACCOUNT`                                         | described above                                                                                     |
 | **The content rows** (cloud mode)              | **no** — `node build/content-export.mjs`                         | the cloud lane has no content to read, so its checks fail on an empty site rather than a broken one |

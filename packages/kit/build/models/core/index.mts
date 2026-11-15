@@ -5,7 +5,6 @@ import forms from './forms.mjs'
 import emails from './emails.mjs'
 import strings from './strings.mjs'
 import models from './models.mjs'
-import print from './print.mjs'
 import spaces from './spaces.mjs'
 import teams from './teams.mjs'
 import providers from './providers.mjs'
@@ -14,4 +13,4 @@ import { AGENT_MODELS } from './agents.mjs'
 /* a moved module's models, at its place (openspec: modules-as-packages) */
 import { MODELS as MODULE_MODELS } from '../../../modules/registry.mjs'
 import { inPlace } from '../../modules/in-place.mjs'
-export const CORE = inPlace([...COLLECTION_MODELS, forms, 'funnels', emails, strings, models, print, spaces, teams, 'courses', providers, commentPolicy, ...AGENT_MODELS], MODULE_MODELS, 'content models')
+export const CORE = inPlace([...COLLECTION_MODELS, forms, 'funnels', emails, strings, models, 'print', spaces, teams, 'courses', providers, commentPolicy, ...AGENT_MODELS], MODULE_MODELS, 'content models')

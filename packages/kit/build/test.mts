@@ -91,10 +91,7 @@ const KIT_TESTS = [
   ['transcript.test.mts'],   /* what the browser writes down while somebody speaks: the arithmetic, with no browser in it */
   ['interrupt.test.mts'],
   ['identity.test.mts'],
-  on('print') && ['print-parity.test.mts'],
-  on('print') && ['print-jobs.test.mts'],
-  on('print') && ['print-cloud.test.mts'],
-  on('print') && ['print-jobs-db.test.mts'],   /* a set is a job that outlives its request: the result kept, a cut-off set carried on from its finished interior, a held lease left alone, a cancel that stops and clears, attempts that run out */   /* a book set where there is no machine: against the running stack, and binding the same count the build does; skipped where the stack is down or the book is not in rows */   /* a book cut into runs where one call cannot hold it: the order kept, a long chapter never split, a run that overran moving only what follows it */   /* one engine, two drivers: the seam is the only door, and a book set in a function is the same edition as one set on a machine */   /* who is here, told once: the guard six modules load and discard on, and the refresh that must tell nobody */   /* what may interrupt a reader, and who has the corner: one rule the ad and the chat both ask */
+  /* (print-jobs, print-cloud, print-jobs-db, edition-id and print-parity are the print module's own, in its folder) */
   ['analytics.test.mts'],
   ['content-api.test.mts'],   /* the content API: the index over the compiled content */
   ['content-json-cloud.test.mts'],   /* cloud mode ships a stub index, not the site's content: a function bundled server-side may not pass 5 MB */
@@ -204,7 +201,6 @@ const KIT_TESTS = [
   ['permissions-db.test.mts'],
   ['ledger.test.mts'],   /* what a payment means: who paid, which offer, what it grants — the decisions apart from the writing */   /* and the policies asked the same question as the rules, per account per table */   /* the four vocabularies under one ability, answering exactly as they did, and a site that adds, narrows and revokes */   /* the second content engine, held to the shape of the first: a relative directory, the body from the parser, an eager plain, a single that is a record */   /* cloud mode's adapter against velite: every built entry made again from its file as a row, field for field */
   on('print') && ['suppliers.test.mts'],   /* the plug-in seam: every printer wears the same shape, its statuses land in our words, and nothing outside its own file chooses one by name */
-  on('print') && ['edition-id.test.mts'],   /* what makes an edition an edition: too sensitive and every deploy pays a setup fee again and voids every proof; too blunt and a changed word ships under the old id — every input and every non-input, and the order, since the hash is a join */
   ['interaction.test.mts'],   /* a browser that USES the site rather than only looking at it: the palette typed into, a guest’s line sent and shown, a diagnostic answered, the bag opened — the class of fault a route walk cannot see, since the page renders perfectly and dies on the first keystroke. Skips loudly with no dev server. */
   ['signed-in-as.test.mts'],   /* the same kinds of person as who-can.test.mjs, but signed in through a real browser: the set of admin sections each one reaches BY ADDRESS (a missing link proves nothing about a missing lock), and one thing their role exists for actually carried out. Skips loudly with no dev server. */
   ['theme-look.test.mts'],   /* a palette is complete or it is not a palette: every colour the theme reads, against every colour each look defines. An incomplete palette does not look broken in review — it looks right on every page somebody opened and wrong on the one they did not, which is how the theme came to ship a button with its text the same colour as its background. */

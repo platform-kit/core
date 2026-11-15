@@ -38,7 +38,7 @@ sources:
     packages/kit/build/interaction.test.mts,
     packages/kit/build/signed-in-as.test.mts,
     packages/kit/build/webhook-doors.test.mts,
-    packages/kit/build/edition-id.test.mts,
+    packages/kit/modules/print/tests/edition-id.test.mts,
     packages/kit/build/doors-db.test.mts,
     packages/kit/modules/funnels/tests/marketing.test.mts,
     packages/kit/build/ranking.test.mts,

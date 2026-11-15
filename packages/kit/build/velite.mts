@@ -1341,7 +1341,7 @@ export async function kitConfig(): Promise<any> {
              fourth printer is one file and its name in that list, and a schema that enumerated them
              again would refuse a book that named it. */
           printers: s.record(s.enum(FORMATS_PRINTED as [string, ...string[]]), s.enum([...PRINTER_IDS, 'auto'] as string[] as [string, ...string[]])).optional(),
-          /* each printer's own options, as its module names them (build/print/block.mjs checks them) */
+          /* each printer's own options, as its module names them (modules/print/build/block.mjs checks them) */
           providers: s.record(s.enum(PRINTER_IDS as [string, ...string[]]), s.record(s.string(), s.union([s.string(), s.number(), s.boolean()]))).optional(),
           rights: s.string().optional(),
           /* per contents, the id of the edition a printed proof was read and passed at: an edition is sold only once proofed */

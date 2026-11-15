@@ -140,7 +140,7 @@ Deno.serve(async (req: Request) => {
      * SETTING A PRINTED BOOK, WITH NO MACHINE. The print model does not run Typst when it is given
      * this: a render is the `print-render` function (Typst as WASM, the type from the bucket), and
      * a rendered file comes from the print bucket rather than off a disk. See that function, and
-     * build/models/core/print.mjs for the seam.
+     * modules/print/build/model.mjs for the seam.
      *
      * A DRAFT BUYS NOTHING. The admin renders on every save so the editor can turn the pages, and
      * a title at a printer that keeps one costs a setup fee — so `draft` stops short of the
@@ -156,7 +156,7 @@ Deno.serve(async (req: Request) => {
       render: async (slug: string, { draft }: { draft: boolean }) => {
         const spec = await contentsOf(slug)
         const editions: Record<string, unknown> = {}
-        /* the contents whose interior the browser has to set first (build/print/typeset/interior.js), by job */
+        /* the contents whose interior the browser has to set first (modules/print/build/typeset/interior.js), by job */
         const waiting: Array<Record<string, unknown>> = []
         const t0 = Date.now()
         for (const contents of spec) {

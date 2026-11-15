@@ -62,17 +62,17 @@ const DEAD = ['book', 'edition', 'format', 'contents', 'cloth', 'foil']
 const READERS = [
   'supabase/functions/_shared/print.ts',
   'supabase/functions/_shared/ledger.ts',
-  'supabase/functions/print-order/index.ts',
-  'supabase/functions/print-webhook/index.ts',
-  'supabase/functions/lulu-webhook/index.ts',
+  'modules/print/functions/print-order/index.ts',
+  'modules/print/functions/print-webhook/index.ts',
+  'modules/print/functions/lulu-webhook/index.ts',
   'supabase/schemas/90-spaces.sql',
   'modules/bots/schema/96-agents.sql',
   'theme/src/components/Orders.vue',
-  'theme/src/components/PrintOrders.vue',
+  'modules/print/ui/admin/PrintOrders.vue',
 ]
 
 /* and the files that are allowed — required — to hold them */
-const PRINTS = ['build/print', 'src/lib/print-offers.ts', 'supabase/functions/_shared/print.ts']
+const PRINTS = ['modules/print', 'src/lib/print-offers.ts', 'supabase/functions/_shared/print.ts']
 /* and the garment's, for the same reason in the other direction: a refactor that emptied the
    apparel kind would otherwise pass check (1) with flying colours */
 const CLOTHES = ['build/kinds/apparel.ts', 'supabase/functions/_shared/suppliers/printify.ts']

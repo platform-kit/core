@@ -34,7 +34,7 @@ sources:
     packages/kit/supabase/functions/create-checkout-session,
     packages/kit/supabase/functions/confirm-checkout,
     packages/kit/supabase/functions/stripe-webhook,
-    packages/kit/supabase/functions/book-files,
+    packages/kit/modules/print/functions/book-files,
     packages/kit/build/catalog.mts,
     packages/kit/supabase/functions/_shared/usage-stripe.mts,
     packages/kit/supabase/functions/_shared/usage-gate.mts,

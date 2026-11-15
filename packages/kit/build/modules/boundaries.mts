@@ -76,7 +76,10 @@ const exists = (p: string) => [p, p.replace(/\.(m?)js$/, '.$1ts'), p.replace(/\.
 export function unresolved(): string[] {
   const out: string[] = []
   for (const file of [...walk(MODULES), ...walk(path.join(KIT, 'src')), ...walk(path.join(KIT, 'theme', 'src'))]) {
-    for (const m of fs.readFileSync(file, 'utf8').matchAll(RELATIVE)) {
+    /* a page a script writes out for a browser to load (print's raster) imports what that page is served, not a file here */
+    const raw = fs.readFileSync(file, 'utf8')
+    const text = file.endsWith('.vue') ? raw : raw.replace(/<script[^>]*>[\s\S]*?<\/script>/g, '')
+    for (const m of text.matchAll(RELATIVE)) {
       const spec = (m[1] || m[2] || m[3] || m[4]).replace(/\?.*$/, '')   /* a bundler's query (?url) is not part of the file */
       if (spec.includes('…')) continue   /* a placeholder in prose */
       if (!exists(path.resolve(path.dirname(file), spec))) out.push(`${path.relative(WORKSPACE, file)} → ${spec}`)

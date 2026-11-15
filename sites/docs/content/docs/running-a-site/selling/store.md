@@ -5,7 +5,7 @@ order: 20
 sources:
   [
     packages/kit/theme/src/components/store,
-    packages/kit/theme/src/assets/print-fonts,
+    packages/kit/modules/print/ui/fonts,
     packages/kit/theme/src/components/admin/OptionsField.vue,
     packages/kit/theme/src/components/store/VariantPicker.vue,
     packages/kit/supabase/functions/_shared/variants.ts,

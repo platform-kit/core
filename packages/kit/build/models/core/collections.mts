@@ -10,7 +10,7 @@ import { z } from 'zod'
 import matter from 'gray-matter'
 import { parseCompanion, serialiseCompanion, validateCompanion, bookChapterTitles } from '../../companion-io.mjs'
 import { spineWords, SPINE_MAX } from '../../../src/lib/print-offers.js'
-import { printWords, SPINE_EDITION } from '../../print/words.mjs'
+import { printWords, SPINE_EDITION } from '../../../modules/print/build/index.mjs'
 import { DUMP, NAME_RE, cleanData, frontmatter, Refusal } from '../util.mjs'
 
 /* an offer's key, a print block's key: eight hex characters, given once, never edited (build/product-keys.mjs) */

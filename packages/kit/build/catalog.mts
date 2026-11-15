@@ -44,7 +44,7 @@ export const PAYMENT_METHODS = ['card', 'link', 'apple_pay', 'google_pay', 'cash
    checked this run", which is a different thing from "no types". */
 const APPAREL_TYPES = null
 import { shippingRules } from '../src/lib/shipping.js'
-import { printWords, SPINE_EDITION } from './print/words.mjs'
+import { printWords, SPINE_EDITION } from '../modules/print/build/index.mjs'
 import { uiScope } from './strings-io.mjs'
 import { problems as repeatProblems } from '../src/lib/recurrence.js'
 import { usageOf } from './site.mjs'

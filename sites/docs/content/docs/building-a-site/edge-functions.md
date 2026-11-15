@@ -6,7 +6,7 @@ sources:
   [
     packages/kit/supabase/functions/_shared/gate.ts,
     packages/kit/supabase/functions/reader-content/index.ts,
-    packages/kit/supabase/functions/print-render,
+    packages/kit/modules/print/functions/print-render,
     packages/kit/supabase/functions,
     packages/kit/supabase/functions/_shared/lib.ts,
     packages/kit/supabase/functions/_shared/database.types.ts,

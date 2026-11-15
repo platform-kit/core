@@ -268,28 +268,29 @@ if (plan.has('functions/_shared/pipe/build/modules/kit.mjs')) {
    things it needs are already written and already pure: the typesetter (which never touched a
    filesystem, and is the reason that function is small), the run planner, and the wasm driver
    behind the compiler seam. They are copied flat, under their own names, because nothing else in
-   the functions imports them and a print/ folder says what they are for. */
+   the functions imports them and a print/ folder says what they are for. They are print's build files
+   (modules/print/build/), bundled from there. */
 const PRINT_MODULES = {
-  'typeset.js': 'build/print/typeset.mjs',
-  'plan-pieces.js': 'build/print/plan-pieces.mjs',
-  'wasm-compiler.js': 'build/print/typeset/wasm-compiler.js',
+  'typeset.js': 'modules/print/build/typeset.mjs',
+  'plan-pieces.js': 'modules/print/build/plan-pieces.mjs',
+  'wasm-compiler.js': 'modules/print/build/typeset/wasm-compiler.js',
   /* NOT compiler.js: the seam names both drivers as literal specifiers, one of them the native
      binary's, and nothing in the functions asks it which driver to use — the function always wants
      wasm and says so. Its one pure part is readback.js. */
-  'readback.js': 'build/print/typeset/readback.js',
-  'picture.js': 'build/print/picture.js',
-  'cover-source.js': 'build/print/cover-source.mjs',
-  'provider.js': 'build/print/provider.mjs',
-  'edition.js': 'build/print/edition.mjs',
-  'index-io.js': 'build/print/index-io.mjs',
-  'epub.js': 'build/print/epub.mjs',
+  'readback.js': 'modules/print/build/typeset/readback.js',
+  'picture.js': 'modules/print/build/picture.js',
+  'cover-source.js': 'modules/print/build/cover-source.mjs',
+  'provider.js': 'modules/print/build/provider.mjs',
+  'edition.js': 'modules/print/build/edition.mjs',
+  'index-io.js': 'modules/print/build/index-io.mjs',
+  'epub.js': 'modules/print/build/epub.mjs',
 }
 for (const [name, r] of Object.entries(PRINT_MODULES)) {
   const abs = path.join(KIT_PKG, r)
   if (!sourceOf(abs)) continue
   /* the typesetter reaches one module of the kit's src; the copy reaches the copy beside it */
   /* they are copied flat under .js names, so an import of one by another is brought to its copy */
-  const text = readKit(abs).toString('utf8').replace(/from '\.\.\/\.\.\/src\/lib\/speech\.js'/g, "from './speech.js'")
+  const text = readKit(abs).toString('utf8').replace(/from '(\.\.\/)+src\/lib\/speech\.js'/g, "from './speech.js'")
     .replace(/from '\.\/([a-z-]+)\.mjs'/g, "from './$1.js'")
   plan.set('functions/_shared/print/' + name, { from: abs, content: Buffer.from(text) })
 }
@@ -302,7 +303,7 @@ for (const [name, r] of Object.entries(PRINT_MODULES)) {
    match its own code would set a book nobody could explain. The TYPE is the other way — large,
    almost never changed — and is fetched from the bucket once per worker. */
 {
-  const dir = path.join(KIT_PKG, 'build/print')
+  const dir = path.join(KIT_PKG, 'modules/print/build')
   const t: Record<string, string> = {}
   if (fs.existsSync(dir)) for (const n of fs.readdirSync(dir).sort()) if (n.endsWith('.typ')) t[n] = fs.readFileSync(path.join(dir, n), 'utf8')
   if (Object.keys(t).length) plan.set('functions/_shared/print/templates.json', { from: dir, content: Buffer.from(JSON.stringify(t, null, 2) + '\n') })

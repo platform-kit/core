@@ -17,7 +17,7 @@ sources:
     packages/kit/build/images,
     packages/kit/theme/src/components/admin/ImageSource.vue,
   ]
-reviewed: 2026-11-10
+reviewed: 2026-11-14
 ---
 
 ## One library

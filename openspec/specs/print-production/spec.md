@@ -8,7 +8,7 @@ How a printed book is made and fulfilled: the interior and covers typeset from t
 
 ### Requirement: The interior is typeset by rules, never by hand
 
-`build/print/typeset.mjs` and `book.typ` SHALL set every edition the block offers: a blank leaf, the title on a recto, the colophon, the contents on a recto, A Note on This Edition for a two-part book, then the body numbered from 1 — one page rule for the whole book; every chapter opening on a page of its own (a recto for long chapters, either side for short ones, the first of each part on a recto); running heads and folios suppressed on openers and skipped versos; hard breaks kept for verse and flowed for prose typed a line at a time; a run of short paragraphs set as verse, asterisks as a dinkus, a capitalised line as a subhead; every `==mark==` a pale yellow highlight and gathered at the back per part with page numbers; the companion after each chapter ruled and numbered, never orphaned; OCR faults fixed in the book's markdown, never worked around; the count padded even.
+`modules/print/build/typeset.mjs` and `book.typ` SHALL set every edition the block offers: a blank leaf, the title on a recto, the colophon, the contents on a recto, A Note on This Edition for a two-part book, then the body numbered from 1 — one page rule for the whole book; every chapter opening on a page of its own (a recto for long chapters, either side for short ones, the first of each part on a recto); running heads and folios suppressed on openers and skipped versos; hard breaks kept for verse and flowed for prose typed a line at a time; a run of short paragraphs set as verse, asterisks as a dinkus, a capitalised line as a subhead; every `==mark==` a pale yellow highlight and gathered at the back per part with page numbers; the companion after each chapter ruled and numbered, never orphaned; OCR faults fixed in the book's markdown, never worked around; the count padded even.
 
 #### Scenario: a typesetting change
 
@@ -26,7 +26,7 @@ Verified by: reading the sheets (by design, no automation)
 - **WHEN** a larger picture is put at the book's `cover` address
 - **THEN** the paperback's edition is new and set again; the hardcover's is not
 
-Verified by: `build/edition-id.test.mts` — fourteen things that MUST move the id (a template, a word, the trim, the paper, the cloth, the foil, the printer, its options, the formats, the colours, the EPUB, the two jacket lines, and the picture) and what must not; the picture identified by its bytes rather than its name or its date, and the part ORDER pinned since the hash is a join
+Verified by: `modules/print/tests/edition-id.test.mts` — fourteen things that MUST move the id (a template, a word, the trim, the paper, the cloth, the foil, the printer, its options, the formats, the colours, the EPUB, the two jacket lines, and the picture) and what must not; the picture identified by its bytes rather than its name or its date, and the part ORDER pinned since the hash is a join
 
 ### Requirement: The pages on the listing and the EPUB
 
@@ -55,14 +55,14 @@ render fills them in without re-setting the edition.
 - **WHEN** an edition is rendered
 - **THEN** its `shots` carry a chapter page, its counterpart in the other text, and the marks page, none chosen by hand
 
-Verified by: `build/print-jobs.test.mts` (the choice, over fixtures); `--dry` and the store's gallery locally
+Verified by: `modules/print/tests/print-jobs.test.mts` (the choice, over fixtures); `--dry` and the store's gallery locally
 
 #### Scenario: the same page either way
 
 - **WHEN** the same edition is drawn by the build's headless Chromium and by an administrator's browser
 - **THEN** both choose the same page numbers and crop to the same box, because both read it from the one shared rule
 
-Verified by: `build/print-jobs.test.mts` (the rule under Node, against the pdf.js text content both paths hand it)
+Verified by: `modules/print/tests/print-jobs.test.mts` (the rule under Node, against the pdf.js text content both paths hand it)
 
 #### Scenario: an edition set by a function
 
@@ -174,18 +174,18 @@ fork a template, a hash input or a printer call.
 - **WHEN** one book is rendered by `npm run print` and by `print-render`
 - **THEN** the two editions have the same id, and the interior PDFs differ only in the metadata Typst stamps with the run's date
 
-Verified by: `build/print-parity.test.mts` (both drivers over one short book, hashes compared)
+Verified by: `modules/print/tests/print-parity.test.mts` (both drivers over one short book, hashes compared)
 
 #### Scenario: a driver that would fork the engine
 
 - **WHEN** a change puts a template, a hash input or a printer call on one driver and not the other
 - **THEN** the build refuses it
 
-Verified by: `build/print-parity.test.mts` (the compiler seam is the only difference between the two entry points)
+Verified by: `modules/print/tests/print-parity.test.mts` (the compiler seam is the only difference between the two entry points)
 
 ### Requirement: The compiler is behind one seam
 
-Typst SHALL be reached through one module, `build/print/typeset/compiler.js`, exposing `compile`
+Typst SHALL be reached through one module, `modules/print/build/typeset/compiler.js`, exposing `compile`
 and `query` over bytes, and nothing else in the pipeline SHALL import a Typst package. Two
 implementations fill it: the native `@myriaddreamin/typst-ts-node-compiler` on a machine, and
 typst-wasm in a function, the second fetching its `.wasm` and the theme's fonts from Storage on
@@ -196,7 +196,7 @@ first use and holding them for the worker's life.
 - **WHEN** a module other than the compiler seam imports a Typst package
 - **THEN** the build refuses it
 
-Verified by: `build/print-parity.test.mts`
+Verified by: `modules/print/tests/print-parity.test.mts`
 
 ### Requirement: A book is compiled a piece at a time, because two seconds is the budget
 
@@ -211,28 +211,28 @@ The interior SHALL compile in one step: the book is typeset as one document, so 
 - **WHEN** a set is cut off after its interior is finished and its lease lapses
 - **THEN** the next worker finishes it on its second attempt, with the same edition and pages, taking the interior back from the bucket rather than compiling it again
 
-Verified by: `build/print-jobs-db.test.mts` under `platformkit test --e2e`
+Verified by: `modules/print/tests/print-jobs-db.test.mts` under `platformkit test --e2e`
 
 #### Scenario: a piece that will not fit in two seconds
 
 - **WHEN** a step is cut off by its budget again and again
 - **THEN** the job is not left running for ever: after five attempts it is failed, with its reason
 
-Verified by: `build/print-jobs-db.test.mts` under `platformkit test --e2e`
+Verified by: `modules/print/tests/print-jobs-db.test.mts` under `platformkit test --e2e`
 
 #### Scenario: an owner cancels a render
 
 - **WHEN** an owner cancels a job
 - **THEN** no further step runs and the part-written edition is removed from the bucket
 
-Verified by: `build/print-jobs-db.test.mts` under `platformkit test --e2e`
+Verified by: `modules/print/tests/print-jobs-db.test.mts` under `platformkit test --e2e`
 
 #### Scenario: a lease still held
 
 - **WHEN** a second call reaches a job another worker holds
 - **THEN** it leaves the job alone and says the set is running
 
-Verified by: `build/print-jobs-db.test.mts` under `platformkit test --e2e`
+Verified by: `modules/print/tests/print-jobs-db.test.mts` under `platformkit test --e2e`
 
 ### Requirement: A cloud-only site can set an edition
 
@@ -252,4 +252,4 @@ Verified by: the demo in cloud mode, by hand, with a screenshot of each state
 - **WHEN** a paperback's picture is cropped in a function
 - **THEN** Storage's image transform does it, to the same dimensions the printer's cover asks for
 
-Verified by: `build/print-cloud.test.mts`
+Verified by: `modules/print/tests/print-cloud.test.mts`

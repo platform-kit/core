@@ -43,7 +43,6 @@ import SiteMark from '../components/SiteMark.vue'
 import { modules } from '#site'
 import { site as SITE_RAW } from '#content'
 const SITE_NAME = ((Array.isArray(SITE_RAW) ? SITE_RAW[0] : SITE_RAW) || {}).name || 'Site'
-import PrintOrders from '../components/PrintOrders.vue'
 import Orders from '../components/Orders.vue'
 import Bookings from '../components/Bookings.vue'
 import EmailsAdmin from '../components/admin/EmailsAdmin.vue'
@@ -58,7 +57,6 @@ import PaymentsAdmin from '../components/admin/PaymentsAdmin.vue'
 import SpacesAdmin from '../components/SpacesAdmin.vue'
 import PublishingPage from '../components/PublishingPage.vue'
 const MediaPage = defineAsyncComponent(() => import('../components/MediaPage.vue'))   /* VueFinder rides with this page alone */
-import PrintAdmin from '../components/admin/PrintAdmin.vue'
 import FormsAdmin from '../components/admin/FormsAdmin.vue'
 /* the publisher calendar is a live-data surface and only ships with its module */
 const SocialAdmin = moduleOn('social-publishing') ? defineAsyncComponent(() => import('../components/admin/SocialAdmin.vue')) : null
@@ -306,7 +304,7 @@ const inlineSlot = ref<any>(null)   /* the element the editor teleports into; it
    server) or one of the three views with their own editors. Any collection not
    named here still appears, under Other, so a new content type is never lost. */
 /* which module each view or collection belongs to: off in platformkit.config.js, it leaves the rail */
-const MODULE_OF: any = { articles: 'articles', books: 'books', companions: 'books', wiki: 'wiki', docs: 'docs', ...Object.fromEntries(SITE_SECTIONS.filter((s: any) => s.module).map((s: any) => [s.key, s.module])), emails: 'emails', support: 'support', social: 'social-publishing', spaces: 'spaces', community: 'spaces', network: 'network', forms: 'forms', 'form-responses': 'forms', 'form-analytics': 'forms', storefront: 'store', products: 'store', collections: 'store', sessions: 'sessions', teams: 'sessions', providers: 'sessions', print: 'print', 'print-orders': 'print', orders: 'store', bookings: 'sessions', payouts: 'sessions', models: 'models' }
+const MODULE_OF: any = { articles: 'articles', books: 'books', companions: 'books', wiki: 'wiki', docs: 'docs', ...Object.fromEntries(SITE_SECTIONS.filter((s: any) => s.module).map((s: any) => [s.key, s.module])), emails: 'emails', support: 'support', social: 'social-publishing', spaces: 'spaces', community: 'spaces', network: 'network', forms: 'forms', 'form-responses': 'forms', 'form-analytics': 'forms', storefront: 'store', products: 'store', collections: 'store', sessions: 'sessions', teams: 'sessions', providers: 'sessions', 'print-orders': 'print', orders: 'store', bookings: 'sessions', payouts: 'sessions', models: 'models' }
 const modelWords = (us('models').admin || {}).page || {}
 /* IS THE VIEW BEHIND THIS KEY AVAILABLE? A VIEW key, not a module id — `products` is a view and
    `store` is the module behind it (MODULE_OF). It was called moduleOn, which is the kit's own name
@@ -345,7 +343,7 @@ const viewOn = (k: any) => (k.startsWith('models/') ? moduleOn('models') : !MODU
 const NAV = [
   { key: 'dashboard', items: ['analytics', 'content-analytics'] },
   { key: 'content', items: ['models', 'media', 'publishing', 'articles', 'books', 'wiki', 'docs', 'pages'] },   /* the machinery first — the builder, the library, and in cloud mode alone the drafts and where a publish goes (navGroups leaves Publishing out of a git-mode admin) — then the kinds; the content models' own rows close the group (navGroups) */
-  { key: 'store', items: ['storefront', 'products', 'collections', 'prices', 'promotions', 'print', 'sessions'] },   /* what is for sale */
+  { key: 'store', items: ['storefront', 'products', 'collections', 'prices', 'promotions', 'sessions'] },   /* what is for sale */
   { key: 'sales', items: ['orders', 'bookings', 'payouts'] },   /* and what was: every order and what became of it — the printed ones are a FILTER of it rather than a page, since a parcel from a printer and a parcel off a shelf are the same fact about one sale — what cal.com mirrored, and what is owed */
   { key: 'marketing', items: ['emails', 'ads', 'experiments'] },   /* reaching people, and the tests of it; a blast is a tab of Emails and the funnels' numbers a tab of Funnels */
   { key: 'forms', items: ['forms', 'form-responses', 'form-analytics'] },
@@ -483,7 +481,6 @@ const IC: any = {
   spaces: '<path d="M6.5 3.5 5 16.5M12 3.5l-1.5 13M3.5 7.5h13M3 12.5h13"/>',
   teams: '<circle cx="10" cy="7" r="2.4"/><path d="M5.6 16c0-2.4 2-4 4.4-4s4.4 1.6 4.4 4"/><circle cx="4.6" cy="8.4" r="1.7"/><circle cx="15.4" cy="8.4" r="1.7"/><path d="M2 14.6c0-1.7 1.2-2.8 2.6-2.8M18 14.6c0-1.7-1.2-2.8-2.6-2.8"/>',
   providers: '<path d="M10 3v14"/><path d="M13.5 6.2c-.6-.9-1.9-1.4-3.5-1.4-2 0-3.3.9-3.3 2.3 0 3.3 7 1.7 7 5 0 1.5-1.4 2.5-3.7 2.5-1.8 0-3.1-.6-3.8-1.6"/>',
-  print: '<path d="M5 3.5h8l2.5 2.5v10.5H5Z"/><path d="M13 3.5V6h2.5"/><path d="M7.5 9h5M7.5 11.5h5M7.5 14h3"/>',
   ads: '<path d="M3.5 8v4h2.5l5.5 3.5v-11L6 8Z"/><path d="M14 7.5a3.6 3.6 0 0 1 0 5"/><path d="M16 5.5a6.4 6.4 0 0 1 0 9"/>',
   products: '<path d="M3.5 4h6l7 7-6 6-7-7Z"/><circle cx="7" cy="7.5" r="1.2"/>',
   storefront: '<path d="M3 8l1.2-4h11.6L17 8"/><path d="M3 8a2.3 2.3 0 0 0 4.6 0 2.4 2.4 0 0 0 4.8 0A2.3 2.3 0 0 0 17 8"/><path d="M4 10.5V17h12v-6.5"/><path d="M8 17v-4h4v4"/>',
@@ -582,7 +579,7 @@ async function loadList() {
      which is what every kit collection gets for nothing. This guard tested the section alone, so a
      placement-only section skipped the fetch and drew an empty grid beside a rail badge counting
      the files it would not ask for. */
-  if (view.value === 'strings' || view.value === 'print') return
+  if (view.value === 'strings') return
   if (SITE_BY_KEY[view.value] && SITE_BY_KEY[view.value].component) return   /* its editor loads its own files */
   if ((SCREENS as any)[view.value]) return   /* a screen a module adds loads its own data: it is not a collection to list */
   if (['analytics', 'content-analytics', 'publishing', 'media', 'print-orders', 'orders', 'bookings', 'emails', 'support', 'comments', 'spaces', 'people', 'forms', 'form-responses', 'form-analytics', 'models', 'payouts', 'social', 'network'].includes(view.value)) return   /* the dashboards fetch their own data */
@@ -1156,11 +1153,6 @@ onMounted(async () => {
         <StringsEditor dir="ui" />
       </template>
 
-      <!-- ============ the print editions: every book in print, and the files it makes ============ -->
-      <template v-else-if="view === 'print'">
-        <AdminHead :title="navLabel('print')"><template #sub><span v-html="LEAD['print']" /></template></AdminHead>
-        <PrintAdmin :book="parsed.name" @open="navigate(ROUTES.admin + '/print/' + $event)" @back="navigate(ROUTES.admin + '/print')" />
-      </template>
 
       <!-- ============ the site's own sections (#site/admin) ============ -->
       <template v-else-if="SITE_BY_KEY[view] && SITE_BY_KEY[view].component">
@@ -1189,9 +1181,6 @@ onMounted(async () => {
       </div>
       <div v-else-if="view === 'publishing'" class="ad-analytics">
         <PublishingPage @published="draftCount = 0" />
-      </div>
-      <div v-else-if="view === 'print-orders'" class="ad-analytics">
-        <PrintOrders />
       </div>
       <div v-else-if="view === 'orders'" class="ad-analytics">
         <Orders />

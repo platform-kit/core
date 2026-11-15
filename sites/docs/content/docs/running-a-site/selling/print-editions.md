@@ -4,11 +4,11 @@ description: Putting a book on sale in print and as files — the block on the b
 order: 21
 sources:
   [
-    packages/kit/theme/src/components/admin/PrintAdmin.vue,
-    packages/kit/theme/src/components/PrintOrders.vue,
+    packages/kit/modules/print/ui/admin/PrintAdmin.vue,
+    packages/kit/modules/print/ui/admin/PrintOrders.vue,
     packages/kit/theme/src/pages/AdminPage.vue,
-    packages/kit/build/print.mts,
-    packages/kit/build/print/block.mts,
+    packages/kit/modules/print/build/print.mts,
+    packages/kit/modules/print/build/block.mts,
     packages/kit/src/lib/print-offers.ts,
   ]
 reviewed: 2026-11-14

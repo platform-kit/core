@@ -623,7 +623,7 @@ export async function platformkit(opts: any = {}): Promise<Plugin[]> {
         worker: { format: 'es' },
         /* IN_BROWSER_TTS, LOCKDOWN_MODE and CONTENT_STORE are the client flags read by name */
         envPrefix: ['VITE_', 'IN_BROWSER_TTS', 'LOCKDOWN_MODE', 'CONTENT_STORE'],
-        /* the print compiler's Deno specifier (build/print/typeset/wasm-compiler.js), which the browser's half shares: here it is the
+        /* the print compiler's Deno specifier (modules/print/build/typeset/wasm-compiler.js), which the browser's half shares: here it is the
            package itself, pinned to the same version */
         resolve: { alias: { '#content': path.resolve(c.root, '.velite'), '#site/content': path.resolve(c.root, 'content'), '@': theme.src, 'npm:@myriaddreamin/typst-ts-web-compiler@0.7.0': '@myriaddreamin/typst-ts-web-compiler' } },
         /* Tailwind over the theme's sources and the site's, utilities only (the kit's tailwind.config.js); a site needs no postcss config */

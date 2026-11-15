@@ -135,7 +135,7 @@ export const MAY_USE_FS = {
   'build/write-if-changed.mjs': 'writes a build output only where the bytes differ, so the watched edge runtime is not restarted for nothing; reached only from the machine side of a compile',
 
   /* by design, and said so */
-  'build/models/core/print.mjs': 'an edition is rendered by Typst, sharp and a headless browser on a machine that has them; a cloud-only site cannot set one at all, which is the point of the print work in the cloud-parity change rather than something to paper over here',
+  'modules/print/build/model.mjs': 'an edition is rendered by Typst, sharp and a headless browser on a machine that has them; a cloud-only site cannot set one at all, which is the point of the print work in the cloud-parity change rather than something to paper over here',
 
   /* DEGRADED IN CLOUD MODE, and the one entry here that is a defect rather than a design.
      areaList() walks content/app/tests/diagnostics with readdirSync, so in a function it returns

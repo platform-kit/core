@@ -14,7 +14,7 @@ declare module 'ffmpeg-static' { const path: string | null; export default path 
 /* optional: ONNX Runtime's native build, when the machine sets the spoken books itself — the same API as the
    common package the web build shares */
 declare module 'onnxruntime-node' { export * from 'onnxruntime-common' }
-/* optional: Typst's native compiler, when the machine sets the printed books — only what build/print/typeset uses */
+/* optional: Typst's native compiler, when the machine sets the printed books — only what modules/print/build/typeset uses */
 declare module '@myriaddreamin/typst-ts-node-compiler' {
   interface CompileResult { hasError(): boolean, printErrors(): void, result: unknown }
   interface CompileArgs { mainFilePath: string }

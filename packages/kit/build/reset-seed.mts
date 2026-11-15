@@ -15,7 +15,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 export const SEED_STEPS = [
   ['spaces.mjs'], ['spaces-push.mjs', '--seed'], ['teams.mjs'], ['teams-push.mjs'], ['../modules/events/build/events.mjs'], ['../modules/events/build/events-push.mjs'],
   ['comments-push.mjs'], ['providers-push.mjs'], ['achievements-push.mjs'], ['../modules/courses/build/push.mjs'], ['../modules/bots/build/bots.mjs'], ['../modules/bots/build/bots-push.mjs'], ['search-push.mjs'],
-  ['print/templates.mjs', '--fonts'], ['dev-account.mjs'],
+  ['../modules/print/build/templates.mjs', '--fonts'], ['dev-account.mjs'],
 ]
 
 /* the build step a seed script is, by its key: a kit script is named for its step; a module's script lives in its folder

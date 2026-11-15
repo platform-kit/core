@@ -40,7 +40,7 @@ import Carousel from './Carousel.vue'
 import ProductCard from './ProductCard.vue'
 import ShipTo from './ShipTo.vue'
 import Book3D from '../Book3D.vue'
-import PrintPagePreview from './PrintPagePreview.vue'
+import { PrintPagePreview } from 'platformkit/modules/print/index.js'
 
 const props = defineProps({ id: { type: String, required: true } })
 const T = us('store')

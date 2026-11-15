@@ -482,6 +482,29 @@ else await act('the API keeps its place before the payments and its screen opens
   await page.locator('.ak').first().waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the API screen never drew') })
 })
 
+if (!(await moduleOn('print'))) notHere('interaction: print in the admin', 'the print module is off')
+else await act('the print editions keep their place in the Store and open a book at its address', async ({ page, clear }: any) => {
+  await go(page, '/', clear, '.pageshell')
+  await signIn(page, clear, 'admin@example.com')
+  await go(page, '/admin', clear, '.ad-rail')
+  const item = page.locator('.ad-navitem[data-key="print"]').first()
+  await item.waitFor({ state: 'attached', timeout: WAIT * 2 }).catch(() => { throw new Error('the rail carries no print item') })
+  /* it names the item it precedes, so it stands where the rail always had it: after the promotions, before the sessions where they are on */
+  const order: string[] = await item.locator('xpath=..').locator('.ad-navitem').evaluateAll((els: any[]) => els.map((e) => e.dataset.key))
+  const at = order.indexOf('print')
+  if (order.includes('sessions') ? order[at + 1] !== 'sessions' : at !== order.length - 1) throw new Error('the store group reads ' + order.join(', '))
+  const fold = item.locator('xpath=ancestor::div[contains(@class, "ad-navgroup")]/preceding-sibling::button[1]')
+  if ((await fold.getAttribute('aria-expanded')) !== 'true') await fold.click()
+  await item.click({ timeout: WAIT })
+  await page.locator('.pr-grid').first().waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the print editions never drew their list') })
+  if (await page.locator('.ad-analytics .pr-grid').count()) throw new Error('the print editor is drawn inside the dashboards\' frame')
+  /* a book at its address: the screen is handed the rest of it */
+  if (BOOK) {
+    await go(page, '/admin/print/' + BOOK.slug, clear, '.pr-title')
+    if (await page.locator('.pr-grid').count()) throw new Error('a book at its address still shows the list')
+  }
+})
+
 if (!(await moduleOn('funnels'))) notHere('interaction: the funnels in the admin', 'the funnels module is off')
 else await act('the funnels keep their place in Marketing, open by their address, and their numbers and the blasts are tabs', async ({ page, clear }: any) => {
   await go(page, '/', clear, '.pageshell')

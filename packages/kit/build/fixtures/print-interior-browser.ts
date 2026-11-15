@@ -3,5 +3,5 @@
  * and the compiler's .wasm by Vite's `?url`. build/print-jobs-db.test.mjs loads this through the site's own Vite in a
  * real browser, so what it proves is the bundle's path and not a test's own.
  */
-export { finishWaiting, setInterior } from '../print/typeset/interior.js'
+export { finishWaiting, setInterior } from '../../modules/print/build/typeset/interior.js'
 export { default as wasm } from '@myriaddreamin/typst-ts-web-compiler/wasm?url'

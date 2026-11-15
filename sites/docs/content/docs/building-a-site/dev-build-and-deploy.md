@@ -49,7 +49,7 @@ sources:
     packages/kit/build/rewrites.test.mts,
     packages/kit/build/steps,
     packages/kit/build/steps.mts,
-    packages/kit/build/steps/print.mts,
+    packages/kit/modules/print/build/steps/print.mts,
     packages/kit/build/functions-data.mts,
     packages/kit/build/content-refresh.mts,
     packages/kit/build/content-refresh.test.mts,
