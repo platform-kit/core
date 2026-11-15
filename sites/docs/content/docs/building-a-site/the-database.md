@@ -30,7 +30,7 @@ sources:
     packages/kit/build/dev-account.mts,
     packages/kit/supabase/schemas/12-content.sql,
     packages/kit/supabase/schemas/15-library.sql,
-    packages/kit/supabase/schemas/20-instrument.sql,
+    packages/kit/modules/instrument/schema/20-instrument.sql,
     packages/kit/supabase/schemas/90-spaces.sql,
     packages/kit/supabase/schemas/14-audience.sql,
     packages/kit/supabase/schemas/glue,
@@ -53,7 +53,7 @@ There is no migration anywhere: none shipped by the kit, none written by a site,
 10-foundation.sql   profiles, the role, the verified address, the person's document, app_settings, is_admin/is_staff/is_support/is_subscribed, admin_people (who a set of accounts are, for an administrator), the trigger on auth.users
 12-content.sql      cloud mode's content: every file under content/ as a row — its live version (path, collection, slug, published, the frontmatter as JSON, the body, the exact text, whether the push has it) — and content_drafts, its draft beside it (the edit's text, data and body, who and when, deleted for a removal not yet published); published rows with a live version readable by anyone, every row by an administrator, a draft by no client (RLS on, no policy), no client write; run_content_push (the pending rows to the repository as one commit, asked by cron) Only administrators read the rows; a visitor is sent them through reader-content, without gated text.
 15-library.sql      the audio bucket's sharing policy
-20-instrument.sql   answers, results, signals
+20-instrument.sql   answers, results, signals (kept in packages/kit/modules/instrument/schema/)
 25-forms.sql        a form's responses and answers, the analytics, the Forms API's webhook subscriptions
 30-analytics.sql    events (with `source` and `distinct_id` for another site's), experiments, the dashboards' reads (the channel rule, a session's facts and the filter predicate, the audience predicate, the KPIs and the registered goals, right now, a piece, the members, the events, the retention cohorts)
 40-commerce.sql     purchases (own, or every row as an administrator), subscriptions, entitlements, `payment_events` deduplicated by provider and event id, `payment_provider_refs` for provider-scoped external ids, the legacy Stripe event and identifier fields, print orders

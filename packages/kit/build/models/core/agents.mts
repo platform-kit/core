@@ -10,7 +10,7 @@
  *
  * Each of these is drawn by the admin's default editor from the zod below (a field's .meta()
  * carries its label, widget and help), so there is no component to write. The grammars they are
- * checked against are build/bots.mjs and modules/events/build/events.mjs — the same ones the compile uses.
+ * checked against are modules/bots/build/bots.mjs and modules/events/build/events.mjs — the same ones the compile uses.
  */
 import { z } from 'zod'
 import { EVENTS } from '../../spaces-io.mjs'
@@ -338,7 +338,7 @@ export const commands = {
 /* the same for the bots: a save on a checkout pushes, a save over rows is a draft */
 async function onBotWrite(ctx: any) {
   if (ctx.store && ctx.store.kind === 'rows') return
-  await ctx.script('bots-push.mjs').catch((e: { message: string }) => console.warn('bots: not projected — ' + e.message))
+  await ctx.script((await import('../../../modules/bots/build/index.mjs')).BOTS_PUSH).catch((e: { message: string }) => console.warn('bots: not projected — ' + e.message))
 }
 
 /* the bots' declaration, made real — the surface's half of it, which needs a database and not a
@@ -348,8 +348,7 @@ async function onBotWrite(ctx: any) {
 async function projectedBots(ctx: any) {
   const db = ctx.store && ctx.store.kind === 'rows' ? ctx.store.client : null
   if (!db) return
-  const { compileBots } = await import('../../bots.mjs')
-  const { projectBots } = await import('../../bots-db.mjs')
+  const { compileBots, projectBots } = await import('../../../modules/bots/build/index.mjs')
   const { bots } = await compileBots({ store: ctx.store, write: false, themeSkills: ctx.themeSkills || null })
   await projectBots({ bots, db })
 }

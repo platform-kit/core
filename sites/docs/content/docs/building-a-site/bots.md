@@ -5,7 +5,7 @@ order: 56.6
 sources:
   [
     packages/kit/modules/copilot/lib,
-    packages/kit/theme/src/pages/VoicePage.vue,
+    packages/kit/modules/bots/ui/VoicePage.vue,
     packages/kit/modules/copilot/ui,
     packages/kit/modules/copilot/functions/copilot-speak,
     packages/kit/modules/copilot/lib,
@@ -20,19 +20,19 @@ sources:
     packages/kit/supabase/functions/_shared/usage.ts,
     packages/kit/build/usage.test.mts,
     packages/kit/src/lib/agents/api.ts,
-    packages/kit/build/agents.test.mts,
-    packages/kit/build/agents-db.test.mts,
-    packages/kit/build/bots.mts,
-    packages/kit/build/bots-push.mts,
-    packages/kit/build/bots-db.mts,
-    packages/kit/build/bots-db.test.mts,
+    packages/kit/modules/bots/tests/agents.test.mts,
+    packages/kit/modules/bots/tests/agents-db.test.mts,
+    packages/kit/modules/bots/build/bots.mts,
+    packages/kit/modules/bots/build/bots-push.mts,
+    packages/kit/modules/bots/build/bots-db.mts,
+    packages/kit/modules/bots/tests/bots-db.test.mts,
     packages/kit/build/models/core/agents.mts,
     packages/kit/agent,
     packages/kit/supabase/functions/_shared/video/livekit.ts,
     packages/kit/build/velite.mts,
-    packages/kit/build/steps/bots.mts,
-    packages/kit/supabase/schemas/96-agents.sql,
-    packages/kit/supabase/functions/agent-run/index.ts,
+    packages/kit/modules/bots/build/steps.mts,
+    packages/kit/modules/bots/schema/96-agents.sql,
+    packages/kit/modules/bots/functions/agent-run/index.ts,
     packages/kit/supabase/functions/_shared/agents/provider.ts,
     packages/kit/supabase/functions/_shared/agents/anthropic.ts,
     packages/kit/build/anthropic.test.mts,
@@ -252,7 +252,7 @@ which turns a row into the entry velite would have made) and hands them to the s
 adapter against velite field for field. The hook hangs on all four collections the index draws from,
 because publishing any one of them changes what a search should find.
 
-**And the bots reach the surface on a publish.** The worker reads the compiled file, but the surface reads rows, because whether this person may summon a bot is a question only the database can answer against their standing. `build/bots-db.mjs` is that projection with no filesystem in it, so the `bots` model's `projected()` runs it the moment somebody publishes, rather than waiting for a deploy a cloud-only deployment never has. A save over rows moves nothing: a save is a draft. See [The three deployment shapes](/content/docs/building-a-site/deployment-modes).
+**And the bots reach the surface on a publish.** The worker reads the compiled file, but the surface reads rows, because whether this person may summon a bot is a question only the database can answer against their standing. `modules/bots/build/bots-db.mts` is that projection with no filesystem in it, so the `bots` model's `projected()` runs it the moment somebody publishes, rather than waiting for a deploy a cloud-only deployment never has. A save over rows moves nothing: a save is a draft. See [The three deployment shapes](/content/docs/building-a-site/deployment-modes).
 
 Set `skills: all` on a bot to give it every published skill, which is what a single-bot site wants — and it is how a default nobody knows about yet still reaches the bot. Naming them one by one means a new one is a new one nobody gets.
 

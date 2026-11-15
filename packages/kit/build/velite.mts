@@ -621,7 +621,7 @@ export async function kitConfig(): Promise<any> {
        summoned; the worker reads the compiled copy the function carries. */
     /* A COMMAND, A TOOL AND A SKILL ARE CONTENT, so they are collections like everything else:
        schema-checked when the content compiles, and — with their models — editable by a site that
-       has no checkout. build/bots.mjs compiles them for the worker; this is the content's own view. */
+       has no checkout. modules/bots/build/bots.mjs compiles them for the worker; this is the content's own view. */
     commands: {
       name: 'Command',
       pattern: 'commands/*.md',

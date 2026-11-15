@@ -2,18 +2,18 @@
    cancelled between a model call and its tool call, out of money mid-thought, a worker that died
    holding a lease — which is the point of keeping the decision out of the function that calls the
    model. No database, no network, no clock of its own. */
-import { next, messagesFor, callsOf, textOf, costOf, limitsOf, claimable, endingOf, skillsLine, openedSkills, LIMITS, memoryOf, beforeNow, MEMORIES } from '../src/lib/agents/loop.js'
-import { toolsFor, BUILTINS, askingWords } from '../supabase/functions/_shared/agents/tools.js'
+import { next, messagesFor, callsOf, textOf, costOf, limitsOf, claimable, endingOf, skillsLine, openedSkills, LIMITS, memoryOf, beforeNow, MEMORIES } from '../../../src/lib/agents/loop.js'
+import { toolsFor, BUILTINS, askingWords } from '../../../supabase/functions/_shared/agents/tools.js'
 import fs from 'node:fs'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const SITE = process.cwd()
-import { providerFrom, hasScript } from '../supabase/functions/_shared/agents/provider.js'
-import { occurrences } from '../src/lib/recurrence.js'
-import { SURFACES } from './bots.mjs'
-import { socialAutomationPrompt } from '../supabase/functions/_shared/social/automation-rules.mjs'
+import { providerFrom, hasScript } from '../../../supabase/functions/_shared/agents/provider.js'
+import { occurrences } from '../../../src/lib/recurrence.js'
+import { SURFACES } from '../build/bots.mjs'
+import { socialAutomationPrompt } from '../../../supabase/functions/_shared/social/automation-rules.mjs'
 
 let pass = 0, fail = 0
 const ok = (msg: string, cond: boolean|null, detail?: string|null|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }
@@ -178,7 +178,7 @@ const toolStep = (name: string, result: any, call = 'c1') => ({ kind: 'tool', na
 /* ---- what a person is told, in words somebody can edit ---- */
 {
   /* the words are the bot's, resolved by the compile from markdown — NO ENGLISH LIVES IN THE LOOP */
-  const src = fs.readFileSync(new URL('../src/lib/agents/loop.ts', import.meta.url), 'utf8')
+  const src = fs.readFileSync(new URL('../../../src/lib/agents/loop.ts', import.meta.url), 'utf8')
   const endingFn = src.slice(src.indexOf('export function endingOf'), src.indexOf('export function endingOf') + 400)
   ok('the loop keeps no sentences of its own', !/'[A-Z][a-z]+ [a-z]/.test(endingFn.replace(/\/\*[\s\S]*?\*\//g, '')))
 
@@ -273,7 +273,7 @@ const toolStep = (name: string, result: any, call = 'c1') => ({ kind: 'tool', na
    This asserts there is nothing else for it to reach for — a source check, because the point is
    that the mistake should be unwritable rather than merely caught. */
 {
-  const src = readFileSync(join(HERE, '..', 'supabase', 'functions', '_shared', 'agents', 'tools.ts'), 'utf8')
+  const src = readFileSync(join(HERE, '..', '..', '..', 'supabase', 'functions', '_shared', 'agents', 'tools.ts'), 'utf8')
   /* the body of each builtin, from its name to the next one */
   const bodies: Record<string, string> = {}
   const re = /^  ([a-z_]+): \{$/gm
@@ -303,7 +303,7 @@ const toolStep = (name: string, result: any, call = 'c1') => ({ kind: 'tool', na
   ok('\u2026by naming the run', /agent_raise_ticket/.test(rt))
 
   /* the worker must not offer one either */
-  const w = readFileSync(join(HERE, '..', 'supabase', 'functions', 'agent-run', 'index.ts'), 'utf8')
+  const w = readFileSync(join(HERE, '..', 'functions', 'agent-run', 'index.ts'), 'utf8')
   const think = w.slice(w.indexOf('async function think'), w.indexOf('async function stopForUsage'))
   ok('billed agent calls reserve through the shared gate before the provider call',
     think.indexOf('authorizeUsage(') >= 0 && think.indexOf('authorizeUsage(') < think.indexOf('await ask('))
@@ -311,11 +311,11 @@ const toolStep = (name: string, result: any, call = 'c1') => ({ kind: 'tool', na
     think.includes('usageAuthorization.settle(') && !/usage_(?:admit|record)\(/.test(think))
   ok('the verified offer and reader stay attached to the reservation',
     /offerKey = operation\?\.offerKey \|\| bot\.billing/.test(think) && think.includes('userId: usageUserId'))
-  const agentSql = readFileSync(join(HERE, '..', 'supabase', 'schemas', '96-agents.sql'), 'utf8')
+  const agentSql = readFileSync(join(HERE, '..', 'schema', '96-agents.sql'), 'utf8')
   const summonSql = agentSql.slice(agentSql.indexOf('"public"."agent_summon"'), agentSql.indexOf('$$;', agentSql.indexOf('"public"."agent_summon"')))
   ok('agent_summon keeps the per-person ceiling and defers billable authorization to the worker',
     summonSql.includes('agent_over_cap') && summonSql.includes('usage-subject-required') && !summonSql.includes('usage_admit'))
-  const copilotSql = readFileSync(join(HERE, '..', 'modules', 'copilot', 'schema', '95-copilot.sql'), 'utf8')
+  const copilotSql = readFileSync(join(HERE, '..', '..', 'copilot', 'schema', '95-copilot.sql'), 'utf8')
   const turnSql = copilotSql.slice(copilotSql.indexOf('"public"."copilot_turn"'), copilotSql.indexOf('$$;', copilotSql.indexOf('"public"."copilot_turn"')))
   ok('copilot_turn keeps its per-turn spend ceiling and defers billing to the same worker gate',
     turnSql.includes('turn_budget') && turnSql.includes('agent_over_cap') && !turnSql.includes('usage_admit'))
@@ -493,8 +493,8 @@ const toolStep = (name: string, result: any, call = 'c1') => ({ kind: 'tool', na
  * box is how "tier2" (no colon, no such tier) gets into a file and silently gates nothing.
  */
 {
-  const models: any = await import('./models/core/agents.mjs')
-  const { describeSchema } = await import('./admin-schemas.mjs')
+  const models: any = await import('../../../build/models/core/agents.mjs')
+  const { describeSchema } = await import('../../../build/admin-schemas.mjs')
   for (const key of ['bots', 'skills', 'tools', 'commands']) {
     const m = models[key]
     ok(key + ' says who it is for as a chooser', !!m && !!m.fields, key)
@@ -517,23 +517,23 @@ const toolStep = (name: string, result: any, call = 'c1') => ({ kind: 'tool', na
  * the endpoint voice and visualizer are named choices, and all five shapes stay available.
  */
 {
-  const { bots } = await import('./models/core/agents.mjs')
-  const { describeSchema } = await import('./admin-schemas.mjs')
+  const { bots } = await import('../../../build/models/core/agents.mjs')
+  const { describeSchema } = await import('../../../build/admin-schemas.mjs')
   const voice = describeSchema(bots.fields).find((field) => field.name === 'voice')
   const sub = Object.fromEntries((voice && voice.fields || []).map((field: any) => [field.key, field]))
   ok('the bot voice block is drawn as a structured group', !!voice && voice.widget === 'group' && voice.kind === 'group')
   ok('the endpoint voice is chosen from named options and remains visible for implicit endpoint selection', sub.say && sub.say.kind === 'select' && !sub.say.shown && sub.say.choices.some((choice: { value: string }) => choice.value === 'alloy'))
   ok('all five named visualizers are selectable', sub.visual && sub.visual.choices.map((choice: any) => choice.value).join(',') === 'aura,wave,radial,grid,bar')
   ok('the greeting is a sentence field and timing values are numeric controls', sub.greeting && sub.greeting.kind === 'text' && sub.wait && sub.wait.kind === 'number' && sub.gap && sub.gap.kind === 'number')
-  const { checkEntry } = await import('../src/lib/models/entry.js')
+  const { checkEntry } = await import('../../../src/lib/models/entry.js')
   const fields = describeSchema(bots.fields).map((field) => ({ ...field, key: field.name }))
   const errors = checkEntry({ fields }, { name: 'Voice test', voice: { by: 'endpoint', say: 'alloy', visual: 'wave', wait: 11 } })
   ok('voice number bounds are enforced by the model', errors.some((error: { field: string }) => error.field === 'voice.wait'), JSON.stringify(errors))
 }
 
 {
-  const { bots, commands } = await import('./models/core/agents.mjs')
-  const { describeSchema } = await import('./admin-schemas.mjs')
+  const { bots, commands } = await import('../../../build/models/core/agents.mjs')
+  const { describeSchema } = await import('../../../build/admin-schemas.mjs')
   const surfaceField = describeSchema(bots.fields).find((field) => field.name === 'surfaces')
   const surfaceChoices = await bots.options.surfaces({ root: SITE })
   const commandSurfaces = describeSchema(commands.fields).find((field) => field.name === 'surfaces')
@@ -555,7 +555,7 @@ const toolStep = (name: string, result: any, call = 'c1') => ({ kind: 'tool', na
  * is a bot that quietly stops waking up.
  */
 {
-  const { agentGrammar } = await import('./models/core/agents.mjs')
+  const { agentGrammar } = await import('../../../build/models/core/agents.mjs')
   const file = [
     '---', 'name: Rounder', 'surfaces: [spaces]',
     'voice:', '  by: endpoint', '  say: alloy', '  voices: [alloy, nova]',

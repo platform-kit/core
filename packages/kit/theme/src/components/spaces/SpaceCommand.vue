@@ -9,7 +9,7 @@ import type { PropType } from 'vue'
  * bot is built from the controls, never parsed back out of a line somebody typed. A command with
  * no arguments has no form at all: it runs.
  *
- * The command record is the compiled one (build/bots.mjs → .velite/commands.json), which carries
+ * The command record is the compiled one (modules/bots/build/bots.mjs → .velite/commands.json), which carries
  * the name, the hint and each argument's kind, label, default and choices — and deliberately NOT
  * the prompt: what the command asks the bot stays in the file and is filled in by the worker.
  */

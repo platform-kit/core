@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 /*
  * THE BOTS, TOOLS AND COMMANDS A SITE DECLARES, compiled into four files: the worker's two (the
  * bots with their prompts, the commands with theirs) and the browser's two (`.velite/agents.json`,
@@ -15,7 +16,7 @@
 export const botsStep = {
   key: 'bots', title: 'The bots, compiled', phase: 'prepare', module: 'bots',
   inputs: ['content/bots/**', 'content/tools/**', 'content/commands/**'],
-  run: ({ script }: any) => script('bots.mjs'),
+  run: ({ script }: any) => script(fileURLToPath(new URL('./bots.mjs', import.meta.url))),
 }
 /* and the bots themselves into the table the database asks when somebody summons one — a
    projection, one way, the files owning it */
@@ -25,6 +26,7 @@ export const botsPushStep = {
   needs: { env: ['SUPABASE_SERVICE_ROLE_KEY'] },
   localProjection: true,
   inputs: ['content/bots/**', 'content/tools/**', 'content/commands/**'],
-  run: ({ script }: any) => script('bots-push.mjs'),
+  run: ({ script }: any) => script(fileURLToPath(new URL('./bots-push.mjs', import.meta.url))),
 }
-export default botsStep
+/* the bots' build steps, each placed in the kit's list where it stood (bots#bots, bots#bots-push) */
+export default [botsStep, botsPushStep]

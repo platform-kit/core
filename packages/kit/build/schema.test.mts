@@ -12,6 +12,7 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import pg from 'pg'
 import { computePlan, applyPlan } from './plan.mjs'
+import { kitBackend } from './modules/backend.mjs'
 
 const KIT = fileURLToPath(new URL('../supabase/', import.meta.url))
 const ROOT = process.cwd()
@@ -50,9 +51,13 @@ const kitFile = (name: string, fn: { (s: any): any; (s: any): any; (arg0: string
 /* ---- the scratch project: the kit's declaration copied, no migrations, a database of its own ---- */
 fs.rmSync(SCR, { recursive: true, force: true })
 fs.mkdirSync(path.join(SCR, 'supabase', 'migrations'), { recursive: true })
-fs.cpSync(path.join(KIT, 'schemas'), path.join(SCR, 'supabase', 'schemas'), { recursive: true })
+/* every schema and glue file of the kit, from the old layout and the module folders alike, by the name it is assembled under */
+const BACKEND = kitBackend(KIT)
+fs.mkdirSync(path.join(SCR, 'supabase', 'schemas', 'glue'), { recursive: true })
+for (const n of BACKEND.schema) fs.cpSync(BACKEND.sources.schema[n], path.join(SCR, 'supabase', 'schemas', n))
+for (const n of BACKEND.glue) fs.cpSync(BACKEND.sources.glue[n], path.join(SCR, 'supabase', 'schemas', 'glue', n))
 /* the rows of the kit and of every module, since the scratch declares every module (assemble.mjs joins them the same way) */
-fs.writeFileSync(path.join(SCR, 'supabase', 'data.sql'), [path.join(KIT, 'data.sql'), ...fs.readdirSync(path.join(KIT, 'data')).filter((f) => f.endsWith('.sql')).sort().map((f) => path.join(KIT, 'data', f))].map((f) => fs.readFileSync(f, 'utf8').trimEnd()).join('\n\n') + '\n')
+fs.writeFileSync(path.join(SCR, 'supabase', 'data.sql'), [path.join(KIT, 'data.sql'), ...BACKEND.rows.map((n) => BACKEND.sources.rows[n])].map((f) => fs.readFileSync(f, 'utf8').trimEnd()).join('\n\n') + '\n')
 const major = (/major_version\s*=\s*(\d+)/.exec(fs.existsSync(path.join(ROOT, 'supabase', 'config.toml')) ? fs.readFileSync(path.join(ROOT, 'supabase', 'config.toml'), 'utf8') : '') || [])[1] || '17'
 fs.writeFileSync(path.join(SCR, 'supabase', 'config.toml'), `project_id = "${PROJECT}"\n[db]\nport = ${PORT}\nshadow_port = ${SHADOW}\nmajor_version = ${major}\n[db.seed]\nenabled = true\nsql_paths = ["./schemas/*.sql", "./schemas/glue/*.sql", "./schemas/site/*.sql", "./data.sql"]\n`)
 sb(['stop', '--no-backup'], { stdio: 'ignore' })

@@ -66,7 +66,7 @@ const READERS = [
   'supabase/functions/print-webhook/index.ts',
   'supabase/functions/lulu-webhook/index.ts',
   'supabase/schemas/90-spaces.sql',
-  'supabase/schemas/96-agents.sql',
+  'modules/bots/schema/96-agents.sql',
   'theme/src/components/Orders.vue',
   'theme/src/components/PrintOrders.vue',
 ]

@@ -12,7 +12,7 @@
  * a tool that throws, a budget that runs out mid-thought, a worker that dies holding a lease — are
  * ordinary inputs.
  *
- * Pinned by build/agents.test.mjs.
+ * Pinned by modules/bots/tests/agents.test.mts.
  */
 
 /* what a step costs, before it is taken. A price is per million tokens, which is how every

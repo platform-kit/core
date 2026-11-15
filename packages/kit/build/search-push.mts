@@ -60,7 +60,7 @@ export function rowsFrom(root = process.cwd(), { models = [] }: { models?: Array
 
 /* every model any published bot may search, and the fields none of them may see */
 export async function modelsWanted(root = process.cwd(), store?: any) {
-  const { compileBots } = await import('./bots.mjs')
+  const { compileBots } = await import('../modules/bots/build/index.mjs')
   const { bots } = await compileBots({ root, store, write: false })
   const want = new Map()
   for (const b of bots) for (const s of b.searches || []) {

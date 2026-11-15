@@ -19,15 +19,15 @@
  * argument of a kind no control can draw.
  */
 import fs from 'node:fs'
-import { MEMORIES } from '../src/lib/agents/loop.js'
+import { MEMORIES } from '../../../src/lib/agents/loop.js'
 import path from 'node:path'
-import { asStore } from './store/index.mjs'
+import { asStore } from '../../../build/store/index.mjs'
 import matter from 'gray-matter'
-import { DESK_BOT, extend } from '../supabase/functions/_shared/agents/desk-bot.js'
-import { BUILTINS, fromOpenApi } from '../supabase/functions/_shared/agents/tools.js'
-import { problems as repeatProblems } from '../src/lib/recurrence.js'
-import { uiScope } from './strings-io.mjs'
-import { isMain } from './is-main.mjs'
+import { DESK_BOT, extend } from '../../../supabase/functions/_shared/agents/desk-bot.js'
+import { BUILTINS, fromOpenApi } from '../../../supabase/functions/_shared/agents/tools.js'
+import { problems as repeatProblems } from '../../../src/lib/recurrence.js'
+import { uiScope } from '../../../build/strings-io.mjs'
+import { isMain } from '../../../build/is-main.mjs'
 
 export const OUT = 'supabase/functions/_shared/bots.json'
 /* the worker's copy, WITH each command's prompt. The browser's copy (SITE_OUT) has everything but
@@ -89,7 +89,7 @@ export const OFFERS = ['off', 'ask', 'always']
  *     - model: suppliers
  *       except: [cost, contact_email]
  */
-export { SEARCHES } from '../supabase/functions/_shared/agents/tools.js'
+export { SEARCHES } from '../../../supabase/functions/_shared/agents/tools.js'
 
 export function searchesOf(v: any) {
   const out = []
@@ -431,8 +431,8 @@ export async function compileBots({ root = process.cwd(), store, check = false, 
   let themeDirPath = null
   if (!themeSkills) {
     try {
-      const { loadSite } = await import('./site.mjs')
-      const { loadTheme } = await import('./theme.mjs')
+      const { loadSite } = await import('../../../build/site.mjs')
+      const { loadTheme } = await import('../../../build/theme.mjs')
       const t = await loadTheme(await loadSite(st.root || root))
       themeDirPath = t && t.skills ? t.skills : null
     } catch (e) { /* no theme package to read from here — the caller hands the defaults in instead */ }
@@ -443,7 +443,7 @@ export async function compileBots({ root = process.cwd(), store, check = false, 
      none, which is the empty set and refuses nothing. */
   let sealed = new Set()
   try {
-    const { readSpaces, sealedRooms } = await import('./spaces-io.mjs')
+    const { readSpaces, sealedRooms } = await import('../../../build/spaces-io.mjs')
     sealed = sealedRooms(await readSpaces(st))
   } catch (e) { /* no spaces to read: nothing is sealed, and nothing is refused */ }
   const { bots, faults: bf } = await readBots(st, { tools, skills, sealed })

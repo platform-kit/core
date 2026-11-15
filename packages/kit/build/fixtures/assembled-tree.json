@@ -1,13 +1,13 @@
 {
  "demo": {
   "all": {
-   ".assembled.json": "2d3498360c787061",
+   ".assembled.json": "77b71c94f5572d2f",
    "config.toml": "d0453df38821d350",
    "data.sql": "cb220bd71a0caaba",
    "functions/_shared/access.ts": "84cb877faa83e179",
    "functions/_shared/agents/anthropic.ts": "a6a7370d4eb41461",
    "functions/_shared/agents/desk-bot.ts": "419c8ac3c5cd568a",
-   "functions/_shared/agents/loop.js": "bb7f75becd6584c2",
+   "functions/_shared/agents/loop.js": "694f5cc802b32268",
    "functions/_shared/agents/model.js": "cf6fb6f063cf26da",
    "functions/_shared/agents/provider.ts": "e484643094445963",
    "functions/_shared/agents/tools.ts": "01c012faaa31f235",
@@ -52,6 +52,7 @@
    "functions/_shared/atproto/views.ts": "6c18dca522908180",
    "functions/_shared/atproto/writes.ts": "998c2cfc08a71ea6",
    "functions/_shared/booking.ts": "eae36f18034fbc7a",
+   "functions/_shared/bots/llm.ts": "0052ceb624116be8",
    "functions/_shared/cal.ts": "5a946786a4ea01de",
    "functions/_shared/chat/markup.js": "deb8637c28062aff",
    "functions/_shared/chat/model.js": "c73835f32e4912ca",
@@ -69,7 +70,6 @@
    "functions/_shared/emails/markdown.ts": "b1bc9c288902911a",
    "functions/_shared/emails/rules.ts": "2082e5a7e66e1c3c",
    "functions/_shared/emails/tags.ts": "a369dc6ca510bd60",
-   "functions/_shared/enrichment/llm.ts": "39c4bd83813d538e",
    "functions/_shared/forms-live.ts": "0991f4833a3ab39a",
    "functions/_shared/forms/score.ts": "3058ec7810513b2e",
    "functions/_shared/gate.ts": "70602d15158e02b1",
@@ -101,8 +101,6 @@
    "functions/_shared/pipe/build/admin-pipe.mjs": "d0e1505d24adc332",
    "functions/_shared/pipe/build/admin-schemas.mjs": "ad33df9a57dc712f",
    "functions/_shared/pipe/build/assets.mjs": "b67eb17fd3bfdaf6",
-   "functions/_shared/pipe/build/bots-db.mjs": "64bdf8e0fe857a71",
-   "functions/_shared/pipe/build/bots.mjs": "6998641674b68ef8",
    "functions/_shared/pipe/build/catalog.mjs": "5a973b38715fd4c2",
    "functions/_shared/pipe/build/comments-push.mjs": "2f47373674c06b1e",
    "functions/_shared/pipe/build/companion-io.mjs": "89fcb965189c978c",
@@ -122,7 +120,7 @@
    "functions/_shared/pipe/build/kinds/index.js": "251909fbc6b08b1b",
    "functions/_shared/pipe/build/model-io.mjs": "3973d3c2fca2fc1b",
    "functions/_shared/pipe/build/models.mjs": "ce7f67d88984c096",
-   "functions/_shared/pipe/build/models/core/agents.mjs": "55675c9af5876695",
+   "functions/_shared/pipe/build/models/core/agents.mjs": "91442918a1e918b6",
    "functions/_shared/pipe/build/models/core/blasts.mjs": "6661d8f599d89961",
    "functions/_shared/pipe/build/models/core/collections.mjs": "329ea47afb3e0845",
    "functions/_shared/pipe/build/models/core/comments.mjs": "bb1c77b81ad2a6a5",
@@ -144,7 +142,7 @@
    "functions/_shared/pipe/build/modes.mjs": "54b6d183002eeaac",
    "functions/_shared/pipe/build/modules/folders.mjs": "4464354dd08ed987",
    "functions/_shared/pipe/build/modules/in-place.mjs": "eb3c869efb926f5a",
-   "functions/_shared/pipe/build/modules/kit.mjs": "f5b667c933bff3c6",
+   "functions/_shared/pipe/build/modules/kit.mjs": "548a053ed60b07b6",
    "functions/_shared/pipe/build/modules/manifest.mjs": "7eb3ca096e012462",
    "functions/_shared/pipe/build/payment-provider-registry.mjs": "6a4ad9d4c6ea246a",
    "functions/_shared/pipe/build/print/block.mjs": "75d17f6e86473c37",
@@ -178,6 +176,10 @@
    "functions/_shared/pipe/build/write-if-changed.mjs": "01da1b178a775d25",
    "functions/_shared/pipe/enrichment-briefs.json": "5f36b2ea290645ee",
    "functions/_shared/pipe/kit-designs.json": "a9f41b677f290d7c",
+   "functions/_shared/pipe/modules/bots/build/bots-db.mjs": "64bdf8e0fe857a71",
+   "functions/_shared/pipe/modules/bots/build/bots.mjs": "9d6a50bb5a4b8391",
+   "functions/_shared/pipe/modules/bots/build/index.mjs": "8c555a6cd6d93997",
+   "functions/_shared/pipe/modules/bots/build/steps.mjs": "150e3f56e5edbad5",
    "functions/_shared/pipe/modules/courses/build/index.mjs": "dd8c4d4844112fbf",
    "functions/_shared/pipe/modules/courses/build/io.mjs": "8e813d731db03222",
    "functions/_shared/pipe/modules/courses/build/models.mjs": "96caa5e1de3b1945",
@@ -189,12 +191,12 @@
    "functions/_shared/pipe/modules/events/build/events.mjs": "33d1eee2f5607050",
    "functions/_shared/pipe/modules/events/build/index.mjs": "2b9f517cf4775c6f",
    "functions/_shared/pipe/modules/events/build/steps.mjs": "d1338fdaf5b9777b",
-   "functions/_shared/pipe/modules/registry.mjs": "d3cd20a2b2f5972c",
+   "functions/_shared/pipe/modules/registry.mjs": "f60c62492b348360",
    "functions/_shared/pipe/modules/tts/build/steps.mjs": "a6e9c16de02a523e",
    "functions/_shared/pipe/site.js": "e0ff2c96edc22259",
    "functions/_shared/pipe/site/build/admin-models.mts": "076566ed73b52d89",
    "functions/_shared/pipe/site/index.js": "5b4b51b3d4aff789",
-   "functions/_shared/pipe/src/lib/agents/loop.js": "bb7f75becd6584c2",
+   "functions/_shared/pipe/src/lib/agents/loop.js": "694f5cc802b32268",
    "functions/_shared/pipe/src/lib/chat/markup.js": "deb8637c28062aff",
    "functions/_shared/pipe/src/lib/chat/model.js": "c73835f32e4912ca",
    "functions/_shared/pipe/src/lib/companion-body.js": "919c75cee0cb5474",
@@ -317,8 +319,8 @@
    "functions/_shared/video/mesh.ts": "df55bf10f0d2deca",
    "functions/admin/deno.json": "720345a63e561ff1",
    "functions/admin/index.ts": "b411cda9b4374e14",
-   "functions/agent-run/deno.json": "a1aec3a17ed10f8c",
-   "functions/agent-run/index.ts": "b393d4234cecf0db",
+   "functions/agent-run/deno.json": "301791e2a77a0c55",
+   "functions/agent-run/index.ts": "8cd6fa554b1f3f39",
    "functions/atproto/index.ts": "1dec781096a4dfb0",
    "functions/book-files/index.ts": "fb1e6d24a9bad27d",
    "functions/book-session/index.ts": "66fc49f41d51bc6c",
@@ -463,7 +465,7 @@
      "schemas/85-api.sql"
     ],
     "changed": {
-     ".assembled.json": "54d7e97c8031b420",
+     ".assembled.json": "6d66729f2ceb8db0",
      "config.toml": "20cacc6311e29e20",
      "data.sql": "27a089848975d57a",
      "functions/_shared/pipe/site.js": "3de0aaa1160d2df0"
@@ -473,7 +475,7 @@
    "articles": {
     "gone": [],
     "changed": {
-     ".assembled.json": "4d66dd3af9a4c124",
+     ".assembled.json": "61b5a404aaad62ad",
      "functions/_shared/pipe/site.js": "1a7a9901df44a58d"
     },
     "added": {}
@@ -481,13 +483,14 @@
    "books": {
     "gone": [],
     "changed": {
-     ".assembled.json": "f997d9acde717fd5",
+     ".assembled.json": "6011a9a364d56219",
      "functions/_shared/pipe/site.js": "6ea4698fb5dc6e28"
     },
     "added": {}
    },
    "bots": {
     "gone": [
+     "functions/_shared/bots/llm.ts",
      "functions/_shared/copilot/grant.ts",
      "functions/_shared/copilot/speech-proxy.ts",
      "functions/agent-run/deno.json",
@@ -505,7 +508,7 @@
      "schemas/glue/bots+support.sql"
     ],
     "changed": {
-     ".assembled.json": "851331e8fb0f7136",
+     ".assembled.json": "360736956c725bd3",
      "config.toml": "522e26a9443d581d",
      "data.sql": "e29326bbdd2950ce",
      "functions/_shared/pipe/site.js": "9fddaea999054da9"
@@ -520,7 +523,7 @@
      "schemas/glue/coaching+sessions.sql"
     ],
     "changed": {
-     ".assembled.json": "f5c3ae9771a439b3",
+     ".assembled.json": "a0297069a937518c",
      "data.sql": "114ab499f1f2a04b",
      "functions/_shared/pipe/site.js": "5440319303571d8f"
     },
@@ -537,7 +540,7 @@
      "schemas/95-copilot.sql"
     ],
     "changed": {
-     ".assembled.json": "7d6f59e4f40b3ede",
+     ".assembled.json": "4d04f73306f52cdd",
      "config.toml": "522e26a9443d581d",
      "functions/_shared/pipe/site.js": "923cb1921e326170"
     },
@@ -553,7 +556,7 @@
      "schemas/glue/courses+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "184e51a1d6962615",
+     ".assembled.json": "45489028f0fff0e6",
      "data.sql": "79eb741aca949c79",
      "functions/_shared/pipe/site.js": "de1d061760dc2035"
     },
@@ -562,7 +565,7 @@
    "docs": {
     "gone": [],
     "changed": {
-     ".assembled.json": "e24cb23d14da054d",
+     ".assembled.json": "37e393cd6c3fbaa6",
      "functions/_shared/pipe/site.js": "38e8e3b7702b5d78"
     },
     "added": {}
@@ -572,13 +575,18 @@
      "functions/send-email/index.ts"
     ],
     "changed": {
-     ".assembled.json": "8835d24b2e82b059",
+     ".assembled.json": "6f5938270dc6d96a",
      "functions/_shared/pipe/site.js": "19cdc8ffa6617dc8"
     },
     "added": {}
    },
    "enrichment": {
-    "refused": "✖ this tree would not boot — a relative import names a file the plan does not hold:"
+    "gone": [],
+    "changed": {
+     ".assembled.json": "98bf3eef7845e27a",
+     "functions/_shared/pipe/site.js": "3ec4b99eaddf28bf"
+    },
+    "added": {}
    },
    "events": {
     "gone": [
@@ -588,7 +596,7 @@
      "schemas/glue/events+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "b3fd99a873ec975f",
+     ".assembled.json": "08d46568bc1d0b99",
      "data.sql": "082ee14448a6cc3b",
      "functions/_shared/pipe/site.js": "912c9b73cc6217ba"
     },
@@ -610,7 +618,7 @@
      "schemas/glue/instrument+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "d70f404afcea4e38",
+     ".assembled.json": "59903e6e047cc396",
      "config.toml": "b2753f8ba9e00017",
      "functions/_shared/pipe/site.js": "7d64f89e20900e0c"
     },
@@ -628,7 +636,7 @@
      "schemas/glue/funnels+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "267c7fd77ae6c6c6",
+     ".assembled.json": "0604e20b60fa0321",
      "config.toml": "1a1f541a5cede00a",
      "data.sql": "b7c5b51238febd7b",
      "functions/_shared/pipe/site.js": "6750067c15051839"
@@ -643,7 +651,7 @@
      "schemas/glue/instrument+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "44ac266d24078ce8",
+     ".assembled.json": "e468f421ce589622",
      "functions/_shared/pipe/site.js": "c7972e30af91d620"
     },
     "added": {}
@@ -656,7 +664,7 @@
      "functions/hyperswitch-subscription-renewal/index.ts"
     ],
     "changed": {
-     ".assembled.json": "bfd165d2358f6b9c",
+     ".assembled.json": "70c9e37751ae0848",
      "data.sql": "3fe1d3f639e4effa",
      "functions/_shared/pipe/site.js": "6ec3f1ba11c97509"
     },
@@ -665,7 +673,7 @@
    "models": {
     "gone": [],
     "changed": {
-     ".assembled.json": "76694829502c09a8",
+     ".assembled.json": "936695a9ff6a1a48",
      "functions/_shared/pipe/site.js": "acf959dedc9cc02f"
     },
     "added": {}
@@ -677,7 +685,7 @@
      "schemas/glue/network+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "93dfc0d1fb0ea115",
+     ".assembled.json": "e0a42e5c5e5e5fed",
      "config.toml": "873b8a023b695d91",
      "data.sql": "93b760abb5f05ef8",
      "functions/_shared/pipe/site.js": "4f5dc00a6cd4d542"
@@ -695,7 +703,7 @@
      "schemas/44-print-jobs.sql"
     ],
     "changed": {
-     ".assembled.json": "f25aaf0d538fabe5",
+     ".assembled.json": "f8b32a09a490992e",
      "config.toml": "d712e4cc6d67a7d7",
      "data.sql": "40e0e880edcc01a4",
      "functions/_shared/pipe/site.js": "764cd042203ff3ae"
@@ -711,7 +719,7 @@
      "schemas/glue/push+support.sql"
     ],
     "changed": {
-     ".assembled.json": "5510c38e97afe8c8",
+     ".assembled.json": "e8d983d898d9b531",
      "config.toml": "5a86d93f912ef9e3",
      "functions/_shared/pipe/site.js": "f859aa8567fa5373"
     },
@@ -720,7 +728,7 @@
    "recommendations": {
     "gone": [],
     "changed": {
-     ".assembled.json": "10f85425d5f73181",
+     ".assembled.json": "89be55777e6f7364",
      "functions/_shared/pipe/site.js": "3ee2498bd01ec552"
     },
     "added": {}
@@ -753,7 +761,7 @@
      "schemas/glue/sessions+spaces.sql"
     ],
     "changed": {
-     ".assembled.json": "109031f4d4f18740",
+     ".assembled.json": "1b5385e9816b0a4a",
      "config.toml": "ec3fc859d9d70688",
      "data.sql": "a76358134d21e286",
      "functions/_shared/pipe/site.js": "3b8202c9c293cbb5",
@@ -772,7 +780,7 @@
      "schemas/glue/bots+social-publishing.sql"
     ],
     "changed": {
-     ".assembled.json": "264f39bf07ade2ed",
+     ".assembled.json": "0ad58af0ca74d99e",
      "config.toml": "01b908acc311fc20",
      "data.sql": "ce3315a1d4dce105",
      "functions/_shared/pipe/site.js": "a9631d33a1c5193d"
@@ -784,7 +792,7 @@
      "schemas/92-encryption.sql"
     ],
     "changed": {
-     ".assembled.json": "e6e4535437e6b3b4",
+     ".assembled.json": "352466740bfa2cdd",
      "functions/_shared/pipe/site.js": "8961ce69942d451c"
     },
     "added": {}
@@ -812,7 +820,7 @@
      "schemas/glue/spaces+support.sql"
     ],
     "changed": {
-     ".assembled.json": "a39f44d519b13436",
+     ".assembled.json": "d090d899aaab30fb",
      "config.toml": "48101cf6994cf84e",
      "data.sql": "2dca5926d9baea36",
      "functions/_shared/pipe/site.js": "84f7c1913b84a11e",
@@ -823,7 +831,7 @@
    "stockists": {
     "gone": [],
     "changed": {
-     ".assembled.json": "2f0d27866f0ae132",
+     ".assembled.json": "f4455b7179b9fc94",
      "functions/_shared/pipe/site.js": "a60c9b39f55dce38"
     },
     "added": {}
@@ -842,7 +850,7 @@
      "schemas/glue/spaces+store.sql"
     ],
     "changed": {
-     ".assembled.json": "3a1cf69ca6de9da1",
+     ".assembled.json": "5b5b0656f3898ad1",
      "config.toml": "20cacc6311e29e20",
      "data.sql": "38ba10509a6a447b",
      "functions/_shared/pipe/site.js": "25b776ad315aff9e"
@@ -862,7 +870,7 @@
      "schemas/glue/spaces+support.sql"
     ],
     "changed": {
-     ".assembled.json": "e4cd1b299ad6d76a",
+     ".assembled.json": "73a9bb8c7529ee1c",
      "config.toml": "eefe5bb51c77932c",
      "data.sql": "51905b9016c0170e",
      "functions/_shared/pipe/site.js": "cffdf8a0b5135796"
@@ -872,7 +880,7 @@
    "tts": {
     "gone": [],
     "changed": {
-     ".assembled.json": "1548ac098548c1b3",
+     ".assembled.json": "ec658063621fbbf2",
      "functions/_shared/pipe/site.js": "04a3c6180e38eff1"
     },
     "added": {}
@@ -880,7 +888,7 @@
    "wiki": {
     "gone": [],
     "changed": {
-     ".assembled.json": "fa813fa50b729af3",
+     ".assembled.json": "824bea9cfc4babbb",
      "functions/_shared/pipe/site.js": "d82681aace60a5a3"
     },
     "added": {}
@@ -889,13 +897,13 @@
  },
  "club": {
   "all": {
-   ".assembled.json": "2f002cb4f83a5a00",
+   ".assembled.json": "a83b0357fef08c00",
    "config.toml": "86f6864f63b967d1",
    "data.sql": "2ac943679dbf742c",
    "functions/_shared/access.ts": "84cb877faa83e179",
    "functions/_shared/agents/anthropic.ts": "a6a7370d4eb41461",
    "functions/_shared/agents/desk-bot.ts": "419c8ac3c5cd568a",
-   "functions/_shared/agents/loop.js": "bb7f75becd6584c2",
+   "functions/_shared/agents/loop.js": "694f5cc802b32268",
    "functions/_shared/agents/model.js": "cf6fb6f063cf26da",
    "functions/_shared/agents/provider.ts": "e484643094445963",
    "functions/_shared/agents/tools.ts": "01c012faaa31f235",
@@ -986,8 +994,6 @@
    "functions/_shared/pipe/build/admin-pipe.mjs": "d0e1505d24adc332",
    "functions/_shared/pipe/build/admin-schemas.mjs": "ad33df9a57dc712f",
    "functions/_shared/pipe/build/assets.mjs": "b67eb17fd3bfdaf6",
-   "functions/_shared/pipe/build/bots-db.mjs": "64bdf8e0fe857a71",
-   "functions/_shared/pipe/build/bots.mjs": "6998641674b68ef8",
    "functions/_shared/pipe/build/catalog.mjs": "5a973b38715fd4c2",
    "functions/_shared/pipe/build/comments-push.mjs": "2f47373674c06b1e",
    "functions/_shared/pipe/build/companion-io.mjs": "89fcb965189c978c",
@@ -1007,7 +1013,7 @@
    "functions/_shared/pipe/build/kinds/index.js": "251909fbc6b08b1b",
    "functions/_shared/pipe/build/model-io.mjs": "3973d3c2fca2fc1b",
    "functions/_shared/pipe/build/models.mjs": "ce7f67d88984c096",
-   "functions/_shared/pipe/build/models/core/agents.mjs": "55675c9af5876695",
+   "functions/_shared/pipe/build/models/core/agents.mjs": "91442918a1e918b6",
    "functions/_shared/pipe/build/models/core/blasts.mjs": "6661d8f599d89961",
    "functions/_shared/pipe/build/models/core/collections.mjs": "329ea47afb3e0845",
    "functions/_shared/pipe/build/models/core/comments.mjs": "bb1c77b81ad2a6a5",
@@ -1029,7 +1035,7 @@
    "functions/_shared/pipe/build/modes.mjs": "54b6d183002eeaac",
    "functions/_shared/pipe/build/modules/folders.mjs": "4464354dd08ed987",
    "functions/_shared/pipe/build/modules/in-place.mjs": "eb3c869efb926f5a",
-   "functions/_shared/pipe/build/modules/kit.mjs": "f5b667c933bff3c6",
+   "functions/_shared/pipe/build/modules/kit.mjs": "548a053ed60b07b6",
    "functions/_shared/pipe/build/modules/manifest.mjs": "7eb3ca096e012462",
    "functions/_shared/pipe/build/payment-provider-registry.mjs": "6a4ad9d4c6ea246a",
    "functions/_shared/pipe/build/print/block.mjs": "75d17f6e86473c37",
@@ -1063,6 +1069,10 @@
    "functions/_shared/pipe/build/write-if-changed.mjs": "01da1b178a775d25",
    "functions/_shared/pipe/enrichment-briefs.json": "5f36b2ea290645ee",
    "functions/_shared/pipe/kit-designs.json": "a9f41b677f290d7c",
+   "functions/_shared/pipe/modules/bots/build/bots-db.mjs": "64bdf8e0fe857a71",
+   "functions/_shared/pipe/modules/bots/build/bots.mjs": "9d6a50bb5a4b8391",
+   "functions/_shared/pipe/modules/bots/build/index.mjs": "8c555a6cd6d93997",
+   "functions/_shared/pipe/modules/bots/build/steps.mjs": "150e3f56e5edbad5",
    "functions/_shared/pipe/modules/courses/build/index.mjs": "dd8c4d4844112fbf",
    "functions/_shared/pipe/modules/courses/build/io.mjs": "8e813d731db03222",
    "functions/_shared/pipe/modules/courses/build/models.mjs": "96caa5e1de3b1945",
@@ -1074,11 +1084,11 @@
    "functions/_shared/pipe/modules/events/build/events.mjs": "33d1eee2f5607050",
    "functions/_shared/pipe/modules/events/build/index.mjs": "2b9f517cf4775c6f",
    "functions/_shared/pipe/modules/events/build/steps.mjs": "d1338fdaf5b9777b",
-   "functions/_shared/pipe/modules/registry.mjs": "d3cd20a2b2f5972c",
+   "functions/_shared/pipe/modules/registry.mjs": "f60c62492b348360",
    "functions/_shared/pipe/modules/tts/build/steps.mjs": "a6e9c16de02a523e",
    "functions/_shared/pipe/site.js": "f2d670aea2d1ce75",
    "functions/_shared/pipe/site/index.js": "9afa7060d2fb5bb3",
-   "functions/_shared/pipe/src/lib/agents/loop.js": "bb7f75becd6584c2",
+   "functions/_shared/pipe/src/lib/agents/loop.js": "694f5cc802b32268",
    "functions/_shared/pipe/src/lib/chat/markup.js": "deb8637c28062aff",
    "functions/_shared/pipe/src/lib/chat/model.js": "c73835f32e4912ca",
    "functions/_shared/pipe/src/lib/companion-body.js": "919c75cee0cb5474",
@@ -1246,7 +1256,7 @@
    "articles": {
     "gone": [],
     "changed": {
-     ".assembled.json": "e06365e41b5d3611",
+     ".assembled.json": "88eb8d3763102103",
      "functions/_shared/pipe/site.js": "55d576aa34d79e9c"
     },
     "added": {}
@@ -1261,7 +1271,7 @@
      "schemas/glue/forms+support.sql"
     ],
     "changed": {
-     ".assembled.json": "c59649bbaff98448",
+     ".assembled.json": "fbea0fa856eded36",
      "config.toml": "54129a9899b3b54a",
      "functions/_shared/pipe/site.js": "2401caf162771934"
     },
@@ -1275,7 +1285,7 @@
      "functions/hyperswitch-subscription-renewal/index.ts"
     ],
     "changed": {
-     ".assembled.json": "92979ebbb0f9c7be",
+     ".assembled.json": "a75273abca242861",
      "data.sql": "4b30e399afb005af",
      "functions/_shared/pipe/site.js": "c45251331f7b4bc1"
     },
@@ -1291,7 +1301,7 @@
      "schemas/glue/forms+support.sql"
     ],
     "changed": {
-     ".assembled.json": "63edecf6c5fad72a",
+     ".assembled.json": "18f84d15c3a289ee",
      "config.toml": "11ddabfd0b94994c",
      "data.sql": "e726ce2a56d156df",
      "functions/_shared/pipe/site.js": "77e04bcbc56b3e9d"

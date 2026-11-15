@@ -119,12 +119,16 @@ export const MAY_USE_FS = {
      the function takes. Each of these was read and the store path confirmed — an entry here is a
      claim about a file, not a way of quietening the check. */
   'build/strings-io.mjs':  'readSiteScopes() is the store; readScopes() reads the THEME\'s own defaults, which in the function are handed in as theme-strings.json instead',
-  'build/bots.mjs':        "readSkills() takes the site's skills through the store; the fs branch reads the THEME PACKAGE's own defaults, which in the function are handed in as theme-skills.json instead (assemble.mjs bundles them, the admin function passes them as themeSkills) — the same arrangement strings-io has, and checked the same way: the function's path was run, not assumed",
+  'modules/bots/build/bots.mjs':        "readSkills() takes the site's skills through the store; the fs branch reads the THEME PACKAGE's own defaults, which in the function are handed in as theme-skills.json instead (assemble.mjs bundles them, the admin function passes them as themeSkills) — the same arrangement strings-io has, and checked the same way: the function's path was run, not assumed",
   'build/assets.mjs':      'resolveAsset() caches a remote file to disk for a build; the pipe imports only addressOf() and assetUsage(), which are pure',
   'build/models.mjs':      'reads and writes the derived models JSON under dist — a build output, never content',
   'build/product-keys.mjs': 'the store is its read; the fs half is the command-line pass over a checkout',
 
   /* not content at all, and in the function not reached */
+  /* the kit's module folders, which ship with the package as the theme's files do (openspec: modules-as-packages).
+     theme.mjs reads them for its component registry and wording, site.mjs names a place's screen by its folder;
+     neither path is taken in the function, whose site arrives compiled as pipe/site.js */
+  'build/modules/folders.mjs': "the kit's own module folders — package code, never a row; read by loadTheme and a place's screen, neither of which the function calls",
   'build/theme.mjs':       "the theme PACKAGE's own files (its manifest, its overrides), which ship with the code and are never a row",
   'build/supabase-env.mjs': 'reads .env on a machine that has one; in a function the environment is the environment',
   'build/spaces-disk.mjs': 'the three things the spaces compile wants from a disk, in one place so spaces.mjs wants none: the catalog and the forms it checks a declaration against (both the BUILD\'s own outputs, never content) and its own output file. On the publish path spaces.mjs takes all three as data and never reaches for this module — st.kind === \'rows\' is the branch, and the projection writes to the database rather than a file',

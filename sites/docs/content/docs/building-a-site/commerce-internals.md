@@ -57,7 +57,7 @@ sources:
     packages/kit/build/checkout-params.test.mts,
     packages/kit/build/payment-providers.test.mts,
   ]
-reviewed: 2026-11-13
+reviewed: 2026-11-15
 ---
 
 ## The payment-provider contract foundation

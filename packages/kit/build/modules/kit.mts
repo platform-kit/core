@@ -225,31 +225,12 @@ const LISTED: Array<ModuleDeclaration | string> = [
   },
   /* api: in its own folder, packages/kit/modules/api/ */
   'api',
-  {
-    key: 'bots', what: 'bots, tools and commands', needs: 'an agent run is rows and a function',
-    static: false, git: true, cloud: true,
-    pages: [
-      { name: 'VoicePage', order: 40, page: 'theme:pages/VoicePage.vue', test: 'platformkit/lib/page-routes.js#voice', keyBy: 'route' },
-    ],
-    owns: {
-      steps: ['bots', 'bots-push'],
-      schema: ['96-agents.sql'], functions: ['agent-run'],
-      cron: [
-        { name: 'agents-sweep', schedule: '* * * * *', command: 'select public.run_agents();' },
-        { name: 'agents-schedule', schedule: '*/5 * * * *', command: 'select public.run_agent_schedules();' },
-      ],
-    },
-  },
+  /* bots: in its own folder, packages/kit/modules/bots/ */
+  'bots',
   /* copilot: in its own folder, packages/kit/modules/copilot/ */
   'copilot',
-  {
-    key: 'instrument', what: 'a site\'s own readings', needs: 'an answer is written to an account',
-    /* the instrument runs on the forms module's runner — one without the other cannot serve. The
-       DEPENDENT declares it, so forms need not know who uses it. */
-    requires: [{ module: 'forms', why: 'the instrument runs on the forms module\u2019s runner \u2014 one without the other cannot serve' }],
-    static: false, git: true, cloud: true,
-    owns: { schema: ['20-instrument.sql'] },
-  },
+  /* instrument: in its own folder, packages/kit/modules/instrument/ */
+  'instrument',
   /* recommendations: in its own folder, packages/kit/modules/recommendations/ */
   'recommendations',
   /*

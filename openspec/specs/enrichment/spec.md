@@ -59,14 +59,14 @@ An enrichment run SHALL be an `agent_runs` row carrying a job (the script and it
 - **WHEN** the worker holding an enrichment run stops between stages
 - **THEN** its lease expires, another worker picks the run up, keeps every stage already done, and carries on from the first one that is not
 
-Verified by: `build/agents-db.test.mts` (the job branch against the stack — a job run is queued, walks its stages in order, finishes, and its cache is the run's own state rather than a file); `packages/kit/modules/enrichment/tests/enrich.test.mts` ("a second worker does not discard what the first one paid for", "a run that died halfway keeps every stage it finished")
+Verified by: `modules/bots/tests/agents-db.test.mts` (the job branch against the stack — a job run is queued, walks its stages in order, finishes, and its cache is the run's own state rather than a file); `packages/kit/modules/enrichment/tests/enrich.test.mts` ("a second worker does not discard what the first one paid for", "a run that died halfway keeps every stage it finished")
 
 #### Scenario: an administrator stops a run
 
 - **WHEN** `agent_cancel` is called on an enrichment run
 - **THEN** it stops before the next paid call, keeps what it has done, and says it was cancelled
 
-Verified by: `build/agents-db.test.mts` — the one `agent_cancel`, proved on a run and the run stopping. There is deliberately no second test for a job: this requirement forbids a second cancel existing, so the same statement covers both branches by construction.
+Verified by: `modules/bots/tests/agents-db.test.mts` — the one `agent_cancel`, proved on a run and the run stopping. There is deliberately no second test for a job: this requirement forbids a second cancel existing, so the same statement covers both branches by construction.
 
 ### Requirement: The stage cache is the run's, and the same shape as the checkout's
 

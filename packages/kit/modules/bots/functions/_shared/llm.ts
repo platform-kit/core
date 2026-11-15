@@ -1,6 +1,10 @@
 /*
  * THE ENRICHMENT'S MODEL LAYER, WHERE THERE IS NO MACHINE.
  *
+ * It lives with the bots because the agent worker (agent-run) is what imports it, on every site with bots
+ * whether enrichment is on or not; kept in enrichment's folder, a site with enrichment off served a worker
+ * whose import named a file that was never assembled.
+ *
  * The pipeline (modules/enrichment/build/pipeline.mts) asks for six things and does not care where they come
  * from: MODEL, THINKING_LEVEL, complete, ready, missingKey, spentUsd. On a machine that is
  * build/llm.mjs, which reads argv and process.env and keeps its own running total. Here it is this,

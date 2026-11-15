@@ -22,37 +22,37 @@
  * is more to do, and by pg_cron for anything whose worker died (`run_agents`).
  */
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { cors, json } from '../_shared/lib.ts'
-import { next, messagesFor, costOf, limitsOf, endingOf, openedSkills, memoryOf } from '../_shared/agents/loop.js'
-import { roomAsProse } from '../_shared/agents/model.js'
-import { occurrences } from '../_shared/recurrence.js'
-import { ask, providersFrom, priceOf } from '../_shared/agents/provider.ts'
-import { pipeline, Paused, runCache } from '../_shared/pipe/modules/enrichment/build/index.mjs'
-import { rowsStore } from '../_shared/pipe/build/store/rows.mjs'
-import { runLlm } from '@pk/enrichment/llm.ts'
-import BRIEFS from '../_shared/pipe/enrichment-briefs.json' with { type: 'json' }
-import { BUILTINS, toolsFor, callHttp } from '../_shared/agents/tools.ts'
+import { cors, json } from '@pk/core/lib.ts'
+import { next, messagesFor, costOf, limitsOf, endingOf, openedSkills, memoryOf } from '@pk/core/agents/loop.js'
+import { roomAsProse } from '@pk/core/agents/model.js'
+import { occurrences } from '@pk/core/recurrence.js'
+import { ask, providersFrom, priceOf } from '@pk/core/agents/provider.ts'
+import { pipeline, Paused, runCache } from '@pk/core/pipe/modules/enrichment/build/index.mjs'
+import { rowsStore } from '@pk/core/pipe/build/store/rows.mjs'
+import { runLlm } from '@pk/bots/llm.ts'
+import BRIEFS from '@pk/core/pipe/enrichment-briefs.json' with { type: 'json' }
+import { BUILTINS, toolsFor, callHttp } from '@pk/core/agents/tools.ts'
 import {
   matchSocialAutomations,
   socialAutomationPrompt,
   socialBotAllowsAnonymousSubject,
-} from '../_shared/social/automation-rules.mts'
-import { cutAnswer } from '../_shared/choices.ts'
-import { offerByKey } from '../_shared/offers.ts'
-import { authorizeUsage, recordInferenceAttempt, reportPendingUsage } from '../_shared/usage.ts'
-import { resolveUsageOperation } from '../_shared/usage-gate.mts'
-import { boundedModelUsage, unitsForCost } from '../_shared/usage-stripe.mts'
+} from '@pk/core/social/automation-rules.mts'
+import { cutAnswer } from '@pk/core/choices.ts'
+import { offerByKey } from '@pk/core/offers.ts'
+import { authorizeUsage, recordInferenceAttempt, reportPendingUsage } from '@pk/core/usage.ts'
+import { resolveUsageOperation } from '@pk/core/usage-gate.mts'
+import { boundedModelUsage, unitsForCost } from '@pk/core/usage-stripe.mts'
 import {
   billableInferenceAttempts,
   boundedInferenceUsage,
   customerCostMicros,
   markupFor,
-} from '../_shared/inference-meter.mts'
-import { inference as SITE_INFERENCE, usage as SITE_USAGE } from '../_shared/pipe/site.js'
-import bots from '../_shared/bots.json' with { type: 'json' }
-import commands from '../_shared/commands.json' with { type: 'json' }
-import { fresh, of } from '../_shared/compiled.ts'
-import type { Database, Json } from '../_shared/database.types.ts'
+} from '@pk/core/inference-meter.mts'
+import { inference as SITE_INFERENCE, usage as SITE_USAGE } from '@pk/core/pipe/site.js'
+import bots from '@pk/core/bots.json' with { type: 'json' }
+import commands from '@pk/core/commands.json' with { type: 'json' }
+import { fresh, of } from '@pk/core/compiled.ts'
+import type { Database, Json } from '@pk/core/database.types.ts'
 /* the catalog as this deployment has it: the shipped file, or the row a publish wrote */
 const catalog = of<Record<string, any>>('catalog')
 

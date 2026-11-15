@@ -5,9 +5,9 @@
    Skipped with a note when the stack or the functions are down (AGENT_TEST=0 skips it too). */
 import fs from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
-import { supabaseUrl, localStack, serviceKey } from './supabase-env.mjs'
-import { notHere, leave } from './test-stack.mjs'
-import type { Database } from '../supabase/functions/_shared/database.types.js'
+import { supabaseUrl, localStack, serviceKey } from '../../../build/supabase-env.mjs'
+import { notHere, leave } from '../../../build/test-stack.mjs'
+import type { Database } from '../../../supabase/functions/_shared/database.types.js'
 
 const note = (m: string) => console.log('agents-db: ' + m)
 if (process.env.AGENT_TEST === '0') { note('skipped (AGENT_TEST=0)'); process.exit(0) }
@@ -429,7 +429,7 @@ try {
         essence: ['Attention moved is the method, not attention argued with.', 'The instruction is meant literally and can be tested once.'],
         quiz: [{ q: 'What does the method actually ask a reader to do?', options: ['Argue the trouble down', 'Move the attention elsewhere', 'Wait for it to pass', 'Describe it precisely'], answer: 1, why: 'The instruction is about where attention goes.' }] })) }),
       say({ chapters: titles.map((t) => ({ title: t, missing: [], wrong: [] })) }),
-      say({ insight: 'One short instruction, meant literally: move the attention off the trouble and judge it by what happens.', statement: 'When something goes wrong I turn it over rather than putting it down.', statementArea: (await import('./companion-io.mjs')).AREAS.list[0], statementLevel: 'L1' }),
+      say({ insight: 'One short instruction, meant literally: move the attention off the trouble and judge it by what happens.', statement: 'When something goes wrong I turn it over rather than putting it down.', statementArea: (await import('../../../build/companion-io.mjs')).AREAS.list[0], statementLevel: 'L1' }),
     ]
 
     const { data: made } = await db.from('agent_runs').insert({

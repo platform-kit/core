@@ -10,7 +10,7 @@ sources:
     packages/kit/supabase/functions/social,
     packages/kit/supabase/functions/social-webhook,
     packages/kit/supabase/functions/social-automation,
-    packages/kit/supabase/functions/agent-run,
+    packages/kit/modules/bots/functions/agent-run,
     packages/kit/supabase/functions/_shared/social,
     packages/kit/supabase/schemas/99-social.sql,
     packages/kit/build/modules/kit.mts,

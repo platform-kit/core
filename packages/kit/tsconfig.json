@@ -20,7 +20,7 @@
     "skipLibCheck": true,
     "types": ["node", "vite/client"],
     // ships raw TypeScript that does not pass this config; only a test imports it
-    "paths": { "@typeform/api-client": ["./build/types/typeform-client.d.ts"], "@pk/core/*": ["./supabase/functions/_shared/*"], "@pk/courses/*": ["./modules/courses/functions/_shared/*"], "@pk/enrichment/*": ["./modules/enrichment/functions/_shared/*"], "@pk/copilot/*": ["./modules/copilot/functions/_shared/*"] }
+    "paths": { "@typeform/api-client": ["./build/types/typeform-client.d.ts"], "@pk/core/*": ["./supabase/functions/_shared/*"], "@pk/courses/*": ["./modules/courses/functions/_shared/*"], "@pk/bots/*": ["./modules/bots/functions/_shared/*"], "@pk/copilot/*": ["./modules/copilot/functions/_shared/*"] }
   },
   "files": ["supabase/functions/deno-shim.d.ts", "build/fixtures/e2e-probe.mts", "build/fixtures/social-adapter.mts", "build/fixtures/print-interior-browser.ts"],
   "include": ["agent", "bin", "build", "src", "vite", "modules"],

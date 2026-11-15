@@ -46,7 +46,7 @@ export function whyFailed(error: any) {
  * What has run where the surface is looking. `runs.here` is the live ones — what the Stop button
  * is for — and the whole list comes back, because a finished run is the one carrying the answer.
  */
-/* what agent_runs_here answers: the runs under a message, newest first (schemas/96-agents.sql) */
+/* what agent_runs_here answers: the runs under a message, newest first (modules/bots/schema/96-agents.sql) */
 export type RunHere = { id: string; bot: string; status: string; step: number; said?: string | null; error?: string | null; mine?: boolean }
 /* what agent_summon and agent_job answer: the run made, or why none was */
 export type Summoned = { ok?: true; id?: string; bot?: string; name?: string; already?: boolean; error?: string; window?: string }
@@ -156,7 +156,7 @@ export function mayRun(audience: any) {
 /*
  * THE COMMANDS, as the composer needs them: name, hint and each argument's kind, label, default
  * and choices — everything required to draw a form and nothing else. The prompt each one runs is
- * deliberately absent (build/bots.mjs writes two files), so a client cannot send its own words
+ * deliberately absent (modules/bots/build/bots.mjs writes two files), so a client cannot send its own words
  * under a command's name; the worker fills it from its own copy.
  */
 export const COMMANDS = Object.values(import.meta.glob('#content/agent-commands.json', { eager: true, import: 'default' }))[0] || []
@@ -164,7 +164,7 @@ export const COMMANDS = Object.values(import.meta.glob('#content/agent-commands.
 /*
  * THE BOTS, as a surface needs them: the name to show, which surfaces they work on, what wakes
  * them and who may summon them. Never the prompt — that is the worker's, and a browser has no use
- * for it. Compiled from content/bots/*.md by build/bots.mjs; the database holds the same list and
+ * for it. Compiled from content/bots/*.md by modules/bots/build/bots.mjs; the database holds the same list and
  * is the one that refuses (`agent_summon`), so this only decides what is OFFERED.
  */
 export const BOTS = Object.values(import.meta.glob('#content/agents.json', { eager: true, import: 'default' }))[0] || []

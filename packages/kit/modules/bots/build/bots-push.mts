@@ -10,9 +10,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { compileBots } from './bots.mjs'
 import { projectBots } from './bots-db.mjs'
-import { supabaseUrl, serviceKey } from './supabase-env.mjs'
-import { isMain } from './is-main.mjs'
-import type { Database } from '../supabase/functions/_shared/database.types.js'
+import { supabaseUrl, serviceKey } from '../../../build/supabase-env.mjs'
+import { isMain } from '../../../build/is-main.mjs'
+import type { Database } from '../../../supabase/functions/_shared/database.types.js'
 
 /* the script's half: find a database from the environment, compile the declaration, hand both to
    the projection — which is bots-db.mjs, and imports no filesystem, so a publish can run it */

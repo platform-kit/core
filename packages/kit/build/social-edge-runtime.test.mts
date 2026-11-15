@@ -14,7 +14,7 @@ const webhookSource = fs.readFileSync(webhookSourcePath, 'utf8')
 const automationPath = path.join(root, 'packages/kit/supabase/functions/social-automation/index.ts')
 const assembledAutomationPath = path.join(site, 'supabase/functions/social-automation/index.ts')
 const automationSource = fs.readFileSync(automationPath, 'utf8')
-const workerSourcePath = path.join(root, 'packages/kit/supabase/functions/agent-run/index.ts')
+const workerSourcePath = path.join(root, 'packages/kit/modules/bots/functions/agent-run/index.ts')
 const assembledWorkerPath = path.join(site, 'supabase/functions/agent-run/index.ts')
 const workerSource = fs.readFileSync(workerSourcePath, 'utf8')
 
@@ -56,9 +56,11 @@ assert.ok(
   'automatic and reviewed replies recheck the connected provider route before a provider write',
 )
 assert.doesNotMatch(automationSource, /from\s+['"]node:|from\s+['"](?:fs|path|child_process)['"]/)
+/* the worker is a module's function, so the assembly writes its shared-code names (@pk/core/, @pk/bots/) as the paths they
+   resolve to in the tree, and nothing else */
 assert.equal(
   fs.readFileSync(assembledWorkerPath, 'utf8'),
-  workerSource,
+  workerSource.replace(/'@pk\/core\//g, "'../_shared/").replace(/'@pk\/bots\//g, "'../_shared/bots/"),
   'the served agent worker must be assembled from the kit source',
 )
 assert.match(workerSource, /socialAutomationPrompt/)

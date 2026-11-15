@@ -18,10 +18,10 @@ import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import assert from 'node:assert/strict'
-import { projectBots } from './bots-db.mjs'
-import { compileBots } from './bots.mjs'
-import { statusOf, leave } from './test-stack.mjs'
-import type { Database } from '../supabase/functions/_shared/database.types.js'
+import { projectBots } from '../build/bots-db.mjs'
+import { compileBots } from '../build/bots.mjs'
+import { statusOf, leave } from '../../../build/test-stack.mjs'
+import type { Database } from '../../../supabase/functions/_shared/database.types.js'
 
 const SITE = process.cwd()
 let pass = 0, fail = 0
@@ -100,8 +100,8 @@ if (!cfg || !cfg.SERVICE_ROLE_KEY) skip('the stack reported no service key')
 const db = createClient<Database>(cfg.API_URL, cfg.SERVICE_ROLE_KEY, { auth: { persistSession: false } })
 { const { error } = await db.from('bots').select('id', { head: true, count: 'exact' }); if (error) skip('the bots table is not there — npm run db:reset (' + error.message + ')') }
 
-const { readSkills } = await import('./bots.mjs')
-const { gitStore } = await import('./store/git.mjs')
+const { readSkills } = await import('../build/bots.mjs')
+const { gitStore } = await import('../../../build/store/git.mjs')
 
 const { bots } = await compileBots({ store: gitStore(SITE), write: false })
 ok('the declaration compiles', bots.length > 0, String(bots.length))
@@ -148,7 +148,7 @@ if (safe) {
 
 /* --- a save over rows moves nothing; a save on a checkout still pushes --- */
 {
-  const { AGENT_MODELS } = await import('./models/core/agents.mjs')
+  const { AGENT_MODELS } = await import('../../../build/models/core/agents.mjs')
   const model: any = AGENT_MODELS.find((m) => m.key === 'bots')
   ok('the bots model answers projected()', typeof model.projected === 'function')
   let ranRows = false, ranDisk = false

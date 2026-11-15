@@ -106,7 +106,7 @@ const KIT_TESTS = [
   on('sessions') && ['recordings.test.mts'],
   on('sessions') && ['teams.test.mts'],      /* a team is a file: the grammar, and what the compile refuses — a fill that means nothing, a booking type naming a team that is gone */
   ['share-cloud.test.mts'],   /* the nginx config is valid with a prerender sidecar and without one; the stack itself behind PLATFORMKIT_SHARE_STACK=1 */
-  on('bots') && ['bots-db.test.mts'],   /* the bots reach the surface on a publish, and the theme's skills with no package directory to read them from */
+  /* (bots-db.test.mts is the bots module's own, in its folder: the bots reach the surface on a publish) */
   on('sessions') && ['teams-db.test.mts'],   /* and its membership is rows: the rule filling it, an invitation surviving a change to the rule, and a membership that is not a directory */
   on('sessions') && ['holds-db.test.mts'],   /* nobody's time is taken twice: the hold written with the booking, two at the same instant with one refused, a group holding its host once */
   on('sessions') && ['times.test.mts'],   /* the native scheduler's arithmetic: wall time in a zone, the open starts of a host */
@@ -114,7 +114,7 @@ const KIT_TESTS = [
   on('sessions') && ['meetings.test.mts'],   /* the site's own video room in its mock: the token door, the signed events, the recording landed; skipped where no type is in a room */   /* a call's recording pulled, signed and kept, against the served functions when the stack serves them */
   on('support') && ['support.test.mts'],
   on('support') && ['tickets.test.mts'],   /* the work as against the conversation: what is owed on a ticket, the order, the narrowing */
-  on('bots') && ['agents.test.mts'],       /* what a run does next: cancelled mid-flight, out of money, a model asking for two tools at once */
+  /* (agents.test.mts is the bots module's own: what a run does next) */
   ['search.test.mts'],
   ['content-kinds.test.mts'],           /* every content type can be edited with no checkout, and no build script opens content with fs */
   ['artefacts.test.mts'],               /* every compiled artefact says how it reaches a deployment that does not build, and compiles the same from content alone */
@@ -128,7 +128,7 @@ const KIT_TESTS = [
   ['site-module.test.mts'],   /* the extension model tried against a site that uses it: sites/demo registers a module the kit has never heard of, and it gets everything one of the kit's does — and loses all of it, and nothing of the kit's, when its switch says false. Skips loudly if the fixture is not in the checkout. */
   ['modules-off.test.mts'],   /* one module off at a time, every module: its own steps stop and its secrets stop being demanded, nothing else moves, every step is gated on a switch that exists, and a coupling that is real is NAMED rather than tolerated */                   /* the three shapes: every module declares what it does in each, and the code is derived to see whether it backs the claim */
   on('bots') && ['anthropic.test.mts'],    /* the second provider: the shape both ways, the order, and which failures are worth trying somebody else for */
-  on('bots') && ['agents-db.test.mts'],    /* and the real worker against the stack: a dead worker resumed, a cancel that stops a tool, a budget that holds */   /* the work as against the conversation: what is owed on a ticket, the order, the narrowing */
+  /* (agents-db.test.mts is the bots module's own: the real worker against the stack) */   /* the work as against the conversation: what is owed on a ticket, the order, the narrowing */
   on('events') && ['recurrence.test.mts'],   /* when something happens again: the rule as fields, the occurrences, the daylight saving */
   on('events') && ['calendar.test.mts'],     /* what is on, as a surface asks for it: today, on now, and the gathering by day */
   on('spaces') && ['spaces.test.mts'],

@@ -19,7 +19,7 @@ import { echoGuard } from '../lib/echo.js'
 import { chunkText } from '../../tts/build/index.mjs'
 import { createSpeechHandler } from '../build/index.mjs'
 import { callHttp, fromOpenApi } from '../../../supabase/functions/_shared/agents/tools.js'
-import { SURFACES } from '../../../build/bots.mjs'
+import { SURFACES } from '../../bots/build/index.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -161,7 +161,7 @@ ok('and an unknown setting still falls back to the conversation', memoryOf({ mem
 {
   if (SITE.modules.bots !== false) {
     const f = 'content/bots/zz-voice-probe.md'
-    const run = () => { try { execFileSync(process.execPath, [fileURLToPath(new URL('../../../build/bots.mjs', import.meta.url)), '--check'], { stdio: ['ignore', 'pipe', 'pipe'] }); return { ok: true, out: '' } } catch (e: any) { return { ok: false, out: String(e.stdout || '') + String(e.stderr || '') } } }
+    const run = () => { try { execFileSync(process.execPath, [fileURLToPath(new URL('../../bots/build/bots.mjs', import.meta.url)), '--check'], { stdio: ['ignore', 'pipe', 'pipe'] }); return { ok: true, out: '' } } catch (e: any) { return { ok: false, out: String(e.stdout || '') + String(e.stderr || '') } } }
     const bot = (front: string) => `---\nname: Voice probe\n${front}---\n\nYou answer briefly.\n`
     try {
       fs.writeFileSync(f, bot('surfaces: [spaces]\nvoice: { say: alloy, greeting: Hello }\n'))
