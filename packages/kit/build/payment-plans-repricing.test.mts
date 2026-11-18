@@ -24,7 +24,8 @@ if (!(await q(`select 1 from pg_proc where proname = 'run_repricings'`)).length)
 const fnUrl = (S.functions || `${S.api}/functions/v1`).replace(/\/$/, '')
 const run = async () => { const r = await fetch(`${fnUrl}/repricings`, { method: 'POST', headers: { authorization: 'Bearer ' + S.service, 'content-type': 'application/json' }, body: '{}' }); return { status: r.status, body: await r.json().catch(() => ({})) } }
 const stripe = async (method: string, p: string, form: Record<string, string> = {}) => (await fetch('https://api.stripe.com/v1/' + p, {
-  method, headers: { authorization: 'Bearer ' + sk, 'content-type': 'application/x-www-form-urlencoded' },
+  /* the Stripe version the kit pins (supabase/functions/_shared/lib.ts), so what is made here is what a checkout makes */
+  method, headers: { authorization: 'Bearer ' + sk, 'content-type': 'application/x-www-form-urlencoded', 'stripe-version': '2024-06-20' },
   body: method === 'GET' ? undefined : new URLSearchParams(form).toString(),
 })).json()
 
