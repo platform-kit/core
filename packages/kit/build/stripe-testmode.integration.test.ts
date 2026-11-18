@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import StripeSdk from 'npm:stripe@17'
+import StripeSdk from 'npm:stripe@23'
 import { createPaymentProvider } from '../supabase/functions/_shared/stripe-payment-provider.ts'
 import type { PaymentCatalogOffer } from '../src/payment-provider.d.ts'
 
@@ -275,7 +275,7 @@ Deno.test('Stripe test-mode adapter journey exercises billing and payment operat
     })
     couponId = coupon.id
     const promotionCode = await stripe.promotionCodes.create({
-      coupon: coupon.id,
+      promotion: { type: 'coupon', coupon: coupon.id },   /* polymorphic since 2025-09-30 */
       code: `PK${suffix.slice(0, 20).toUpperCase()}`,
     })
     promotionCodeId = promotionCode.id
@@ -289,7 +289,7 @@ Deno.test('Stripe test-mode adapter journey exercises billing and payment operat
     }, { idempotencyKey: `${prefix}:subscription:create` })
     subscriptionId = subscription.id
     assert.equal(subscription.status, 'trialing')
-    assert.equal(subscription.trial_end, subscription.current_period_end)
+    assert.equal(subscription.trial_end, subscription.items.data[0]?.current_period_end, 'the period is on the item since 2025-03-31')
     assert.equal(subscription.discounts.length, 1, 'Stripe did not apply the test promotion code.')
 
     phase = 'opening the customer billing portal'

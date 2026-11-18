@@ -752,6 +752,14 @@ assert.deepEqual(await ensureUsageBilling(stripe, usageOffer, 'prod_usage', { ke
 })
 assert.equal(stripeState.meterCreates.length, 1)
 assert.equal(stripeState.priceCreates.length, 1)
+/* stripe@22 and later return a decimal amount as a Stripe.Decimal, whose text may carry trailing zeros:
+   the price is still the same one, and nothing new is made (openspec: stripe-current-api) */
+const asDecimal = (t: string) => ({ toString: () => t, valueOf: () => t, toJSON: () => t })
+;(stripeState.prices[0] as any).unit_amount_decimal = asDecimal('0.000003000000')
+assert.deepEqual(await ensureUsageBilling(stripe, usageOffer, 'prod_usage', { key: usageOffer.key, sku: usageOffer.sku }), {
+  price: 'price_1', meter: 'mtr_1', made: false,
+}, 'a Stripe.Decimal amount matches the offer it was made from')
+assert.equal(stripeState.priceCreates.length, 1)
 const repriced: any = await ensureUsageBilling(stripe, {
   ...usageOffer,
   usage: { ...usageOffer.usage, overage_price_micros: 60_000 },

@@ -234,7 +234,7 @@
     "contentful-management": "^11.76.0",
     "matrix-js-sdk": "^43.0.0",
     "posthog-js": "^1.428.3",
-    "stripe": "^17.7.0",
+    "stripe": "^23.1.0",
     "@calcom/embed-core": "^1.5.3",
     "@typeform/embed": "^6.0.0",
     "typescript": "5.9.3",

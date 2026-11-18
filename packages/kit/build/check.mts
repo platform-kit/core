@@ -23,6 +23,7 @@ import { spawnSync } from 'node:child_process'
 import { parseEnv } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { isMain } from './is-main.mjs'
+import { STRIPE_API_VERSION, olderThanKit } from './stripe-version.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const KIT_ROOT = path.resolve(HERE, '..')
@@ -138,6 +139,38 @@ export function tcpOpen(host: any, port: any, ms = 3000) {
   })
 }
 
+/*
+ * STRIPE WEBHOOK ENDPOINTS ON AN OLDER VERSION (openspec: stripe-current-api). An event is rendered at its
+ * endpoint's API version, which the site owner sets in Stripe. The adapter reads both shapes, so an older
+ * endpoint still works, but it should move to the kit's. An endpoint with no version of its own uses the
+ * account's default, which the latest event shows.
+ */
+export function webhookVersionFindings(endpoints: Array<{ id: string; url?: string; api_version?: string | null; status?: string }>, accountVersion: string | null = null): Finding[] {
+  const out: Finding[] = []
+  for (const e of endpoints) {
+    if (e.status === 'disabled') continue
+    const v = e.api_version ?? accountVersion
+    const name = `Stripe webhook ${e.url ?? e.id}`
+    if (olderThanKit(v)) out.push(warn(name, `sends events at ${v}${e.api_version ? '' : " (the account's default)"}; the kit calls Stripe at ${STRIPE_API_VERSION}`, `move it to ${STRIPE_API_VERSION}: Stripe Dashboard → Developers → Webhooks → the endpoint → Update API version`))
+    else out.push(pass(name, v ? `sends events at ${v}` : 'sends events at the account default'))
+  }
+  return out
+}
+async function stripeWebhookChecks(key: string, f: (url: string, init?: RequestInit) => Promise<{ status: number, ok: boolean, json?: () => Promise<any> }>): Promise<Finding[]> {
+  try {
+    const headers = { authorization: 'Bearer ' + key }
+    const r = await f('https://api.stripe.com/v1/webhook_endpoints?limit=100', { headers, signal: AbortSignal.timeout(8000) })
+    if (!r.ok || !r.json) return []
+    const endpoints = (await r.json())?.data ?? []
+    let account: string | null = null
+    if (endpoints.some((e: { api_version?: string | null }) => !e.api_version)) {
+      const ev = await f('https://api.stripe.com/v1/events?limit=1', { headers, signal: AbortSignal.timeout(8000) })
+      if (ev.ok && ev.json) account = (await ev.json())?.data?.[0]?.api_version ?? null
+    }
+    return webhookVersionFindings(endpoints, account)
+  } catch { return [] }
+}
+
 /* ---- online: one read-only call per service this knows how to ask ---- */
 export async function onlineChecks(site: any, env: any, { fetch: f = fetch as (url: string, init?: RequestInit) => Promise<{ status: number, ok: boolean, json?: () => Promise<any> }>, connect = tcpOpen } = {}) {
   const out = []
@@ -148,7 +181,11 @@ export async function onlineChecks(site: any, env: any, { fetch: f = fetch as (u
       return r.ok ? pass(name, 'the key is accepted') : warn(name, `answered ${r.status}`)
     } catch (e: any) { return warn(name, `could not be reached: ${String(e.message || e).split('\n')[0]}`) }
   }
-  if (env.STRIPE_SECRET_KEY) out.push(await ask('Stripe', 'https://api.stripe.com/v1/balance', { authorization: 'Bearer ' + env.STRIPE_SECRET_KEY }))
+  if (env.STRIPE_SECRET_KEY) {
+    const stripeKey = await ask('Stripe', 'https://api.stripe.com/v1/balance', { authorization: 'Bearer ' + env.STRIPE_SECRET_KEY })
+    out.push(stripeKey)
+    if (stripeKey.level === 'pass') out.push(...await stripeWebhookChecks(env.STRIPE_SECRET_KEY, f))
+  }
   if (env.SMTP_HOST) out.push((await connect(env.SMTP_HOST, Number(env.SMTP_PORT || 587))) ? pass('mail relay', `${env.SMTP_HOST} answers`) : warn('mail relay', `${env.SMTP_HOST}:${env.SMTP_PORT || 587} could not be reached`))
   let providers = []
   try { const { inferenceOf } = await import('./site.mjs'); providers = inferenceOf(site || {})?.providers || [] } catch {}

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import StripeSdk from 'npm:stripe@17'
+import StripeSdk from 'npm:stripe@23'
 import { createPaymentProvider } from '../supabase/functions/_shared/stripe-payment-provider.ts'
 
 /*

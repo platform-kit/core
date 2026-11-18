@@ -12,6 +12,7 @@
 import pg from 'pg'
 import { createClient } from '@supabase/supabase-js'
 import { requireStack, skip, notHere } from './test-stack.mjs'
+import { STRIPE_API_VERSION } from './stripe-version.mjs'
 const S = requireStack('payment-plans-continue') as any
 const sk = process.env.STRIPE_SECRET_KEY || ''
 if (!/^sk_test_/.test(sk) || /^(1|true|yes|on)$/i.test(process.env.STRIPE_MOCK || '')) skip('payment-plans-continue', 'Stripe test mode is not this stack\'s provider')
@@ -26,7 +27,7 @@ if (!(await q(`select 1 from pg_proc where proname = 'run_term_reminders'`)).len
 const fnUrl = (S.functions || `${S.api}/functions/v1`).replace(/\/$/, '')
 const run = async () => { const r = await fetch(`${fnUrl}/term-reminders`, { method: 'POST', headers: { authorization: 'Bearer ' + S.service, 'content-type': 'application/json' }, body: '{}' }); return { status: r.status, body: await r.json().catch(() => ({})) } }
 const stripe = async (method: string, p: string, form: Record<string, string> = {}) => (await fetch('https://api.stripe.com/v1/' + p, {
-  method, headers: { authorization: 'Bearer ' + sk, 'content-type': 'application/x-www-form-urlencoded' },
+  method, headers: { authorization: 'Bearer ' + sk, 'content-type': 'application/x-www-form-urlencoded', 'stripe-version': STRIPE_API_VERSION },
   body: method === 'GET' ? undefined : new URLSearchParams(form).toString(),
 })).json()
 

@@ -10,6 +10,7 @@
  */
 import pg from 'pg'
 import { requireStack, skip, notHere } from './test-stack.mjs'
+import { STRIPE_API_VERSION } from './stripe-version.mjs'
 const S = requireStack('payment-plans-repricing') as any
 const sk = process.env.STRIPE_SECRET_KEY || ''
 if (!/^sk_test_/.test(sk) || /^(1|true|yes|on)$/i.test(process.env.STRIPE_MOCK || '')) skip('payment-plans-repricing', 'Stripe test mode is not this stack\'s provider')
@@ -24,8 +25,8 @@ if (!(await q(`select 1 from pg_proc where proname = 'run_repricings'`)).length)
 const fnUrl = (S.functions || `${S.api}/functions/v1`).replace(/\/$/, '')
 const run = async () => { const r = await fetch(`${fnUrl}/repricings`, { method: 'POST', headers: { authorization: 'Bearer ' + S.service, 'content-type': 'application/json' }, body: '{}' }); return { status: r.status, body: await r.json().catch(() => ({})) } }
 const stripe = async (method: string, p: string, form: Record<string, string> = {}) => (await fetch('https://api.stripe.com/v1/' + p, {
-  /* the Stripe version the kit pins (supabase/functions/_shared/lib.ts), so what is made here is what a checkout makes */
-  method, headers: { authorization: 'Bearer ' + sk, 'content-type': 'application/x-www-form-urlencoded', 'stripe-version': '2024-06-20' },
+  /* the kit's own version, so what is made here is what a checkout makes: flexible billing mode, the period on the item */
+  method, headers: { authorization: 'Bearer ' + sk, 'content-type': 'application/x-www-form-urlencoded', 'stripe-version': STRIPE_API_VERSION },
   body: method === 'GET' ? undefined : new URLSearchParams(form).toString(),
 })).json()
 
@@ -46,7 +47,8 @@ try {
   const sub = await stripe('POST', 'subscriptions', { customer: cus.id, 'items[0][price_data][currency]': 'usd', 'items[0][price_data][unit_amount]': '900', 'items[0][price_data][recurring][interval]': 'month', 'items[0][price_data][product]': product.id })
   ok('the old-price subscription starts at Stripe', sub.status === 'active', JSON.stringify(sub.error ?? sub.status))
   /* the account's current API puts the period on the item; an older one on the subscription */
-  const periodEnd: number = sub.current_period_end ?? sub.items?.data?.[0]?.current_period_end
+  const periodEnd: number = sub.items?.data?.[0]?.current_period_end
+  ok('the subscription is in flexible billing mode, which the old version could not change', sub.billing_mode?.type === 'flexible', JSON.stringify(sub.billing_mode))
   await local(sub.id, old, 900, periodEnd)
   /* one already on the new price, and one whose subscription is ending */
   const current = await user('pp-reprice-current@example.com'); await local('sub_pp_current', current, NEW, periodEnd)

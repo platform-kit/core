@@ -1,4 +1,4 @@
-import type Stripe from 'npm:stripe@17'
+import type Stripe from 'npm:stripe@23'
 import type {
   CreatePaymentCheckout,
   PaymentCatalogOffer,
@@ -56,16 +56,39 @@ const paymentIntentFromError = (error: unknown): { id: string; status: string; c
     : null
 }
 
+/*
+ * READ AT EITHER VERSION (openspec: stripe-current-api). The kit's own calls get Stripe's current shape,
+ * but a webhook event comes at the version of the endpoint it is sent to, which the site owner moves
+ * when they choose. So each field Stripe has moved is read from its new place first, then its old one.
+ */
+/* a subscription's billing period: on its item since 2025-03-31, on the subscription before */
+export function periodOf(subscription: Stripe.Subscription): { start?: number; end?: number } {
+  const old = subscription as unknown as { current_period_start?: number; current_period_end?: number }
+  const item = subscription.items?.data?.[0] as (Stripe.SubscriptionItem & { current_period_start?: number; current_period_end?: number }) | undefined
+  const start = item?.current_period_start ?? old.current_period_start
+  const end = item?.current_period_end ?? old.current_period_end
+  return { ...(start ? { start } : {}), ...(end ? { end } : {}) }
+}
+/* an invoice's subscription: under `parent` since 2025-03-31, top level before */
+export function invoiceSubscriptionOf(invoice: unknown): string | null {
+  const o = invoice as { parent?: { subscription_details?: { subscription?: unknown } | null } | null; subscription?: unknown }
+  return identifier(o?.parent?.subscription_details?.subscription) ?? identifier(o?.subscription)
+}
+/* an invoice line's price: under `pricing` since 2025-03-31, top level before */
+const linePriceOf = (line: { pricing?: { price_details?: { price?: unknown } | null } | null; price?: unknown }) =>
+  line?.pricing?.price_details?.price ?? line?.price ?? null
+
 function subscriptionSnapshot(subscription: Stripe.Subscription): PaymentSubscriptionSnapshot {
   const customerId = identifier(subscription.customer)
   const scheduleId = identifier(subscription.schedule)
+  const period = periodOf(subscription)
   return {
     provider: 'stripe',
     subscriptionId: subscription.id,
     ...(customerId ? { customerId } : {}),
     status: subscription.status,
-    ...(subscription.current_period_start ? { currentPeriodStart: subscription.current_period_start } : {}),
-    ...(subscription.current_period_end ? { currentPeriodEnd: subscription.current_period_end } : {}),
+    ...(period.start ? { currentPeriodStart: period.start } : {}),
+    ...(period.end ? { currentPeriodEnd: period.end } : {}),
     ...(subscription.cancel_at_period_end != null ? { cancelAtPeriodEnd: subscription.cancel_at_period_end } : {}),
     ...(subscription.trial_end ? { trialEnd: subscription.trial_end } : {}),
     ...(scheduleId ? { scheduleId } : {}),
@@ -84,10 +107,10 @@ function subscriptionSnapshot(subscription: Stripe.Subscription): PaymentSubscri
 
 async function invoiceSnapshot(stripe: Stripe, invoice: Stripe.Invoice): Promise<PaymentInvoiceSnapshot> {
   const lines = await Promise.all(invoice.lines.data.map(async (line: any) => {
-    const rawPrice = line.price
+    const rawPrice = linePriceOf(line)
     const priceId = identifier(rawPrice)
-    const price = rawPrice && typeof rawPrice === 'object'
-      ? rawPrice
+    const price: Stripe.Price | null = rawPrice && typeof rawPrice === 'object'
+      ? rawPrice as Stripe.Price
       : priceId ? await stripe.prices.retrieve(priceId) : null
     return {
       ...(priceId ? { priceId } : {}),
@@ -97,7 +120,7 @@ async function invoiceSnapshot(stripe: Stripe, invoice: Stripe.Invoice): Promise
       ...(line.period?.end != null ? { periodEnd: line.period.end } : {}),
     }
   }))
-  const subscriptionId = identifier(invoice.subscription)
+  const subscriptionId = invoiceSubscriptionOf(invoice)
   return {
     provider: 'stripe',
     invoiceId: invoice.id,
@@ -408,8 +431,9 @@ export function createPaymentProvider(
           ...(input.customer?.providerCustomerId ? {} : { customer_creation: 'always' }),
         } : {}),
         ...(input.allowedPaymentMethods?.length ? {
-          /* a card kept for a later charge: Affirm and Afterpay are paid once and can't be kept */
-          payment_method_types: [...input.allowedPaymentMethods].filter((m) => !input.saveMethod || !['affirm', 'afterpay_clearpay'].includes(m)) as Stripe.Checkout.SessionCreateParams.PaymentMethodType[],
+          /* a card kept for a later charge: Affirm and Afterpay are paid once and can't be kept.
+             `allowed_payment_method_types` replaced `payment_method_types` in 2026-09-30 */
+          allowed_payment_method_types: [...input.allowedPaymentMethods].filter((m) => !input.saveMethod || !['affirm', 'afterpay_clearpay'].includes(m)) as Stripe.Checkout.SessionCreateParams.AllowedPaymentMethodType[],
         } : {}),
         ...(input.shippingAddress ? {
           shipping_address_collection: {
@@ -461,13 +485,14 @@ export function createPaymentProvider(
         if (e?.code === 'resource_missing' || e?.statusCode === 404) throw new PaymentProviderError('checkout_not_found', 'No such checkout.', 404)
         throw e
       })
-      const status = session.status
-      const mode = session.mode
+      /* the library's enums are open (`OtherString`), so each is narrowed here before it is used */
+      const status = session.status as PaymentCheckoutSnapshot['status']
+      const mode = session.mode as PaymentCheckoutSnapshot['mode']
       if ((status !== 'open' && status !== 'complete' && status !== 'expired') ||
           (mode !== 'payment' && mode !== 'subscription')) {
         throw new PaymentProviderError('invalid_checkout_snapshot', 'Stripe returned a checkout with an unsupported status or mode.', 502)
       }
-      const paymentStatus = session.payment_status
+      const paymentStatus = session.payment_status as NonNullable<PaymentCheckoutSnapshot['paymentStatus']>
       if (!['paid', 'unpaid', 'no_payment_required'].includes(paymentStatus)) {
         throw new PaymentProviderError('invalid_checkout_snapshot', 'Stripe returned an unsupported checkout payment status.', 502)
       }
@@ -503,7 +528,7 @@ export function createPaymentProvider(
           name: product && !('deleted' in product) ? product.name : price.nickname ?? sku,
           currency: price.currency,
           billing: price.type === 'recurring' ? 'subscription' : 'once',
-          ...(price.recurring?.interval ? { interval: price.recurring.interval } : {}),
+          ...(price.recurring?.interval ? { interval: price.recurring.interval as PaymentCheckoutLine['interval'] } : {}),
           unitAmountMinor,
           quantity: line.quantity ?? 1,
           providerPriceId: price.id,
@@ -519,7 +544,9 @@ export function createPaymentProvider(
             expand: ['items.data.price.product'],
           })
           : null
-      const rawShipping = session.shipping_details ?? session.collected_information?.shipping_details ?? null
+      /* `collected_information` since 2025-03-31; `shipping_details` before */
+      const rawShipping = session.collected_information?.shipping_details ??
+        (session as unknown as { shipping_details?: Stripe.Checkout.Session.CollectedInformation.ShippingDetails | null }).shipping_details ?? null
       const rawShippingRate = session.shipping_cost?.shipping_rate
       const shippingRateId = identifier(rawShippingRate)
       const shippingRate = rawShippingRate && typeof rawShippingRate === 'object'
@@ -746,6 +773,7 @@ export function createPaymentProvider(
     }) {
       const subscription = await stripe.subscriptions.retrieve(input.subscriptionId)
       const item = subscription.items.data[0]
+      const periodEnd = periodOf(subscription).end
       if (!item) throw new PaymentProviderError('subscription_item_missing', 'The subscription has no billable item.', 409)
       const prices = await stripe.prices.list({ lookup_keys: [input.offerKey], active: true, limit: 1 })
       const price = prices.data[0]
@@ -769,12 +797,13 @@ export function createPaymentProvider(
             {
               items: [{ price: item.price.id, quantity: item.quantity ?? 1 }],
               start_date: schedule.phases[0].start_date,
-              end_date: subscription.current_period_end,
+              end_date: periodEnd,
               proration_behavior: 'none',
             },
             {
               items: [{ price: price.id, quantity: 1 }],
-              iterations: 1,
+              /* one of the new price's intervals, then released: `duration` replaced `iterations` in 2025-09-30 */
+              duration: { interval: price.recurring?.interval ?? 'month', interval_count: price.recurring?.interval_count ?? 1 },
               proration_behavior: 'none',
               ...(input.userId ? { metadata: { user_id: input.userId } } : {}),
             },
@@ -783,8 +812,8 @@ export function createPaymentProvider(
         return {
           subscriptionId: subscription.id,
           status: subscription.status,
-          currentPeriodEnd: subscription.current_period_end,
-          nextAt: subscription.current_period_end,
+          currentPeriodEnd: periodEnd,
+          nextAt: periodEnd,
           subscription: subscriptionSnapshot(subscription),
         }
       }
@@ -796,7 +825,7 @@ export function createPaymentProvider(
         return {
           subscriptionId: subscription.id,
           status: subscription.status,
-          currentPeriodEnd: subscription.current_period_end,
+          currentPeriodEnd: periodEnd,
           subscription: subscriptionSnapshot(subscription),
         }
       }
@@ -810,7 +839,7 @@ export function createPaymentProvider(
       return {
         subscriptionId: updated.id,
         status: updated.status,
-        currentPeriodEnd: updated.current_period_end,
+        currentPeriodEnd: periodOf(updated).end,
         subscription: subscriptionSnapshot(updated),
       }
     },
@@ -845,7 +874,9 @@ export function createPaymentProvider(
         : identifier(Reflect.get(object, 'payment_intent'))
       const subscriptionId = event.type.startsWith('customer.subscription.')
         ? objectId
-        : identifier(Reflect.get(object, 'subscription'))
+        : event.type.startsWith('invoice.')
+          ? invoiceSubscriptionOf(object)
+          : identifier(Reflect.get(object, 'subscription'))
       const subscription = event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated'
         ? subscriptionSnapshot(object as Stripe.Subscription)
         : event.type === 'invoice.paid' && subscriptionId

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
-import StripeSdk from 'npm:stripe@17'
-import type Stripe from 'npm:stripe@17'
+import StripeSdk from 'npm:stripe@23'
+import type Stripe from 'npm:stripe@23'
 import { createPaymentProvider } from '../supabase/functions/_shared/stripe-payment-provider.ts'
 import { PaymentProviderError } from '../supabase/functions/_shared/payment-provider.mts'
 import type { CreatePaymentCheckout, PaymentCatalogOffer } from '../src/payment-provider.d.ts'
@@ -142,7 +142,8 @@ Deno.test('Stripe checkout preserves trial, tax, payment-method, and coupon term
   assert.deepEqual(checkoutInput?.automatic_tax, { enabled: true })
   assert.deepEqual(checkoutInput?.customer_update, { address: 'auto' })
   assert.deepEqual(checkoutInput?.tax_id_collection, { enabled: true })
-  assert.deepEqual(checkoutInput?.payment_method_types, ['card', 'link'])
+  assert.deepEqual(checkoutInput?.allowed_payment_method_types, ['card', 'link'])
+  assert.equal(checkoutInput?.payment_method_types, undefined, 'removed from Checkout Sessions in 2026-09-30')
   assert.equal(checkoutInput?.line_items[0].price_data.recurring.interval, 'month')
   assert.deepEqual(checkoutInput?.line_items[1], { price: 'price_metered_usage', quantity: 1 })
 })
@@ -544,12 +545,10 @@ Deno.test('Stripe subscription changes and portal sessions stay behind the adapt
         status: 'active',
         customer: 'cus_1',
         metadata: { user_id: 'user_1' },
-        current_period_start: 1_760_000_000,
-        current_period_end: 1_762_592_000,
         cancel_at_period_end: false,
         trial_end: null,
         schedule: null,
-        items: { data: [{ id: 'si_1', quantity: 1, price: oldPrice }] },
+        items: { data: [{ id: 'si_1', quantity: 1, price: oldPrice, current_period_start: 1_760_000_000, current_period_end: 1_762_592_000 }] },
       }),
       update: async (_id: string, input: unknown, options: unknown) => {
         subscriptionUpdate = input
@@ -559,12 +558,10 @@ Deno.test('Stripe subscription changes and portal sessions stay behind the adapt
           status: 'active',
           customer: 'cus_1',
           metadata: { user_id: 'user_1' },
-          current_period_start: 1_760_000_000,
-          current_period_end: 1_762_592_000,
           cancel_at_period_end: false,
           trial_end: null,
           schedule: null,
-          items: { data: [{ id: 'si_1', quantity: 1, price: newPrice }] },
+          items: { data: [{ id: 'si_1', quantity: 1, price: newPrice, current_period_start: 1_760_000_000, current_period_end: 1_762_592_000 }] },
         }
       },
     },
@@ -586,6 +583,9 @@ Deno.test('Stripe subscription changes and portal sessions stay behind the adapt
   })
   assert.equal(changed.subscriptionId, 'sub_1')
   assert.equal(changed.subscription.provider, 'stripe')
+  assert.equal(changed.currentPeriodEnd, 1_762_592_000, 'the period comes from the item')
+  assert.equal(changed.subscription.currentPeriodStart, 1_760_000_000)
+  assert.equal(changed.subscription.currentPeriodEnd, 1_762_592_000)
   assert.deepEqual(subscriptionUpdate, {
     items: [{ id: 'si_1', price: 'price_new' }],
     proration_behavior: 'always_invoice',
@@ -736,7 +736,7 @@ Deno.test('Stripe webhook verification checks the raw request in the adapter', a
 Deno.test('Stripe webhook signatures validate the exact raw body', async () => {
   const secret = 'whsec_test'
   const stripe = new StripeSdk('sk_test_provider_adapter', {
-    apiVersion: '2025-02-24.acacia',
+    apiVersion: '2026-10-28.endive',
     httpClient: StripeSdk.createFetchHttpClient(),
   })
   const provider = createPaymentProvider({ STRIPE_WEBHOOK_SECRET: secret }, { stripe })
@@ -774,7 +774,107 @@ Deno.test('Stripe webhook signatures validate the exact raw body', async () => {
   )
 })
 
-Deno.test('Stripe invoice webhooks normalize subscription, price metadata, and billing periods', async () => {
+Deno.test('The kit calls Stripe at the version its library pins', async () => {
+  const lib = await Deno.readTextFile(new URL('../supabase/functions/_shared/lib.ts', import.meta.url))
+  const version = lib.match(/export const STRIPE_API_VERSION = '([^']+)'/)?.[1]
+  assert.equal(version, '2026-10-28.endive')
+  assert.equal(version, (StripeSdk as unknown as { API_VERSION: string }).API_VERSION, 'the library major matches the version')
+  assert.match(lib, /apiVersion: STRIPE_API_VERSION/)
+  for (const file of ['../supabase/functions/_shared/lib.ts', '../supabase/functions/_shared/stripe-payment-provider.ts', '../supabase/functions/deno-shim.d.ts', './payment-provider-registry.mts']) {
+    assert.doesNotMatch(await Deno.readTextFile(new URL(file, import.meta.url)), /npm:stripe@(?!23\b)/, file)
+  }
+})
+
+Deno.test('Stripe invoice webhooks at the current version read the subscription from parent and the price from pricing', async () => {
+  const price = {
+    id: 'price_usage',
+    lookup_key: 'usage-plan_usage',
+    unit_amount: 100,
+    currency: 'usd',
+    metadata: { usage: 'metered', usage_offer_key: 'usage-plan', usage_meter: 'audio' },
+  }
+  let retrieved: string | undefined
+  const provider = testProvider({
+    webhooks: {
+      constructEventAsync: async () => ({
+        id: 'evt_invoice_now',
+        type: 'invoice.paid',
+        created: 1_760_000_000,
+        data: { object: {
+          id: 'in_2',
+          billing_reason: 'subscription_cycle',
+          parent: { type: 'subscription_details', subscription_details: { subscription: 'sub_9', metadata: {} } },
+          currency: 'usd',
+          amount_paid: 100,
+          lines: { data: [{
+            pricing: { type: 'price_details', price_details: { price: 'price_usage', product: 'prod_1' } },
+            parent: { type: 'subscription_item_details', subscription_item_details: { subscription: 'sub_9', subscription_item: 'si_9' } },
+            period: { start: 1_760_000_000, end: 1_762_592_000 },
+          }] },
+        } },
+      }),
+    },
+    subscriptions: { retrieve: async (id: string) => {
+      retrieved = id
+      return {
+        id: 'sub_9', customer: 'cus_1', status: 'active', cancel_at_period_end: false, metadata: { user_id: 'user_1' },
+        items: { data: [{ quantity: 1, price, current_period_start: 1_760_000_000, current_period_end: 1_762_592_000 }] },
+      }
+    } },
+    prices: { retrieve: async () => price },
+  }, { STRIPE_WEBHOOK_SECRET: 'whsec_test' })
+  const [event] = await provider.verifyWebhook(new Request('https://site.test/webhook', {
+    method: 'POST', headers: { 'stripe-signature': 'valid-signature' }, body: '{}',
+  }))
+  assert.equal(retrieved, 'sub_9')
+  assert.equal(event.subscriptionId, 'sub_9')
+  assert.equal(event.invoice?.subscriptionId, 'sub_9')
+  assert.equal(event.subscription?.currentPeriodStart, 1_760_000_000)
+  assert.equal(event.subscription?.currentPeriodEnd, 1_762_592_000)
+  assert.deepEqual(event.invoice?.lines[0], {
+    priceId: 'price_usage',
+    offerKey: 'usage-plan_usage',
+    metadata: { usage: 'metered', usage_offer_key: 'usage-plan', usage_meter: 'audio' },
+    periodStart: 1_760_000_000,
+    periodEnd: 1_762_592_000,
+  })
+})
+
+Deno.test('Stripe invoice.payment_failed at the current version names its subscription', async () => {
+  const provider = testProvider({
+    webhooks: { constructEventAsync: async () => ({
+      id: 'evt_failed_now', type: 'invoice.payment_failed', created: 1_760_000_000,
+      data: { object: { id: 'in_3', parent: { type: 'subscription_details', subscription_details: { subscription: 'sub_4' } } } },
+    }) },
+  }, { STRIPE_WEBHOOK_SECRET: 'whsec_test' })
+  const [event] = await provider.verifyWebhook(new Request('https://site.test/webhook', {
+    method: 'POST', headers: { 'stripe-signature': 'valid-signature' }, body: '{}',
+  }))
+  assert.equal(event.type, 'invoice.payment-failed')
+  assert.equal(event.subscriptionId, 'sub_4')
+})
+
+Deno.test('A plan change at the next renewal ends the first phase at the item period and gives the second a duration', async () => {
+  let scheduleUpdate: Record<string, any> | undefined
+  const provider = testProvider({
+    subscriptions: { retrieve: async () => ({
+      id: 'sub_1', status: 'active', customer: 'cus_1', metadata: {}, cancel_at_period_end: false, schedule: null,
+      items: { data: [{ id: 'si_1', quantity: 1, price: { id: 'price_old', lookup_key: 'plan-old', metadata: {} }, current_period_start: 1_760_000_000, current_period_end: 1_762_592_000 }] },
+    }) },
+    prices: { list: async () => ({ data: [{ id: 'price_new', lookup_key: 'plan-new', recurring: { interval: 'month', interval_count: 1 } }] }) },
+    subscriptionSchedules: {
+      create: async () => ({ id: 'sub_sched_1', phases: [{ start_date: 1_760_000_000 }] }),
+      update: async (_id: string, input: Record<string, any>) => { scheduleUpdate = input; return {} },
+    },
+  })
+  const changed = await provider.changeSubscription({ subscriptionId: 'sub_1', offerKey: 'plan-new', proration: 'next-cycle', idempotencyKey: 'change:next', userId: 'user_1' })
+  assert.equal(changed.nextAt, 1_762_592_000)
+  assert.equal(scheduleUpdate?.phases[0].end_date, 1_762_592_000)
+  assert.deepEqual(scheduleUpdate?.phases[1].duration, { interval: 'month', interval_count: 1 })
+  assert.equal(scheduleUpdate?.phases[1].iterations, undefined, 'removed in 2025-09-30')
+})
+
+Deno.test('Stripe invoice webhooks at 2024-06-20 still normalize subscription, price metadata, and billing periods', async () => {
   const price = {
     id: 'price_usage',
     lookup_key: 'usage-plan_usage',

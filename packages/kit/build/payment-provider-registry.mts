@@ -181,7 +181,7 @@ export function paymentProviderRegistrySource(providers: any[], selectedProvider
       `'./${selected.adapter}'`,
     ].join(''),
   ]
-  if (typescript) imports.unshift("import type Stripe from 'npm:stripe@17'")
+  if (typescript) imports.unshift("import type Stripe from 'npm:stripe@23'")
   const entries = [[
     '  {',
     `    id: ${JSON.stringify(selected.id)},`,

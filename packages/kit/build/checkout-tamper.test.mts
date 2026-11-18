@@ -19,6 +19,7 @@ import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack } from './supabase-env.mjs'
 import { leave, notHere } from './test-stack.mjs'
+import { STRIPE_API_VERSION } from './stripe-version.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: string) => console.log('checkout-tamper: ' + m)
@@ -48,7 +49,7 @@ const checkout = async (body: { items: { sku: string; variant: string; quantity:
   if (id) made.push(id)
   return { status: r.status, data, id }
 }
-const stripe = async (path: string, method = 'GET') => (await fetch('https://api.stripe.com/v1/' + path, { method, headers: { authorization: 'Bearer ' + sk } })).json()
+const stripe = async (path: string, method = 'GET') => (await fetch('https://api.stripe.com/v1/' + path, { method, headers: { authorization: 'Bearer ' + sk, 'stripe-version': STRIPE_API_VERSION } })).json()
 const sessionOf = (id: any) => stripe(`checkout/sessions/${id}?expand[]=line_items&expand[]=shipping_options.shipping_rate`)
 
 const member = await as('member@example.com'), free = await as('free@example.com')

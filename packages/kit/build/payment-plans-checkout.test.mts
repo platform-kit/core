@@ -11,6 +11,7 @@ import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import { supabaseUrl, localStack } from './supabase-env.mjs'
 import { leave, notHere } from './test-stack.mjs'
+import { STRIPE_API_VERSION } from './stripe-version.mjs'
 import type { Database } from '../supabase/functions/_shared/database.types.js'
 
 const note = (m: string) => console.log('payment-plans-checkout: ' + m)
@@ -34,7 +35,7 @@ const checkout = async (body: any, token: string | null) => {
   const id = data.checkoutId || /\/(cs_test_[A-Za-z0-9]+)/.exec(String(data.url || ''))?.[1]
   return { status: r.status, data, id }
 }
-const stripe = async (p: string) => (await fetch('https://api.stripe.com/v1/' + p, { headers: { authorization: 'Bearer ' + sk } })).json()
+const stripe = async (p: string) => (await fetch('https://api.stripe.com/v1/' + p, { headers: { authorization: 'Bearer ' + sk, 'stripe-version': STRIPE_API_VERSION } })).json()
 
 console.log('\nBUYING A PLAN OR A TERM\n')
 const free = await as('free@example.com')
@@ -52,7 +53,7 @@ if (monthly.id) {
   const s = await stripe(`checkout/sessions/${monthly.id}?expand[]=line_items`)
   ok('…as a subscription', s.mode === 'subscription', s.mode)
   ok('…at the term\'s own monthly price, whatever the request said', s.line_items?.data?.[0]?.price?.unit_amount === 4000, JSON.stringify(s.line_items?.data?.[0]?.price?.unit_amount))
-  await fetch(`https://api.stripe.com/v1/checkout/sessions/${monthly.id}/expire`, { method: 'POST', headers: { authorization: 'Bearer ' + sk } })
+  await fetch(`https://api.stripe.com/v1/checkout/sessions/${monthly.id}/expire`, { method: 'POST', headers: { authorization: 'Bearer ' + sk, 'stripe-version': STRIPE_API_VERSION } })
 }
 const full = await checkout({ items: [{ sku: 'patron-monthly--6m-full' }], accept: true }, free)
 ok('an agreed term paid in full opens a checkout', full.status === 200 && !!full.id, JSON.stringify(full))
@@ -60,11 +61,11 @@ if (full.id) {
   const s = await stripe(`checkout/sessions/${full.id}?expand[]=line_items`)
   ok('…as one payment', s.mode === 'payment', s.mode)
   ok('…of the term\'s full price', s.line_items?.data?.[0]?.price?.unit_amount === 20000, JSON.stringify(s.line_items?.data?.[0]?.price?.unit_amount))
-  await fetch(`https://api.stripe.com/v1/checkout/sessions/${full.id}/expire`, { method: 'POST', headers: { authorization: 'Bearer ' + sk } })
+  await fetch(`https://api.stripe.com/v1/checkout/sessions/${full.id}/expire`, { method: 'POST', headers: { authorization: 'Bearer ' + sk, 'stripe-version': STRIPE_API_VERSION } })
 }
 const open = await checkout({ items: [{ sku: 'patron-monthly' }] }, free)
 ok('the open-ended membership still sells as before, with nothing to agree to', open.status === 200 && !!open.id, JSON.stringify(open))
-if (open.id) await fetch(`https://api.stripe.com/v1/checkout/sessions/${open.id}/expire`, { method: 'POST', headers: { authorization: 'Bearer ' + sk } })
+if (open.id) await fetch(`https://api.stripe.com/v1/checkout/sessions/${open.id}/expire`, { method: 'POST', headers: { authorization: 'Bearer ' + sk, 'stripe-version': STRIPE_API_VERSION } })
 
 console.log(`\n  ${pass} passed, ${fail} failed\n`)
 if (fail) process.exit(1)

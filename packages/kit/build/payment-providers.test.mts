@@ -417,7 +417,7 @@ const typedHyperswitchRegistry = paymentProviderRegistrySource(
   { profileCapabilities: [...hyperswitchCapabilities] },
   { typescript: true },
 )
-assert.match(typedHyperswitchRegistry, /import type Stripe from 'npm:stripe@17'/)
+assert.match(typedHyperswitchRegistry, /import type Stripe from 'npm:stripe@23'/)
 assert.match(typedHyperswitchRegistry, /secrets: Readonly<Record<string, string \| undefined>>/)
 assert.throws(() => paymentProviderRegistrySource(
   [STRIPE_PAYMENT_PROVIDER_REGISTRATION, HYPERSWITCH_PAYMENT_PROVIDER_REGISTRATION],

@@ -9,7 +9,7 @@
  * deploy environment); locally `npm run db:serve` hands the functions the root
  * .env, the one file every secret lives in.
  */
-import Stripe from 'npm:stripe@17'
+import Stripe from 'npm:stripe@23'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import type { Database } from './database.types.ts'
 import { createSitePaymentProvider } from './payment-provider-registry.ts'
@@ -32,8 +32,11 @@ export const stripeConfigured = STRIPE_KEY.length > 0 || stripeMock
    Anything that moves money outward asks this rather than stripeConfigured, which is true under the
    mock on purpose. */
 export const stripeLive = STRIPE_KEY.length > 0 && !stripeMock
+/* THE STRIPE API VERSION every call is made at, here and only here (openspec: stripe-current-api). The
+   library's major version pins the same one, so its types describe what arrives. */
+export const STRIPE_API_VERSION = '2026-10-28.endive'
 export const stripe = new Stripe(STRIPE_KEY || 'sk_test_unconfigured', {
-  apiVersion: '2024-06-20' as Stripe.LatestApiVersion,
+  apiVersion: STRIPE_API_VERSION as Stripe.LatestApiVersion,
   httpClient: Stripe.createFetchHttpClient(),
 })
 let paymentProviderPromise: Promise<PaymentProviderAdapter> | null = null

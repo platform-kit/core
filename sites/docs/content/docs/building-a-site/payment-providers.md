@@ -63,6 +63,9 @@ sources:
     packages/kit/build/payment-provider-adapters.test.mts,
     packages/kit/build/payment-provider-db.test.mts,
     packages/kit/build/stripe-payment-provider.test.ts,
+    packages/kit/supabase/functions/_shared/lib.ts,
+    packages/kit/build/stripe-version.mts,
+    packages/kit/build/check.mts,
     packages/kit/build/stripe-testmode.integration.mts,
     packages/kit/build/stripe-testmode.integration.test.ts,
     packages/kit/build/stripe-usage-recovery.integration.mts,
@@ -81,6 +84,26 @@ default for existing sites; a site may instead register its own server-side adap
 speaks the provider's protocol, while PlatformKit continues to decide what the site sells, record
 orders and subscriptions, grant access, and make webhook processing idempotent. There is no
 processor combining, fallback, or automatic migration of customers between providers.
+
+## Stripe's API version
+
+The kit calls Stripe at one API version, `2026-10-28.endive`. It is set once, as `STRIPE_API_VERSION` in
+`supabase/functions/_shared/lib.ts`, and the kit uses Stripe's library at the major version that
+matches it (`stripe@23`). Tests that call Stripe directly send the same version, read from
+`build/stripe-version.mts`.
+
+Stripe sends webhook events at the API version set on the receiving endpoint, which you set in
+Stripe's dashboard, not at the kit's version. The Stripe adapter reads each field Stripe has moved
+from its new place first, then its old one:
+
+- a subscription's billing period, from its items;
+- an invoice's subscription, from `parent`;
+- an invoice line's price, from `pricing`.
+
+So an endpoint still on an older version keeps working. Move it anyway: in Stripe, go to
+**Developers → Webhooks**, choose the endpoint, then **Update API version**. `platformkit check`
+warns about every endpoint older than the kit's version, including one that has no version of its own
+and uses an older account default.
 
 The core includes the existing Stripe adapter and a built-in Hyperswitch adapter. Its browser flow
 uses the official Hyperswitch Web SDK's secure card fields: card details go straight from the

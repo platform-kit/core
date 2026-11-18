@@ -6,7 +6,8 @@
  */
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { machineChecks, browserCheck, settingsChecks, siteChecks, onlineChecks, runChecks, report } from './check.mjs'
+import { machineChecks, browserCheck, settingsChecks, siteChecks, onlineChecks, runChecks, report, webhookVersionFindings } from './check.mjs'
+import { STRIPE_API_VERSION } from './stripe-version.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const DEMO = path.resolve(HERE, '../../../sites/demo')
@@ -71,6 +72,26 @@ const ran = (status: number, stdout = '') => () => ({ status, stdout });
   ok('a refused key: the report says refused', refused.some((r) => r.name === 'Stripe' && r.level === 'fail' && /refused/.test(r.detail)), JSON.stringify(refused))
   const away = await onlineChecks({}, env, { fetch: async () => { throw new Error('getaddrinfo ENOTFOUND') } })
   ok('an unreachable service: the report says could not be reached', away.some((r) => r.name === 'Stripe' && r.level === 'warn' && /could not be reached/.test(r.detail)), JSON.stringify(away))
+}
+
+/* a Stripe webhook endpoint on an older version than the kit's is named, with where to move it (openspec: stripe-current-api) */
+{
+  const found = webhookVersionFindings([
+    { id: 'we_old', url: 'https://site.test/functions/v1/stripe-webhook', api_version: '2024-06-20' },
+    { id: 'we_now', url: 'https://site.test/now', api_version: STRIPE_API_VERSION },
+    { id: 'we_default', url: 'https://site.test/default', api_version: null },
+    { id: 'we_off', url: 'https://site.test/off', api_version: '2020-08-27', status: 'disabled' },
+  ], '2025-02-24.acacia')
+  const old = found.find((r) => /stripe-webhook/.test(r.name))
+  ok('an endpoint at 2024-06-20: a warning', old?.level === 'warn', JSON.stringify(found))
+  ok('…naming the kit\'s version and where to change it', !!old && old.detail.includes(STRIPE_API_VERSION) && /Webhooks/.test(old.fix || ''), JSON.stringify(old))
+  ok('an endpoint at the kit\'s version passes', found.find((r) => /now/.test(r.name))?.level === 'pass')
+  ok('an endpoint on the account default is judged by that default', found.find((r) => /default/.test(r.name))?.level === 'warn')
+  ok('a disabled endpoint is not reported', !found.some((r) => /off/.test(r.name)))
+  const env = { STRIPE_SECRET_KEY: 'sk_test_x' }
+  const asked: string[] = []
+  const online = await onlineChecks({}, env, { fetch: async (url: string) => { asked.push(url); return { status: 200, ok: true, json: async () => (/webhook_endpoints/.test(url) ? { data: [{ id: 'we_1', url: 'https://x.test/hook', api_version: '2024-06-20' }] } : { data: [] }) } }, connect: async () => true })
+  ok('online, the key accepted: the endpoints are read and the old one warned', online.some((r) => r.name === 'Stripe webhook https://x.test/hook' && r.level === 'warn'), JSON.stringify(online))
 }
 
 console.log(fail ? `check: ${fail} failed, ${pass} passed` : `check: all ${pass} checks passed`)

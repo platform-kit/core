@@ -77,7 +77,7 @@ sources:
     packages/kit/build/source-install.mts,
     packages/kit/build/runtime-paths.mts,
   ]
-reviewed: 2026-11-17
+reviewed: 2026-11-18
 ---
 
 ## A proposal promises nothing it does not require

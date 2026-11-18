@@ -168,13 +168,19 @@ export function usageStripeMetadata(offer: any, metadata: any) {
   }
 }
 
+/* a decimal amount as Stripe returns it: a string before stripe@22, a `Stripe.Decimal` since (its toString is
+   the decimal string), and either may carry trailing zeros. Compared as written, without the float rounding. */
+export const decimalText = (v: unknown) => {
+  const t = String(v ?? '').trim()
+  return t.includes('.') ? t.replace(/0+$/, '').replace(/\.$/, '') : t
+}
 function meterPriceMatches(price: any, offer: any, productId: any, meterId: any, amount: any, metadata: any) {
   return price.active &&
     String(price.product?.id ?? price.product) === productId &&
     price.type === 'recurring' &&
     price.billing_scheme === 'per_unit' &&
     price.currency === offer.currency.toLowerCase() &&
-    price.unit_amount_decimal === amount &&
+    price.unit_amount_decimal != null && decimalText(price.unit_amount_decimal) === decimalText(amount) &&
     price.recurring?.interval === (offer.period === 'weekly' ? 'week' : 'month') &&
     (price.recurring?.interval_count ?? 1) === 1 &&
     price.recurring?.usage_type === 'metered' &&
