@@ -57,7 +57,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Payment, booking, video and printer notifications are checked as genuine before anything is done with them; forged, altered, out-of-date or repeated ones change nothing.
 - If the chosen provider can't do something an offer needs, the purchase is refused before anyone is charged.
 - Stripe buyers pay on Stripe's hosted checkout; Hyperswitch buyers pay on the site's own checkout page, with an order summary, trial and renewal lines, and clear decline and verification messages.
-- On Hyperswitch, PlatformKit renews memberships itself by charging the saved card.
+- On Hyperswitch, PlatformKit renews memberships itself by charging the saved card, and continues a prepaid term on it the same way.
 - Hyperswitch can't sell goods that ship, collect tax, or pay providers. Using Stripe behind Hyperswitch also needs the Stripe account to allow card data from Hyperswitch, which the account owner arranges with Stripe.
 - Products and prices set on the site are kept in step with the payment provider automatically.
 - A Payments screen shows staff which provider is in use, what it can do, and a link to its own dashboard; secret keys are never shown.

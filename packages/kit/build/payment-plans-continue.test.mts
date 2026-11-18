@@ -107,7 +107,7 @@ try {
   const none = await q(`select id from public.subscriptions where user_id = $1`, [declined])
   ok('a declined card: the term just ends, and nothing is started', gone.length === 1 && gone[0].status === 'ended' && none.length === 0, JSON.stringify({ gone, none }))
 
-  const off = await q(`select status, then from public.commitments where user_id = $1`, [stopped])
+  const off = await q(`select status, "then" from public.commitments where user_id = $1`, [stopped])
   const offSubs = await q(`select id from public.subscriptions where user_id = $1`, [stopped])
   ok('renewal turned off: the term runs to its end and nothing follows it', off[0]?.status === 'active' && off[0]?.then === 'end' && offSubs.length === 0, JSON.stringify({ off, offSubs }))
 

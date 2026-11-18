@@ -68,7 +68,7 @@ const provider = createPaymentProvider({
         id,
         status: intent?.metadata?.platformkit_subscription_change
           ? prorationStatus
-          : 'succeeded',
+          : intent?.metadata?.platformkit_test_decline === '1' ? 'failed' : 'succeeded',
         client_secret: 'pay_client_secret',
       })
     }
@@ -795,4 +795,53 @@ await assert.rejects(
 )
 assert.equal(requests.length, noEmailRequestCount)
 
-console.log('hyperswitch adapter: checkout preflight, customer, refund, catalog, saved payment method, and top-up checks passed')
+/* A TERM PAID IN FULL THAT CONTINUES (openspec: payment-plans): the checkout keeps its method, confirming it removes
+   nothing, and the continuation is a kit-managed subscription whose first payment is charged on that method */
+const keptCheckout = await provider.createCheckout!({
+  idempotencyKey: 'checkout:kept',
+  mode: 'payment',
+  customer: { userId: 'user_test', providerCustomerId: 'cus_test' },
+  lines: [{ offerKey: 'patron-6m-full', sku: 'patron--6m-full', name: 'Patron · 6 months', currency: 'USD', billing: 'once', unitAmountMinor: 20000, quantity: 1 }],
+  successUrl: 'https://site.test/thanks?session={CHECKOUT_ID}',
+  cancelUrl: 'https://site.test/cart',
+  metadata: { user_id: 'user_test', skus: 'patron--6m-full' },
+  saveMethod: true,
+})
+assert.equal(lastIntentRequest().body?.setup_future_usage, 'off_session')
+assert.equal(lastIntentRequest().body?.metadata?.platformkit_save_method, '1')
+const beforeKeptConfirm = requests.length
+await provider.retrieveCheckout!(keptCheckout.checkoutId)
+assert.equal(requests.slice(beforeKeptConfirm).some((request) => request.init.method === 'DELETE'), false, 'a kept method is not removed')
+
+const continued = await provider.startSubscription!({
+  customerId: 'cus_test',
+  paymentMethodId: 'pm_saved',
+  line: { offerKey: 'patron', sku: 'patron-monthly', name: 'Patron', currency: 'usd', billing: 'subscription', interval: 'month', unitAmountMinor: 4000, quantity: 1, metadata: { tier: 'patron' } },
+  metadata: { user_id: 'user_test' },
+  idempotencyKey: 'commitment-continue:test',
+})
+assert.equal(continued.status, 'active')
+assert.equal(continued.paymentMethodId, 'pm_saved')
+assert.equal(continued.items[0]?.sku, 'patron-monthly')
+assert.equal(continued.items[0]?.unitAmountMinor, 4000)
+assert.equal((continued.currentPeriodEnd ?? 0) > (continued.currentPeriodStart ?? 0), true)
+const continuedIntent = lastIntentRequest()
+assert.equal(continuedIntent.body?.customer_present, 'absent')
+assert.deepEqual(continuedIntent.body?.amount_details, { currency: 'USD', order_amount: 4000 })
+assert.equal(continuedIntent.body?.metadata?.platformkit_checkout_mode, 'subscription')
+/* what the renewal run and a plan change read back: the payment is a PlatformKit subscription */
+const continuedRead = await provider.retrieveCheckout!(continued.subscriptionId)
+assert.equal(continuedRead.mode, 'subscription')
+assert.equal(continuedRead.subscription?.items[0]?.sku, 'patron-monthly')
+await assert.rejects(
+  provider.startSubscription!({
+    customerId: 'cus_test',
+    paymentMethodId: 'pm_saved',
+    line: { offerKey: 'patron', sku: 'patron-monthly', name: 'Patron', currency: 'usd', billing: 'subscription', interval: 'month', unitAmountMinor: 4000, quantity: 1 },
+    metadata: { user_id: 'user_test', platformkit_test_decline: '1' },
+    idempotencyKey: 'commitment-continue:declined',
+  }),
+  (error) => error instanceof PaymentProviderError && error.code === 'payment_failed',
+)
+
+console.log('hyperswitch adapter: checkout preflight, customer, refund, catalog, saved payment method, top-up, and kept-method continuation checks passed')
