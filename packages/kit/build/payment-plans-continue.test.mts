@@ -31,8 +31,10 @@ const stripe = async (method: string, p: string, form: Record<string, string> = 
 })).json()
 
 const users: string[] = [], customers: string[] = []
-const user = async (email: string) => { const [{ id }] = await q(`insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
-  values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', $1, extensions.crypt('password123', extensions.gen_salt('bf')), now(), now(), now()) returning id`, [email]); users.push(id); return id }
+const user = async (email: string) => { const [{ id }] = await q(`insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at,
+    confirmation_token, recovery_token, email_change_token_new, email_change_token_current, reauthentication_token, email_change, raw_app_meta_data, raw_user_meta_data)
+  values (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', $1, extensions.crypt('password123', extensions.gen_salt('bf')), now(), now(), now(),
+    '', '', '', '', '', '', '{"provider":"email","providers":["email"]}', '{}') returning id`, [email]); users.push(id); return id }
 const link = (object: string, external: string, entity: string, id: string) => q(`insert into public.payment_provider_refs (provider, object_type, external_id, entity_type, entity_id) values ('stripe', $1, $2, $3, $4) on conflict do nothing`, [object, external, entity, id])
 
 /* what the ledger holds after a checkout that kept its card: the customer, the purchase and its payment, the term */

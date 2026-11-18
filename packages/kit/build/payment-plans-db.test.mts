@@ -113,6 +113,15 @@ try {
   let called = true
   try { await as(buyer, `select public.commitment_paid('sub_plan_2', 'forged')`) } catch { called = false }
   ok('a buyer cannot report their own payment', called === false)
+
+  /* THE ADMIN'S VIEW OF A PERSON lists their plans and terms; nobody else is shown it */
+  const boss = await user('plan-admin@example.com')
+  await q(`select set_config('app.setting_roles', '1', true)`)
+  await q(`update public.profiles set roles = array['admin'] where id = $1`, [boss])
+  await q(`select set_config('app.setting_roles', '', true)`)
+  const seen = (await as(boss, `select public.admin_person($1) as p`, [buyer]))[0].p
+  ok('the admin sees the plans and terms of the person', Array.isArray(seen?.commitments) && seen.commitments.length === 3 && seen.commitments.every((c: any) => c.payments_total >= 1), JSON.stringify(seen?.commitments)?.slice(0, 200))
+  ok('…and somebody else sees no person at all', (await as(other, `select public.admin_person($1) as p`, [buyer]))[0].p === null)
 } finally {
   await q('rollback').catch(() => {})
   await client.end()

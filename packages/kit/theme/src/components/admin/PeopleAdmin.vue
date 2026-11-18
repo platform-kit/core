@@ -111,6 +111,15 @@ const marks = (row: any) => [
   ...(row.verified === false ? [{ k: 'unconfirmed', w: W.value['is-unconfirmed'] }] : []),
 ]
 const when = (v: any) => { const d = new Date(v); return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) }
+/* a plan or a term in one line: its state, its payments, its end and what follows, anything missed or owed */
+const commitmentLine = (c: any) => [
+  c.status,
+  c.plan === 'full' ? fill(W.value['plans-full'], { each: money(c.amount, c.currency) }) : fill(W.value['plans-payments'], { made: c.payments_made, total: c.payments_total, each: money(c.amount, c.currency) }),
+  c.ends_at ? fill(W.value['plans-ends'], { date: when(c.ends_at) }) : '',
+  c.then && c.then !== 'end' ? W.value['plans-then-' + c.then] : '',
+  c.missed_at && c.status !== 'ended' ? fill(W.value['plans-missed'], { date: when(c.missed_at) }) : '',
+  c.owed > 0 ? fill(W.value['plans-owed'], { owed: money(c.owed, c.currency) }) : '',
+].filter(Boolean).join(' · ')
 const money = (a: any, c: any) => (a == null ? '' : new Intl.NumberFormat(undefined, { style: 'currency', currency: (c || 'usd').toUpperCase() }).format(Number(a) / 100))
 /* the processor's own page for this customer — the site keeps the id and nothing else */
 const invoicesAt = computed(() => (person.value && person.value.billing_id
@@ -172,11 +181,22 @@ const invoicesAt = computed(() => (person.value && person.value.billing_id
           </section>
 
           <section class="pp-panel">
+            <h3>{{ W['plans-title'] }}</h3>
+            <ul v-if="person.commitments?.length" class="pp-lines">
+              <li v-for="c in person.commitments" :key="c.id">
+                <b>{{ c.sku }}</b>
+                <i>{{ commitmentLine(c) }}</i>
+              </li>
+            </ul>
+            <p v-else class="pp-quiet">{{ W['plans-none'] }}</p>
+          </section>
+
+          <section class="pp-panel">
             <h3>{{ W['bought-title'] }}</h3>
             <ul v-if="person.purchases.length" class="pp-lines">
               <li v-for="p in person.purchases" :key="p.id">
                 <b>{{ p.sku }}</b>
-                <i>{{ money(p.amount, p.currency) }} · {{ when(p.at) }}<template v-if="p.status !== 'paid'"> · {{ W.refunded }}</template></i>
+                <i>{{ money(p.amount, p.currency) }} · {{ when(p.at) }}<template v-if="p.status === 'suspended'"> · {{ W.suspended }}</template><template v-else-if="p.status !== 'paid'"> · {{ W.refunded }}</template></i>
               </li>
             </ul>
             <p v-else class="pp-quiet">{{ W['bought-none'] }}</p>

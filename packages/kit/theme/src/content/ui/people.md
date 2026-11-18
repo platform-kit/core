@@ -53,6 +53,16 @@ invoices: Their invoices
 invoices-what: At the payment processor — this site keeps no card and no bank details.
 invoices-none: No billing account yet.
 refunded: refunded
+suspended: paused, a payment outstanding
+plans-title: Their plans and terms
+plans-none: None.
+plans-payments: {made} of {total} paid, {each} each
+plans-full: {each} paid in full
+plans-ends: ends {date}
+plans-then-monthly: then monthly
+plans-then-renew: then renews
+plans-missed: payment missed {date}
+plans-owed: {owed} owed
 
 ## roles
 

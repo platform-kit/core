@@ -25,7 +25,7 @@
 ## 4. Screens and docs
 
 - [x] 4.1 The plan and term picker in the Pricing section and on the store's offer page
-- [ ] 4.2 The account's billing view (done) and the admin's person view (to do) show the commitment
+- [x] 4.2 The account's billing view and the admin's person view show the commitment
 - [x] 4.3 The selling documentation and the strings reference
 
 ## 5. Verify

@@ -278,3 +278,20 @@ $$;
 REVOKE ALL ON FUNCTION "public"."run_term_reminders"() FROM PUBLIC;
 REVOKE ALL ON FUNCTION "public"."run_term_reminders"() FROM "anon", "authenticated";
 GRANT EXECUTE ON FUNCTION "public"."run_term_reminders"() TO "service_role";
+
+-- A PERSON'S PLANS AND TERMS, as their page in the admin shows them (admin_person, 10-foundation.sql): every one,
+-- newest first, with what is made, owed and next
+CREATE OR REPLACE FUNCTION "public"."person_commitments"("p_user" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+  select coalesce((
+    select jsonb_agg(jsonb_build_object('id', c.id, 'sku', c.sku, 'of_sku', c.of_sku, 'plan', c.plan, 'status', c.status,
+             'payments_made', c.payments_made, 'payments_total', c.payments_total, 'amount', c.amount_minor,
+             'currency', c.currency, 'ends_at', c.ends_at, 'then', c."then", 'missed_at', c.missed_at,
+             'owed', c.owed_minor) order by c.created_at desc)
+      from public.commitments c where c.user_id = p_user), '[]'::jsonb);
+$$;
+REVOKE ALL ON FUNCTION "public"."person_commitments"("uuid") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."person_commitments"("uuid") FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."person_commitments"("uuid") TO "service_role";

@@ -23,7 +23,7 @@ sources:
     packages/kit/theme/src/components/admin/PeopleAdmin.vue,
     packages/kit/build/dev-account.mts,
   ]
-reviewed: 2026-11-14
+reviewed: 2026-11-18
 ---
 
 Use **People → People** to find an account, review its purchases and bookings, and assign staff roles. A reader's access to paid content is separate from staff permissions; do not grant a staff role just to unlock a purchase.
@@ -77,15 +77,16 @@ A social publisher's invitation is not a staff role. Accepting it grants access 
 
 Search by name, email, or username. Filter the list to all accounts, staff, providers, members, purchasers, or unconfirmed email addresses. The list is paginated. Open a person to review:
 
-| Information  | Details                                                                                   |
-| ------------ | ----------------------------------------------------------------------------------------- |
-| Roles        | Current staff roles, shown as switches. This is the only information you can change here. |
-| Entitlements | Live access grants and their source or expiry.                                            |
-| Purchases    | Purchases and refunds, including amounts.                                                 |
-| Subscription | Current plan and status, paid-through date, and any scheduled plan change.                |
-| Bookings     | Past and upcoming sessions.                                                               |
-| Invoices     | A link to that customer's Stripe record when a Stripe billing id is available.            |
-| Traits       | The traits configured for staff review.                                                   |
+| Information     | Details                                                                                                                          |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Roles           | Current staff roles, shown as switches. This is the only information you can change here.                                        |
+| Entitlements    | Live access grants and their source or expiry.                                                                                   |
+| Purchases       | Purchases and refunds, including amounts. One bought in instalments with a payment outstanding is marked paused.                 |
+| Subscription    | Current plan and status, paid-through date, and any scheduled plan change.                                                       |
+| Plans and terms | Each payment plan or fixed term: payments made and left, when a term ends and what follows, a missed payment, and anything owed. |
+| Bookings        | Past and upcoming sessions.                                                                                                      |
+| Invoices        | A link to that customer's Stripe record when a Stripe billing id is available.                                                   |
+| Traits          | The traits configured for staff review.                                                                                          |
 
 Use the role switches on this page to assign or remove staff roles. People is read-only for profile, membership, and purchase data; it does not expose payment-card or bank details. The last administrator cannot be demoted or removed.
 

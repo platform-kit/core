@@ -299,6 +299,8 @@ CREATE OR REPLACE FUNCTION "public"."admin_person"("p_user" "uuid") RETURNS "jso
           from public.subscriptions s where s.user_id = p.id
            and s.status in ('active', 'trialing', 'past_due')
          order by s.created_at desc limit 1),
+      /* plans and terms: payments made and left, anything owed (44-commitments.sql) */
+      'commitments', public.person_commitments(p.id),
       'bookings', public.person_bookings(p.id))
     from public.profiles p where p.id = p_user) end
 $$;

@@ -22,6 +22,9 @@ export type PersonPurchase = Pick<Row<'purchases'>, 'id' | 'sku' | 'key' | 'vari
 /* person_bookings (glue/core+sessions.sql; [] without sessions) */
 export type PersonBooking = Pick<Row<'bookings'>, 'uid' | 'title' | 'start_at' | 'status'> & { type: string | null }
 
+/* person_commitments (44-commitments.sql): a plan or a term, as the admin's person page lists it */
+export type PersonCommitment = Pick<Row<'commitments'>, 'id' | 'sku' | 'of_sku' | 'plan' | 'status' | 'payments_made' | 'payments_total' | 'currency' | 'ends_at' | 'then' | 'missed_at'> & { amount: number; owed: number }
+
 /* admin_person (10-foundation.sql): one person, as their admin page opens them */
 export type AdminPerson = {
   id: string; email: string | null; username: string | null; name: string; first_name: string | null; last_name: string | null
@@ -30,6 +33,7 @@ export type AdminPerson = {
   entitlements: Pick<Row<'entitlements'>, 'kind' | 'key' | 'tier' | 'source' | 'expires_at'>[]
   purchases: PersonPurchase[]
   subscription: (Pick<Row<'subscriptions'>, 'sku' | 'key' | 'status' | 'next_sku' | 'next_at'> & { period_end: string | null }) | null
+  commitments: PersonCommitment[]
   bookings: PersonBooking[]
 }
 
