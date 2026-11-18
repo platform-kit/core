@@ -247,3 +247,33 @@ GRANT EXECUTE ON FUNCTION "public"."commitment_missed"("text") TO "service_role"
 GRANT EXECUTE ON FUNCTION "public"."commitment_default"("text") TO "service_role";
 GRANT EXECUTE ON FUNCTION "public"."commitment_holds"("uuid", "text") TO "service_role";
 GRANT EXECUTE ON FUNCTION "public"."commitment_binding"("text") TO "service_role";
+
+-- THE REMINDER BEFORE A TERM ENDS: a week before a membership term with nothing after it, once (the memberships module's
+-- term-reminders function sends it; this calls the function only when one is due)
+CREATE OR REPLACE FUNCTION "public"."run_term_reminders"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+declare url text; secret text;
+begin
+  if not exists (
+    select 1 from public.commitments c
+     where (c.membership and c."then" = 'end' and c.ends_at is not null and c.reminded_at is null
+            and c.status in ('active', 'ended') and c.change_to_sku is null
+            and c.ends_at > now() and c.ends_at <= now() + interval '7 days')
+        or (c.plan = 'full' and c.status = 'active' and c.ends_at <= now())
+  ) then return; end if;
+  select value into url from public.app_settings where key = 'functions_url';
+  select value into secret from public.app_settings where key = 'functions_secret';
+  if url is null or secret is null then return; end if;
+  perform net.http_post(
+    url := rtrim(url, '/') || '/term-reminders',
+    headers := jsonb_build_object('content-type', 'application/json', 'authorization', 'Bearer ' || secret),
+    body := '{}'::jsonb,
+    timeout_milliseconds := 60000);
+end;
+$$;
+
+REVOKE ALL ON FUNCTION "public"."run_term_reminders"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."run_term_reminders"() FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."run_term_reminders"() TO "service_role";

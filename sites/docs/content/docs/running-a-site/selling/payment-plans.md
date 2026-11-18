@@ -17,6 +17,8 @@ sources:
     packages/kit/theme/src/components/store/PlanPicker.vue,
     packages/kit/theme/src/pages/BillingPortalPage.vue,
     packages/kit/build/payment-plans-bookings.test.mts,
+    packages/kit/modules/memberships/functions/term-reminders,
+    packages/kit/modules/memberships/emails/term-ending.json,
     packages/kit/content/emails/payment-missed.json,
     packages/kit/content/emails/payment-missed-notice.json,
     packages/kit/content/emails/payment-default-notice.json,
@@ -128,4 +130,8 @@ The Billing page lists each plan or term the person is in: payments made and lef
 
 With the sessions module on, a missed payment also reaches bookings. The `commitment-bookings` function, run every five minutes, emails the hosts of the buyer's upcoming bookings once. Where the offer names a grace period, it cancels every upcoming booking once the payment has been outstanding that long. The cancellation goes through the ordinary one, so whichever scheduler holds the booking, the person and the host are told. Nothing is given back. Bookings cancelled this way stay cancelled after the payment is made.
 
-Still to come under the OpenSpec change `payment-plans`: the reminder before a term ends, and continuing a term that was paid in full (`then: monthly` or `renew` after a `full` payment).
+## Before a term ends
+
+A week before a membership term that simply ends (`then: end`, with no plan change waiting), the member is emailed once (`term-ending`), with a link back to the membership. The memberships module's `term-reminders` function sends it daily. The same run marks a term paid in full as ended once its date has passed.
+
+Still to come under the OpenSpec change `payment-plans`: continuing a term that was paid in full (`then: monthly` or `renew` after a `full` payment). Until then, a term paid in full ends when it ends, whatever its `then` says.

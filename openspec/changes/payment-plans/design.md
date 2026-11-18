@@ -81,7 +81,8 @@ A membership with terms and no open-ended price is allowed, which relaxes today'
 
 ## Flows
 
-- **Checkout:** the request names a plan or a term and how it's paid. The server reads the prices from the catalogue (the server decides what a buyer pays). The checkout shows the commitment and requires its acceptance.
+- **Each way of paying is an offer of its own** (decided while building): the build compiles every plan and term into a derived offer (`<sku>--plan-3`, `<sku>--6m-monthly`, `<sku>--3m-full`) carrying its `commitment`, with a key derived from the parent's. Checkout, the provider's price sync and the Hyperswitch renewal run then sell it as they sell any subscription or one-off offer, unchanged. `src/lib/payment-plans.ts` holds the naming rule, shared by the build and the page.
+- **Checkout:** the request names the way of paying's sku and `accept: true`. The server reads the prices from the catalogue (the server decides what a buyer pays). The checkout shows the commitment and requires its acceptance.
   - Paid in full: a one-off payment, then a purchase, the entitlement (expiring at `ends_at` for a term), and a commitment row for a term.
   - Paid monthly: a subscription at the plan's or term's monthly price, set to end after `payments_total` payments, and a commitment row.
 - **Payment reported paid:** `payments_made` goes up. A restricted commitment is restored, and its entitlement made active. On the last payment of a plain plan, the subscription ends and the entitlement stays, as a purchase would. On the last payment of a term, `then` decides:

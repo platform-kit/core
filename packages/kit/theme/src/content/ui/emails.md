@@ -162,6 +162,12 @@ subject: A payment for {{what}} was missed
 
 subject: A plan for {{what}} is in default
 
+## term-ending
+
+### mail
+
+subject: Your {{what}} term ends on {{ends}}
+
 ## course-lesson
 
 ### mail

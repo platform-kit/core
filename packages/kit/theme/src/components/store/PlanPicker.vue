@@ -23,6 +23,7 @@ const fill = (s: string, v: Record<string, string | number>) => Object.entries(v
 const label = (w: WayToPay) => {
   const amount = money(w.amount, currency.value)
   if (w.plan === 'once') return fill(P.value['plans-once'], { amount })
+  if (w.plan === 'open') return fill(P.value['plans-open'], { amount })
   if (w.plan === 'full') return fill(P.value['plans-full'], { months: w.months ?? '', amount })
   if (w.months) return fill(P.value['plans-monthly'], { months: w.months, amount })
   return fill(P.value['plans-instalments'], { n: w.payments, amount })
@@ -35,6 +36,8 @@ const commitment = computed(() => {
   return fill(P.value['plans-commitment'], { n: w.payments, amount, total: money(w.amount * w.payments, currency.value) })
 })
 const then = computed(() => (way.value?.months && way.value.then ? P.value['plans-then-' + way.value.then] : ''))
+/* what is agreed to and what follows, as one sentence pair: written in the template, the space between them is lost */
+const terms = computed(() => [commitment.value, then.value].filter(Boolean).join(' '))
 const ready = computed(() => !!way.value && (!way.value.committed || agreed.value))
 function go() {
   const w = way.value
@@ -53,12 +56,12 @@ function go() {
         <span>{{ label(w) }}</span>
       </label>
     </fieldset>
-    <p v-if="commitment" class="pp-plans-terms">{{ commitment }}<template v-if="then"> {{ then }}</template></p>
+    <p v-if="commitment" class="pp-plans-terms">{{ terms }}</p>
     <label v-if="way && way.committed" class="pp-plans-agree">
       <input v-model="agreed" type="checkbox" />
       <span>{{ P['plans-agree'] }}</span>
     </label>
-    <button type="button" class="pp-btn" :disabled="busy || !ready" @click="go">{{ P['plans-cta'] }}</button>
+    <button type="button" class="pp-plans-cta" :disabled="busy || !ready" @click="go">{{ P['plans-cta'] }}</button>
   </div>
 </template>
 
@@ -72,6 +75,10 @@ function go() {
 .pp-plans-terms { margin: 0; color: var(--ink2); font-size: .92rem; line-height: 1.5 }
 .pp-plans-agree { display: flex; align-items: flex-start; gap: 10px; font-size: .95rem; line-height: 1.4; cursor: pointer }
 .pp-plans-agree input { margin: 3px 0 0; accent-color: var(--ink) }
-.pp-plans .pp-btn { justify-self: start }
-@media (max-width: 620px) { .pp-plans .pp-btn { justify-self: stretch; width: 100% } }
+/* the product page's own button, drawn here because its styles are scoped to it */
+.pp-plans-cta { display: inline-flex; align-items: center; justify-content: center; width: 100%; font: inherit; font-size: 15.5px; font-weight: 600; color: var(--paper); background: var(--ink);
+  border: 1px solid var(--ink); border-radius: 999px; padding: 14px 22px; cursor: pointer; transition: transform .14s, box-shadow .14s }
+.pp-plans-cta:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 12px 28px -14px #000a }
+.pp-plans-cta:disabled { opacity: .55; cursor: default }
+.pp-plans-cta:focus-visible { outline: 2px solid var(--accent2); outline-offset: 3px }
 </style>

@@ -146,6 +146,7 @@ bestseller: Bestseller
 # the ways to pay for an offer sold on a plan or in terms (Payment plans and fixed terms)
 plans-label: How you'd like to pay
 plans-once: Pay {amount} once
+plans-open: {amount} a month, cancel any time
 plans-full: {months} months, {amount} paid now
 plans-monthly: {months} months, {amount} a month
 plans-instalments: {n} monthly payments of {amount}

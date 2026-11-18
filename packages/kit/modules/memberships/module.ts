@@ -7,6 +7,8 @@ export default {
   owns: {
     cron: [
       { name: 'hyperswitch-subscription-renewal', schedule: '*/15 * * * *', command: 'select public.run_hyperswitch_subscription_renewal()' },
+      /* a week before a fixed term that simply ends, the member is told (openspec: payment-plans) */
+      { name: 'term-reminders', schedule: '20 9 * * *', command: 'select public.run_term_reminders()' },
     ],
     env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET'],
   },
