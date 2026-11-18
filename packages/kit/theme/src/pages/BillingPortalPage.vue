@@ -293,7 +293,7 @@ onBeforeUnmount(() => {
             </section>
             <section v-if="state === 'ready' && commitments.length" class="billing-card" aria-labelledby="billing-commitments-title">
               <h2 id="billing-commitments-title" class="billing-card-title">{{ W['billing-commitments'] }}</h2>
-              <section v-for="c in commitments" :key="c.sku + c.starts_at" class="billing-commitment">
+              <div v-for="c in commitments" :key="c.sku + c.starts_at" class="billing-commitment">
                 <h3 class="billing-commitment-title">{{ commitmentTitle(c) }}</h3>
                 <dl class="billing-details">
                   <div><dt>{{ W['billing-status'] }}</dt><dd><span class="billing-status-pill" :class="commitmentStatus(c) === 'active' ? 'is-active' : 'is-attention'">{{ W['billing-commitment-status-' + commitmentStatus(c)] }}</span></dd></div>
@@ -310,7 +310,7 @@ onBeforeUnmount(() => {
                 <div v-if="commitmentStatus(c) !== 'active' && usesProviderPortal" class="billing-actions">
                   <button class="billing-button billing-primary" type="button" :disabled="busy" @click="update('manage')">{{ W['billing-commitment-update'] }}</button>
                 </div>
-              </section>
+              </div>
             </section>
             <section v-if="state === 'ready' && subscription" class="billing-card">
               <dl class="billing-details">
