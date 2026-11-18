@@ -25,7 +25,7 @@ export function holds(condition: string, ctx: Record<string, unknown>) {
 }
 
 /* `{$ name $}` is forms.md's binding; nunjucks's own `{{ name }}` is left as it is (the same thing) */
-export function renderCopy(md: string, ctx: { name?: string; many?: string[] }) {
+export function renderCopy(md: string, ctx: Record<string, unknown>) {   /* the answers and data by name */
   const src = String(md || '').replace(/\{\$\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\$\}/g, '{{ $1 }}')
   try { return env.renderString(src, bindable(ctx || {})) }
   catch (e: any) { if (typeof console !== 'undefined') console.warn(`[forms] the copy could not be rendered: ${e.message || e}`); return src }

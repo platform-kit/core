@@ -32,10 +32,14 @@ const tests = fs.readdirSync(HERE).filter((f) => /\.(test|integration)\.m[jt]s$/
 const source = Object.fromEntries(tests.map((f) => [f, fs.readFileSync(path.join(HERE, f), 'utf8')]))
 
 /* ─── 1. every function is named by a test ─── */
-const FN_DIR = path.join(KIT, 'supabase', 'functions')
-const functions = fs.readdirSync(FN_DIR).filter((d) => !d.startsWith('_') && fs.statSync(path.join(FN_DIR, d)).isDirectory())
+/* every function of the kit, a module folder's included, and every test that could name one: the kit's and each
+   module folder's (openspec: modules-as-packages) */
+const { kitBackend } = await import('./modules/backend.mjs')
+const functions = kitBackend().functions
+const MOD_ROOT = path.join(KIT, 'modules')
+const moduleSources = Object.fromEntries((fs.existsSync(MOD_ROOT) ? fs.readdirSync(MOD_ROOT) : []).flatMap((m) => { const d = path.join(MOD_ROOT, m, 'tests'); return fs.existsSync(d) ? fs.readdirSync(d).filter((x) => /\.(test|integration)\.m[jt]s$/.test(x)).map((x) => [`modules/${m}/tests/${x}`, fs.readFileSync(path.join(d, x), 'utf8')]) : [] }))
 const callsFunctions = /functions\/v1|FUNCTIONS_URL|\bFN\b|\.functions\b/
-const namedBy = (fn: string) => Object.entries(source).filter(([, s]) => callsFunctions.test(s) && new RegExp(`functions/v1/${fn}\\b|['"\`/]${fn}['"\`?/]`).test(s)).map(([f]) => f)
+const namedBy = (fn: string) => Object.entries({ ...source, ...moduleSources }).filter(([, s]) => callsFunctions.test(s) && new RegExp(`functions/v1/${fn}\\b|['"\`/]${fn}['"\`?/]`).test(s)).map(([f]) => f)
 const untested = functions.filter((fn) => !namedBy(fn).length)
 ok(`every function is named by a test (${functions.length - untested.length} of ${functions.length})`, !untested.length, untested.join(', '))
 

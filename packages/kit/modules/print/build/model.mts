@@ -33,7 +33,12 @@ async function render(root: string, slug: string, local = true, store = null) {
   const { printBook, writePrintIndex } = await import(MACHINE)
   const { asStore } = await import('../../../build/store/index.mjs'); store = asStore(store || root)
   const t0 = Date.now()
-  const ms = await printBook(slug, { local })
+  /* Typst's native compiler is an optional package: a machine without it cannot set a book, and says so in words rather
+     than as a failed import */
+  const ms = await printBook(slug, { local }).catch((e: any) => {
+    if (e && e.code === 'ERR_MODULE_NOT_FOUND' && /typst-ts-node-compiler/.test(String(e.message))) throw new Refusal(503, "this machine cannot set books: Typst's native compiler is not installed (npm install @myriaddreamin/typst-ts-node-compiler, an optional package), so the editions were not set")
+    throw e
+  })
   if (!local) await writePrintIndex(ms)
   /* the drafts: one per contents, each with its covers and their dimensions for the preview's crops */
   const editions = Object.fromEntries(ms.map((m: any) => [m.contents, { edition: m.edition, pages: m.pages, covers: m.covers, epub: !!m.epub, printers: m.printers || {}, dims: Object.fromEntries(Object.entries(m.dims || {}).map(([k, d]) => [k, { width: (d as any).width, height: (d as any).height, spine: (d as any).spine, bleed: (d as any).bleed, flap: (d as any).flap || 0, trim: m.trim }])) }]))

@@ -301,6 +301,26 @@ async function runSite(site: any, reserved: any) {
     const cold: any = []
     await Promise.all(fnDirs.map(async (f) => { for (let i = 0; i < 30; i++) { const c = await answers(`${st.API_URL}/functions/v1/${f}`, { method: 'OPTIONS' }); if (c > 0 && c !== 503 && c !== 502) return; await new Promise((r) => setTimeout(r, 2000)) } cold.push(f) }))
     if (cold.length) throw new Error(`these functions did not boot: ${cold.join(', ')} (the run's functions log names why)`)
+    /* AND THE DATABASE REACHES THEM. A database's call to a function (a webhook's delivery, a cron's run) goes by the
+       gateway's name on the stack's network, and pg_net's resolver keeps an answer for a while, a failed one included: asked
+       before the gateway's name resolved, every call for the next minute failed with "Could not resolve hostname", and a
+       test whose delivery fell in that minute waited for something that had already been dropped. So the run waits until a
+       call from the database has come back from the functions. */
+    await waitFor('the database reaching the functions', async () => {
+      const pg = (await import('pg')).default
+      const db = new pg.Client({ connectionString: st.DB_URL })
+      try {
+        await db.connect()
+        const base = (await db.query("select coalesce((select value from public.app_settings where key = 'functions_url'), 'http://kong:8000/functions/v1') as u")).rows[0].u
+        const { rows: [{ id }] } = await db.query('select net.http_get($1) as id', [base + '/' + probe])
+        for (let i = 0; i < 20; i++) {
+          const { rows } = await db.query('select status_code, error_msg from net._http_response where id = $1', [id])
+          if (rows.length) return rows[0].status_code != null
+          await new Promise((r) => setTimeout(r, 250))
+        }
+        return false
+      } catch { return false } finally { await db.end().catch(() => {}) }
+    }, 120)
     /* where the log stands once every function is warm: what a TEST called is what is written after this */
     const fnLog = logs.replace(/\.log$/, '.functions.log')
     const warmAt = fs.existsSync(fnLog) ? fs.statSync(fnLog).size : 0

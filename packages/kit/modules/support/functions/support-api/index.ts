@@ -65,11 +65,11 @@ const CONV_ALL = `${CONV}, contact_id, assignee_id, custom_attributes` as const 
 async function deliver(event: string, id: string) {
   const { data: subs } = await admin.from('support_webhooks').select('*')
   const want = (subs ?? []).filter((w) => (w.subscriptions || []).includes(event))
-  if (!want.length) return { delivered: 0 }
+  if (!want.length) return { delivered: 0, why: 'no subscription holds ' + event }
   let payload: any = null
   if (event === 'message_created' || event === 'message_updated') {
-    const { data: m } = await admin.from('support_messages').select(`${MSG}, conversation_id` as const).eq('id', id).maybeSingle(); if (!m) return { delivered: 0 }
-    const { data: c } = await admin.from('support_conversations').select(CONV_ALL).eq('id', m.conversation_id).maybeSingle(); if (!c) return { delivered: 0 }
+    const { data: m } = await admin.from('support_messages').select(`${MSG}, conversation_id` as const).eq('id', id).maybeSingle(); if (!m) return { delivered: 0, why: 'no message ' + id }
+    const { data: c } = await admin.from('support_conversations').select(CONV_ALL).eq('id', m.conversation_id).maybeSingle(); if (!c) return { delivered: 0, why: 'no conversation ' + m.conversation_id }
     const conv = await fullConversation(c, { withMessages: false })
     const contact = conv.meta.sender
     const [row] = await withAgents(await withUrls([m]))

@@ -115,7 +115,7 @@ try {
   })
   await ok('webhooks: a subscription made through the Application API receives a contact\'s line (the Client API), an agent\'s line under RLS (the seed\'s support agent), and a status change; listed, updated, deleted', async () => {
     const hits: any = []
-    const server: any = http.createServer((rq, rs) => { let b = ''; rq.on('data', (c) => { b += c }); rq.on('end', () => { hits.push(JSON.parse(b)); rs.writeHead(200); rs.end('ok') }) })
+    const server: any = http.createServer((rq, rs) => { let b = ''; rq.on('data', (c) => { b += c }); rq.on('end', () => { hits.push({ ...JSON.parse(b), __at: Date.now() }); rs.writeHead(200); rs.end('ok') }) })
     await new Promise((r) => server.listen(0, '0.0.0.0', r))
     const receiver = `http://host.docker.internal:${server.address().port}/hook`
     try {
@@ -123,11 +123,22 @@ try {
       const listed = await call('/api/v1/accounts/1/webhooks', { headers: AUTH }); assert.ok(listed.body.payload.webhooks.some((x: { id: any }) => x.id === hookId))
       const upd = await call('/api/v1/accounts/1/webhooks/' + hookId, { method: 'PATCH', headers: AUTH, body: { webhook: { url: receiver, subscriptions: ['message_created', 'conversation_status_changed'] } } }); assert.equal(upd.status, 200); assert.deepEqual(upd.body.payload.webhook.subscriptions, ['message_created', 'conversation_status_changed'])
       /* a contact's line through the Client API */
-      const conv2 = await call(PUB + '/contacts/' + sourceId + '/conversations', { method: 'POST', body: {} }); ids.convs.push(conv2.body.id)
+      const conv2 = await call(PUB + '/contacts/' + sourceId + '/conversations', { method: 'POST', body: {} }); assert.equal(conv2.status, 200, 'the second conversation: ' + JSON.stringify(conv2.body)); ids.convs.push(conv2.body.id)
       hits.length = 0
-      await call(PUB + '/contacts/' + sourceId + '/conversations/' + conv2.body.id + '/messages', { method: 'POST', body: { content: 'A second question' } })
+      const sentAt = Date.now()
+      const line2 = await call(PUB + '/contacts/' + sourceId + '/conversations/' + conv2.body.id + '/messages', { method: 'POST', body: { content: 'A second question' } }); assert.equal(line2.status, 200, 'the contact\'s line: ' + JSON.stringify(line2.body))
       for (let i = 0; i < 40 && !hits.some((h: { event: string; message_type: string; content: string }) => h.event === 'message_created' && h.message_type === 'incoming' && h.content === 'A second question'); i++) await new Promise((r) => setTimeout(r, 300))
-      const inc = hits.find((h: { event: string; message_type: string; content: string }) => h.event === 'message_created' && h.message_type === 'incoming' && h.content === 'A second question'); assert.ok(inc, 'the contact\'s line delivered: ' + JSON.stringify(hits.map((h: { event: any; message_type: any; content: any }) => [h.event, h.message_type, h.content])))
+      const inc = hits.find((h: { event: string; message_type: string; content: string }) => h.event === 'message_created' && h.message_type === 'incoming' && h.content === 'A second question')
+      /* nothing delivered says which hop broke: the database's call to the function (its address in app_settings), or the function's to the receiver (the subscription's last error) */
+      if (inc) console.log('    (the contact\'s line arrived ' + ((inc.__at - sentAt) / 1000).toFixed(1) + 's after it was sent)')
+      if (!inc) {
+        const { data: sub } = await service.from('support_webhooks').select('url, last_at, last_error').eq('id', hookId).maybeSingle()
+        const { data: fu } = await service.from('app_settings').select('value').eq('key', 'functions_url').maybeSingle()
+        /* and the delivery asked again by hand, for the line: what the function answers now */
+        const { data: line } = await service.from('support_messages').select('id').eq('body', 'A second question').order('created_at', { ascending: false }).limit(1).maybeSingle()
+        const again = line ? await fetch(FN + '/deliver', { method: 'POST', headers: { Authorization: 'Bearer ' + serviceKey(), 'Content-Type': 'application/json' }, body: JSON.stringify({ event: 'message_created', id: (line as any).id }) }).then(async (r) => r.status + ' ' + (await r.text()).slice(0, 200)).catch((e) => String(e)) : 'no such line in support_messages'
+        assert.fail('the contact\'s line delivered: ' + JSON.stringify(hits.map((h: any) => [h.event, h.message_type, h.content, ((h.__at - sentAt) / 1000).toFixed(1) + 's'])) + ' after ' + ((Date.now() - sentAt) / 1000).toFixed(1) + 's' + ' — subscription ' + JSON.stringify(sub) + ', functions_url ' + JSON.stringify((fu as any)?.value ?? null) + ', asked again: ' + again + ' — conversation ' + conv2.body.id + ', line ' + JSON.stringify(line2.body).slice(0, 160))
+      }
       assert.equal(inc.conversation.id, conv2.body.id); assert.equal(inc.sender.type, 'contact'); assert.equal(inc.inbox.id, 1); assert.ok(inc.account.name)
       /* an agent's line under RLS, as the inbox writes one */
       const anonKey = anon; const agent = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } })

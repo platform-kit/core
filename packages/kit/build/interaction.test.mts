@@ -571,6 +571,7 @@ else await act('the funnels keep their place in Marketing, open by their address
   }
   /* back on the list, its numbers are its second tab */
   await go(page, '/admin/funnels', clear, '.fn-list')
+  await page.locator('.ui-pagetabs button').nth(1).waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => {})   /* the tabs draw after the screen */
   const tabs: string[] = await page.locator('.ui-pagetabs button').allInnerTexts()
   if (tabs.length !== 2) throw new Error('the funnels set has the tabs ' + JSON.stringify(tabs))
   await page.locator('.ui-pagetabs button').nth(1).click({ timeout: WAIT })
@@ -579,6 +580,7 @@ else await act('the funnels keep their place in Marketing, open by their address
   /* and a blast is a tab of Emails */
   await go(page, '/admin/blasts', clear, '.bl')
   if (await moduleOn('emails')) {
+    await page.locator('.ui-pagetabs button').nth(1).waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => {})   /* the tabs draw after the screen */
     const et: string[] = await page.locator('.ui-pagetabs button').allInnerTexts()
     if (et.length !== 2) throw new Error('the emails set has the tabs ' + JSON.stringify(et))
   }
