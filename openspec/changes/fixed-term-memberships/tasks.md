@@ -4,7 +4,8 @@
 
 - [ ] 1.1 `membership_terms` with its grants and row-level security; `declarations.test.mts` passes
 - [ ] 1.2 Catalogue: `terms` and `changes`, with the build refusals listed in the design
-- [ ] 1.3 Confirm whether Hyperswitch's portal can hide cancellation, and record the answer in the design
+- [x] 1.3 Confirm how each provider lets a member cancel or switch plan (Hyperswitch: only the kit's /billing; Stripe: a portal configuration), recorded in the design
+- [ ] 1.4 A kit-managed Stripe portal configuration with cancellation and plan switching off, used for members in a term
 
 ## 2. Buying
 

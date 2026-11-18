@@ -42,7 +42,7 @@ Verified by: `packages/kit/build/fixed-terms-db.test.mts`
 
 ### Requirement: A monthly term commits the buyer to every payment
 
-A monthly term SHALL charge its monthly price once a month, through the site's subscriptions, until the term's number of payments is made. The member SHALL NOT be able to cancel it before then, in the site's own screens or in the payment provider's portal. The site SHALL know at any time how many payments have been made and how many remain.
+A monthly term SHALL charge its monthly price once a month, through the site's subscriptions, until the term's number of payments is made. The member SHALL NOT be able to cancel it before then, or change plan except as the membership's change policy allows, in the site's own screens or in the payment provider's portal. A subscription ended mid-term by any other means SHALL end the term early, with the remaining payments recorded as owed. The site SHALL know at any time how many payments have been made and how many remain.
 
 #### Scenario: cancelling halfway
 
