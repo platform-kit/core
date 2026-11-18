@@ -1094,6 +1094,108 @@ export type Database = {
           },
         ]
       }
+      commitments: {
+        Row: {
+          amount_minor: number
+          bookings_cancelled_at: string | null
+          cancel_bookings_after_minutes: number | null
+          change_to_sku: string | null
+          created_at: string
+          currency: string
+          ends_at: string | null
+          entitlement_source_id: string | null
+          hosts_told_at: string | null
+          id: string
+          membership: boolean
+          missed_at: string | null
+          of_sku: string
+          opened_by: string
+          owed_minor: number
+          paid_refs: string[]
+          payments_made: number
+          payments_total: number
+          plan: string
+          purchase_id: string | null
+          reminded_at: string | null
+          restrict: string
+          restricted_at: string | null
+          sku: string
+          starts_at: string
+          status: string
+          subscription_id: string | null
+          term_months: number | null
+          then: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_minor: number
+          bookings_cancelled_at?: string | null
+          cancel_bookings_after_minutes?: number | null
+          change_to_sku?: string | null
+          created_at?: string
+          currency: string
+          ends_at?: string | null
+          entitlement_source_id?: string | null
+          hosts_told_at?: string | null
+          id?: string
+          membership?: boolean
+          missed_at?: string | null
+          of_sku: string
+          opened_by: string
+          owed_minor?: number
+          paid_refs?: string[]
+          payments_made?: number
+          payments_total: number
+          plan: string
+          purchase_id?: string | null
+          reminded_at?: string | null
+          restrict?: string
+          restricted_at?: string | null
+          sku: string
+          starts_at?: string
+          status?: string
+          subscription_id?: string | null
+          term_months?: number | null
+          then?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_minor?: number
+          bookings_cancelled_at?: string | null
+          cancel_bookings_after_minutes?: number | null
+          change_to_sku?: string | null
+          created_at?: string
+          currency?: string
+          ends_at?: string | null
+          entitlement_source_id?: string | null
+          hosts_told_at?: string | null
+          id?: string
+          membership?: boolean
+          missed_at?: string | null
+          of_sku?: string
+          opened_by?: string
+          owed_minor?: number
+          paid_refs?: string[]
+          payments_made?: number
+          payments_total?: number
+          plan?: string
+          purchase_id?: string | null
+          reminded_at?: string | null
+          restrict?: string
+          restricted_at?: string | null
+          sku?: string
+          starts_at?: string
+          status?: string
+          subscription_id?: string | null
+          term_months?: number | null
+          then?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       compiled: {
         Row: {
           data: Json
@@ -7886,6 +7988,108 @@ export type Database = {
       comment_unsay: { Args: { p_comment: string | null }; Returns: Json }
       comments_on: {
         Args: { p_kind: string | null; p_limit?: number | null; p_subject: string | null }
+        Returns: Json
+      }
+      commitment_access: {
+        Args: {
+          c: Database["public"]["Tables"]["commitments"]["Row"] | null
+          p_on: boolean | null
+        }
+        Returns: undefined
+      }
+      commitment_binding: {
+        Args: { p_subscription: string | null }
+        Returns: {
+          amount_minor: number
+          bookings_cancelled_at: string | null
+          cancel_bookings_after_minutes: number | null
+          change_to_sku: string | null
+          created_at: string
+          currency: string
+          ends_at: string | null
+          entitlement_source_id: string | null
+          hosts_told_at: string | null
+          id: string
+          membership: boolean
+          missed_at: string | null
+          of_sku: string
+          opened_by: string
+          owed_minor: number
+          paid_refs: string[]
+          payments_made: number
+          payments_total: number
+          plan: string
+          purchase_id: string | null
+          reminded_at: string | null
+          restrict: string
+          restricted_at: string | null
+          sku: string
+          starts_at: string
+          status: string
+          subscription_id: string | null
+          term_months: number | null
+          then: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "commitments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      commitment_default: { Args: { p_subscription: string | null }; Returns: Json }
+      commitment_holds: {
+        Args: { p_source_id: string | null; p_user: string | null }
+        Returns: boolean
+      }
+      commitment_missed: { Args: { p_subscription: string | null }; Returns: Json }
+      commitment_of: {
+        Args: { p_subscription: string | null }
+        Returns: {
+          amount_minor: number
+          bookings_cancelled_at: string | null
+          cancel_bookings_after_minutes: number | null
+          change_to_sku: string | null
+          created_at: string
+          currency: string
+          ends_at: string | null
+          entitlement_source_id: string | null
+          hosts_told_at: string | null
+          id: string
+          membership: boolean
+          missed_at: string | null
+          of_sku: string
+          opened_by: string
+          owed_minor: number
+          paid_refs: string[]
+          payments_made: number
+          payments_total: number
+          plan: string
+          purchase_id: string | null
+          reminded_at: string | null
+          restrict: string
+          restricted_at: string | null
+          sku: string
+          starts_at: string
+          status: string
+          subscription_id: string | null
+          term_months: number | null
+          then: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "commitments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      commitment_open: { Args: { p: Json | null }; Returns: string }
+      commitment_paid: {
+        Args: { p_ref: string | null; p_subscription: string | null }
         Returns: Json
       }
       community_admitted: { Args: { p_place: string | null }; Returns: boolean }

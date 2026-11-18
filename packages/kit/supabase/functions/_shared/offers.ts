@@ -33,6 +33,14 @@ export type Offer = {
   usage?: { unit: string; rate_micros: number; grant_micros?: number; included_micros?: number; meter?: string; overage_price_micros?: number; incremental_charge_minor?: number; speech_cost_per_second_micros?: number }
   /* a book in print (src/lib/print-offers.js): the format this sku is, its binding, the choices a line may carry, the files that come with it */
   format?: string; binding?: string | null; trim?: string; paper?: string; contents?: string[]; cloth?: string[] | null; foil?: string[] | null; includes?: string[]
+  /* payment plans and fixed terms (build/commitments.mts): on the offer the file declares, what the picker shows and
+     the policies; on each way of paying compiled from it, the commitment that way of paying is */
+  plans?: { payments: number; each: number; sku: string }[]
+  terms?: { months: number; then: 'end' | 'monthly' | 'renew'; full?: { sku: string; amount: number }; monthly?: { sku: string; amount: number } }[]
+  terms_only?: boolean
+  changes?: { upgrade: 'anytime' | 'term-end' | 'never'; downgrade: 'anytime' | 'term-end' | 'never' }
+  missed?: { restrict: string; cancel_bookings_after_minutes: number | null }
+  commitment?: { of: string; plan: 'full' | 'monthly'; payments: number; months: number | null; then: 'end' | 'monthly' | 'renew'; missed: { restrict: string; cancel_bookings_after_minutes: number | null } }
 }
 /* What ships and what a variant may be are decisions over plain data, so they live in
    ledger-rules.js where they can be checked without a stack — and are re-exported here because this

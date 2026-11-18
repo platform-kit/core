@@ -14,7 +14,8 @@
  * what it granted and nothing else.
  */
 import { admin, getPaymentProvider, json } from '../_shared/lib.ts'
-import { checkoutCompleted, subscriptionChanged, subscriptionDeleted, grantUsage, iso } from '../_shared/ledger.ts'
+import { checkoutCompleted, subscriptionChanged, subscriptionDeleted, grantUsage, iso, firstPayment } from '../_shared/ledger.ts'
+import { commitmentPaid, commitmentMissed } from '../_shared/commitments.ts'
 import { includedGrantForInvoice } from '../_shared/usage-stripe.mts'
 import { findProviderEntity, findProviderEntities, findProviderExternalIds } from '../_shared/payment-provider-refs.ts'
 import { assertPaymentCapabilities, normalizePaymentEvent, normalizePaymentCheckout, PaymentProviderError, providerScopedId } from '../_shared/payment-provider.mts'
@@ -30,6 +31,7 @@ async function handle(event: PaymentProviderEvent, provider: PaymentProviderAdap
       await checkoutCompleted(checkout, provider.id)
       if (checkout.mode === 'subscription' && checkout.subscription) {
         await subscriptionChanged(checkout.subscription, provider.id)
+        await firstPayment(checkout.subscription, provider.id)
       }
       break
     }
@@ -97,6 +99,9 @@ async function handle(event: PaymentProviderEvent, provider: PaymentProviderAdap
         end,
         meteredLine?.metadata ?? {},
       )
+      /* a plan's or a term's payment, counted once — the first under the name checkout counts it by
+         (openspec: payment-plans) */
+      await commitmentPaid(subscriptionIdLocal, invoice.billingReason === 'subscription_create' ? 'first' : invoice.invoiceId)
       if (usageGrant) await grantUsage(
         /* the row's source is one the grant itself wrote: a purchase or a subscription */
         usageGrant.user_id, usageGrant.offer_key, usageGrant.source as 'purchase' | 'subscription', usageGrant.source_id,
@@ -113,6 +118,8 @@ async function handle(event: PaymentProviderEvent, provider: PaymentProviderAdap
       const { error } = await admin.from('subscriptions')
         .update({ status: 'past_due', updated_at: new Date().toISOString() }).eq('id', subscriptionId)
       if (error) throw new Error(`subscription payment failure was not recorded: ${error.message}`)
+      /* a plan's or a term's payment missed: access held back as its offer says, and people told */
+      await commitmentMissed(subscriptionId)
       break
     }
     case 'checkout.expired':

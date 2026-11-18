@@ -286,7 +286,12 @@ export interface PaymentProviderAdapter {
     nextAt?: number
     subscription: PaymentSubscriptionSnapshot
   }>
-  createPortalSession?(input: { customerId: string; returnUrl: string }): Promise<{ url: string }>
+  /* `committed`: the customer owes payments on a plan or a term (openspec: payment-plans), so the
+     portal offers no cancellation and no plan switch — those go through the site, where the
+     offer's policy applies. Cards and invoices stay the customer's to manage. */
+  createPortalSession?(input: { customerId: string; returnUrl: string; committed?: boolean }): Promise<{ url: string }>
+  /* no further charge after the period already paid for: a plan's last payment made */
+  endSubscription?(input: { subscriptionId: string; idempotencyKey: string }): Promise<void>
   createPaymentMethodSession?(input: {
     customerId: string
     returnUrl: string

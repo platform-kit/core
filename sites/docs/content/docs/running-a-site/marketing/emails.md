@@ -10,7 +10,7 @@ sources:
     packages/kit/theme/src/components/admin/EmailsAdmin.vue,
     packages/kit/build/auth-config.mts,
   ]
-reviewed: 2026-11-14
+reviewed: 2026-11-17
 ---
 
 Every email the site sends is a **design** built in the admin, compiled at build time, and filled with the real facts when it is sent. Marketing → **Emails** is a rail of the designs, one open in a drag-and-drop editor mounted with the site's colours and fonts. Module: `emails`.
@@ -32,6 +32,8 @@ Every email the site sends is a **design** built in the admin, compiled at build
 | **event-reminder**                                           | To everybody who said they were coming to an event, at the same hours                                                                                                                                                                                                 |
 | **course-lesson**                                            | To somebody taking a course, when a lesson opens for them after they started: once per lesson, and at most one a day (see [Courses](/content/docs/running-a-site/content/courses))                                                                                    |
 | **course-complete**                                          | To somebody who finished a course, with their certificate's address where the course gives one                                                                                                                                                                        |
+| **payment-missed**                                           | To somebody whose payment on a plan or a term failed, saying whether their access is paused and where to pay                                                                                                                                                          |
+| **payment-missed-notice**, **payment-default-notice**        | To the site's administrators: a payment on a plan or a term missed, and the provider no longer retrying it, with what is owed                                                                                                                                         |
 | **provider-terms**                                           | The moment a new version of the providers' terms is published — to every provider still on an earlier one, with the terms themselves in the letter                                                                                                                    |
 | **session-reminder**                                         | To the person, at each of the hours before the session the sending rules name (24 and 1 by default)                                                                                                                                                                   |
 

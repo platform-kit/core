@@ -18,6 +18,7 @@ import { appUrl } from './lib.ts'
 import { findProviderEntities, findProviderEntity, linkProviderEntity } from './payment-provider-refs.ts'
 import { providerScopedId } from './payment-provider.mts'
 import type { PaymentCheckoutSnapshot, PaymentSubscriptionSnapshot } from './payment-provider.d.ts'
+import { commitmentOf, openCommitment, holds, commitmentDefaulted, commitmentPaid, localSubscriptionId } from './commitments.ts'
 
 export const iso = (unix?: number | null) => (unix ? new Date(unix * 1000).toISOString() : null)
 export const idOf = (x: { id: any }) => (typeof x === 'string' ? x : x?.id ?? null)
@@ -300,6 +301,15 @@ export async function checkoutCompleted(o: any, provider = 'stripe') {
       const entitlementId = await grant(userId!, g.kind as 'class' | 'product', g.key, 'purchase', g.source_id, {}, provider)
       await linkProviderEntity(provider, 'checkout', o.id, 'entitlements', entitlementId)
     }
+    /* A TERM PAID IN FULL (openspec: payment-plans): the membership's tier from today to the end of
+       the term, through the same entitlement every tier is held by, and the commitment that says so */
+    const term = commitmentOf(bought)
+    if (term && term.plan === 'full' && term.months && userId) {
+      const ends = new Date(); ends.setUTCMonth(ends.getUTCMonth() + term.months)
+      const entitlementId = await grant(userId, 'class', 'subscribed', 'purchase', o.id, { tier: bought.tier ?? null, plan_amount: bought.unit_amount, expires_at: ends.toISOString() }, provider)
+      await linkProviderEntity(provider, 'checkout', o.id, 'entitlements', entitlementId)
+      await openCommitment({ userId, bought, openedBy: `${checkoutIdentity}:${sku}`, purchaseId, entitlementSourceId: providerScopedId(provider, o.id), paidRefs: ['full'] })
+    }
     /* a printed book: an order to the address the checkout collected, sent to the printer at once */
     if (bought?.kind === 'print' && bought.book) await printOrdered(o, bought, li.quantity ?? 1, userId, variant, provider)
     /* the line as the confirmation says it: the book's title, the format and choices, the files it carries */
@@ -573,12 +583,49 @@ export async function subscriptionChanged(o: any, provider = 'stripe') {
   if (priceId) await linkProviderEntity(provider, 'price', priceId, 'subscriptions', subscriptionId)
   if (usageItem?.price?.id) await linkProviderEntity(provider, 'price', usageItem.price.id, 'subscriptions', subscriptionId)
   if (usageItem && usageMeta.usage_meter) await linkProviderEntity(provider, 'meter', usageMeta.usage_meter, 'subscriptions', subscriptionId)
-  const { data: entitlement, error: entitlementError } = await admin.from('entitlements').upsert({
-    user_id: userId, kind: 'class', key: 'subscribed', source: 'subscription', source_id: providerScopedId(provider, externalSubscriptionId),
-    tier: item?.price?.metadata?.tier ?? null, plan_amount: amount, active, expires_at: periodEnd,
-  }, { onConflict: 'user_id,kind,key,source_id' }).select('id').maybeSingle()
-  if (entitlementError || !entitlement?.id) throw new Error(`subscription entitlement was not recorded: ${entitlementError?.message ?? 'no entitlement id returned'}`)
-  await linkProviderEntity(provider, 'subscription', externalSubscriptionId, 'entitlements', entitlement.id)
+  /* A PLAN OR A MONTHLY TERM (openspec: payment-plans). Access held back after a missed payment stays
+     held whatever the provider now says — a subscription "past due" reads as live — until it is paid. */
+  const scoped = providerScopedId(provider, externalSubscriptionId)
+  const committed = commitmentOf(known)
+  const held = !!committed && await holds(userId, scoped)
+  const live = active && !held
+  const parent = committed ? offer(committed.of) : null
+  if (committed && parent && parent.kind !== 'membership') {
+    /* what was bought outright is kept once paid for: the subscription ending after its last payment
+       takes nothing back. Only a payment outstanding holds it (and a default, through the database). */
+    const kept = !held
+    /* something bought once, paid in instalments: what buying it outright grants, and a purchase of
+       it — which is what a course, an event or a book is opened by — written once */
+    const { data: purchaseId, error: purchaseError } = await admin.rpc('purchase_write', { p: {
+      user_id: userId, checkout_identity: `commitment:${scoped}`, price_id: priceId, product_id: null,
+      sku: parent.sku, key: parent.key, kind: parent.kind, title: known!.title, unit_price: amount, quantity: 1,
+      amount_total: amount, currency: item?.price?.currency ?? known!.currency, status: kept ? 'paid' : 'suspended',
+    } })
+    if (purchaseError || !purchaseId) throw new Error(`plan purchase was not recorded: ${purchaseError?.message ?? 'no purchase id returned'}`)
+    await linkProviderEntity(provider, 'subscription', externalSubscriptionId, 'purchases', purchaseId)
+    for (const g of grantsOf({ offer: parent, sku: parent.sku, book: parent.book, quantity: 1, sessionId: externalSubscriptionId, userId })) {
+      const entitlementId = await grant(userId, g.kind as 'class' | 'product', g.key, 'subscription', g.source_id, { active: kept }, provider)
+      await linkProviderEntity(provider, 'subscription', externalSubscriptionId, 'entitlements', entitlementId)
+    }
+    await openCommitment({ userId, bought: known, openedBy: `${subscriptionId}:${known!.sku}`, subscriptionId, purchaseId, entitlementSourceId: scoped })
+  } else {
+    const { data: entitlement, error: entitlementError } = await admin.from('entitlements').upsert({
+      user_id: userId, kind: 'class', key: 'subscribed', source: 'subscription', source_id: scoped,
+      tier: item?.price?.metadata?.tier ?? null, plan_amount: amount, active: live, expires_at: periodEnd,
+    }, { onConflict: 'user_id,kind,key,source_id' }).select('id').maybeSingle()
+    if (entitlementError || !entitlement?.id) throw new Error(`subscription entitlement was not recorded: ${entitlementError?.message ?? 'no entitlement id returned'}`)
+    await linkProviderEntity(provider, 'subscription', externalSubscriptionId, 'entitlements', entitlement.id)
+    if (committed) await openCommitment({ userId, bought: known, openedBy: `${subscriptionId}:${known!.sku}`, subscriptionId, entitlementSourceId: scoped })
+  }
+  /* the provider has stopped retrying (Stripe's "unpaid"): the rest of the commitment is owed */
+  if (committed && o.status === 'unpaid') await commitmentDefaulted(subscriptionId)
+}
+
+/* a subscription's first payment, made at checkout: counted under the same name the provider's own
+   first invoice is, so whichever arrives second is not counted again */
+export async function firstPayment(snapshot: PaymentSubscriptionSnapshot, provider = 'stripe') {
+  if (!snapshot?.subscriptionId) return
+  await commitmentPaid(await localSubscriptionId(provider, snapshot.subscriptionId), 'first')
 }
 export async function subscriptionDeleted(id: string, provider = 'stripe') {
   const mappedId = await findProviderEntity(provider, 'subscription', id, 'subscriptions')
@@ -589,4 +636,7 @@ export async function subscriptionDeleted(id: string, provider = 'stripe') {
   const { error: entitlementError } = await admin.from('entitlements').update({ active: false })
     .eq('source_id', providerScopedId(provider, id)).eq('kind', 'class').eq('key', 'subscribed')
   if (entitlementError) throw new Error(`subscription entitlement cancellation was not recorded: ${entitlementError.message}`)
+  /* ended before its last payment — by an administrator in the provider's dashboard, say, or after
+     the provider gave up retrying: the rest is owed. A commitment already paid is left as it is. */
+  await commitmentDefaulted(subscriptionId)
 }

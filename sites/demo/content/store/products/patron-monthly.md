@@ -15,6 +15,21 @@ sessions:
     monthly: 2
 rank: 2
 order: 11
+# also sold for a fixed term: in full, or monthly with every payment owed (Payment plans and fixed terms)
+terms:
+  - months: 3
+    full: 108
+    monthly: 40
+  - months: 6
+    full: 200
+    monthly: 36
+    then: monthly
+changes:
+  upgrade: anytime
+  downgrade: term-end
+missed:
+  restrict: immediately
+  cancelBookings: 24h
 ---
 
 Everything in Member, a private hour with a coach each month, chat answered within 24 hours, and each new book the day it lands.

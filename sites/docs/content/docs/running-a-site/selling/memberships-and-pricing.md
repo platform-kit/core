@@ -13,7 +13,7 @@ sources:
     packages/kit/theme/src/components/landing/LandingPricing.vue,
     packages/kit/src/lib/auth.ts,
   ]
-reviewed: 2026-11-10
+reviewed: 2026-11-17
 ---
 
 A **membership** is a tier — a level — and any number of offers may belong to it: `group-coaching-weekly` and `group-coaching-monthly` are two product files with the same **tier** slug. A higher **rank** includes everything below it. Never assume one membership product.
@@ -56,6 +56,8 @@ A person holds one subscription. The pricing page marks their rung **Subscribed*
 
 - **Up** (a higher rank, or another offer of the same tier) happens now: the rest of the period on the new plan less the rest on the old, charged at once. A card that fails leaves the plan as it was.
 - **Down** takes effect at the renewal: the paid-for plan runs to the end of its period, and the lower one begins then. The page marks the coming rung with the date; pressing the current rung again calls the step down off.
+
+A member partway through a fixed term switches as the membership's `changes` policy says: an upgrade and a downgrade each any time, only at the end of the term (the change is kept and made after the term's last payment), or never. Another term can't be started over one with payments still to make. [Payment plans and fixed terms](/docs/running-a-site/selling/payment-plans) describes terms.
 
 Checkout returns to the app with a toast saying what happened; the purchase is theirs on landing whether or not the provider's webhook has arrived yet.
 

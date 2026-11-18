@@ -35,6 +35,12 @@ CREATE TABLE IF NOT EXISTS "public"."commitments" (
     "missed_at" timestamp with time zone,
     "restricted_at" timestamp with time zone,
     "bookings_cancelled_at" timestamp with time zone,
+    -- when the hosts of the buyer's upcoming bookings were told of the missed payment (the sessions module)
+    "hosts_told_at" timestamp with time zone,
+    -- a plan change the offer's policy deferred to the end of the term
+    "change_to_sku" "text",
+    -- whether it pays for a membership: a plan for anything else is its own subscription, never "the plan"
+    "membership" boolean DEFAULT false NOT NULL,
     "reminded_at" timestamp with time zone,
     "owed_minor" integer DEFAULT 0 NOT NULL,
     -- what it rides on and what it holds back: the local subscription, the purchase, and the
@@ -63,7 +69,8 @@ ALTER TABLE ONLY "public"."commitments"
 ALTER TABLE "public"."commitments" ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "commitments_select_own" ON "public"."commitments" FOR SELECT TO "authenticated" USING ((("auth"."uid"() = "user_id") OR "public"."is_admin"()));
 
-REVOKE ALL ON TABLE "public"."commitments" FROM "anon";
+-- a buyer reads their own and writes nothing: every change is the server's, from a payment report
+REVOKE ALL ON TABLE "public"."commitments" FROM "anon", "authenticated";
 GRANT SELECT ON TABLE "public"."commitments" TO "authenticated";
 GRANT ALL ON TABLE "public"."commitments" TO "service_role";
 
@@ -74,7 +81,9 @@ CREATE OR REPLACE FUNCTION "public"."commitment_access"("c" "public"."commitment
     AS $$
 begin
   if c.entitlement_source_id is not null then
-    update public.entitlements set active = p_on where user_id = c.user_id and source_id = c.entitlement_source_id and active <> p_on;
+    -- the source itself, and each credit it granted (a session's or a form's, "<source>:<n>" — ledger-rules.ts)
+    update public.entitlements set active = p_on
+     where user_id = c.user_id and (source_id = c.entitlement_source_id or source_id like c.entitlement_source_id || ':%') and active <> p_on;
   end if;
   if c.purchase_id is not null then
     update public.purchases set status = case when p_on then 'paid' else 'suspended' end
@@ -102,7 +111,7 @@ declare out_id uuid;
 begin
   insert into public.commitments (
     user_id, sku, of_sku, plan, term_months, payments_total, payments_made, paid_refs, amount_minor, currency,
-    starts_at, ends_at, "then", "restrict", cancel_bookings_after_minutes, subscription_id, purchase_id, entitlement_source_id, opened_by
+    starts_at, ends_at, "then", "restrict", cancel_bookings_after_minutes, subscription_id, purchase_id, entitlement_source_id, opened_by, membership
   ) values (
     (p->>'user_id')::uuid, p->>'sku', p->>'of_sku', p->>'plan', nullif(p->>'term_months', '')::integer,
     (p->>'payments_total')::integer, coalesce((p->>'payments_made')::integer, 0),
@@ -110,7 +119,8 @@ begin
     (p->>'amount_minor')::integer, coalesce(p->>'currency', 'usd'),
     coalesce((p->>'starts_at')::timestamptz, now()), (p->>'ends_at')::timestamptz,
     coalesce(p->>'then', 'end'), coalesce(p->>'restrict', 'immediately'), nullif(p->>'cancel_bookings_after_minutes', '')::integer,
-    p->>'subscription_id', nullif(p->>'purchase_id', '')::uuid, p->>'entitlement_source_id', p->>'opened_by'
+    p->>'subscription_id', nullif(p->>'purchase_id', '')::uuid, p->>'entitlement_source_id', p->>'opened_by',
+    coalesce((p->>'membership')::boolean, false)
   )
   on conflict ("opened_by") do update set
     purchase_id = coalesce(public.commitments.purchase_id, excluded.purchase_id),
@@ -140,7 +150,7 @@ begin
   update public.commitments
      set paid_refs = paid_refs || p_ref, payments_made = payments_made + 1,
          status = case when payments_made + 1 >= payments_total then 'ended' else 'active' end,
-         missed_at = null, restricted_at = null, owed_minor = 0, updated_at = now()
+         missed_at = null, restricted_at = null, hosts_told_at = null, bookings_cancelled_at = null, owed_minor = 0, updated_at = now()
    where id = c.id
    returning * into c;
   return jsonb_build_object('commitment', true, 'counted', true, 'id', c.id, 'restored', restored,

@@ -2,6 +2,7 @@ import { admin, getPaymentProvider, getUser, isServiceBearer, json, preflight } 
 import { fresh } from '@pk/core/compiled.ts'
 import { offerByKey } from '@pk/core/offers.ts'
 import { subscriptionDeleted } from '@pk/core/ledger.ts'
+import { commitmentPaid, commitmentMissed, commitmentDefaulted } from '@pk/core/commitments.ts'
 import { assertPaymentCapabilities, PaymentProviderError } from '@pk/core/payment-provider.mts'
 import { findProviderExternalIds, linkProviderEntity } from '@pk/core/payment-provider-refs.ts'
 import { meteredUsageAmountMinor, paymentPeriodEnd } from '@pk/core/hyperswitch-billing.mts'
@@ -222,6 +223,8 @@ async function run() {
       if (completeError || completed !== true) {
         throw new Error(`subscription renewal was charged but its ledger transition failed: ${completeError?.message ?? 'claim no longer active'}`)
       }
+      /* a plan's or a term's payment, counted by the payment that made it (openspec: payment-plans) */
+      await commitmentPaid(row.subscription_id, result.paymentIntentId)
       renewed++
     } catch (cause) {
       const message = String((cause as Error)?.message ?? cause)
@@ -234,6 +237,13 @@ async function run() {
         throw new Error(`subscription renewal failed (${message}) and retry state could not be saved: ${failureError?.message ?? 'claim no longer active'}`)
       }
       console.error(`Hyperswitch subscription renewal failed for ${row.subscription_id}: ${message}`)
+      /* a plan's or a term's payment missed; and once the retries are spent, the rest is owed */
+      try {
+        await commitmentMissed(row.subscription_id)
+        const { data: retry } = await admin.from('payment_subscription_renewals').select('status')
+          .eq('provider', 'hyperswitch').eq('subscription_id', row.subscription_id).eq('period_end', row.period_end).maybeSingle()
+        if (retry?.status === 'exhausted') await commitmentDefaulted(row.subscription_id)
+      } catch (e) { console.error(`commitment for ${row.subscription_id} not updated after a failed renewal: ${(e as Error)?.message ?? e}`) }
       failed++
     }
   }

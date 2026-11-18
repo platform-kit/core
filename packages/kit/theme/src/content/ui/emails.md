@@ -144,6 +144,24 @@ subject: New terms to agree to before your next sale
 
 subject: {{what}} is {{in}}
 
+## payment-missed
+
+### mail
+
+subject: Your payment for {{what}} didn't go through
+
+## payment-missed-notice
+
+### mail
+
+subject: A payment for {{what}} was missed
+
+## payment-default-notice
+
+### mail
+
+subject: A plan for {{what}} is in default
+
 ## course-lesson
 
 ### mail

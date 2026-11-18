@@ -149,6 +149,32 @@ export function createPaymentProvider(
   if (!stripe) throw new PaymentProviderError('stripe_client_missing', 'The built-in Stripe client was not initialized.', 500)
   const webhookSecret = secrets.STRIPE_WEBHOOK_SECRET || ''
 
+  /*
+   * THE PORTAL FOR A CUSTOMER IN A PLAN OR A TERM: cards, invoices and their details, and no way to
+   * cancel or switch plan (openspec: payment-plans). Made once in the account and found again by its
+   * metadata, so nothing about it is kept here; Stripe's own default configuration is left as the
+   * site owner set it, for everybody else.
+   */
+  let committedPortalId: string | null = null
+  const COMMITTED = 'platformkit-commitment'
+  async function committedPortal(): Promise<string> {
+    if (committedPortalId) return committedPortalId
+    for await (const c of stripe!.billingPortal.configurations.list({ active: true, limit: 100 })) {
+      if (c.metadata?.platformkit === COMMITTED) return (committedPortalId = c.id)
+    }
+    const made = await stripe!.billingPortal.configurations.create({
+      features: {
+        customer_update: { enabled: true, allowed_updates: ['email', 'address', 'name', 'phone', 'tax_id'] },
+        invoice_history: { enabled: true },
+        payment_method_update: { enabled: true },
+        subscription_cancel: { enabled: false },
+        subscription_update: { enabled: false },
+      },
+      metadata: { platformkit: COMMITTED },
+    }, { idempotencyKey: COMMITTED })
+    return (committedPortalId = made.id)
+  }
+
   return {
     id: 'stripe',
     capabilities: STRIPE_PAYMENT_CAPABILITIES,
@@ -669,12 +695,18 @@ export function createPaymentProvider(
       }
       return { provider: 'stripe', offers: synced }
     },
-    async createPortalSession(input: { customerId: string; returnUrl: string }) {
+    async createPortalSession(input: { customerId: string; returnUrl: string; committed?: boolean }) {
       const session = await stripe.billingPortal.sessions.create({
         customer: input.customerId,
         return_url: input.returnUrl,
+        /* a customer in a plan or a term: the portal without cancellation or plan switching. Without
+           a configuration the session uses the account's default, which is everybody else's. */
+        ...(input.committed ? { configuration: await committedPortal() } : {}),
       })
       return { url: session.url }
+    },
+    async endSubscription(input: { subscriptionId: string; idempotencyKey: string }) {
+      await stripe.subscriptions.update(input.subscriptionId, { cancel_at_period_end: true }, { idempotencyKey: input.idempotencyKey })
     },
     async changeSubscription(input: {
       subscriptionId: string

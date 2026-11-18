@@ -11,7 +11,7 @@
  * hands it compiled (auth-config.mjs on deploy, supabase/templates locally); their tags are Go
  * templates — `{{ .ConfirmationURL }}` — left intact by fill.js and filled by Supabase.
  */
-export const KINDS = ['order', 'shipped', 'files', 'chat', 'support', 'support-digest', 'magic-link', 'recovery', 'invitation', 'campaign', 'session-booked', 'session-held', 'session-to-confirm', 'session-declined', 'session-moved', 'session-cancelled', 'session-reminder', 'event-reminder', 'provider-terms', 'course-lesson', 'course-complete']
+export const KINDS = ['order', 'shipped', 'files', 'chat', 'support', 'support-digest', 'magic-link', 'recovery', 'invitation', 'campaign', 'session-booked', 'session-held', 'session-to-confirm', 'session-declined', 'session-moved', 'session-cancelled', 'session-reminder', 'event-reminder', 'provider-terms', 'course-lesson', 'course-complete', 'payment-missed', 'payment-missed-notice', 'payment-default-notice']
 /* the ones Supabase Auth sends, from the compiled design: never filled here */
 export const GOTRUE = ['magic-link', 'recovery', 'invitation']
 
@@ -107,6 +107,26 @@ export const TAGS: any = {
     { label: 'Link to the course', value: '{{url}}', group: 'Course', sample: 'https://example.com/courses/writing-well' },
     { label: 'Link to the certificate', value: '{{certificate}}', group: 'Course', sample: 'https://example.com/certificates/3f2a9c', description: 'empty when the course gives none' },
   ],
+  /* a payment of a plan or a term missed, and its default (openspec: payment-plans): to the buyer, and to the administrators */
+  'payment-missed': [
+    { label: 'First name', value: '{{name}}', group: 'Buyer', sample: 'Ada' },
+    { label: 'What it pays for', value: '{{what}}', group: 'Plan', sample: 'Coaching' },
+    { label: 'The payment', value: '{{amount}}', group: 'Plan', sample: '$1,800.00' },
+    { label: 'Link to billing', value: '{{url}}', group: 'Plan', sample: 'https://example.com/billing' },
+    { label: 'Access is paused', value: '{{restricted}}', group: 'Plan', sample: 'yes', description: 'empty when the offer keeps access until the retries end' },
+  ],
+  'payment-missed-notice': [
+    { label: 'Who', value: '{{who}}', group: 'Buyer', sample: 'ada@example.com' },
+    { label: 'What it pays for', value: '{{what}}', group: 'Plan', sample: 'Coaching' },
+    { label: 'The payment', value: '{{amount}}', group: 'Plan', sample: '$1,800.00' },
+    { label: 'Access is paused', value: '{{restricted}}', group: 'Plan', sample: 'yes', description: 'empty when the offer keeps access until the retries end' },
+  ],
+  'payment-default-notice': [
+    { label: 'Who', value: '{{who}}', group: 'Buyer', sample: 'ada@example.com' },
+    { label: 'What it pays for', value: '{{what}}', group: 'Plan', sample: 'Coaching' },
+    { label: 'What is owed', value: '{{owed}}', group: 'Plan', sample: '$7,200.00' },
+    { label: 'Link to the admin', value: '{{url}}', group: 'Plan', sample: 'https://example.com/admin' },
+  ],
   /* the frame every funnel step and blast is piped through: the markdown's html goes into an html block as {{{body}}} */
   campaign: [
     { label: 'First name', value: '{{name}}', group: 'Reader', sample: 'Ada' },
@@ -158,6 +178,9 @@ export const PAIRS: any = {
   ],
   'session-moved': null, 'session-cancelled': null, 'session-reminder': null,
   'course-lesson': [],
+  'payment-missed': [{ label: 'Only when access is paused', before: '{{#if restricted}}', after: '{{/if}}', group: 'Show when' }, { label: 'Only when access is kept for now', before: '{{#unless restricted}}', after: '{{/unless}}', group: 'Show when' }],
+  'payment-missed-notice': [{ label: 'Only when access is paused', before: '{{#if restricted}}', after: '{{/if}}', group: 'Show when' }],
+  'payment-default-notice': [],
   'course-complete': [{ label: 'Only with a certificate', before: '{{#if certificate}}', after: '{{/if}}', group: 'Show when' }],
   'provider-terms': [{ label: 'Only for somebody who signed an earlier version', before: '{{#if signed}}', after: '{{/if}}', group: 'Show when' }, { label: 'Only for somebody who has never signed', before: '{{#unless signed}}', after: '{{/unless}}', group: 'Show when' }],
 }
@@ -169,6 +192,9 @@ TAGS['event-reminder'].push({ label: 'How soon', value: '{{in}}', group: 'Sessio
 TAGS['event-reminder'].push({ label: 'What it is', value: '{{what}}', group: 'Session', sample: 'The members\' call' })
 /* one sample order per email, for the editor's preview and a test send */
 export const SAMPLES = {
+  'payment-missed': { name: 'Ada', what: 'Coaching', amount: '$1,800.00', url: 'https://example.com/billing', restricted: 'yes' },
+  'payment-missed-notice': { who: 'ada@example.com', what: 'Coaching', amount: '$1,800.00', restricted: 'yes' },
+  'payment-default-notice': { who: 'ada@example.com', what: 'Coaching', owed: '$7,200.00', url: 'https://example.com/admin' },
   order: { name: 'Ada', title: 'The Kybalion', url: 'https://example.com/store/products/the-kybalion-print', lines: [{ title: 'The Kybalion', detail: 'Paperback · Both — the modern edition, then the original full text', qty: 1, amount: '$15.00' }], subtotal: '$15.00', shipping: '$5.00', total: '$20.00', address: ['Ada Lovelace', '1 Example Street', 'Anytown NY 10001', 'US'], ships: true, files: true, guest: false },
   shipped: { name: 'Ada', title: 'The Kybalion', url: 'https://example.com/store/products/the-kybalion-print', carrier: 'USPS', tracking_id: '9400 1000 0000 0000 0000 00', tracking_url: 'https://tools.usps.com/go/TrackConfirmAction?tLabels=9400100000000000000000', address: ['Ada Lovelace', '1 Example Street', 'Anytown NY 10001', 'US'] },
   files: { name: 'Ada', title: 'The Kybalion', url: 'https://example.com/store/products/the-kybalion-print', files: 'PDF and EPUB', guest: false },

@@ -9,6 +9,11 @@ sources:
     packages/kit/supabase/schemas/44-commitments.sql,
     packages/kit/build/payment-plans.test.mts,
     packages/kit/build/payment-plans-db.test.mts,
+    packages/kit/build/payment-plans-checkout.test.mts,
+    packages/kit/supabase/functions/_shared/commitments.ts,
+    packages/kit/content/emails/payment-missed.json,
+    packages/kit/content/emails/payment-missed-notice.json,
+    packages/kit/content/emails/payment-default-notice.json,
   ]
 reviewed: 2026-11-17
 ---
@@ -95,4 +100,16 @@ Each way of paying is compiled into an offer of its own, named after the offer i
 
 Each buyer's commitment is a row in `commitments`. It counts the payments, holds access back after a missed payment, and records what's owed. While a payment is outstanding, the entitlements the payment wrote are inactive, and a purchase bought in instalments is marked `suspended`. A buyer can read their own commitments. Only the server can write them.
 
-Selling plans and terms at checkout, the plan picker, and the billing view are being built under the OpenSpec change `payment-plans`.
+## Buying, paying and cancelling
+
+A plan or a term is bought on its own, and only once the buyer has agreed to it: checkout refuses one without `accept: true`, and charges the catalogue's price for it whatever the request says. A membership sold in terms alone is bought through one of its terms.
+
+Each payment is counted once, whichever report brings it: the Stripe webhook, the Hyperswitch renewal run, or the buyer's own confirmation on landing.
+
+- **A missed payment** holds access back as `missed.restrict` says, and emails the buyer (`payment-missed`) and the administrators (`payment-missed-notice`). Paying gives access back at once.
+- **When the provider stops retrying**, or the subscription is ended some other way before the last payment, the rest is recorded as owed and the administrators are told (`payment-default-notice`).
+- **The last payment** ends the subscription at the end of the period paid for, moves it to the open-ended price (`then: monthly`), or starts another term (`then: renew`). A plan change the policy deferred is made instead.
+
+A buyer can't cancel while payments are still to make. On Hyperswitch, the site's billing page refuses it. On Stripe, the customer portal opens without cancellation or plan switching for a customer with payments to make. It's a portal configuration the kit makes once in the account, tagged `platformkit-commitment`. Everybody else gets the account's default portal.
+
+Still being built under the OpenSpec change `payment-plans`: the plan picker on the Pricing section and the store, the commitment in the billing view, cancelling bookings after the grace period, the reminder before a term ends, and continuing a term that was paid in full.

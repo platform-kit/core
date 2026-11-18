@@ -60,9 +60,11 @@ CREATE OR REPLACE FUNCTION "public"."get_my_entitlements"() RETURNS "jsonb"
       and active
       and (expires_at is null or expires_at > now())
   ), sub as (
-    select sku, key, next_sku, next_key, next_at from public.subscriptions
-    where user_id = auth.uid() and status in ('active', 'trialing', 'past_due')
-    order by updated_at desc limit 1
+    select s.sku, s.key, s.next_sku, s.next_key, s.next_at from public.subscriptions s
+    where s.user_id = auth.uid() and s.status in ('active', 'trialing', 'past_due')
+      -- a course or programme paid in instalments is a subscription too, and never the person's plan (44-commitments.sql)
+      and not exists (select 1 from public.commitments c where c.subscription_id = s.id and not c.membership)
+    order by s.updated_at desc limit 1
   )
   select jsonb_build_object(
     'class', case

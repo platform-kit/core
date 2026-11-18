@@ -1,0 +1,299 @@
+{
+  "settings": {
+    "width": 600,
+    "backgroundColor": "#fbfaf3",
+    "textColor": "#0c0d0b",
+    "linkColor": "#0c0d0b",
+    "linkUnderline": true,
+    "fontFamily": "Georgia",
+    "locale": "en",
+    "preheaderText": "Your payment of {{amount}} for {{what}} didn't go through."
+  },
+  "blocks": [
+    {
+      "id": "paymen-0",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        }
+      },
+      "children": [
+        [
+          {
+            "id": "paymen-1",
+            "type": "spacer",
+            "height": 28,
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "paymen-2",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 34,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "paymen-3",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#0c0d0b;font-family:Menlo, Consolas, monospace\">Your site</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 2,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "paymen-4",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">What you send it about</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "paymen-5",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "paymen-6",
+            "type": "divider",
+            "lineStyle": "solid",
+            "color": "#e6e2d6",
+            "thickness": 1,
+            "width": "full",
+            "styles": {
+              "padding": {
+                "top": 18,
+                "right": 0,
+                "bottom": 6,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "paymen-7",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "paymen-8",
+            "type": "title",
+            "level": 2,
+            "content": "Your payment didn't go through.",
+            "textAlign": "left",
+            "color": "#0c0d0b",
+            "fontFamily": "Georgia, Times New Roman, serif",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 10,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "paymen-9",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:16px;color:#0c0d0b\">Hi {{name}}, your payment of {{amount}} for {{what}} didn't go through.{{#if restricted}} Your access is paused until it's paid.{{/if}}{{#unless restricted}} Your access continues while the payment is retried.{{/unless}}</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 12,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "paymen-a",
+            "type": "button",
+            "text": "Update your payment",
+            "url": "{{url}}",
+            "backgroundColor": "#0c0d0b",
+            "textColor": "#fbfaf3",
+            "borderRadius": 999,
+            "fontSize": 15,
+            "fontFamily": "Georgia, Times New Roman, serif",
+            "buttonPadding": {
+              "top": 13,
+              "right": 24,
+              "bottom": 13,
+              "left": 24
+            },
+            "align": "left",
+            "styles": {
+              "padding": {
+                "top": 10,
+                "right": 0,
+                "bottom": 14,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "paymen-b",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69\">Paying gives your access back at once. Your plan has payments still to make, and they stay due.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "paymen-c",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 34,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "paymen-d",
+            "type": "divider",
+            "lineStyle": "solid",
+            "color": "#e6e2d6",
+            "thickness": 1,
+            "width": "full",
+            "styles": {
+              "padding": {
+                "top": 22,
+                "right": 0,
+                "bottom": 14,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "paymen-e",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">Questions? Reply to this email.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 6,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "paymen-f",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">You are receiving this because of a payment plan on this site.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "paymen-g",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        }
+      },
+      "children": [
+        [
+          {
+            "id": "paymen-h",
+            "type": "spacer",
+            "height": 28,
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    }
+  ]
+}

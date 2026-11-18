@@ -49,7 +49,8 @@ import { checkoutCompleted, subscriptionChanged, subscriptionDeleted, iso } from
 import { findProviderExternalIds, linkProviderEntity } from '../_shared/payment-provider-refs.ts'
 import { judge } from '../_shared/cal.ts'
 import { coaching as siteCoaching } from '../_shared/pipe/site.js'
-import { fresh } from '../_shared/compiled.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
+import { fresh } from '../_shared/compiled.ts'
+import { commitmentOf, binding } from '../_shared/commitments.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
 
 Deno.serve(async (req: Request) => {
   await fresh()
@@ -174,6 +175,20 @@ Deno.serve(async (req: Request) => {
     const o = offerOf(String(it.sku ?? ''))
     return !o || (o.kind !== 'print' && o.kind !== 'download' && !(guestSessionBooking && o.kind === 'session'))
   })) return json({ error: 'sign in to buy', code: 'signin' }, 401)
+  /*
+   * A PLAN OR A TERM IS A COMMITMENT (openspec: payment-plans): bought on its own, and only once the
+   * buyer has said yes to all of it — the page shows the payments, that they can't be stopped
+   * part-way, what a missed one does and what follows. A membership sold in terms alone is bought
+   * through one of its terms, never as itself.
+   */
+  for (const sku of merged.keys()) {
+    const o = offerOf(sku)
+    if (o?.terms_only) return json({ error: `${sku}: choose one of its terms`, code: 'choose_term' }, 400)
+    if (commitmentOf(o)) {
+      if (merged.size > 1) return json({ error: 'a plan is bought on its own', code: 'plan_alone' }, 400)
+      if (body?.accept !== true) return json({ error: 'agree to the plan first', code: 'accept' }, 400)
+    }
+  }
   if (subscriptions && once) return json({ error: 'a membership is bought on its own' }, 400)
   if (subscriptions > 1) return json({ error: 'one membership at a time' }, 400)
   const mode = subscriptions ? 'subscription' : 'payment'
@@ -209,9 +224,41 @@ Deno.serve(async (req: Request) => {
     throw error
   }
   /* already a subscriber: the plan is switched, not doubled */
-  let { data: live } = mode === 'subscription' && user
-    ? await admin.from('subscriptions').select('id, sku, key, next_sku, next_key, plan_amount, current_period_start, current_period_end').eq('user_id', user.id).in('status', ['active', 'trialing', 'past_due']).order('updated_at', { ascending: false }).limit(1).maybeSingle()
+  /* a plan for a course or a programme is its own subscription beside a membership, never switched into it */
+  const targetOffer = offerOf([...merged.keys()][0])
+  const intoMembership = (targetOffer?.kind === 'membership')
+  let { data: live } = mode === 'subscription' && user && intoMembership
+    ? await (async () => {
+      const { data: rows } = await admin.from('subscriptions').select('id, sku, key, next_sku, next_key, plan_amount, current_period_start, current_period_end').eq('user_id', user.id).in('status', ['active', 'trialing', 'past_due']).order('updated_at', { ascending: false }).limit(10)
+      const ids = (rows ?? []).map((r) => r.id)
+      const { data: plans } = ids.length ? await admin.from('commitments').select('subscription_id').in('subscription_id', ids).eq('membership', false) : { data: [] }
+      const apart = new Set((plans ?? []).map((p: any) => p.subscription_id))
+      return { data: (rows ?? []).find((r) => !apart.has(r.id)) ?? null }
+    })()
     : { data: null }
+  /*
+   * PARTWAY THROUGH A TERM, a change of plan follows the membership's policy: an upgrade or a
+   * downgrade each any time, at the end of the term, or never. Another term can't be started over
+   * one still owing payments. A change deferred to the end of the term is kept on the commitment
+   * and made, through the ordinary subscription change, after its last payment.
+   */
+  if (live && user) {
+    const held = await binding(live.id)
+    if (held) {
+      const to = offer([...merged.keys()][0])!
+      if (commitmentOf(to)) return json({ error: 'finish this term before starting another', code: 'committed', ends_at: held.ends_at }, 409)
+      const parent = offer(held.of_sku)
+      const from = (live.key ? offerByKey(live.key) : null) ?? offer(live.sku ?? '')
+      const up = (TIERS[to.tier ?? ''] ?? 0) >= (TIERS[from?.tier ?? ''] ?? 0)
+      const rule = (parent?.changes ?? { upgrade: 'anytime', downgrade: 'anytime' })[up ? 'upgrade' : 'downgrade']
+      if (rule === 'never') return json({ error: up ? 'this term can\'t be upgraded' : 'this term can\'t be downgraded', code: 'committed', ends_at: held.ends_at }, 409)
+      if (rule === 'term-end') {
+        await admin.from('commitments').update({ change_to_sku: to.sku, updated_at: new Date().toISOString() }).eq('id', held.id)
+        await admin.from('subscriptions').update({ next_sku: to.sku, next_key: to.key, next_at: held.ends_at }).eq('id', live.id)
+        return json({ switched: true, from: live.sku, to: to.sku, at: held.ends_at, deferred: true })
+      }
+    }
+  }
   if (live && user) {
     const targetSku = [...merged.keys()][0]
     const target = offer(targetSku)!

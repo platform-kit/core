@@ -9,6 +9,16 @@ import { subscriptionDeleted } from '@pk/core/ledger.ts'
 import { assertPaymentCapabilities, PaymentProviderError } from '@pk/core/payment-provider.mts'
 import type { PaymentProviderAdapter } from '@pk/core/payment-provider.d.ts'
 import { findProviderExternalIds, linkProviderEntity } from '@pk/core/payment-provider-refs.ts'
+import { binding } from '@pk/core/commitments.ts'
+
+/* what the billing view shows of somebody's plans and terms: what is owed, made and left (openspec: payment-plans) */
+async function commitmentsOf(userId: string) {
+  const { data, error } = await admin.from('commitments')
+    .select('sku, of_sku, plan, term_months, payments_total, payments_made, amount_minor, currency, starts_at, ends_at, then, status, missed_at, owed_minor, subscription_id')
+    .eq('user_id', userId).in('status', ['active', 'restricted', 'defaulted']).order('created_at', { ascending: false })
+  if (error) throw new Error(`commitments could not be loaded: ${error.message}`)
+  return data ?? []
+}
 
 Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre
@@ -29,7 +39,8 @@ Deno.serve(async (req: Request) => {
     if (subscriptionError) {
       return json({ error: `billing subscription could not be loaded: ${subscriptionError.message}` }, 500)
     }
-    if (!subscription) return json({ subscription: null, has_payment_method: false, provider: null })
+    const commitments = await commitmentsOf(user.id)
+    if (!subscription) return json({ subscription: null, has_payment_method: false, provider: null, commitments })
     const { data: refs, error: refsError } = await admin.from('payment_provider_refs')
       .select('provider, object_type')
       .eq('entity_type', 'subscriptions')
@@ -58,6 +69,7 @@ Deno.serve(async (req: Request) => {
       has_payment_method: providerId != null
         && (refs ?? []).some((ref) => ref.provider === providerId && ref.object_type === 'payment_method'),
       provider: providerId,
+      commitments,
     })
   }
 
@@ -87,6 +99,11 @@ Deno.serve(async (req: Request) => {
     const { data: subscription, error: subscriptionError } = await query.maybeSingle()
     if (subscriptionError) return json({ error: `billing subscription could not be loaded: ${subscriptionError.message}` }, 500)
     if (!subscription) return json({ subscription: null, has_payment_method: false })
+    /* A PLAN OR A TERM CAN'T BE CANCELLED before its last payment: the buyer agreed to all of them */
+    if (action === 'cancel') {
+      const held = await binding(subscription.id)
+      if (held) return json({ error: 'this plan has payments still to make', code: 'committed', payments_made: held.payments_made, payments_total: held.payments_total, ends_at: held.ends_at }, 409)
+    }
     if (action === 'cancel' || action === 'resume') {
       const { error } = await admin.from('subscriptions').update({
         cancel_at_period_end: action === 'cancel',
@@ -152,9 +169,12 @@ Deno.serve(async (req: Request) => {
       throw new PaymentProviderError('portal_unavailable', `Payment provider "${provider.id}" does not implement customer portal sessions.`, 500)
     }
     if (!linkedCustomers.length) await linkProviderEntity(provider.id, 'customer', customerId, 'profiles', user.id)
+    /* somebody owing payments on a plan or a term gets the portal without cancel or switch */
+    const committed = (await commitmentsOf(user.id)).some((c: any) => c.subscription_id && c.status !== 'defaulted' && c.payments_made < c.payments_total)
     const session = await provider.createPortalSession({
       customerId,
       returnUrl: `${appUrl()}${provider.id === 'hyperswitch' ? '/billing' : '/store'}`,
+      ...(committed ? { committed: true } : {}),
     })
     return json({ url: session.url })
   } catch (e: any) {

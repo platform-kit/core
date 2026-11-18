@@ -9,7 +9,7 @@
  * confirm it.
  */
 import { stripeConfigured, stripeMock, isMockId, stripeUnconfigured, json, preflight, getUser, getPaymentProvider } from '../_shared/lib.ts'
-import { checkoutCompleted, subscriptionChanged } from '../_shared/ledger.ts'
+import { checkoutCompleted, subscriptionChanged, firstPayment } from '../_shared/ledger.ts'
 import {
   assertPaymentCapabilities,
   normalizePaymentCheckout,
@@ -47,6 +47,7 @@ Deno.serve(async (req: Request) => {
     await checkoutCompleted(snapshot, provider.id)
     if (snapshot.mode === 'subscription' && snapshot.subscription) {
       await subscriptionChanged(snapshot.subscription, provider.id)
+      await firstPayment(snapshot.subscription, provider.id)
     }
     return json({ ok: true, mode: snapshot.mode })
   } catch (e: any) {
