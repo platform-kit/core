@@ -9,8 +9,9 @@ sources:
     packages/kit/supabase/functions/_shared/emails/tags.ts,
     packages/kit/theme/src/components/admin/EmailsAdmin.vue,
     packages/kit/build/auth-config.mts,
+    packages/kit/modules/memberships/emails/term-continues.json,
   ]
-reviewed: 2026-11-17
+reviewed: 2026-11-18
 ---
 
 Every email the site sends is a **design** built in the admin, compiled at build time, and filled with the real facts when it is sent. Marketing → **Emails** is a rail of the designs, one open in a drag-and-drop editor mounted with the site's colours and fonts. Module: `emails`.
@@ -34,6 +35,7 @@ Every email the site sends is a **design** built in the admin, compiled at build
 | **course-complete**                                          | To somebody who finished a course, with their certificate's address where the course gives one                                                                                                                                                                        |
 | **payment-missed**                                           | To somebody whose payment on a plan or a term failed, saying whether their access is paused and where to pay                                                                                                                                                          |
 | **payment-missed-notice**, **payment-default-notice**        | To the site's administrators: a payment on a plan or a term missed, and the provider no longer retrying it, with what is owed                                                                                                                                         |
+| **term-ending**, **term-continues**                          | To a member a week before a fixed term ends: that it ends, or what follows it and what that costs. **term-ending** also goes when the card kept for a renewal is declined                                                                                             |
 | **provider-terms**                                           | The moment a new version of the providers' terms is published — to every provider still on an earlier one, with the terms themselves in the letter                                                                                                                    |
 | **session-reminder**                                         | To the person, at each of the hours before the session the sending rules name (24 and 1 by default)                                                                                                                                                                   |
 

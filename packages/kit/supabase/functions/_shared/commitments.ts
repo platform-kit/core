@@ -36,12 +36,12 @@ async function rpc(name: string, args: Record<string, unknown>) {
 
 /* OPENING ONE. Idempotent on `opened_by`: the confirmation and the provider's report both arrive. */
 export async function openCommitment(p: {
-  userId: string; bought: any; openedBy: string; subscriptionId?: string | null; purchaseId?: string | null; entitlementSourceId: string; paidRefs?: string[]
+  userId: string; bought: any; openedBy: string; subscriptionId?: string | null; purchaseId?: string | null; entitlementSourceId: string; paidRefs?: string[]; startsAt?: Date
 }) {
   const c = commitmentOf(p.bought)
   if (!c) return null
   const parent = offer(c.of)
-  const now = new Date()
+  const now = p.startsAt ?? new Date()
   return rpc('commitment_open', { p: {
     user_id: p.userId, sku: p.bought.sku, of_sku: c.of, plan: c.plan, term_months: c.months,
     payments_total: c.payments, payments_made: (p.paidRefs ?? []).length, paid_refs: p.paidRefs ?? [],

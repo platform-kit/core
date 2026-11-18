@@ -168,6 +168,12 @@ subject: A plan for {{what}} is in default
 
 subject: Your {{what}} term ends on {{ends}}
 
+## term-continues
+
+### mail
+
+subject: Your {{what}} term ends on {{ends}}, and your membership continues
+
 ## course-lesson
 
 ### mail

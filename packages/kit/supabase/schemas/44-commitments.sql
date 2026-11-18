@@ -248,8 +248,9 @@ GRANT EXECUTE ON FUNCTION "public"."commitment_default"("text") TO "service_role
 GRANT EXECUTE ON FUNCTION "public"."commitment_holds"("uuid", "text") TO "service_role";
 GRANT EXECUTE ON FUNCTION "public"."commitment_binding"("text") TO "service_role";
 
--- THE REMINDER BEFORE A TERM ENDS: a week before a membership term with nothing after it, once (the memberships module's
--- term-reminders function sends it; this calls the function only when one is due)
+-- THE WEEK BEFORE A TERM ENDS, AND THE HOUR IT DOES: a reminder a week before every membership term, once, saying
+-- whether it ends or what follows; and a term paid in full continued or marked ended as it closes (the memberships
+-- module's term-reminders function does both; this calls it, hourly, only when one is due)
 CREATE OR REPLACE FUNCTION "public"."run_term_reminders"() RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -258,10 +259,10 @@ declare url text; secret text;
 begin
   if not exists (
     select 1 from public.commitments c
-     where (c.membership and c."then" = 'end' and c.ends_at is not null and c.reminded_at is null
+     where (c.membership and c.ends_at is not null and c.reminded_at is null
             and c.status in ('active', 'ended') and c.change_to_sku is null
             and c.ends_at > now() and c.ends_at <= now() + interval '7 days')
-        or (c.plan = 'full' and c.status = 'active' and c.ends_at <= now())
+        or (c.plan = 'full' and c.status = 'active' and c.ends_at <= now() + interval '1 hour')
   ) then return; end if;
   select value into url from public.app_settings where key = 'functions_url';
   select value into secret from public.app_settings where key = 'functions_secret';

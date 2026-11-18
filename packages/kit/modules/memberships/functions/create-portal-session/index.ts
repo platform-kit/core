@@ -14,7 +14,7 @@ import { binding } from '@pk/core/commitments.ts'
 /* what the billing view shows of somebody's plans and terms: what is owed, made and left (openspec: payment-plans) */
 async function commitmentsOf(userId: string) {
   const { data, error } = await admin.from('commitments')
-    .select('sku, of_sku, plan, term_months, payments_total, payments_made, amount_minor, currency, starts_at, ends_at, then, status, missed_at, owed_minor, subscription_id')
+    .select('id, membership, sku, of_sku, plan, term_months, payments_total, payments_made, amount_minor, currency, starts_at, ends_at, then, status, missed_at, owed_minor, subscription_id')
     .eq('user_id', userId).in('status', ['active', 'restricted', 'defaulted']).order('created_at', { ascending: false })
   if (error) throw new Error(`commitments could not be loaded: ${error.message}`)
   return data ?? []
@@ -28,6 +28,16 @@ Deno.serve(async (req: Request) => {
   if (!user) return json({ error: 'sign in first' }, 401)
   const body = await req.json().catch(() => ({}))
   const action = typeof body?.action === 'string' ? body.action : 'manage'
+  /* TURNING RENEWAL OFF: what follows a term is the member's to stop before it starts. The payments the
+     term itself owes are untouched; only what comes after it becomes nothing. */
+  if (action === 'end-after-term') {
+    const id = typeof body?.commitment === 'string' ? body.commitment : ''
+    const { data, error } = await admin.from('commitments').update({ then: 'end', updated_at: new Date().toISOString() })
+      .eq('id', id).eq('user_id', user.id).eq('membership', true).in('status', ['active', 'restricted']).neq('then', 'end').select('id')
+    if (error) return json({ error: `renewal could not be turned off: ${error.message}` }, 500)
+    if (!data?.length) return json({ error: 'no term of yours renews', code: 'not_found' }, 404)
+    return json({ ended: true, commitments: await commitmentsOf(user.id) })
+  }
   if (action === 'read') {
     const { data: subscription, error: subscriptionError } = await admin.from('subscriptions')
       .select('id, sku, key, status, current_period_end, cancel_at_period_end, next_sku, next_key, next_at')

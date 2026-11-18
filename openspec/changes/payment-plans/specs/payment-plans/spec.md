@@ -69,6 +69,20 @@ Each term SHALL say what follows it: it ends (the default), it continues as the 
 
 Verified by: `packages/kit/build/payment-plans-db.test.mts`
 
+#### Scenario: a 3-month term paid in full that continues
+
+- **WHEN** a term paid in full and marked to continue monthly or to renew closes, and the card it was paid with was kept
+- **THEN** the monthly membership begins on that card, or the full price is charged and a new term starts the day the first ends; a declined card starts nothing and the term ends, the member told
+
+Verified by: `packages/kit/build/payment-plans-continue.test.mts`
+
+#### Scenario: renewal turned off
+
+- **WHEN** a member turns renewal off on the Billing page before a term ends
+- **THEN** the term's own payments are still owed, and nothing follows it
+
+Verified by: `packages/kit/build/payment-plans-continue.test.mts`
+
 ### Requirement: Plan changes follow the site's policy
 
 A membership SHALL say when a member on one of its terms may move to a higher tier and when to a lower one: any time, only at the end of the term, or never. Each direction SHALL be set separately. Without a setting, both SHALL be allowed any time, as today. A change the policy defers SHALL take effect when the term ends. A change it forbids SHALL be refused, with the reason.

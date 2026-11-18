@@ -604,6 +604,8 @@ Deno.serve(async (req: Request) => {
          already worked into these amounts */
       ...(selectedPaymentProvider.id === 'stripe' && !discounted.lines.some((l: any) => l.discount > 0) ? { allowPromotionCodes: true } : {}),
       ...(mode === 'subscription' && trialDays ? { trialDays } : {}),
+      /* a term paid in full that continues keeps its card for the charge when it ends; the picker says so */
+      ...(mode === 'payment' && inCart.some((o) => { const c = commitmentOf(o); return c?.plan === 'full' && c.then !== 'end' }) ? { saveMethod: true } : {}),
       automaticTax: wantsAutoTax,
       collectTaxId: wantsTaxId,
       ...(methods.length ? { allowedPaymentMethods: methods } : {}),

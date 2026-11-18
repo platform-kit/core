@@ -69,8 +69,8 @@ const activeTabLabel = computed(() => activeTab.value === 'usage'
   ? W.value['billing-usage-tab']
   : W.value['billing-membership-tab'])
 
-async function request(action: string) {
-  const { data, error } = await supabase!.functions.invoke('create-portal-session', { body: { action } })
+async function request(action: string, extra: Record<string, unknown> = {}) {
+  const { data, error } = await supabase!.functions.invoke('create-portal-session', { body: { action, ...extra } })
   if (error) {
     let message = error.message || ''
     try { message = (await error.context?.clone?.json())?.error || message } catch {}
@@ -117,13 +117,13 @@ async function load() {
   }
 }
 
-async function update(action: string) {
+async function update(action: string, extra: Record<string, unknown> = {}) {
   if (busy.value) return
   busy.value = true
   fault.value = ''
   notice.value = ''
   try {
-    const result = await request(action)
+    const result = await request(action, extra)
     if (typeof result?.url === 'string') {
       window.location.assign(result.url)
       return
@@ -295,7 +295,7 @@ onBeforeUnmount(() => {
             </section>
             <section v-if="state === 'ready' && commitments.length" class="billing-card" aria-labelledby="billing-commitments-title">
               <h2 id="billing-commitments-title" class="billing-card-title">{{ W['billing-commitments'] }}</h2>
-              <div v-for="c in commitments" :key="c.sku + c.starts_at" class="billing-commitment">
+              <div v-for="c in commitments" :key="c.id" class="billing-commitment">
                 <h3 class="billing-commitment-title">{{ commitmentTitle(c) }}</h3>
                 <dl class="billing-details">
                   <div><dt>{{ W['billing-status'] }}</dt><dd><span class="billing-status-pill" :class="commitmentStatus(c) === 'active' ? 'is-active' : 'is-attention'">{{ W['billing-commitment-status-' + commitmentStatus(c)] }}</span></dd></div>
@@ -309,6 +309,12 @@ onBeforeUnmount(() => {
                 </dl>
                 <p v-if="commitmentStatus(c) !== 'active'" class="billing-notice">{{ W['billing-commitment-pay'] }}</p>
                 <p v-else-if="binding(c)" class="billing-muted">{{ W['billing-commitment-locked'] }}</p>
+                <template v-if="c.membership && c.then !== 'end' && commitmentStatus(c) === 'active'">
+                  <p class="billing-muted">{{ W['billing-commitment-then-' + c.then] }}</p>
+                  <div class="billing-actions">
+                    <button class="billing-button" type="button" :disabled="busy" @click="update('end-after-term', { commitment: c.id })">{{ W['billing-commitment-end-after'] }}</button>
+                  </div>
+                </template>
                 <div v-if="commitmentStatus(c) !== 'active' && usesProviderPortal" class="billing-actions">
                   <button class="billing-button billing-primary" type="button" :disabled="busy" @click="update('manage')">{{ W['billing-commitment-update'] }}</button>
                 </div>

@@ -408,6 +408,18 @@ methods.
 | `usage.prepaid-top-up`                                                                                                                                          | `getDefaultPaymentMethod`, `createPaymentIntent`, and `retrievePaymentIntent` |
 | `payouts.connected-accounts`                                                                                                                                    | `createPayoutAccount`, `retrievePayoutAccount`, and `createPayout`            |
 
+Payment plans and fixed terms ([Payment plans and fixed terms](/content/docs/running-a-site/selling/payment-plans)) use
+three more optional operations, with no capability of their own:
+
+- `endSubscription` stops a subscription after the period already paid for, once a plan's last
+  payment is made. Hyperswitch has none: its renewals are the kit's own, so the kit's row is ended.
+- A checkout's `saveMethod` keeps a one-off payment's method for a later charge made without the
+  buyer present, for a term paid in full that continues. `retrievePaymentIntent` then names the
+  method as `paymentMethodId`.
+- `startSubscription` begins a subscription on that saved method, charging its first period at
+  once. A declined charge is refused with `payment_failed`, so no unpaid subscription is left behind.
+  On Hyperswitch, that first payment is the subscription the renewal run charges again.
+
 Each operation uses PlatformKit's normalized inputs and results: checkout requests carry offer
 keys, quantities, requested tax/shipping terms, and an idempotency key; checkout and subscription
 snapshots describe the provider result without making the provider catalog authoritative. The

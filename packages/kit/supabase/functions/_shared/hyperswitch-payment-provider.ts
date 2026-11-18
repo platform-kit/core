@@ -259,6 +259,7 @@ export function createPaymentProvider(
     description: string
     metadata: Readonly<Record<string, string>>
     idempotencyKey: string
+    orderDetails?: readonly HyperswitchPayload[]
   }) => {
     const merchantReferenceId = await stableMerchantReference('pay', input.idempotencyKey)
     const intent = await api.request('POST', '/v2/payments/create-intent', {
@@ -273,6 +274,7 @@ export function createPaymentProvider(
       capture_method: 'automatic',
       description: input.description,
       metadata: input.metadata,
+      ...(input.orderDetails ? { order_details: input.orderDetails } : {}),
     }, input.idempotencyKey)
     const paymentId = requiredString(intent.id, 'payment id')
     const clientSecret = requiredString(intent.client_secret, 'client secret')
@@ -475,6 +477,8 @@ export function createPaymentProvider(
           platformkit_subscription_metadata: JSON.stringify(input.lines[0]!.metadata ?? {}),
           ...(input.trialDays ? { platformkit_trial_days: String(input.trialDays) } : {}),
         } : {}),
+        /* a term paid in full that continues keeps the method it was paid with */
+        ...(input.mode === 'payment' && input.saveMethod ? { platformkit_save_method: '1' } : {}),
       }
       let customerId = input.customer?.providerCustomerId
       if (!customerId) {
@@ -505,7 +509,7 @@ export function createPaymentProvider(
         customer_id: customerId,
         capture_method: 'automatic',
         ...(paymentMethodTypes ? { allowed_payment_method_types: paymentMethodTypes } : {}),
-        ...(input.mode === 'subscription' ? { setup_future_usage: 'off_session' } : {}),
+        ...(input.mode === 'subscription' || input.saveMethod ? { setup_future_usage: 'off_session' } : {}),
         order_details: input.lines.map((line) => ({
           product_id: line.offerKey,
           product_name: line.name,
@@ -563,7 +567,7 @@ export function createPaymentProvider(
       const paymentState = status === 'complete'
         ? 'paid'
         : 'unpaid'
-      if (status === 'complete' && metadata.platformkit_checkout_mode === 'payment') {
+      if (status === 'complete' && metadata.platformkit_checkout_mode === 'payment' && metadata.platformkit_save_method !== '1') {
         await removeOneTimePaymentMethod(checkoutId)
       }
       const customer = typeof payment.customer_id === 'string' ? payment.customer_id : undefined
@@ -682,6 +686,7 @@ export function createPaymentProvider(
         profileCapabilities,
         input.metadata.platformkit_usage_incremental === '1' ||
           input.metadata.platformkit_subscription_renewal === '1' ||
+          input.metadata.platformkit_commitment_continue === '1' ||
           input.metadata.platformkit_subscription_change != null
           ? 'checkout.subscription'
           : 'usage.prepaid-top-up',
@@ -703,6 +708,57 @@ export function createPaymentProvider(
         paymentIntentId: requiredString(payment.id, 'id'),
         status: requiredString(payment.status, 'payment status'),
         ...(typeof payment.client_secret === 'string' ? { clientSecret: payment.client_secret } : {}),
+      }
+    },
+
+    /* the kit's own subscription, as a checkout makes one: its first period paid off-session on the
+       saved method, and that payment is the subscription the renewal run charges again */
+    async startSubscription(input) {
+      assertProfileCapability(profileCapabilities, 'checkout.subscription')
+      const line = input.line
+      const metadata: Record<string, string> = {
+        ...input.metadata,
+        platformkit_checkout: '1',
+        platformkit_checkout_mode: 'subscription',
+        skus: line.sku,
+        platformkit_subscription_amount: String(line.unitAmountMinor),
+        platformkit_subscription_currency: line.currency.toUpperCase(),
+        platformkit_subscription_interval: line.interval ?? 'month',
+        platformkit_subscription_sku: line.sku,
+        platformkit_subscription_metadata: JSON.stringify(line.metadata ?? {}),
+      }
+      const paid = await createOffSessionPayment({
+        amountMinor: line.unitAmountMinor * line.quantity,
+        currency: line.currency,
+        customerId: input.customerId,
+        paymentMethodId: input.paymentMethodId,
+        description: line.name,
+        metadata,
+        idempotencyKey: input.idempotencyKey,
+        orderDetails: [{ product_id: line.offerKey, product_name: line.name, quantity: line.quantity, amount: line.unitAmountMinor * line.quantity, currency: line.currency.toUpperCase() }],
+      })
+      if (paid.status.toLowerCase() !== 'succeeded') {
+        throw new PaymentProviderError('payment_failed', `Hyperswitch payment ${paid.paymentIntentId} returned status "${paid.status}"`, 402)
+      }
+      const start = Math.floor(Date.now() / 1000)
+      return {
+        provider: 'hyperswitch',
+        subscriptionId: paid.paymentIntentId,
+        customerId: input.customerId,
+        paymentMethodId: input.paymentMethodId,
+        status: 'active',
+        currentPeriodStart: start,
+        currentPeriodEnd: paymentPeriodEnd(start, line.interval ?? 'month'),
+        metadata,
+        items: [{
+          priceId: `platformkit:${encodeURIComponent(line.offerKey)}`,
+          offerKey: line.offerKey,
+          sku: line.sku,
+          unitAmountMinor: line.unitAmountMinor,
+          currency: line.currency,
+          quantity: line.quantity,
+          metadata: line.metadata ?? {},
+        }],
       }
     },
 

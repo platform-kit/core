@@ -37,7 +37,9 @@ const commitment = computed(() => {
 })
 const then = computed(() => (way.value?.months && way.value.then ? P.value['plans-then-' + way.value.then] : ''))
 /* what is agreed to and what follows, as one sentence pair: written in the template, the space between them is lost */
-const terms = computed(() => [commitment.value, then.value].filter(Boolean).join(' '))
+/* a term paid in full that continues is charged again on the same card, and the buyer is told so */
+const kept = computed(() => (way.value?.plan === 'full' && way.value.then && way.value.then !== 'end' ? P.value['plans-card-kept'] : ''))
+const terms = computed(() => [commitment.value, then.value, kept.value].filter(Boolean).join(' '))
 const ready = computed(() => !!way.value && (!way.value.committed || agreed.value))
 function go() {
   const w = way.value

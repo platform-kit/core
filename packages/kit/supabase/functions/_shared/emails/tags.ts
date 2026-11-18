@@ -11,7 +11,7 @@
  * hands it compiled (auth-config.mjs on deploy, supabase/templates locally); their tags are Go
  * templates — `{{ .ConfirmationURL }}` — left intact by fill.js and filled by Supabase.
  */
-export const KINDS = ['order', 'shipped', 'files', 'chat', 'support', 'support-digest', 'magic-link', 'recovery', 'invitation', 'campaign', 'session-booked', 'session-held', 'session-to-confirm', 'session-declined', 'session-moved', 'session-cancelled', 'session-reminder', 'event-reminder', 'provider-terms', 'course-lesson', 'course-complete', 'payment-missed', 'payment-missed-notice', 'payment-default-notice', 'term-ending']
+export const KINDS = ['order', 'shipped', 'files', 'chat', 'support', 'support-digest', 'magic-link', 'recovery', 'invitation', 'campaign', 'session-booked', 'session-held', 'session-to-confirm', 'session-declined', 'session-moved', 'session-cancelled', 'session-reminder', 'event-reminder', 'provider-terms', 'course-lesson', 'course-complete', 'payment-missed', 'payment-missed-notice', 'payment-default-notice', 'term-ending', 'term-continues']
 /* the ones Supabase Auth sends, from the compiled design: never filled here */
 export const GOTRUE = ['magic-link', 'recovery', 'invitation']
 
@@ -134,6 +134,15 @@ export const TAGS: any = {
     { label: 'When it ends', value: '{{ends}}', group: 'Term', sample: '17 February 2027' },
     { label: 'Link to the membership', value: '{{url}}', group: 'Term', sample: 'https://example.com/store/products/coaching' },
   ],
+  /* a fixed term about to end, where the membership continues monthly or a new term begins (the memberships module) */
+  'term-continues': [
+    { label: 'First name', value: '{{name}}', group: 'Member', sample: 'Ada' },
+    { label: 'The membership', value: '{{what}}', group: 'Term', sample: 'Coaching' },
+    { label: 'When the term ends', value: '{{ends}}', group: 'Term', sample: '17 February 2027' },
+    { label: 'What is charged next', value: '{{amount}}', group: 'Term', sample: '$200.00' },
+    { label: 'Months in the term', value: '{{months}}', group: 'Term', sample: '6' },
+    { label: 'Link to billing', value: '{{url}}', group: 'Term', sample: 'https://example.com/billing' },
+  ],
   /* the frame every funnel step and blast is piped through: the markdown's html goes into an html block as {{{body}}} */
   campaign: [
     { label: 'First name', value: '{{name}}', group: 'Reader', sample: 'Ada' },
@@ -188,7 +197,8 @@ export const PAIRS: any = {
   'payment-missed': [{ label: 'Only when access is paused', before: '{{#if restricted}}', after: '{{/if}}', group: 'Show when' }, { label: 'Only when access is kept for now', before: '{{#unless restricted}}', after: '{{/unless}}', group: 'Show when' }],
   'payment-missed-notice': [{ label: 'Only when access is paused', before: '{{#if restricted}}', after: '{{/if}}', group: 'Show when' }],
   'payment-default-notice': [],
-  'term-ending': [],
+  'term-ending': [{ label: 'Only when the renewal payment was declined', before: '{{#if declined}}', after: '{{/if}}', group: 'Show when' }],
+  'term-continues': [{ label: 'Only when a new term begins', before: '{{#if renew}}', after: '{{/if}}', group: 'Show when' }, { label: 'Only when it continues monthly', before: '{{#unless renew}}', after: '{{/unless}}', group: 'Show when' }, { label: 'Only when paid monthly', before: '{{#if monthly}}', after: '{{/if}}', group: 'Show when' }, { label: 'Only for a term paid in full', before: '{{#if full}}', after: '{{/if}}', group: 'Show when' }],
   'course-complete': [{ label: 'Only with a certificate', before: '{{#if certificate}}', after: '{{/if}}', group: 'Show when' }],
   'provider-terms': [{ label: 'Only for somebody who signed an earlier version', before: '{{#if signed}}', after: '{{/if}}', group: 'Show when' }, { label: 'Only for somebody who has never signed', before: '{{#unless signed}}', after: '{{/unless}}', group: 'Show when' }],
 }
@@ -201,6 +211,7 @@ TAGS['event-reminder'].push({ label: 'What it is', value: '{{what}}', group: 'Se
 /* one sample order per email, for the editor's preview and a test send */
 export const SAMPLES = {
   'term-ending': { name: 'Ada', what: 'Coaching', ends: '17 February 2027', url: 'https://example.com/store/products/coaching' },
+  'term-continues': { name: 'Ada', what: 'Coaching', ends: '17 February 2027', amount: '$200.00', months: '6', renew: 'yes', monthly: '', full: 'yes', url: 'https://example.com/billing' },
   'payment-missed': { name: 'Ada', what: 'Coaching', amount: '$1,800.00', url: 'https://example.com/billing', restricted: 'yes' },
   'payment-missed-notice': { who: 'ada@example.com', what: 'Coaching', amount: '$1,800.00', restricted: 'yes' },
   'payment-default-notice': { who: 'ada@example.com', what: 'Coaching', owed: '$7,200.00', url: 'https://example.com/admin' },

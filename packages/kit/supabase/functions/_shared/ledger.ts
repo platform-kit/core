@@ -305,10 +305,8 @@ export async function checkoutCompleted(o: any, provider = 'stripe') {
        the term, through the same entitlement every tier is held by, and the commitment that says so */
     const term = commitmentOf(bought)
     if (term && term.plan === 'full' && term.months && userId) {
-      const ends = new Date(); ends.setUTCMonth(ends.getUTCMonth() + term.months)
-      const entitlementId = await grant(userId, 'class', 'subscribed', 'purchase', o.id, { tier: bought.tier ?? null, plan_amount: bought.unit_amount, expires_at: ends.toISOString() }, provider)
+      const entitlementId = await termPaid({ userId, bought, sourceId: o.id, from: new Date(), openedBy: `${checkoutIdentity}:${sku}`, purchaseId, provider })
       await linkProviderEntity(provider, 'checkout', o.id, 'entitlements', entitlementId)
-      await openCommitment({ userId, bought, openedBy: `${checkoutIdentity}:${sku}`, purchaseId, entitlementSourceId: providerScopedId(provider, o.id), paidRefs: ['full'] })
     }
     /* a printed book: an order to the address the checkout collected, sent to the printer at once */
     if (bought?.kind === 'print' && bought.book) await printOrdered(o, bought, li.quantity ?? 1, userId, variant, provider)
@@ -619,6 +617,20 @@ export async function subscriptionChanged(o: any, provider = 'stripe') {
   }
   /* the provider has stopped retrying (Stripe's "unpaid"): the rest of the commitment is owed */
   if (committed && o.status === 'unpaid') await commitmentDefaulted(subscriptionId)
+}
+
+/*
+ * A TERM PAID IN FULL (openspec: payment-plans): the membership's tier for the term's months from
+ * `from` — today at checkout, the day the last one ends when a term renews — through the same
+ * entitlement every tier is held by, and the commitment that says so. `sourceId` is the payment's
+ * (the checkout, or the renewal's charge), so a replay writes the same rows.
+ */
+export async function termPaid(p: { userId: string; bought: any; sourceId: string; from: Date; openedBy: string; purchaseId: string | null; provider: string }) {
+  const term = commitmentOf(p.bought)!
+  const ends = new Date(p.from); ends.setUTCMonth(ends.getUTCMonth() + (term.months ?? 0))
+  const entitlementId = await grant(p.userId, 'class', 'subscribed', 'purchase', p.sourceId, { tier: p.bought.tier ?? null, plan_amount: p.bought.unit_amount, expires_at: ends.toISOString() }, p.provider)
+  await openCommitment({ userId: p.userId, bought: p.bought, openedBy: p.openedBy, purchaseId: p.purchaseId, entitlementSourceId: providerScopedId(p.provider, p.sourceId), paidRefs: ['full'], startsAt: p.from })
+  return entitlementId
 }
 
 /* a subscription's first payment, made at checkout: counted under the same name the provider's own

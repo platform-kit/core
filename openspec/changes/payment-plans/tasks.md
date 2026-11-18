@@ -10,16 +10,16 @@
 ## 2. Buying
 
 - [x] 2.1 Checkout takes a plan or term, prices it on the server, and requires acceptance of the commitment
-- [ ] 2.2 Paid in full: a purchase, an entitlement (until the term ends, for a term), and a commitment row for a term (done); the method saved where `then` continues (to do, with 3.5)
+- [x] 2.2 Paid in full: a purchase, an entitlement (until the term ends, for a term), a commitment row for a term, and the method saved where `then` continues
 - [x] 2.3 Paid monthly: a subscription that ends after the last payment, and a commitment row
 
 ## 3. Running a commitment
 
 - [x] 3.1 Paid and failed reports from the Stripe webhook and the Hyperswitch renewal run update the commitment
 - [x] 3.2 Restrict and restore through the entitlement, as `missed.restrict` says; the emails
-- [ ] 3.3 The scheduled job: default after retries end (done, from the providers' own reports), renewal reminders (to do)
+- [x] 3.3 The scheduled job: default after retries end (from the providers' own reports), and the reminder a week before every term ends
 - [x] 3.4 The sessions module's rule: bookings cancelled after the offer's grace period, without refund, through `cancelBooking`
-- [ ] 3.5 What follows a term: end, monthly, renew (done for monthly terms; continuing a term paid in full is to do)
+- [x] 3.5 What follows a term: end, monthly, renew, for a monthly term and for one paid in full; renewal can be turned off by the member
 - [x] 3.6 Plan changes follow `changes`; cancellation is refused mid-commitment
 
 ## 4. Screens and docs

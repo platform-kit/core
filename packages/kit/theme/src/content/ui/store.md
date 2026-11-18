@@ -155,6 +155,7 @@ plans-then-monthly: After the term, it continues at the usual monthly price unti
 plans-then-renew: After the term, a new term of the same length begins.
 plans-commitment: You're agreeing to {n} payments of {amount}, {total} in all. They can't be stopped partway, and a missed payment pauses your access until it's paid.
 plans-commitment-full: You're paying {amount} now for {months} months.
+plans-card-kept: The card you pay with is kept for that, and you can turn renewal off on your billing page before the term ends.
 plans-agree: I agree to every payment of this plan
 plans-cta: Continue to payment
 

@@ -125,6 +125,9 @@ billing-commitment-status-missed: Payment missed
 billing-commitment-status-restricted: Payment missed, access paused
 billing-commitment-status-defaulted: In default
 billing-commitment-locked: You agreed to every payment of this plan, so it can't be cancelled until the last one is made.
+billing-commitment-then-monthly: When the term ends, your membership continues at the usual monthly price until you cancel.
+billing-commitment-then-renew: When the term ends, a new term of the same length begins.
+billing-commitment-end-after: Turn off renewal
 billing-commitment-pay: Paying the missed payment gives your access back at once. Update your payment method to pay it.
 
 ### alert

@@ -153,7 +153,7 @@
           {
             "id": "termend-9",
             "type": "paragraph",
-            "content": "<p><span style=\"font-size:16px;color:#0c0d0b\">Hi {{name}}, your {{what}} term ends on {{ends}}, and your membership ends with it.</span></p>",
+            "content": "<p><span style=\"font-size:16px;color:#0c0d0b\">Hi {{name}}, your {{what}} term ends on {{ends}}, and your membership ends with it.{{#if declined}} The payment to renew it didn't go through.{{/if}}</span></p>",
             "styles": {
               "padding": {
                 "top": 0,

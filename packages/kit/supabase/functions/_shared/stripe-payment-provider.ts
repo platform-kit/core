@@ -2,6 +2,7 @@ import type Stripe from 'npm:stripe@17'
 import type {
   CreatePaymentCheckout,
   PaymentCatalogOffer,
+  PaymentCheckoutLine,
   PaymentCheckoutSnapshot,
   PaymentInvoiceSnapshot,
   PaymentSubscriptionSnapshot,
@@ -270,6 +271,28 @@ export function createPaymentProvider(
         paymentIntentId: intent.id,
         status: paymentIntentStatus(intent.status, intent.last_payment_error),
         ...(typeof intent.client_secret === 'string' ? { clientSecret: intent.client_secret } : {}),
+        ...(identifier(intent.payment_method) ? { paymentMethodId: identifier(intent.payment_method)! } : {}),
+      }
+    },
+    /* Stripe's own subscription on a saved card, its first invoice paid now or not at all
+       (error_if_incomplete), so a declined continuation leaves nothing half-made */
+    async startSubscription(input: { customerId: string; paymentMethodId: string; line: PaymentCheckoutLine; metadata: Readonly<Record<string, string>>; idempotencyKey: string }) {
+      if (!input.line.providerPriceId) throw new PaymentProviderError('price_missing', 'Stripe subscriptions start from a synchronized price.', 500)
+      try {
+        const subscription = await stripe.subscriptions.create({
+          customer: input.customerId,
+          default_payment_method: input.paymentMethodId,
+          items: [{ price: input.line.providerPriceId, quantity: input.line.quantity }],
+          metadata: { ...input.metadata },
+          off_session: true,
+          payment_behavior: 'error_if_incomplete',
+        }, { idempotencyKey: input.idempotencyKey })
+        return subscriptionSnapshot(subscription)
+      } catch (cause: any) {
+        if (cause?.type === 'StripeCardError' || cause?.code === 'card_declined' || cause?.raw?.code === 'card_declined') {
+          throw new PaymentProviderError('payment_failed', String(cause?.message ?? 'The card was declined.'), 402)
+        }
+        throw cause
       }
     },
     async createPayoutAccount(input: {
@@ -379,8 +402,14 @@ export function createPaymentProvider(
           ...(input.customer?.providerCustomerId ? { customer_update: { address: 'auto' } } : {}),
         } : {}),
         ...(input.collectTaxId ? { tax_id_collection: { enabled: true } } : {}),
+        /* a term paid in full that continues: the card is kept for the charge when it ends */
+        ...(input.mode === 'payment' && input.saveMethod ? {
+          payment_intent_data: { setup_future_usage: 'off_session' },
+          ...(input.customer?.providerCustomerId ? {} : { customer_creation: 'always' }),
+        } : {}),
         ...(input.allowedPaymentMethods?.length ? {
-          payment_method_types: [...input.allowedPaymentMethods] as Stripe.Checkout.SessionCreateParams.PaymentMethodType[],
+          /* a card kept for a later charge: Affirm and Afterpay are paid once and can't be kept */
+          payment_method_types: [...input.allowedPaymentMethods].filter((m) => !input.saveMethod || !['affirm', 'afterpay_clearpay'].includes(m)) as Stripe.Checkout.SessionCreateParams.PaymentMethodType[],
         } : {}),
         ...(input.shippingAddress ? {
           shipping_address_collection: {

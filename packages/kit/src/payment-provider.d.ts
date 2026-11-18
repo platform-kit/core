@@ -121,6 +121,9 @@ export interface CreatePaymentCheckout {
   collectPhone?: boolean
   shippingOptions?: readonly PaymentShippingOption[]
   shippingSubmitMessage?: string
+  /* payment mode: keep the method paid with for a later charge made without the buyer present — a
+     term paid in full that continues (openspec: payment-plans). The page tells the buyer so. */
+  saveMethod?: boolean
 }
 
 export interface PaymentCheckoutRequirements {
@@ -310,7 +313,17 @@ export interface PaymentProviderAdapter {
     metadata: Readonly<Record<string, string>>
     idempotencyKey: string
   }): Promise<{ paymentIntentId: string; status: string; clientSecret?: string }>
-  retrievePaymentIntent?(paymentIntentId: string): Promise<{ paymentIntentId: string; status: string; clientSecret?: string }>
+  retrievePaymentIntent?(paymentIntentId: string): Promise<{ paymentIntentId: string; status: string; clientSecret?: string; paymentMethodId?: string }>
+  /* a subscription begun on a method already saved, its first period charged now: a term paid in
+     full continuing at the monthly price. Refused (PaymentProviderError "payment_failed") when the
+     charge is declined, so no subscription is left unpaid. */
+  startSubscription?(input: {
+    customerId: string
+    paymentMethodId: string
+    line: PaymentCheckoutLine
+    metadata: Readonly<Record<string, string>>
+    idempotencyKey: string
+  }): Promise<PaymentSubscriptionSnapshot>
   verifyWebhook(request: Request): Promise<readonly PaymentProviderEvent[]>
   createPayoutAccount?(input: {
     accountId?: string

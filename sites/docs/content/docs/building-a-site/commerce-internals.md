@@ -59,7 +59,7 @@ sources:
     packages/kit/build/checkout-params.test.mts,
     packages/kit/build/payment-providers.test.mts,
   ]
-reviewed: 2026-11-17
+reviewed: 2026-11-18
 ---
 
 ## The payment-provider contract foundation
@@ -386,7 +386,7 @@ A product's `key` (eight hex characters, given once by the admin's writer or `no
 
 `_shared/ledger.ts` is what a payment writes — purchases, subscriptions, entitlements, a session's credit and its booking, a print order sent to the printer, the order's email once per session — called by the **webhook** with Stripe's objects and by **`confirm-checkout`** on landing (the session retrieved from Stripe, checked to be the buyer's, written through the same upserts), so what was paid for is theirs on landing whether or not the webhook has arrived, and a local run needs no `stripe listen` to see a purchase land (the forwarder is still how renewals, failures and refunds arrive).
 
-A purchase is `paid`, `refunded`, or `suspended`. `suspended` is a purchase bought in instalments whose payment is outstanding: `44-commitments.sql` holds it back, together with the entitlements the payment wrote, and gives both back when the payment is made. Payment plans and fixed terms compile into offers of their own (`build/commitments.mts`); [Payment plans and fixed terms](/docs/running-a-site/selling/payment-plans) describes them.
+A purchase is `paid`, `refunded`, or `suspended`. `suspended` is a purchase bought in instalments whose payment is outstanding: `44-commitments.sql` holds it back, together with the entitlements the payment wrote, and gives both back when the payment is made. Payment plans and fixed terms compile into offers of their own (`build/commitments.mts`). A term paid in full is written by `termPaid` in `ledger.ts`, both at checkout and when the memberships module's term job renews it, so a renewal grants exactly what a checkout does; [Payment plans and fixed terms](/docs/running-a-site/selling/payment-plans) describes them.
 
 `get_my_entitlements` returns the person's classes, live tiers, plan (`plan`, `plan_key`, `plan_next`, `plan_next_at`) and credits; `lib/auth.js` (`memberTiers`, `hasTier`, `tierRank`) reads it.
 

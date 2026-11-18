@@ -12,13 +12,17 @@ sources:
     packages/kit/build/payment-plans-checkout.test.mts,
     packages/kit/supabase/functions/_shared/commitments.ts,
     packages/kit/supabase/functions/commitment-bookings,
-    packages/kit/supabase/schemas/glue/core+sessions.sql,
+    packages/kit/supabase/schemas/55-sessions.sql,
     packages/kit/src/lib/payment-plans.ts,
     packages/kit/theme/src/components/store/PlanPicker.vue,
     packages/kit/theme/src/pages/BillingPortalPage.vue,
     packages/kit/build/payment-plans-bookings.test.mts,
     packages/kit/modules/memberships/functions/term-reminders,
     packages/kit/modules/memberships/emails/term-ending.json,
+    packages/kit/modules/memberships/emails/term-continues.json,
+    packages/kit/build/payment-plans-continue.test.mts,
+    packages/kit/supabase/functions/_shared/stripe-payment-provider.ts,
+    packages/kit/supabase/functions/_shared/hyperswitch-payment-provider.ts,
     packages/kit/content/emails/payment-missed.json,
     packages/kit/content/emails/payment-missed-notice.json,
     packages/kit/content/emails/payment-default-notice.json,
@@ -74,6 +78,10 @@ terms:
 - `end`, the default: the term ends, and so does the membership.
 - `monthly`: the membership continues at its open-ended monthly price until it is cancelled.
 - `renew`: another term of the same length begins.
+
+A term paid in full that continues keeps the card it was paid with, and the store page says so. When the term ends, that card pays for what follows: the open-ended membership begins as a subscription (`monthly`), or the full price is charged for the next term (`renew`). Affirm and Afterpay can't be kept for a later charge, so checkout leaves them out for these terms.
+
+The member can turn renewal off on the Billing page at any point before the term ends. The term's own payments are still owed. Only what follows it is dropped.
 
 `changes` says when a member partway through a term may move to a higher or a lower tier: `anytime` (the default, as for any membership), `term-end`, or `never`.
 
@@ -132,6 +140,6 @@ With the sessions module on, a missed payment also reaches bookings. The `commit
 
 ## Before a term ends
 
-A week before a membership term that simply ends (`then: end`, with no plan change waiting), the member is emailed once (`term-ending`), with a link back to the membership. The memberships module's `term-reminders` function sends it daily. The same run marks a term paid in full as ended once its date has passed.
+A week before every membership term ends, the member is emailed once. Where the term simply ends, the email is `term-ending`, with a link back to the membership. Where it continues or renews, the email is `term-continues`: what will be charged, and that renewal can be turned off on the Billing page. A term with a plan change waiting gets neither, because the change is what follows.
 
-Still to come under the OpenSpec change `payment-plans`: continuing a term that was paid in full (`then: monthly` or `renew` after a `full` payment). Until then, a term paid in full ends when it ends, whatever its `then` says.
+The memberships module's `term-reminders` function runs hourly. Within the hour a term paid in full closes, it charges what follows on the kept card, or marks the term ended. If the card is declined, or the member has since taken another membership, nothing is started and the term ends. A declined member gets `term-ending`, saying the renewal payment didn't go through. Each charge carries a key of the term's own, so a repeated run charges nobody twice.
