@@ -37,6 +37,12 @@ export const PIPE_ROOTS = [
 export const PIPE_SKIP = /^build\/(print\.mjs|print\/(epub|pages|pdf\.min|raster|typeset)\.mjs|git-push\.mjs)$/
 
 const IMPORT_RE = /(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/g
+/* AND WHAT THE SUPABASE CLI WILL LOOK FOR. The CLI (v3) gathers a function's files with its own regex, below as it
+   ships, and it reads any quoted path on a line that starts with `import` or `export` as an import:
+   `export const X = fileURLToPath(new URL('./x.mjs', import.meta.url))` names ./x.mjs to it. A file the pipe
+   does not carry, named so, stops `supabase start` with "failed to read file". Keep such a path off an
+   import or export line (`const X = …` then `export { X }`). */
+const SUPABASE_CLI_IMPORT_RE = /(?:import|export)\s+(?:type\s+)?(?:{[^{}]+}|.*?)\s*(?:from)?\s*['"](.*?)['"]|import\(\s*(?:"([^"\r\n]*)"|'([^'\r\n]*)')\s*[,)]/gi
 const rel = (base: string, f: string) => path.relative(base, f).split(path.sep).join('/')
 /* the file a specifier names: itself, or — for a .mjs (.js) the source keeps as TypeScript — the .mts (.ts) beside it,
    which the copy is stripped from (openspec: typescript-throughout). Null where neither is there. */
@@ -74,10 +80,12 @@ export function closureResolves(base: string, roots = PIPE_ROOTS, skip = PIPE_SK
   const inside = closure(base, roots, skip)
   const bad = []
   for (const [r, abs] of inside) {
-    for (const m of fs.readFileSync(abs, 'utf8').matchAll(IMPORT_RE)) {
-      const spec = m[1] || m[2]
+    const src = fs.readFileSync(abs, 'utf8')
+    for (const m of [...src.matchAll(IMPORT_RE), ...src.matchAll(SUPABASE_CLI_IMPORT_RE)]) {
+      const spec = (m[1] || m[2] || m[3])?.trim()
       if (!spec || !spec.startsWith('.')) continue
       const target = jsName(rel(base, path.resolve(path.dirname(abs), spec)))
+      if (!path.posix.basename(target).includes('.')) continue   /* a folder: the CLI skips a path with no extension */
       if (!inside.has(target) && sourceOf(path.join(base, target))) bad.push(`${r} → ${target}`)
     }
   }

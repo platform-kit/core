@@ -6,4 +6,6 @@ export { pipeline, Paused } from './pipeline.mjs'
 export { runCache, fileCache } from './cache.mjs'
 /* the script the admin and `platformkit enrich` spawn, by its path */
 import { fileURLToPath } from 'node:url'
-export const ENRICH_SCRIPT = fileURLToPath(new URL('./enrich.mjs', import.meta.url))
+/* off an export line: the Supabase CLI reads a quoted path on one as an import (build/pipe-closure.mts) */
+const ENRICH_SCRIPT = fileURLToPath(new URL('./enrich.mjs', import.meta.url))
+export { ENRICH_SCRIPT }

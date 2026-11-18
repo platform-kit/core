@@ -5,4 +5,6 @@
 import { fileURLToPath } from 'node:url'
 export { compileEvents } from './events.mjs'
 export { projectEvents, projectEventComments } from './events-db.mjs'
-export const EVENTS_PUSH = fileURLToPath(new URL('./events-push.mjs', import.meta.url))
+/* off an export line: the Supabase CLI reads a quoted path on one as an import (build/pipe-closure.mts) */
+const EVENTS_PUSH = fileURLToPath(new URL('./events-push.mjs', import.meta.url))
+export { EVENTS_PUSH }
