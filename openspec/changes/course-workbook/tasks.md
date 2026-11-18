@@ -6,7 +6,7 @@
 - [x] Courses: completion waits for a required form; the player shows the form under the lesson's text
 - [x] Courses: the workbook page, linked from the overview and player, with print styles
 - [x] Courses: the share record, the reader's controls on the workbook page, and the coach's read of shared workbooks
-- [x] Tests: `forms.test`, `forms-db.test`, `courses.test`, `courses-db.test` for each scenario
+- [x] Tests: `forms.test`, `courses.test`, `courses-db.test`, `course-workbook-db.test` (the `form` function's part too) for each scenario
 - [x] Demo: one workbook lesson with an ordered list
 - [x] Docs: forms and courses pages
 - [x] Seen in a browser: the input, the lesson, the workbook and sharing, at 1280 and 390 px, light and dark

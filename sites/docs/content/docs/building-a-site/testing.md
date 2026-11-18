@@ -233,7 +233,7 @@ A test reaches a database only inside the end-to-end run, on the `pk_<site>_e2e`
 - a stack test that leaves early with a pass other than through `skip()` (a failure in the end-to-end run) or after `notHere()`;
 - a test that reaches a stack — a client, Postgres, a function's URL — without taking it from `build/test-stack.mjs`, which is how the run finds it; and a stack test that reads `supabase status` or falls back to a dev port (543xx, 5173);
 - a Deno test that `test.mjs` does not run;
-- a specification's "Verified by" naming a test that does not exist or is not registered. A claim no test can back is listed in the file's `KNOWN_GAPS` with what decides it, and printed on every run.
+- a specification's "Verified by" naming a test that does not exist or is not registered. A change counts once every one of its tasks is ticked; until then the tests its specifications name are printed as owed, not failed, since a plan names tests before they are written. A claim no test can back is listed in the file's `KNOWN_GAPS` with what decides it, and printed on every run.
 
 In the run itself, `build/function-bodies.test.mts` compiles every SQL function in the declaration against the tables as built: the schema loads with `check_function_bodies` off, so a body naming a column that is not there would otherwise fail only when called.
 

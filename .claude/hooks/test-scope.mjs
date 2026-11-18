@@ -18,6 +18,8 @@ const runsFullSuite = command.split(/&&|\|\||;/).some((segment) => {
 
   part = part.replace(/^(?:[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|[^\s]+)\s+)+/, '')
   if (/(?:^|\s)--check(?:\s|$)/.test(part)) return false
+  /* one named test on a fresh end-to-end stack is the targeted run the testing guide asks for */
+  if (/(?:^|\s)--e2e(?:\s|$)/.test(part) && /(?:^|\s)--run(?:=|\s+)\S/.test(part)) return false
 
   return /^(?:(?:npm|pnpm|yarn)\s+(?:run\s+)?test|npx\s+platformkit\s+test|platformkit\s+test|node\s+(?:\S*\/)?packages\/kit\/build\/test\.mjs)(?:\s|$)/.test(part)
 })

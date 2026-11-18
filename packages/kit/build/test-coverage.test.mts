@@ -129,10 +129,13 @@ const claims: any = []
    the remedy is a decision rather than a test. */
 const KNOWN_GAPS: any = {
 }
-/* a change not yet started is a plan — the tests it names are still to be written; once any of its tasks is done, its
-   claims count like the specs' */
-const started = (f: string) => { const m = /openspec\/changes\/([^/]+)\//.exec(f.split(path.sep).join('/')); if (!m) return true; const t = path.join(WORKSPACE, 'openspec', 'changes', m[1], 'tasks.md'); return fs.existsSync(t) && /^- \[x\]/m.test(fs.readFileSync(t, 'utf8')) }
-for (const f of specFiles.filter(started)) {
+/* a change still being done is a plan — the tests it names are still to be written, and are listed as owed; once every
+   one of its tasks is ticked it says it is done, and its claims count like the specs' */
+const finished = (f: string) => { const m = /openspec\/changes\/([^/]+)\//.exec(f.split(path.sep).join('/')); if (!m) return true; const t = path.join(WORKSPACE, 'openspec', 'changes', m[1], 'tasks.md'); if (!fs.existsSync(t)) return false; const s = fs.readFileSync(t, 'utf8'); return /^\s*- \[x\]/m.test(s) && !/^\s*- \[ \]/m.test(s) }
+const owed: string[] = []
+for (const f of specFiles.filter((x: string) => !finished(x))) for (const m of fs.readFileSync(f, 'utf8').matchAll(/^Verified by:([^\n]*)$/gm)) for (const t of m[1].matchAll(/`(?:node )?(?:packages\/kit\/)?(?:build\/|modules\/[\w-]+\/tests\/)?([\w.-]+\.(?:test|integration)\.m[jt]s)`/g)) if (!testExists(t[1])) owed.push(`${path.relative(WORKSPACE, f)}: ${t[1]}`)
+for (const o of [...new Set(owed)]) console.log('  · owed by a change still being done: ' + o)
+for (const f of specFiles.filter(finished)) {
   const text = fs.readFileSync(f, 'utf8')
   for (const m of text.matchAll(/^Verified by:([^\n]*)$/gm)) for (const t of m[1].matchAll(/`(?:node )?(?:packages\/kit\/)?(?:build\/|modules\/[\w-]+\/tests\/)?([\w.-]+\.(?:test|integration)\.m[jt]s)`/g)) {
     const name = t[1]

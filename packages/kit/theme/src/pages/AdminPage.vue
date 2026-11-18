@@ -608,8 +608,8 @@ const columnDefs = computed(() => {
   const fields = col.value.fields.filter((f: any) => f.grid)
   void companionsIndex.value   /* the Companion column reads the index; recompute when it loads */
   return [
-    /* (a second valueGetter here, which folded the draft mark into the value so the cell would redraw when it flipped, was
-       always overridden by this one: an object keeps the last of two keys) */
+    /* the draft mark is drawn again after every load (loadList redraws this column outright), so a save or a publish
+       shows it come or go without it being part of the value */
     { field: 'name', headerName: 'File', pinned: 'left', flex: 1.4, minWidth: 190,
       valueGetter: (p: any) => p.data.name,
       cellRenderer: (p: any) => `${p.data && p.data.draft ? `<i class="ad-draftpill">${FW.draft}</i>` : ''}<span class="ad-file">${p.data ? p.data.name : ''}</span>` },

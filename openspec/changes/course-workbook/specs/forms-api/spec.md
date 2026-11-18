@@ -9,7 +9,7 @@ A form SHALL be able to ask for an ordered list: any number of single-line text 
 - **WHEN** a respondent answers "What parts of your life are going well? Highest first" with my work, my love life, my friendships, my health, then drags my health to the top
 - **THEN** the stored answer is my health, my work, my love life, my friendships, in that order, and it reopens in that order
 
-Verified by: `build/forms.test.mts` (parse and compose), `build/forms-db.test.mts` (stored order) and the input driven in a browser at 1280 and 390 px
+Verified by: `build/forms.test.mts` (parse and compose), `modules/courses/tests/course-workbook-db.test.mts` (stored order, through the `form` function) and the input driven in a browser at 1280 and 390 px
 
 ### Requirement: A workbook form keeps the respondent's answers
 
@@ -20,7 +20,7 @@ A form SHALL be able to declare itself a workbook form. A signed-in respondent S
 - **WHEN** a reader finishes a workbook form, comes back a week later and changes one answer
 - **THEN** the same response opens with every earlier answer, the changed answer replaces the old one, and there is still one response
 
-Verified by: `build/forms-db.test.mts`
+Verified by: `modules/courses/tests/course-workbook-db.test.mts` (the `form` function: the same response reopened and revised)
 
 ### Requirement: An ordered list offers common answers and keeps within its bounds
 
@@ -42,7 +42,7 @@ A workbook form SHALL be able to name earlier answers by reference (`#! uses = <
 - **WHEN** a reader whose most-wanted change is money opens a later form that is about each of those situations
 - **THEN** its questions name money; once it is finished, it offers to do the same for their second situation; and each situation's answers are kept apart
 
-Verified by: `build/course-workbook-db.test.mts` and the course in a browser
+Verified by: `modules/courses/tests/course-workbook-db.test.mts` and the course in a browser
 
 #### Scenario: an earlier answer not given yet
 
