@@ -109,6 +109,19 @@ billing-saved: Your membership settings were updated.
 billing-load-error: We couldn't check whether you have an active membership. Try again.
 billing-error: Your membership settings could not be updated. Try again.
 billing-manage-error: Membership management could not be opened. Try again.
+billing-commitments: Your plans
+billing-commitment-payments: Payments made
+billing-commitment-payments-value: {made} of {total}
+billing-commitment-each: Each payment
+billing-commitment-paid: Paid in full
+billing-commitment-ends: Term ends
+billing-commitment-owed: Still owed
+billing-commitment-status-active: On track
+billing-commitment-status-missed: Payment missed
+billing-commitment-status-restricted: Payment missed, access paused
+billing-commitment-status-defaulted: In default
+billing-commitment-locked: You agreed to every payment of this plan, so it can't be cancelled until the last one is made.
+billing-commitment-pay: Paying the missed payment gives your access back at once. Update your payment method to pay it.
 
 ### alert
 

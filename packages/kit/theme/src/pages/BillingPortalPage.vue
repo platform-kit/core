@@ -27,6 +27,17 @@ const busy = ref(false)
 const fault = ref('')
 const notice = ref('')
 const subscription = ref<any>(null)
+/* the plans and terms this person is in, with what is made, left and owed (openspec: payment-plans) */
+const commitments = ref<any[]>([])
+const dateOf = (value: string | null) => value ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value)) : ''
+const moneyOf = (minor: number, currency: string) => {
+  try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: (currency || 'usd').toUpperCase() }).format((Number(minor) || 0) / 100) }
+  catch { return ((Number(minor) || 0) / 100).toFixed(2) }
+}
+const titleOf = (sku: string) => products.find((offer: any) => offer.sku === sku)?.title || sku
+const commitmentStatus = (c: any) => c.status === 'defaulted' ? 'defaulted' : c.status === 'restricted' ? 'restricted' : c.missed_at ? 'missed' : 'active'
+/* the subscription can't be cancelled from here while a plan on it still owes payments */
+const locked = computed(() => commitments.value.some((c: any) => c.subscription_id && c.status !== 'defaulted' && c.payments_made < c.payments_total))
 const hasPaymentMethod = ref(false)
 const usagePanel = ref<any>(null)
 let loadGeneration = 0
@@ -86,8 +97,9 @@ async function load() {
     const result = await request('read')
     if (generation !== loadGeneration || !authSettled.value || !isSignedIn.value) return
     subscription.value = result.subscription || null
+    commitments.value = Array.isArray(result.commitments) ? result.commitments : []
     hasPaymentMethod.value = result.has_payment_method === true
-    state.value = subscription.value ? 'ready' : 'empty'
+    state.value = subscription.value || commitments.value.length ? 'ready' : 'empty'
   } catch (error) {
     if (generation !== loadGeneration || !authSettled.value || !isSignedIn.value) return
     console.error('Unable to load membership settings', error)
@@ -272,7 +284,25 @@ onBeforeUnmount(() => {
               </div>
               <button class="billing-button billing-primary billing-empty-link" type="button" @click="navigate(ROUTES.store)">{{ W['billing-change-plan'] }}</button>
             </section>
-            <section v-else class="billing-card">
+            <section v-if="state === 'ready' && commitments.length" class="billing-card" aria-labelledby="billing-commitments-title">
+              <h2 id="billing-commitments-title" class="billing-card-title">{{ W['billing-commitments'] }}</h2>
+              <div v-for="c in commitments" :key="c.sku + c.starts_at" class="billing-commitment">
+                <dl class="billing-details">
+                  <div><dt>{{ W['billing-plan'] }}</dt><dd>{{ titleOf(c.of_sku) }}</dd></div>
+                  <div><dt>{{ W['billing-status'] }}</dt><dd><span class="billing-status-pill" :class="commitmentStatus(c) === 'active' ? 'is-active' : 'is-attention'">{{ W['billing-commitment-status-' + commitmentStatus(c)] }}</span></dd></div>
+                  <div v-if="c.plan === 'full'"><dt>{{ W['billing-commitment-paid'] }}</dt><dd>{{ moneyOf(c.amount_minor, c.currency) }}</dd></div>
+                  <template v-else>
+                    <div><dt>{{ W['billing-commitment-payments'] }}</dt><dd>{{ (W['billing-commitment-payments-value'] || '').replace('{made}', String(c.payments_made)).replace('{total}', String(c.payments_total)) }}</dd></div>
+                    <div><dt>{{ W['billing-commitment-each'] }}</dt><dd>{{ moneyOf(c.amount_minor, c.currency) }}</dd></div>
+                  </template>
+                  <div v-if="c.ends_at"><dt>{{ W['billing-commitment-ends'] }}</dt><dd>{{ dateOf(c.ends_at) }}</dd></div>
+                  <div v-if="c.owed_minor > 0"><dt>{{ W['billing-commitment-owed'] }}</dt><dd>{{ moneyOf(c.owed_minor, c.currency) }}</dd></div>
+                </dl>
+                <p v-if="commitmentStatus(c) !== 'active'" class="billing-notice">{{ W['billing-commitment-pay'] }}</p>
+              </div>
+              <p v-if="locked" class="billing-muted">{{ W['billing-commitment-locked'] }}</p>
+            </section>
+            <section v-if="state === 'ready' && subscription" class="billing-card">
               <dl class="billing-details">
                 <div><dt>{{ W['billing-plan'] }}</dt><dd>{{ plan }}</dd></div>
                 <div><dt>{{ W['billing-status'] }}</dt><dd><span class="billing-status-pill" :class="`is-${statusTone}`">{{ statusLabel }}</span></dd></div>
@@ -297,7 +327,7 @@ onBeforeUnmount(() => {
                   {{ W['billing-manage'] }}
                 </button>
                 <button
-                  v-else
+                  v-else-if="!locked || subscription.cancel_at_period_end"
                   class="billing-button"
                   type="button"
                   :disabled="busy"
@@ -344,6 +374,9 @@ onBeforeUnmount(() => {
 .billing-panel { min-width: 0; margin: 0; padding: 0; border: 0; background: none }
 .billing-card { display: grid; gap: 18px; width: min(100%, 680px); box-sizing: border-box; border: 1px solid var(--hair); border-radius: 1.1rem; padding: clamp(20px, 5vw, 32px); background: color-mix(in srgb, var(--paper) 88%, transparent); box-shadow: 0 18px 40px -36px color-mix(in srgb, var(--ink) 35%, transparent) }
 .billing-card p { margin: 0 }
+.billing-card-title { margin: 0; font-family: var(--f); font-size: 1.125rem; font-weight: 600; line-height: 1.35; letter-spacing: -.01em }
+.billing-commitment { display: grid; gap: 12px }
+.billing-commitment + .billing-commitment { padding-top: 6px }
 .billing-card > .billing-button { justify-self: start }
 .billing-empty { display: grid; justify-items: start; gap: 14px; width: min(100%, 680px); padding: 0 }
 .billing-empty-copy { display: grid; gap: 6px }

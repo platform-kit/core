@@ -12,6 +12,8 @@
  * the seller's.
  */
 
+import { waySku } from '../src/lib/payment-plans.js'
+
 export const THEN = ['end', 'monthly', 'renew'] as const
 export const CHANGE = ['anytime', 'term-end', 'never'] as const
 export const RESTRICT = ['immediately', 'after-retries', 'never'] as const
@@ -63,7 +65,7 @@ export function compileCommitments({ file, d, base, err, sessions }: Ctx): { ext
   const missed = { restrict, cancel_bookings_after_minutes: grace ?? null }
 
   const common = (way: string, title: string) => ({
-    file, sku: `${base.sku}--${way}`, key: derivedKey(base.key, way), title,
+    file, sku: waySku(base.sku, way), key: derivedKey(base.key, way), title,
     kind: base.kind, currency: base.currency, tier: base.tier, rank: base.rank, book: base.book,
   })
 

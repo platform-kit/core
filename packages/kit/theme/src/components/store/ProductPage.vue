@@ -28,6 +28,8 @@ import { priceOf } from 'platformkit/lib/prices.js'
 import { lists as priceLists, promotions as promoList, priceContext } from 'platformkit/lib/storefront.js'
 import { apply as applyPromotions } from 'platformkit/lib/promotions.js'
 import VariantPicker from './VariantPicker.vue'
+import PlanPicker from './PlanPicker.vue'
+import { waysToPay } from 'platformkit/lib/payment-plans.js'
 import { filesFor } from 'platformkit/lib/downloads.js'
 import { guestCart } from 'platformkit/lib/shipto.js'
 import { renderer } from 'platformkit/lib/markdown.js'
@@ -117,6 +119,8 @@ const lineLabel = computed(() => {
 const owned = computed(() => isOnline.value && ownedOnline.value)
 const priceText = computed(() => {
   if (!p.value || (!offer.value && !p.value.available)) return P.unavailable
+  /* a membership sold in terms alone has no price of its own: the least a way of paying for it costs */
+  if (p.value.price == null) { const ways = waysToPay(p.value); if (ways.length) return fill(P['from-price'] || '{price}', { price: money(Math.min(...ways.map((w) => w.amount)), p.value.currency) }) }
   /* print prices by format; everything else by the chosen variant — and before a choice is
      made, the cheapest with "from", since any single number would be one somebody is not
      charged. Where every shape costs the same there is nothing to qualify. */
@@ -469,6 +473,8 @@ function buyNow() {
 }
 const join = () => run(() => subscribe(p.value.sku), { kind: 'subscribe', product_id: p.value.sku })
 const manage = () => run(() => openPortal())
+/* sold on a plan or in terms: the ways to pay replace the one button (openspec: payment-plans) */
+const plansOf = computed(() => (p.value ? waysToPay(p.value).length > 0 : false))
 
 watch(p, (v) => {
   if (!v || preview) return
@@ -551,8 +557,12 @@ watch(picked, () => { needSize.value = false }, { deep: true })
                 <span class="pp-note-active">{{ P['membership-active'] }}</span>
                 <button type="button" class="pp-btn ghost" :disabled="busy" @click="manage">{{ P['membership-manage'] }}</button>
               </template>
+              <PlanPicker v-else-if="plansOf" :product="p" :busy="busy || !p.available" @run="(fn, evt) => run(fn, evt)" />
               <button v-else type="button" class="pp-btn" :disabled="busy || !p.available" @click="join">{{ P['membership-cta'] }}</button>
             </template>
+
+            <!-- something bought once, also sold on a payment plan -->
+            <PlanPicker v-else-if="plansOf && !owned" :product="p" :busy="busy || !p.available" @run="(fn, evt) => run(fn, evt)" />
 
             <!-- a book or a good -->
             <template v-else>

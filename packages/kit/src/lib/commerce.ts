@@ -17,7 +17,7 @@ import { ug } from './strings.js'
 /* where a checkout comes back to: this page, or a path the caller names (a paid form sends them
    back to the form itself, so the answer is the next thing they see). A path on this site only. */
 const here = (path?: string|undefined) => (path && String(path).startsWith('/') ? String(path) : window.location.pathname + window.location.search)
-async function call(name: string, body: { country?: any; items?: any; return?: string; booking?: any; success?: string }) {
+async function call(name: string, body: { country?: any; items?: any; return?: string; booking?: any; success?: string; accept?: boolean }) {
   const { data, error } = await supabase!.functions.invoke(name, { body })
   const fail = (msg: string|undefined, code: string) => {
     if (String(code || '').startsWith('hyperswitch_')) {
@@ -77,6 +77,12 @@ export async function payAndBook(sku: any, booking: any) {
    choosing another plan is switched in place and told (no page leaves) */
 export async function subscribe(sku: any) {
   const d = await call('create-checkout-session', { items: [{ sku, quantity: 1 }], return: here() })
+  return followCheckout(d)
+}
+/* a plan or a term: a commitment, bought on its own once the buyer has agreed to every payment of it
+   (openspec: payment-plans). A membership term may switch in place, as subscribe does. */
+export async function commit(sku: string) {
+  const d = await call('create-checkout-session', { items: [{ sku, quantity: 1 }], accept: true, return: here() })
   return followCheckout(d)
 }
 /* …and is managed entirely in the selected provider's portal */

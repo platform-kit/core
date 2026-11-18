@@ -85,13 +85,15 @@ const LISTED: Array<ModuleDeclaration | string> = [
       steps: ['teams', 'teams-push'],
       schema: ['55-sessions.sql', '56-teams.sql', '57-providers.sql'],
       functions: ['book-session', 'cal-webhook', 'cancel-session', 'coach-hours', 'livekit-webhook', 'payouts', 'providers',
-        'scheduling-api', 'session-files', 'session-recordings', 'session-reminders', 'session-room', 'session-slots'],
+        'scheduling-api', 'session-files', 'session-recordings', 'session-reminders', 'session-room', 'session-slots', 'commitment-bookings'],
       cron: [
         /* the providers' ledger (57-providers.sql) paid out, hourly */
         { name: 'payouts-sweep', schedule: '15 * * * *', command: 'select public.payouts_sweep()' },
         { name: 'session-recordings', schedule: '*/10 * * * *', command: 'select public.run_session_recordings()' },
         { name: 'session-recordings-retain', schedule: '40 4 * * *', command: 'select public.run_session_recordings_retain()' },
         { name: 'session-reminders', schedule: '*/5 * * * *', command: 'select public.run_session_reminders()' },
+        /* a plan's missed payment, as it touches bookings (glue/core+sessions.sql; openspec: payment-plans) */
+        { name: 'commitment-bookings', schedule: '*/5 * * * *', command: 'select public.run_commitment_bookings()' },
       ],
       env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'CAL_WEBHOOK_SECRET', 'CAL_API_KEY', 'LIVEKIT_URL', 'LIVEKIT_API_KEY', 'LIVEKIT_API_SECRET', 'STORAGE_S3_ACCESS_KEY', 'STORAGE_S3_SECRET_KEY'],
     },

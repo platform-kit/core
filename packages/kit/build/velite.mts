@@ -290,7 +290,8 @@ export async function kitConfig(): Promise<any> {
         kind: s.enum(['book', 'good', 'membership', 'session', 'form']),   /* session: a paid call, bought as it is booked (content/sessions names it by sku); form: an answer somebody pays to have looked at, which a form names by sku */
         billing: s.enum(['once', 'subscription']).default('once'),
         period: s.enum(['weekly', 'monthly']).optional(),
-        price: s.number().min(0),
+        /* optional for a membership sold in terms alone; the catalogue refuses it missing anywhere else */
+        price: s.number().min(0).optional(),
         currency: s.string().default('usd'),
         'chat-hours': s.number().optional(),      /* what the offer promises: a coach's reply within this many hours */
         /* WHAT STRIPE ALREADY DOES, AND THIS NEVER PASSED. Four fields, each a parameter rather
@@ -324,6 +325,12 @@ export async function kitConfig(): Promise<any> {
           overagePrice: s.number().min(0.000001).optional(),
           speechCostPerSecond: s.number().min(0).optional(),
         }).optional(),
+        /* PAYMENT PLANS AND FIXED TERMS (openspec: payment-plans; build/commitments.mts checks them): instalments of
+           something bought once, a membership's terms, when a member mid-term may change tier, what a missed payment does */
+        plans: s.array(s.object({ payments: s.number().int(), each: s.number() })).optional(),
+        terms: s.array(s.object({ months: s.number().int(), full: s.number().optional(), monthly: s.number().optional(), then: s.enum(['end', 'monthly', 'renew']).optional() })).optional(),
+        changes: s.object({ upgrade: s.enum(['anytime', 'term-end', 'never']).optional(), downgrade: s.enum(['anytime', 'term-end', 'never']).optional() }).optional(),
+        missed: s.object({ restrict: s.enum(['immediately', 'after-retries', 'never']).optional(), cancelBookings: s.union([s.string(), s.literal(false)]).optional() }).optional(),
         sessions: s.array(s.object({ type: s.string(), weekly: s.number().default(0), monthly: s.number().default(0) })).default([]),   /* a membership's sessions included: booking types with how many a week and a month (0 = no limit); a listed type is the tier's whatever the type's own rules say */
         book: s.string().optional(),              /* book slug, for a book unlock */
         /* a membership is a tier: its slug is what every price of it carries as
@@ -385,7 +392,7 @@ export async function kitConfig(): Promise<any> {
         body: markdown(),
         raw: s.raw(),
         excerpt: s.excerpt({ length: 160 }),
-      }).transform((data) => ({ ...stripCollection('store/products')(data), unit_amount: Math.round(data.price * 100) })),
+      }).transform((data) => ({ ...stripCollection('store/products')(data), unit_amount: data.price == null ? undefined : Math.round(data.price * 100) })),
     },
     /* Landing pages: a route, and a list of sections (a component by name, with
        its props) assembled in that order. A page knows nothing about testing;

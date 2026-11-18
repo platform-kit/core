@@ -51,3 +51,36 @@ CREATE OR REPLACE FUNCTION "public"."person_bookings"("p_user" "uuid") RETURNS "
              order by b.start_at desc nulls last)
       from public.bookings b where b.user_id = p_user), '[]'::jsonb);
 $$;
+
+-- A MISSED PAYMENT ON A PLAN OR A TERM, AS IT TOUCHES BOOKINGS (openspec: payment-plans). The rule is the sessions
+-- module's, so a site without it has none: the hosts of the buyer's upcoming bookings are told once, and where the
+-- offer named a grace period, the bookings are cancelled when it has passed with the payment still outstanding.
+-- Run every five minutes; it calls the function only when there is something to do.
+CREATE OR REPLACE FUNCTION "public"."run_commitment_bookings"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+declare url text; secret text;
+begin
+  if not exists (
+    select 1 from public.commitments c
+     where c.missed_at is not null and c.status in ('active', 'restricted', 'defaulted')
+       and (c.hosts_told_at is null
+            or (c.cancel_bookings_after_minutes is not null and c.bookings_cancelled_at is null
+                and c.missed_at + make_interval(mins => c.cancel_bookings_after_minutes) <= now()))
+       and exists (select 1 from public.bookings b where b.user_id = c.user_id and b.status in ('accepted', 'pending') and b.start_at > now())
+  ) then return; end if;
+  select value into url from public.app_settings where key = 'functions_url';
+  select value into secret from public.app_settings where key = 'functions_secret';
+  if url is null or secret is null then return; end if;
+  perform net.http_post(
+    url := rtrim(url, '/') || '/commitment-bookings',
+    headers := jsonb_build_object('content-type', 'application/json', 'authorization', 'Bearer ' || secret),
+    body := '{}'::jsonb,
+    timeout_milliseconds := 60000);
+end;
+$$;
+
+REVOKE ALL ON FUNCTION "public"."run_commitment_bookings"() FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."run_commitment_bookings"() FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."run_commitment_bookings"() TO "service_role";

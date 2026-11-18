@@ -11,6 +11,12 @@ sources:
     packages/kit/build/payment-plans-db.test.mts,
     packages/kit/build/payment-plans-checkout.test.mts,
     packages/kit/supabase/functions/_shared/commitments.ts,
+    packages/kit/supabase/functions/commitment-bookings,
+    packages/kit/supabase/schemas/glue/core+sessions.sql,
+    packages/kit/src/lib/payment-plans.ts,
+    packages/kit/theme/src/components/store/PlanPicker.vue,
+    packages/kit/theme/src/pages/BillingPortalPage.vue,
+    packages/kit/build/payment-plans-bookings.test.mts,
     packages/kit/content/emails/payment-missed.json,
     packages/kit/content/emails/payment-missed-notice.json,
     packages/kit/content/emails/payment-default-notice.json,
@@ -112,4 +118,14 @@ Each payment is counted once, whichever report brings it: the Stripe webhook, th
 
 A buyer can't cancel while payments are still to make. On Hyperswitch, the site's billing page refuses it. On Stripe, the customer portal opens without cancellation or plan switching for a customer with payments to make. It's a portal configuration the kit makes once in the account, tagged `platformkit-commitment`. Everybody else gets the account's default portal.
 
-Still being built under the OpenSpec change `payment-plans`: the plan picker on the Pricing section and the store, the commitment in the billing view, cancelling bookings after the grace period, the reminder before a term ends, and continuing a term that was paid in full.
+## Where it shows
+
+An offer with plans or terms shows its ways to pay on its store page in place of the one button: each way with its price, what the buyer is agreeing to (the number of payments, the total, and what follows a term), and a box to tick before checkout opens. The words are in the store's strings, under `product` → `ui` (`plans-…`). On the Pricing section, point a row at the offer's store page rather than at a sku: a plan or a term is bought only where its terms are shown and agreed to.
+
+The Billing page lists each plan or term the person is in: payments made and left, the amount of each, when a term ends, anything owed, and whether a payment was missed.
+
+## Bookings
+
+With the sessions module on, a missed payment also reaches bookings. The `commitment-bookings` function, run every five minutes, emails the hosts of the buyer's upcoming bookings once. Where the offer names a grace period, it cancels every upcoming booking once the payment has been outstanding that long. The cancellation goes through the ordinary one, so whichever scheduler holds the booking, the person and the host are told. Nothing is given back. Bookings cancelled this way stay cancelled after the payment is made.
+
+Still to come under the OpenSpec change `payment-plans`: the reminder before a term ends, and continuing a term that was paid in full (`then: monthly` or `renew` after a `full` payment).

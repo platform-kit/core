@@ -86,7 +86,9 @@ export async function moveBooking(s: Session, uid: string, start: string, by: { 
   return made
 }
 
-export async function cancelBooking(row: { uid: string; user_id: string | null; event: string | null; credit_id: string | null }, by: { email: string; role: 'reader' | 'host' | 'admin' }, reason: string) {
+/* `keepCredit`: a cancellation that gives nothing back — the bookings of somebody whose plan payment is outstanding
+   past its grace period (openspec: payment-plans). Every other cancellation returns a paid session's credit. */
+export async function cancelBooking(row: { uid: string; user_id: string | null; event: string | null; credit_id: string | null }, by: { email: string; role: 'reader' | 'host' | 'admin' }, reason: string, opts: { keepCredit?: boolean } = {}) {
   const s = await typeFor(row.event, { any: true })
   const sch = s ? schedulerOf(s) : null
   if (!s || schedulerIdOf(s) === 'cal') {
@@ -99,5 +101,5 @@ export async function cancelBooking(row: { uid: string; user_id: string | null; 
     await sessionMail('session-cancelled', row.uid).catch((e) => console.warn('session-cancelled mail', String(e)))
     await tell('BOOKING_CANCELLED', row.uid)
   }
-  if (row.credit_id && s?.sku) await returnCredit(row.credit_id)
+  if (row.credit_id && s?.sku && !opts.keepCredit) await returnCredit(row.credit_id)
 }
