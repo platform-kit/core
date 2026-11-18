@@ -23,7 +23,7 @@ sources:
     packages/kit/content/emails/payment-missed-notice.json,
     packages/kit/content/emails/payment-default-notice.json,
   ]
-reviewed: 2026-11-17
+reviewed: 2026-11-18
 ---
 
 A payment plan sells something for one price, or in a set number of monthly payments at a price you write. A fixed term sells a membership for a number of months, paid in full or monthly. Either way the buyer commits to every payment: the full amount is owed, whether or not they use what they bought.

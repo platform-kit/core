@@ -9,6 +9,7 @@ import { products } from '#content'
 import { hasPublishedMeteredUsagePlan } from '../lib/usage-eligibility.js'
 import SiteLayout from '../layouts/SiteLayout.vue'
 import UsagePanel from '../components/UsagePanel.vue'
+import { offerSkuOf } from 'platformkit/lib/payment-plans.js'
 import SignInPage from './SignInPage.vue'
 
 const W = computed(() => ((us('usage').page || {}).main || {}))
@@ -56,7 +57,8 @@ const periodEnd = computed(() => {
 const plan = computed(() => {
   const key = subscription.value?.key
   const sku = subscription.value?.sku
-  return products.find((offer: any) => offer.key === key || offer.sku === sku)?.title || sku || key || ''
+  /* a plan or a term is sold as an offer of its own, named after the offer it pays for */
+  return products.find((offer: any) => offer.key === key || offer.sku === sku || offer.sku === offerSkuOf(sku))?.title || sku || key || ''
 })
 const statusLabel = computed(() => W.value[`billing-status-${subscription.value?.status}`] || subscription.value?.status || '')
 const statusTone = computed(() => ['active', 'trialing'].includes(subscription.value?.status)

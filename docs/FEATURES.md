@@ -317,6 +317,10 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - A Billing page showing the plan, its status (active, free trial, payment needs attention, ended), the renewal date, whether a saved card is ready for renewals, and plans to explore.
 - Cancel at the end of the period and resume, in the app on Hyperswitch or in Stripe's billing portal on Stripe.
 - A membership band in the store: "Become a member", "Switch to this", "You're a member".
+- Fixed terms: a membership sold for 3, 6 or 12 months (any number of terms), each paid in full or monthly at prices the site sets, with the full amount owed. What follows a term is the site's choice (it ends, continues monthly, or renews), and so is when a member may change tier mid-term.
+- Payment plans: anything sold once that doesn't ship can also be sold in a set number of monthly payments. The buyer agrees to every payment before checkout and can't cancel partway.
+- A missed payment on a plan or a term pauses access at once or after the retries (the site chooses), emails the buyer and the administrators, and can cancel the buyer's upcoming bookings without refund after a grace period. Paying restores access.
+- The Billing page lists each plan or term with payments made and left, when a term ends, and anything owed. A member is reminded a week before a term that simply ends.
 
 ### Usage-based billing
 

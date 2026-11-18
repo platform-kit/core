@@ -19,6 +19,8 @@ export type WayToPay = {
 }
 
 export const waySku = (sku: string, way: string) => `${sku}--${way}`
+/* the offer a way of paying pays for: the sku it is named after */
+export const offerSkuOf = (sku: string) => String(sku || '').split('--')[0]
 
 const minor = (v: unknown) => Math.round(Number(v) * 100)
 
