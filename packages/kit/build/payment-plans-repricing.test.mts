@@ -44,10 +44,12 @@ try {
   const product = await stripe('POST', 'products', { name: 'Member (old price, test)' }); products.push(product.id)
   const sub = await stripe('POST', 'subscriptions', { customer: cus.id, 'items[0][price_data][currency]': 'usd', 'items[0][price_data][unit_amount]': '900', 'items[0][price_data][recurring][interval]': 'month', 'items[0][price_data][product]': product.id })
   ok('the old-price subscription starts at Stripe', sub.status === 'active', JSON.stringify(sub.error ?? sub.status))
-  await local(sub.id, old, 900, sub.current_period_end)
+  /* the account's current API puts the period on the item; an older one on the subscription */
+  const periodEnd: number = sub.current_period_end ?? sub.items?.data?.[0]?.current_period_end
+  await local(sub.id, old, 900, periodEnd)
   /* one already on the new price, and one whose subscription is ending */
-  const current = await user('pp-reprice-current@example.com'); await local('sub_pp_current', current, NEW, sub.current_period_end)
-  const leaving = await user('pp-reprice-leaving@example.com'); await local('sub_pp_leaving', leaving, 900, sub.current_period_end)
+  const current = await user('pp-reprice-current@example.com'); await local('sub_pp_current', current, NEW, periodEnd)
+  const leaving = await user('pp-reprice-leaving@example.com'); await local('sub_pp_leaving', leaving, 900, periodEnd)
 
   const first = await run()
   ok('the job answers the service', first.status === 200, JSON.stringify(first))
@@ -66,12 +68,12 @@ try {
   ok('a notice to somebody now leaving is withdrawn', of('sub_pp_leaving') ? (await q(`select status from public.repricings where subscription_id = 'sub_pp_leaving'`))[0]?.status === 'dropped' : true)
 
   /* the date comes round: the renewal the notice named is the next one */
-  await q(`update public.repricings set effective_at = to_timestamp($1) where subscription_id = $2`, [sub.current_period_end, sub.id])
+  await q(`update public.repricings set effective_at = to_timestamp($1) where subscription_id = $2`, [periodEnd, sub.id])
   const due = await run()
   ok('when the named renewal is next, the member is moved', due.status === 200 && due.body.moved === 1, JSON.stringify(due.body))
   const live = await stripe('GET', `subscriptions/${sub.id}?expand[]=schedule`)
   const phases = live.schedule?.phases ?? []
-  ok('…at Stripe, the new price from the next renewal', phases.length === 2 && phases[1]?.items?.[0]?.price && phases[0]?.end_date === sub.current_period_end, JSON.stringify(phases.map((p: any) => ({ end: p.end_date, price: p.items?.[0]?.price }))))
+  ok('…at Stripe, the new price from the next renewal', phases.length === 2 && phases[1]?.items?.[0]?.price && phases[0]?.end_date === periodEnd, JSON.stringify(phases.map((p: any) => ({ end: p.end_date, price: p.items?.[0]?.price }))))
   if (phases[1]?.items?.[0]?.price) {
     const price = await stripe('GET', `prices/${typeof phases[1].items[0].price === 'string' ? phases[1].items[0].price : phases[1].items[0].price.id}`)
     ok('…which is the $12 price', price.unit_amount === NEW, String(price.unit_amount))

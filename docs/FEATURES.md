@@ -321,7 +321,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Payment plans: anything sold once that doesn't ship can also be sold in a set number of monthly payments. The buyer agrees to every payment before checkout and can't cancel partway.
 - A missed payment on a plan or a term pauses access at once or after the retries (the site chooses), emails the buyer and the administrators, and can cancel the buyer's upcoming bookings without refund after a grace period. Paying restores access.
 - The Billing page lists each plan or term with payments made and left, when a term ends, and anything owed. A member is reminded a week before every term ends, with what follows and what it costs, and can turn renewal off there. An administrator sees the same on the person's page in the admin.
-- When a membership's price changes, existing members keep their price unless the site chooses to move them; then each is emailed 30 days ahead (or as the site sets) and moved at a renewal.
+- When a membership's price changes, existing members keep their price unless the site chooses to move them; then each is emailed 30 days ahead (or as the site sets) and moved at the first renewal at least that far away.
 - On the Pricing page, one switch shows every program paid in full or monthly, with the saving, read straight from the product files.
 
 ### Usage-based billing
