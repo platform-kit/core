@@ -1,18 +1,18 @@
-import { admin, isServiceBearer, json, preflight } from '../_shared/lib.ts'
+import { admin, isServiceBearer, json, preflight } from '@pk/core/lib.ts'
 import {
   automationDeliveryOutcome,
   sendInstagramPrivateReply,
-} from '../_shared/social/automation-delivery.mts'
+} from '@pk/core/social/automation-delivery.mts'
 import {
   matchSocialAutomations,
   socialBotAllowsAnonymousSubject,
-} from '../_shared/social/automation-rules.mts'
+} from '@pk/core/social/automation-rules.mts'
 import {
   availableSocialAutomationRoutes,
   invokeSocialOperation,
-} from '../_shared/social/operations.mts'
-import { DIRECT_SOCIAL_ADAPTERS } from '../_shared/social/direct-sdk.mts'
-import { createManagedSocial } from '../_shared/social/managed-sdk.mts'
+} from '@pk/core/social/operations.mts'
+import { DIRECT_SOCIAL_ADAPTERS } from '@pk/core/social/direct-sdk.mts'
+import { createManagedSocial } from '@pk/core/social/managed-sdk.mts'
 
 type Row = Record<string, any>
 type SocialRuntime = {

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { createHash, randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
-import { localStack, serviceKey, supabaseUrl } from './supabase-env.mjs'
-import type { Database } from '../supabase/functions/_shared/database.types.js'
+import { localStack, serviceKey, supabaseUrl } from '../../../build/supabase-env.mjs'
+import type { Database } from '../../../supabase/functions/_shared/database.types.js'
 
 const url = supabaseUrl()
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY || ''

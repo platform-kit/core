@@ -1,5 +1,5 @@
-import { admin, appUrl, getUser, json, preflight } from '../_shared/lib.ts'
-import { SOCIAL_ADAPTERS } from '../_shared/social/registry.ts'
+import { admin, appUrl, getUser, json, preflight } from '@pk/core/lib.ts'
+import { SOCIAL_ADAPTERS } from '@pk/core/social/registry.ts'
 import {
   blueskyLoopbackClientId,
   blueskyOAuthClientMetadata,

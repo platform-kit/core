@@ -14,7 +14,7 @@ sources:
     packages/kit/theme/src/pages/AdminPage.vue,
     packages/kit/src/lib/look.ts,
   ]
-reviewed: 2026-11-14
+reviewed: 2026-11-17
 ---
 
 ## Site settings

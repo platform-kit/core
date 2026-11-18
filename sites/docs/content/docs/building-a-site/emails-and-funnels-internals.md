@@ -18,7 +18,7 @@ sources:
     packages/kit/src/lib/support/prompts.ts,
     packages/kit/build/chat-email-strings.mts,
     packages/kit/supabase/functions/send-email,
-    packages/kit/supabase/functions/social,
+    packages/kit/modules/social-publishing/functions/social,
     packages/kit/supabase/functions/session-reminders,
     packages/kit/supabase/functions/_shared/session-mail.ts,
     packages/kit/supabase/functions/_shared/ics.ts,

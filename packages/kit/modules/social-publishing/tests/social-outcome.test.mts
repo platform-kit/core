@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import { resolveSocialOutcome } from '../supabase/functions/_shared/social/outcome.mjs'
+import { resolveSocialOutcome } from '../../../supabase/functions/_shared/social/outcome.mjs'
 
 const knownFailure = (failure: { disposition: { kind: string }; code: any }) => ({
   status: failure.disposition?.kind === 'after-delay' ? 'retry_wait' : 'failed',
@@ -69,7 +69,7 @@ const lostResponse = await resolveSocialOutcome({
 assert.equal(lostResponse.status, 'review_required')
 assert.equal(lostResponse.errorCode, 'provider_outcome_uncertain')
 
-const publishSource = fs.readFileSync(new URL('../supabase/functions/social-publish/index.ts', import.meta.url), 'utf8')
+const publishSource = fs.readFileSync(new URL('../functions/social-publish/index.ts', import.meta.url), 'utf8')
 assert.match(publishSource, /resolveSocialOutcome/)
 assert.doesNotMatch(publishSource, /adapter\.publish\([\s\S]*?adapter\.publish\(/, 'the delivery path must not retry publication inside one invocation')
 

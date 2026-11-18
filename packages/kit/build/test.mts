@@ -160,20 +160,7 @@ const KIT_TESTS = [
   on('sessions') && c.modules.api !== false && ['scheduling-api.test.mts'],
   on('store') && c.modules.api !== false && ['storefront-api.test.mts'],
   on('support') && c.modules.api !== false && ['support-api.test.mts'],
-  on('social-publishing') && ['social-permissions.test.mts'],
-  on('social-publishing') && ['social-security.test.mts'],
-  on('social-publishing') && ['social-automation.test.mts'],
-  on('social-publishing') && ['social-automation-db.test.mts'],
-  on('social-publishing') && ['social-automation-admin.test.mts'],
-  on('social-publishing') && ['social-webhooks.test.mts'],
-  on('social-publishing') && ['social-publishing.test.mts'],
-  on('social-publishing') && ['social-delivery.test.mts'],
-  on('social-publishing') && ['social-oauth.test.mts'],
-  on('social-publishing') && ['social-managed.test.mts'],
-  on('social-publishing') && ['social-outcome.test.mts'],
-  on('social-publishing') && ['social-admin.test.mts'],
-  on('social-publishing') && ['social-metrics.test.mts'],
-  on('social-publishing') && ['social-metrics-db.test.mts'],
+  /* (social-publishing's own tests are in its folder; the ones that need spaces too, and the adapter's, are here) */
   /* the community as a Matrix homeserver: the translation under Node, then matrix-js-sdk — the
      library Element is built on — against the served function */
   on('spaces') && c.modules.api !== false && ['matrix-api.test.mts'],   /* the desk as Chatwoot's APIs: the shapes under Node; the Client and Application APIs, the webhooks and the snippet against the served function */   /* the store as Shopify's Storefront API: the products from the offers under Node; the official client, the cart and the handoff against the served function */   /* the sessions as cal.com's API v2: the shapes under Node; cal.js pointed at the site, the judge, the webhooks and cal.com's embed against the served function */   /* the forms as Typeform's API: the shapes under Node; the official client, the webhooks and the embed against the served function */
@@ -183,7 +170,6 @@ const KIT_TESTS = [
   ['content-refresh.test.mts'],
   ['social-adapter.test.mts'],
   ['social-provider-matrix.test.mts'],
-  on('social-publishing') && ['social-operations.test.mts'],
   ['pipe.test.mts'],
   ['admin-fence.test.mts'],
   ['admin-classes.test.mts'],   /* every `ui-` class a component wears is one something defines: `.ui-in` is not `.ui-input`, styled nothing, and drew a white input on the dark theme in three places */

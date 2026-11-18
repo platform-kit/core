@@ -71,7 +71,7 @@ Verified by: `build/pipe.test.mts`
   its administrator-only Settings view and controls are not shown or reachable, and every unrelated
   section and backing operation remains refused
 
-Verified by: `build/social-publishing.test.mts` against the served local functions and CMS, plus
+Verified by: `modules/social-publishing/tests/social-publishing.test.mts` against the served local functions and CMS, plus
 screenshots of the invitee's rail and Social navigation in both themes
 
 #### Scenario: the rail's rows

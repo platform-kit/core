@@ -3,11 +3,11 @@ import {
   matchSocialAutomations,
   socialBotAllowsAnonymousSubject,
   socialKeywordMatches,
-} from '../supabase/functions/_shared/social/automation-rules.mjs'
+} from '../../../supabase/functions/_shared/social/automation-rules.mjs'
 import {
   automationDeliveryOutcome,
   sendInstagramPrivateReply,
-} from '../supabase/functions/_shared/social/automation-delivery.mjs'
+} from '../../../supabase/functions/_shared/social/automation-delivery.mjs'
 
 assert.equal(socialKeywordMatches('Send me the GUIDE, please.', 'guide'), true)
 assert.equal(socialKeywordMatches('Send me a guidebook.', 'guide'), false)

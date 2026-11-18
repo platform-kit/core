@@ -13,7 +13,7 @@
 - [x] Courses' `index.ts` front door, and the boundary check on. Verified by `module-boundaries.test.mts` with a planted import.
 
 ### The rest
-- [ ] Each remaining module moved, one per commit, with the same proof as the pilot.
+- [ ] Each remaining module moved, one per commit, with the same proof as the pilot. Done so far: courses, translation, enrichment, recommendations, tts, push, api, space-encryption, copilot, memberships, events, instrument, bots, funnels, print, social-publishing. Left: articles, books, wiki, docs, store, sessions, coaching, support, spaces, network, forms, emails, models. Known ties left in core: the admin's social gate (who may enter the admin for Social alone) is still the admin's own code, waiting for an admin-access slot; `_shared/print.ts`, `_shared/suppliers/` and `_shared/social/` stay core shared function code, since the admin function, the store and the bots worker read them.
 - [ ] `core` moved last.
 - [ ] The demo's stockists moved to `src/modules/stockists/` and registered from one config entry. Verified by `site-module.test.mts`.
 - [ ] The old layout, the manifest file lists, the `App.vue` chain and the `router.ts` flags removed. Verified by `manifests.test.mts` refusing any file outside a module or the shared list.

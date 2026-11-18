@@ -16,9 +16,9 @@ import {
 const direct = fs.readFileSync(new URL('../supabase/functions/_shared/social/direct-sdk.mts', import.meta.url), 'utf8')
 const redditAdapter = fs.readFileSync(new URL('../supabase/functions/_shared/social/reddit-adapter.mts', import.meta.url), 'utf8')
 const registry = fs.readFileSync(new URL('../supabase/functions/_shared/social/registry.ts', import.meta.url), 'utf8')
-const socialFunction = fs.readFileSync(new URL('../supabase/functions/social/index.ts', import.meta.url), 'utf8')
-const publisher = fs.readFileSync(new URL('../supabase/functions/social-publish/index.ts', import.meta.url), 'utf8')
-const schema = fs.readFileSync(new URL('../supabase/schemas/99-social.sql', import.meta.url), 'utf8')
+const socialFunction = fs.readFileSync(new URL('../modules/social-publishing/functions/social/index.ts', import.meta.url), 'utf8')
+const publisher = fs.readFileSync(new URL('../modules/social-publishing/functions/social-publish/index.ts', import.meta.url), 'utf8')
+const schema = fs.readFileSync(new URL('../modules/social-publishing/schema/99-social.sql', import.meta.url), 'utf8')
 
 for (const provider of ['threads', 'bluesky', 'youtube', 'tiktok', 'instagram', 'linkedin', 'reddit']) {
   assert.match(direct, new RegExp(`createAdapter\\('${provider}'`), `${provider} has a direct adapter`)

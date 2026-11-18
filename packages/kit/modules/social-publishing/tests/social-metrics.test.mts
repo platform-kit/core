@@ -9,7 +9,7 @@ import {
   metricsDeliveryEligible,
   nextMetricsFetchAt,
   normalizePostMetrics,
-} from '../supabase/functions/_shared/social/metrics.mjs'
+} from '../../../supabase/functions/_shared/social/metrics.mjs'
 
 const published = Date.parse('2026-10-01T00:00:00.000Z')
 const hour = METRICS_HOURLY_MS
@@ -110,11 +110,11 @@ assert.equal(normalizePostMetrics({ views: -1 }).views, null, 'negative provider
 assert.throws(() => normalizePostMetrics(null), /provider returned/i)
 assert.throws(() => normalizePostMetrics({ payload: 'x'.repeat(33 * 1024) }), { code: 'metrics_response_too_large' })
 
-const schema = fs.readFileSync(new URL('../supabase/schemas/99-social.sql', import.meta.url), 'utf8')
-const kitModules = fs.readFileSync(new URL('./modules/kit.mts', import.meta.url), 'utf8')
+const schema = fs.readFileSync(new URL('../schema/99-social.sql', import.meta.url), 'utf8')
+const kitModules = fs.readFileSync(new URL('../module.ts', import.meta.url), 'utf8')
 const assembledData = fs.readFileSync('supabase/data.sql', 'utf8')
-const worker = fs.readFileSync(new URL('../supabase/functions/social-publish/index.ts', import.meta.url), 'utf8')
-const socialApi = fs.readFileSync(new URL('../supabase/functions/social/index.ts', import.meta.url), 'utf8')
+const worker = fs.readFileSync(new URL('../functions/social-publish/index.ts', import.meta.url), 'utf8')
+const socialApi = fs.readFileSync(new URL('../functions/social/index.ts', import.meta.url), 'utf8')
 assert.match(schema, /CREATE TABLE IF NOT EXISTS "public"\."social_metrics_snapshots"/)
 assert.match(schema, /"metrics_last_fetched_at" timestamp with time zone/)
 assert.match(schema, /"metrics_next_fetch_at" timestamp with time zone/)

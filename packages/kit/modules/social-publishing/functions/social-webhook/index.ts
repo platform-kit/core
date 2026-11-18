@@ -1,8 +1,8 @@
-import { admin } from '../_shared/lib.ts'
-import { createDirectWebhookClient, DIRECT_SOCIAL_ADAPTERS } from '../_shared/social/direct-sdk.mts'
-import { createManagedSocial, managedOperationContext } from '../_shared/social/managed-sdk.mts'
-import { availableSocialAutomationRoutes } from '../_shared/social/operations.mts'
-import { normalizeSocialAutomationEvents } from '../_shared/social/automation-events.mts'
+import { admin } from '@pk/core/lib.ts'
+import { createDirectWebhookClient, DIRECT_SOCIAL_ADAPTERS } from '@pk/core/social/direct-sdk.mts'
+import { createManagedSocial, managedOperationContext } from '@pk/core/social/managed-sdk.mts'
+import { availableSocialAutomationRoutes } from '@pk/core/social/operations.mts'
+import { normalizeSocialAutomationEvents } from '@pk/core/social/automation-events.mts'
 import {
   answerLinkedInWebhookChallenge,
   answerMetaWebhookChallenge,

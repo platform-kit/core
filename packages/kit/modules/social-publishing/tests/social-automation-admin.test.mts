@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { join } from 'node:path'
-import { parseGroups } from './strings-io.mjs'
+import { parseGroups } from '../../../build/strings-io.mjs'
 
-const WORKSPACE = new URL('../../..', import.meta.url).pathname
-const adminPath = join(WORKSPACE, 'packages/kit/theme/src/components/admin/SocialAdmin.vue')
-const componentPath = join(WORKSPACE, 'packages/kit/theme/src/components/admin/social/SocialAutomations.vue')
-const stringsPath = join(WORKSPACE, 'packages/kit/theme/src/content/ui/social.md')
+const WORKSPACE = new URL('../../../../..', import.meta.url).pathname
+const adminPath = join(WORKSPACE, 'packages/kit/modules/social-publishing/ui/admin/SocialAdmin.vue')
+const componentPath = join(WORKSPACE, 'packages/kit/modules/social-publishing/ui/admin/SocialAutomations.vue')
+const stringsPath = join(WORKSPACE, 'packages/kit/modules/social-publishing/strings/social.md')
 /* these read the source's text: the conversion's own `any` is not what they are about */
 const untyped = (src: string) => src.replace(/\(([^()]+?) as any\)/g, '$1').replace(/: any\b/g, '')
 const admin = untyped(fs.readFileSync(adminPath, 'utf8'))

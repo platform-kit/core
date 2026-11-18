@@ -32,7 +32,7 @@ sources:
     packages/kit/theme/src/components/store/StoreHome.vue,
     packages/kit/theme/src/components/store/ProductCard.vue,
     packages/kit/theme/src/components/store/ProductPage.vue,
-    packages/kit/build/social-publishing.test.mts,
+    packages/kit/modules/social-publishing/tests/social-publishing.test.mts,
     packages/kit/agent,
     packages/kit/supabase/functions,
     package.json,

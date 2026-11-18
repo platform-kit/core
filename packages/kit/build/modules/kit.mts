@@ -121,19 +121,8 @@ const LISTED: Array<ModuleDeclaration | string> = [
       env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'],
     },
   },
-  {
-    key: 'social-publishing', what: 'drafts and scheduled posts for social accounts', needs: 'accounts, media and delivery records live in the backend',
-    static: false, git: true, cloud: true,
-    owns: {
-      schema: ['99-social.sql'],
-      functions: ['social', 'social-oauth', 'social-publish', 'social-webhook', 'social-automation'],
-      cron: [
-        { name: 'social-publishing', schedule: '* * * * *', command: 'select public.run_social_publishing()' },
-        { name: 'social-metrics', schedule: '*/10 * * * *', command: 'select public.run_social_metrics()' },
-        { name: 'social-automation-recovery', schedule: '* * * * *', command: 'select public.run_social_automation()' },
-      ],
-    },
-  },
+  /* social-publishing: in its own folder, packages/kit/modules/social-publishing/ */
+  'social-publishing',
   {
     key: 'spaces', what: 'rooms, channels, threads, huddles — and the community served as a Matrix homeserver', needs: 'there is nowhere to keep a room or who is in it',
     static: false, git: true, cloud: true,

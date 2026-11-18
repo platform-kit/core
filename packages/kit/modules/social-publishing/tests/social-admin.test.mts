@@ -1,18 +1,17 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 
-const adminPage = fs.readFileSync(new URL('../theme/src/pages/AdminPage.vue', import.meta.url), 'utf8')
-const adminHead = fs.readFileSync(new URL('../theme/src/components/admin/AdminHead.vue', import.meta.url), 'utf8')
+const adminPage = fs.readFileSync(new URL('../../../theme/src/pages/AdminPage.vue', import.meta.url), 'utf8')
+const adminHead = fs.readFileSync(new URL('../../../theme/src/components/admin/AdminHead.vue', import.meta.url), 'utf8')
 /* these read the source's text: the conversion's own `any` is not what they are about */
 const untyped = (src: string) => src.replace(/\(([^()]+?) as any\)/g, '$1').replace(/: any\b/g, '')
-const socialAdmin = untyped(fs.readFileSync(new URL('../theme/src/components/admin/SocialAdmin.vue', import.meta.url), 'utf8'))
-const socialWords = fs.readFileSync(new URL('../theme/src/content/ui/social.md', import.meta.url), 'utf8')
+const socialAdmin = untyped(fs.readFileSync(new URL('../ui/admin/SocialAdmin.vue', import.meta.url), 'utf8'))
+const socialWords = fs.readFileSync(new URL('../strings/social.md', import.meta.url), 'utf8')
 
-assert.match(
-  adminPage,
-  /'support',\s*'comments',\s*'spaces',\s*'people',\s*'forms',\s*'form-responses',\s*'form-analytics',\s*'funnel-analytics',\s*'models',\s*'payouts',\s*'social'/,
-  'the live-data Social view must not be requested as a content collection',
-)
+/* the live-data Social view is a module screen, and the admin never requests a module screen as a content collection */
+const manifest = fs.readFileSync(new URL('../module.ts', import.meta.url), 'utf8')
+assert.match(manifest, /'core:admin-screen': \[\{ key: 'social', component: '\.\/ui\/admin\/SocialAdmin\.vue' \}\]/, 'Social is a screen the module adds to the admin')
+assert.match(adminPage, /if \(\(SCREENS as any\)\[view\.value\]\) return/, 'the live-data Social view must not be requested as a content collection')
 assert.match(socialAdmin, /const activeView = ref\('calendar'\)/)
 assert.doesNotMatch(socialAdmin, /calendar-description/)
 assert.doesNotMatch(socialWords, /^calendar-description:/m)

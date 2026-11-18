@@ -482,8 +482,27 @@ else await act('the API keeps its place before the payments and its screen opens
   await page.locator('.ak').first().waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the API screen never drew') })
 })
 
+if (!(await moduleOn('social-publishing'))) notHere('interaction: social in the admin', 'the social-publishing module is off')
+else await act('social keeps its group after People and its screen opens', async ({ page, clear }: any) => {
+  await go(page, '/', clear, '.pageshell')
+  await signIn(page, clear, 'admin@example.com')
+  await go(page, '/admin', clear, '.ad-rail')
+  const item = page.locator('.ad-navitem[data-key="social"]').first()
+  await item.waitFor({ state: 'attached', timeout: WAIT * 2 }).catch(() => { throw new Error('the rail carries no social item') })
+  /* a group of its own, straight after People's: the rail's group headings in order, and the one over Social */
+  const groups: string[] = await page.locator('.ad-navsec').evaluateAll((els: any[]) => els.map((x) => x.innerText.trim()))
+  const at = groups.findIndex((g) => /^social$/i.test(g))
+  if (at < 1 || !/people/i.test(groups[at - 1])) throw new Error('the rail reads ' + groups.join(' | '))
+  const fold = item.locator('xpath=ancestor::div[contains(@class, "ad-navgroup")]/preceding-sibling::button[1]')
+  if ((await fold.getAttribute('aria-expanded')) !== 'true') await fold.click()
+  await item.click({ timeout: WAIT })
+  await page.locator('.ad-analytics .sp-admin').first().waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the social screen never drew') })
+})
+
 if (!(await moduleOn('print'))) notHere('interaction: print in the admin', 'the print module is off')
 else await act('the print editions keep their place in the Store and open a book at its address', async ({ page, clear }: any) => {
+  /* an admin action that fails says why, in the failure */
+  page.on('response', async (r: any) => { if (r.status() >= 500 && r.url().includes('/__admin/')) console.log('    ' + r.url() + ' → ' + r.status() + ' ' + (await r.text().catch(() => '')).slice(0, 400)) })
   await go(page, '/', clear, '.pageshell')
   await signIn(page, clear, 'admin@example.com')
   await go(page, '/admin', clear, '.ad-rail')

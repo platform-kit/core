@@ -30,28 +30,28 @@ Verified by: `build/webhook-doors.test.mts` — against the functions as served:
 - **WHEN** a reader without social-publishing access calls `social` to read accounts, upload media, edit a post, or grant access
 - **THEN** it is refused and no protected row, storage object or credential is disclosed or changed
 
-Verified by: `build/social-publishing.test.mts` against the served local functions with reader, invitee and administrator accounts
+Verified by: `modules/social-publishing/tests/social-publishing.test.mts` against the served local functions with reader, invitee and administrator accounts
 
 #### Scenario: a callback with forged or replayed state
 
 - **WHEN** `social-oauth` receives state that is missing, expired, altered or already consumed
 - **THEN** it refuses the callback and creates or changes no connected account or credential
 
-Verified by: `build/social-publishing.test.mts` against the served local function
+Verified by: `modules/social-publishing/tests/social-publishing.test.mts` against the served local function
 
 #### Scenario: a scheduled call without the service bearer
 
 - **WHEN** `social-publish` is called without the scheduled-job credential, or with a due delivery identifier that is not claimable
 - **THEN** it refuses the request or claims no delivery and publishes nothing
 
-Verified by: `build/social-publishing.test.mts` against the served local function
+Verified by: `modules/social-publishing/tests/social-publishing.test.mts` against the served local function
 
 #### Scenario: a social webhook without its provider verification
 
 - **WHEN** `social-webhook` receives an event with a missing, invalid, or unsupported signature mechanism
 - **THEN** it refuses the event and writes no webhook inbox row or provider state
 
-Verified by: `build/social-webhooks.test.mts` against the served local Supabase function
+Verified by: `modules/social-publishing/tests/social-webhooks.test.mts` against the served local Supabase function
 
 #### Scenario: a publish by a reader
 

@@ -90,8 +90,8 @@ By owner (kit, theme, site), the separation is clean. By layer, it leaks.
 
    | File | Lines |
    |---|---|
-   | `theme/src/components/admin/SocialAdmin.vue` | 5,351 |
-   | `supabase/functions/social/index.ts` | 2,789 |
+   | `modules/social-publishing/ui/admin/SocialAdmin.vue` | 5,351 |
+   | `modules/social-publishing/functions/social/index.ts` | 2,789 |
    | `theme/src/pages/SpacesPage.vue` | 2,018 |
    | `theme/src/pages/AdminPage.vue` | 1,812 |
    | `src/lib/spaces/api.ts` | 1,287 |

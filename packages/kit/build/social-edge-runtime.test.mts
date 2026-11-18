@@ -5,13 +5,15 @@ import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..')
 const site = process.cwd()
-const sourcePath = path.join(root, 'packages/kit/supabase/functions/social/index.ts')
+/* a module's function names shared code (@pk/core/, @pk/<module>/); the assembly writes those names as the paths they resolve to */
+const served = (src: string) => src.replace(/'@pk\/core\//g, "'../_shared/").replace(/'@pk\/([a-z-]+)\//g, "'../_shared/$1/")
+const sourcePath = path.join(root, 'packages/kit/modules/social-publishing/functions/social/index.ts')
 const assembledPath = path.join(site, 'supabase/functions/social/index.ts')
 const source = fs.readFileSync(sourcePath, 'utf8')
-const webhookSourcePath = path.join(root, 'packages/kit/supabase/functions/social-webhook/index.ts')
+const webhookSourcePath = path.join(root, 'packages/kit/modules/social-publishing/functions/social-webhook/index.ts')
 const assembledWebhookPath = path.join(site, 'supabase/functions/social-webhook/index.ts')
 const webhookSource = fs.readFileSync(webhookSourcePath, 'utf8')
-const automationPath = path.join(root, 'packages/kit/supabase/functions/social-automation/index.ts')
+const automationPath = path.join(root, 'packages/kit/modules/social-publishing/functions/social-automation/index.ts')
 const assembledAutomationPath = path.join(site, 'supabase/functions/social-automation/index.ts')
 const automationSource = fs.readFileSync(automationPath, 'utf8')
 const workerSourcePath = path.join(root, 'packages/kit/modules/bots/functions/agent-run/index.ts')
@@ -20,14 +22,14 @@ const workerSource = fs.readFileSync(workerSourcePath, 'utf8')
 
 assert.equal(
   fs.readFileSync(assembledPath, 'utf8'),
-  source,
+  served(source),
   'the served Social function must be assembled from the kit source',
 )
 assert.match(source, /Deno\.serve\(async \(req(: [A-Za-z]+)?\) => \{/)
 assert.doesNotMatch(source, /from\s+['"]node:|from\s+['"](?:fs|path|child_process)['"]/)
 assert.equal(
   fs.readFileSync(assembledWebhookPath, 'utf8'),
-  webhookSource,
+  served(webhookSource),
   'the served Social webhook function must be assembled from the kit source',
 )
 assert.match(webhookSource, /webhooks\.verify/)
@@ -35,7 +37,7 @@ assert.match(webhookSource, /social_inbound_events/)
 assert.doesNotMatch(webhookSource, /from\s+['"]node:|from\s+['"](?:fs|path|child_process)['"]/)
 assert.equal(
   fs.readFileSync(assembledAutomationPath, 'utf8'),
-  automationSource,
+  served(automationSource),
   'the Social automation processor must be assembled from the kit source',
 )
 assert.match(automationSource, /social_begin_automation_send/)
@@ -60,7 +62,7 @@ assert.doesNotMatch(automationSource, /from\s+['"]node:|from\s+['"](?:fs|path|ch
    resolve to in the tree, and nothing else */
 assert.equal(
   fs.readFileSync(assembledWorkerPath, 'utf8'),
-  workerSource.replace(/'@pk\/core\//g, "'../_shared/").replace(/'@pk\/bots\//g, "'../_shared/bots/"),
+  served(workerSource),
   'the served agent worker must be assembled from the kit source',
 )
 assert.match(workerSource, /socialAutomationPrompt/)

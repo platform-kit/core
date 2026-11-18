@@ -1,17 +1,17 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { SOCIAL_ADAPTERS } from '../_shared/social/registry.ts'
-import { resolveSocialOutcome } from '../_shared/social/outcome.mts'
+import { SOCIAL_ADAPTERS } from '@pk/core/social/registry.ts'
+import { resolveSocialOutcome } from '@pk/core/social/outcome.mts'
 import {
   hasSocialCapability,
   normalizePostMetrics,
-} from '../_shared/social/metrics.mts'
+} from '@pk/core/social/metrics.mts'
 import {
   connectedAccountRef,
   createManagedSocial,
   hasManagedBackend,
   managedOperationContext,
-} from '../_shared/social/managed-sdk.mts'
-import type { Database } from '../_shared/database.types.ts'
+} from '@pk/core/social/managed-sdk.mts'
+import type { Database } from '@pk/core/database.types.ts'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''

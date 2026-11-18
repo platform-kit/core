@@ -59,7 +59,6 @@ import PublishingPage from '../components/PublishingPage.vue'
 const MediaPage = defineAsyncComponent(() => import('../components/MediaPage.vue'))   /* VueFinder rides with this page alone */
 import FormsAdmin from '../components/admin/FormsAdmin.vue'
 /* the publisher calendar is a live-data surface and only ships with its module */
-const SocialAdmin = moduleOn('social-publishing') ? defineAsyncComponent(() => import('../components/admin/SocialAdmin.vue')) : null
 /* the content models' builder comes as its own chunk, and only with the module on */
 const ModelsAdmin = moduleOn('models') ? defineAsyncComponent(() => import('../components/admin/ModelsAdmin.vue')) : null
 import ModelLeaf from '../components/admin/ModelLeaf.vue'
@@ -142,7 +141,7 @@ const parsed = computed(() => {
    bookings — nothing that needs the content pipe. A support agent, wherever, sees Notifications and Support and
    nothing else; a reader who is not on the staff sees the gate. */
 const LIVE = !CMS
-const LIVE_VIEWS = new Set(['analytics', 'content-analytics', 'form-analytics', 'support', 'comments', 'spaces', 'orders', 'print-orders', 'bookings', 'social', 'network', 'payments', ...(MODULE_SECTIONS as any[]).filter((s) => s.live).map((s) => s.key)])   /* and the module sections that say they are live */
+const LIVE_VIEWS = new Set(['analytics', 'content-analytics', 'form-analytics', 'support', 'comments', 'spaces', 'orders', 'print-orders', 'bookings', 'network', 'payments', ...(MODULE_SECTIONS as any[]).filter((s) => s.live).map((s) => s.key)])   /* and the module sections that say they are live */
 const socialAccess = ref(false)
 const socialAccessKnown = ref(false)
 const socialAccessError = ref(false)
@@ -188,8 +187,7 @@ watch([authSettled, isSignedIn, () => route.value], refreshSocialAccess, { immed
    names a capability; the reads behind it ask the same one in the database, so the rail is a
    convenience and never the fence — an address typed by hand answers nothing either. */
 const NEEDS: any = {
-  /* anybody who runs any part of the site */
-  social: 'social',
+  /* (Social, which anybody who runs any part of the site may open, says so in its own rail fill: needs 'social') */
   payments: 'admin',
   /* the desk */
   support: 'support',
@@ -349,7 +347,6 @@ const NAV = [
   { key: 'forms', items: ['forms', 'form-responses', 'form-analytics'] },
   { key: 'community', items: ['support', 'comments', 'community', 'network'] },   /* people reaching the desk, or each other; the policy is a tab of Comments and the spaces a tab of Community */
   { key: 'people', items: ['people', 'teams', 'providers'] },   /* everyone with an account, the teams they are in, and whoever sells through the site */
-  { key: 'social', items: ['social'] },
   { key: 'settings', items: ['site', 'strings', 'payments'] },   /* what is SET, never what is read */
 ]
 /* the group's NAME, from the words — falling back to the key so a group a site invents still
@@ -495,7 +492,6 @@ const IC: any = {
   studio: '<ellipse cx="10" cy="5.5" rx="6" ry="2.5"/><path d="M4 5.5v9c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-9"/><path d="M4 10c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5"/>',
   /* ───── drawn for the rows that used to fall back to the generic square ───── */
   people: '<circle cx="10" cy="6.8" r="2.6"/><path d="M4.5 16.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/>',   /* one person */
-  social: '<circle cx="6" cy="10" r="2"/><circle cx="14" cy="5" r="2"/><circle cx="14" cy="15" r="2"/><path d="m7.8 9.1 4.4-3.2M7.8 10.9l4.4 3.2"/>',   /* connected social channels */
   comments: '<path d="M3.5 5.5A1.5 1.5 0 0 1 5 4h7.5A1.5 1.5 0 0 1 14 5.5v4A1.5 1.5 0 0 1 12.5 11H7l-3.5 2.5Z"/><path d="M16.5 8v5.5A1.5 1.5 0 0 1 15 15h-1.5v2L10.5 15"/>',   /* two bubbles: a thread */
   network: '<path d="M3.5 9 10 3.5 16.5 9v7.5h-13z"/><path d="M8 16.5v-4h4v4"/>',   /* a house: the timeline every member has */
   'comment-policy': '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h9A1.5 1.5 0 0 1 16 5.5v6A1.5 1.5 0 0 1 14.5 13H8l-4 3Z"/><path d="m7.2 8.4 1.8 1.8 3.8-4"/>',   /* what a comment has to pass */
@@ -1172,9 +1168,6 @@ onMounted(async () => {
       </div>
       <div v-else-if="view === 'form-analytics'" class="ad-analytics">
         <FormAnalytics :name="parsed.name" @open="navigate(ROUTES.admin + '/form-analytics/' + $event)" @back="navigate(ROUTES.admin + '/form-analytics')" @responses="navigate(ROUTES.admin + '/form-responses')" />
-      </div>
-      <div v-else-if="view === 'social'" class="ad-analytics">
-        <SocialAdmin />
       </div>
       <div v-else-if="view === 'media'" class="ad-analytics ad-media">
         <MediaPage />

@@ -2,12 +2,12 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { AgGridVue } from 'ag-grid-vue3'
 import { AllCommunityModule, ModuleRegistry, type ColDef } from 'ag-grid-community'
-import { useAgGridTheme } from '../../lib/agGridTheme.js'
+import { useAgGridTheme } from 'platformkit/theme/lib/agGridTheme.js'
 import { supabase } from 'platformkit/lib/supabase.js'
 import { isAdmin } from 'platformkit/lib/auth.js'
 import { us } from 'platformkit/lib/strings.js'
-import AdminHead from './AdminHead.vue'
-import SocialAutomations from './social/SocialAutomations.vue'
+import AdminHead from 'platformkit/theme/components/admin/AdminHead.vue'
+import SocialAutomations from './SocialAutomations.vue'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 const gridTheme = useAgGridTheme()

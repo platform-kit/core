@@ -1,5 +1,5 @@
-import { admin, appUrl, getUser, json, preflight } from '../_shared/lib.ts'
-import { SOCIAL_ADAPTERS } from '../_shared/social/registry.ts'
+import { admin, appUrl, getUser, json, preflight } from '@pk/core/lib.ts'
+import { SOCIAL_ADAPTERS } from '@pk/core/social/registry.ts'
 import {
   createManagedSocial,
   invokeManagedNative,
@@ -9,14 +9,14 @@ import {
   hasManagedBackend,
   connectedAccountRef,
   managedOperationContext,
-} from '../_shared/social/managed-sdk.mts'
+} from '@pk/core/social/managed-sdk.mts'
 import {
   availableSocialOperations,
   invokeNativeOperation,
   invokeSocialOperation,
   operationAvailable,
-} from '../_shared/social/operations.mts'
-import type { Json } from '../_shared/database.types.ts'
+} from '@pk/core/social/operations.mts'
+import type { Json } from '@pk/core/database.types.ts'
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const GRANT_DAYS = 7

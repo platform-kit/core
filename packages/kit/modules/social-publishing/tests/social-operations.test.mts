@@ -4,7 +4,7 @@ import {
   invokeNativeOperation,
   invokeSocialOperation,
   operationAvailable,
-} from '../supabase/functions/_shared/social/operations.mjs'
+} from '../../../supabase/functions/_shared/social/operations.mjs'
 
 const account = {
   backend: 'default',

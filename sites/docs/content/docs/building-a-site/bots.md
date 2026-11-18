@@ -45,13 +45,13 @@ sources:
     packages/kit/build/steps/search.mts,
     packages/kit/supabase/functions/_shared/agents/desk-bot.ts,
     packages/kit/theme/src/components/spaces/SpaceCommand.vue,
-    packages/kit/supabase/functions/social-automation,
-    packages/kit/supabase/functions/social-webhook,
-    packages/kit/supabase/schemas/99-social.sql,
-    packages/kit/build/social-automation.test.mts,
-    packages/kit/build/social-automation-db.test.mts,
-    packages/kit/build/social-automation-admin.test.mts,
-    packages/kit/theme/src/components/admin/social,
+    packages/kit/modules/social-publishing/functions/social-automation,
+    packages/kit/modules/social-publishing/functions/social-webhook,
+    packages/kit/modules/social-publishing/schema/99-social.sql,
+    packages/kit/modules/social-publishing/tests/social-automation.test.mts,
+    packages/kit/modules/social-publishing/tests/social-automation-db.test.mts,
+    packages/kit/modules/social-publishing/tests/social-automation-admin.test.mts,
+    packages/kit/modules/social-publishing/ui/admin,
   ]
 reviewed: 2026-11-14
 ---

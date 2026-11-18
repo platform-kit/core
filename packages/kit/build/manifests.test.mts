@@ -21,8 +21,8 @@ import nodeFs from 'node:fs'
 import nodePath from 'node:path'
 import { fileURLToPath } from 'node:url'
 /* the kit's own src, the theme's beside it, and the site's — for the switch-reading seam below */
-const KIT_SRC = fileURLToPath(new URL('../src/', import.meta.url))
-const THEME_SRC = fileURLToPath(new URL('../theme/src/', import.meta.url))
+const KIT_SRC = fileURLToPath(new URL('../src', import.meta.url))
+const THEME_SRC = fileURLToPath(new URL('../theme/src', import.meta.url))
 import { readManifest, readManifests, unmetRequirements, FIELDS, OWNS, SHAPES, KINDS } from './modules/manifest.mjs'
 import { loadSite } from './site.mjs'
 import { moduleSet } from './steps.mjs'
@@ -255,19 +255,20 @@ t('social publishing is backend-only and owns its isolated function doors', () =
   assert.equal(social.git, true)
   assert.equal(social.cloud, true)
   assert.deepEqual(social.owns.schema, ['99-social.sql'])
+  /* its folder's functions, by name */
   assert.deepEqual(social.owns.functions, [
     'social',
+    'social-automation',
     'social-oauth',
     'social-publish',
     'social-webhook',
-    'social-automation',
   ])
   assert.deepEqual(social.owns.cron, [
     { name: 'social-publishing', schedule: '* * * * *', command: 'select public.run_social_publishing()' },
     { name: 'social-metrics', schedule: '*/10 * * * *', command: 'select public.run_social_metrics()' },
     { name: 'social-automation-recovery', schedule: '* * * * *', command: 'select public.run_social_automation()' },
   ])
-  const schema = fileURLToPath(new URL('../supabase/schemas/99-social.sql', import.meta.url))
+  const schema = fileURLToPath(new URL('../modules/social-publishing/schema/99-social.sql', import.meta.url))
   assert.ok(nodeFs.existsSync(schema), 'the social-publishing schema is not declared')
   if (CRON_SITE.deployment.backend && CRON_SITE.modules['social-publishing'] !== false) {
     const data = nodeFs.readFileSync(nodePath.join(process.cwd(), 'supabase', 'data.sql'), 'utf8')
@@ -277,7 +278,7 @@ t('social publishing is backend-only and owns its isolated function doors', () =
     assert.match(data, /run_social_automation/)
   }
   for (const name of social.owns.functions) {
-    const entry = nodePath.join(fileURLToPath(new URL('../supabase/functions/', import.meta.url)), name, 'index.ts')
+    const entry = nodePath.join(fileURLToPath(new URL('../modules/social-publishing/functions', import.meta.url)), name, 'index.ts')
     assert.ok(nodeFs.existsSync(entry), `${name} is claimed but has no Edge Function entry point`)
   }
 })

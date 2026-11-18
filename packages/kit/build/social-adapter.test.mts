@@ -29,9 +29,9 @@ assert.throws(() => defineSocialAdapter({ ...adapter, defaultScopes: ['missing']
 
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 const productionPaths = [
-  'packages/kit/supabase/functions/social-oauth/index.ts',
-  'packages/kit/supabase/functions/social/index.ts',
-  'packages/kit/supabase/functions/social-publish/index.ts',
+  'packages/kit/modules/social-publishing/functions/social-oauth/index.ts',
+  'packages/kit/modules/social-publishing/functions/social/index.ts',
+  'packages/kit/modules/social-publishing/functions/social-publish/index.ts',
 ]
 for (const file of productionPaths) {
   const source = fs.readFileSync(path.join(root, file), 'utf8')
