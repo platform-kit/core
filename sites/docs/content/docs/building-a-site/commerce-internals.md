@@ -45,6 +45,8 @@ sources:
     packages/kit/src/payment-provider.mts,
     packages/kit/src/payment-provider.d.ts,
     packages/kit/supabase/schemas/40-commerce.sql,
+    packages/kit/supabase/schemas/44-commitments.sql,
+    packages/kit/build/commitments.mts,
     packages/kit/build/policies.test.mts,
     packages/kit/theme/src/components/Orders.vue,
     packages/kit/build/product-keys.mts,
@@ -57,7 +59,7 @@ sources:
     packages/kit/build/checkout-params.test.mts,
     packages/kit/build/payment-providers.test.mts,
   ]
-reviewed: 2026-11-15
+reviewed: 2026-11-17
 ---
 
 ## The payment-provider contract foundation
@@ -383,6 +385,8 @@ A product's `key` (eight hex characters, given once by the admin's writer or `no
 `create-checkout-session` makes the Stripe Checkout session: the lines by sku, a print or download line's **variant** (contents, cloth, foil — `variantOf` / `parseVariant`) checked against the offer's choices, the shipping options for the one country the buyer chose (`allowed_countries` is that country alone; each option carries its level as metadata; the phone collected), a paid session's chosen time in the metadata, `metadata.guest` for a cart with no JWT. Checkout returns to `/app?checkout=success&session=…` (a cancel to the page it started from, a path on this site only).
 
 `_shared/ledger.ts` is what a payment writes — purchases, subscriptions, entitlements, a session's credit and its booking, a print order sent to the printer, the order's email once per session — called by the **webhook** with Stripe's objects and by **`confirm-checkout`** on landing (the session retrieved from Stripe, checked to be the buyer's, written through the same upserts), so what was paid for is theirs on landing whether or not the webhook has arrived, and a local run needs no `stripe listen` to see a purchase land (the forwarder is still how renewals, failures and refunds arrive).
+
+A purchase is `paid`, `refunded`, or `suspended`. `suspended` is a purchase bought in instalments whose payment is outstanding: `44-commitments.sql` holds it back, together with the entitlements the payment wrote, and gives both back when the payment is made. Payment plans and fixed terms compile into offers of their own (`build/commitments.mts`); [Payment plans and fixed terms](/docs/running-a-site/selling/payment-plans) describes them.
 
 `get_my_entitlements` returns the person's classes, live tiers, plan (`plan`, `plan_key`, `plan_next`, `plan_next_at`) and credits; `lib/auth.js` (`memberTiers`, `hasTier`, `tierRank`) reads it.
 

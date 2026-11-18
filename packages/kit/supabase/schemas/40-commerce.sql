@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS "public"."purchases" (
     "options" "jsonb",
     "unit_price" integer,
     "quantity" integer DEFAULT 1 NOT NULL,
-    CONSTRAINT "purchases_status_check" CHECK (("status" = ANY (ARRAY['paid'::"text", 'refunded'::"text"])))
+    CONSTRAINT "purchases_status_check" CHECK (("status" = ANY (ARRAY['paid'::"text", 'refunded'::"text", 'suspended'::"text"])))
 );
 
 CREATE TABLE IF NOT EXISTS "public"."stripe_events" (

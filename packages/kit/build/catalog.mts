@@ -49,6 +49,7 @@ import { uiScope } from './strings-io.mjs'
 import { problems as repeatProblems } from '../src/lib/recurrence.js'
 import { usageOf } from './site.mjs'
 import { isMain } from './is-main.mjs'
+import { compileCommitments } from './commitments.mjs'
 
 const OUT_AT = 'supabase/functions/_shared/catalog.json'
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -177,10 +178,13 @@ for (const { file, data: d } of files('content/store/products')) {
   const twin = Object.values(offers).find((o: any) => o.key === key)
   if (twin) { err(`${file}: key ${key} is already ${twin.file}'s`); continue }
   const billing = d.billing === 'subscription' ? 'subscription' : 'once'
-  const price = Number(d.price)
-  if (!(typeof d.price === 'number' || /^\d+(\.\d{1,2})?$/.test(String(d.price ?? ''))) || !(price >= 0)) err(`${file}: price "${d.price}" — write dollars: 10 or 10.00`)
+  /* a membership sold in terms alone has no open-ended price (openspec: payment-plans) */
+  const termsOnly = d.kind === 'membership' && d.price == null && Array.isArray(d.terms) && d.terms.length > 0
+  const price = termsOnly ? 0 : Number(d.price)
+  if (!termsOnly && !(typeof d.price === 'number' || /^\d+(\.\d{1,2})?$/.test(String(d.price ?? ''))) || !(price >= 0)) err(`${file}: price "${d.price}" — write dollars: 10 or 10.00`)
   if (billing === 'subscription' && !['weekly', 'monthly'].includes(d.period)) err(`${file}: a subscription needs period: weekly | monthly`)
   if (billing === 'once' && d.period) err(`${file}: period is for a subscription; this is bought once`)
+  if (termsOnly && billing === 'subscription') err(`${file}: billing: subscription is an open-ended price, and this membership names none — give it a price, or drop billing to sell it in terms alone`)
   /* THE FOUR STRIPE ALREADY DOES. Each refused HERE, where the build can say which file and which
      field, rather than by Stripe in front of a buyer. A trial on a one-off is the one that would
      actually be rejected by the API; the others are shapes a file can get wrong. */
@@ -197,7 +201,7 @@ for (const { file, data: d } of files('content/store/products')) {
     if (!(Number.isInteger(hi) && hi >= lo)) err(`${file}: adjustable.max "${d.adjustable.max}" — a whole number, not below min (${lo})`)
   }
   if (d.kind === 'membership') {
-    if (billing !== 'subscription') err(`${file}: a membership is billing: subscription`)
+    if (billing !== 'subscription' && !termsOnly) err(`${file}: a membership is billing: subscription, or is sold in terms alone`)
     if (!d.tier || typeof d.rank !== 'number') err(`${file}: a membership needs a tier and a rank`)
     else if (tiers[d.tier] != null && tiers[d.tier] !== d.rank) err(`${file}: tier ${d.tier} has rank ${d.rank} here and ${tiers[d.tier]} elsewhere`)
     else tiers[d.tier] = d.rank
@@ -263,6 +267,16 @@ for (const { file, data: d } of files('content/store/products')) {
       for (const k of d.unsold || []) {
         if (!offers[sku].variants.some((v: any) => v.variant === k)) err(`${file}: unsold names "${k}", which no combination of its options produces`)
       }
+    }
+  }
+  /* ITS PLANS AND TERMS, each a way of paying compiled into an offer of its own (build/commitments.mts) */
+  {
+    const { extra, derived } = compileCommitments({ file, d, base: offers[sku], err, sessions: (site?.modules || {}).sessions !== false })
+    Object.assign(offers[sku], extra)
+    for (const o of derived) {
+      const twin = offers[o.sku] ? offers[o.sku] : Object.values(offers).find((x: any) => x.key === o.key)
+      if (twin) { err(`${file}: ${o.sku} (key ${o.key}) collides with ${(twin as any).file}'s`); continue }
+      offers[o.sku] = o
     }
   }
 }

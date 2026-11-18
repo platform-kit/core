@@ -11,7 +11,7 @@ sources:
     packages/kit/build/webhooks-push.mts,
     packages/kit/modules/api/tests/webhooks.test.mts,
   ]
-reviewed: 2026-11-13
+reviewed: 2026-11-17
 ---
 
 Use this rule to decide whether information belongs in a content file or in the database:
@@ -86,7 +86,7 @@ files or the classification lists.
 |            | Declaration                                                                                                       | State                                                                                                                                                         |
 | ---------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Library    | every article, book, companion, page                                                                              | what was read, and how far                                                                                                                                    |
-| Store      | offers, collections, the storefront, print blocks                                                                 | purchases, subscriptions, entitlements, orders, carts                                                                                                         |
+| Store      | offers, collections, the storefront, print blocks                                                                 | purchases, subscriptions, entitlements, commitments, orders, carts                                                                                            |
 | Sessions   | the types, and the hours they are bookable at by default                                                          | bookings, paid-Checkout fulfillment claims (the private `booking_checkout_fulfilments` table), a coach's own hours and overrides                              |
 | Emails     | designs, funnels, blasts, the policy                                                                              | the log, the links, the events, a person's place in a funnel                                                                                                  |
 | Support    | the desk's prompts, canned replies, the policy                                                                    | contacts, conversations, messages                                                                                                                             |
