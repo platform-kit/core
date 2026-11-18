@@ -138,6 +138,28 @@ await t('the refusals', async () => {
   await refused({ s: `title: M\nsku: m\nkey: c0ac0003\nkind: membership\ntier: tier-1\nrank: 1\nterms:\n  - months: 3\n    full: 10\n    then: monthly` }, /no open-ended monthly price to continue at/)
 })
 
+await t('a minimum term that rolls on monthly: the monthly price is kept for the term to continue at, never sold alone', async () => {
+  const { offers } = await catalogOf({ coaching: MEMBERSHIP + `
+termsOnly: true
+terms:
+  - months: 3
+    full: 6000
+    monthly: 2400
+    then: monthly` })
+  const parent: any = Object.values(offers).find((o: any) => o.sku === 'coaching')
+  assert.equal(parent.terms_only, true)
+  assert.equal(parent.unit_amount, 200000, 'the price a term continues at is still in the catalogue')
+  assert.equal(parent.billing, 'subscription')
+  const { waysToPay } = await import('../src/lib/payment-plans.js')
+  const ways = waysToPay({ sku: 'coaching', billing: 'subscription', price: 2000, termsOnly: true, terms: [{ months: 3, full: 6000, monthly: 2400, then: 'monthly' }] })
+  assert.deepEqual(ways.map((w: any) => w.plan), ['full', 'monthly'], 'the page offers the term, not the open-ended price')
+})
+
+await t('termsOnly is refused where nothing could continue at its price, or there are no terms', async () => {
+  await refused({ coaching: MEMBERSHIP + `\ntermsOnly: true\nterms:\n  - months: 3\n    full: 6000` }, /no term continues monthly/)
+  await refused({ coaching: MEMBERSHIP + `\ntermsOnly: true` }, /it has none/)
+})
+
 await t('a grace period reads as minutes', () => {
   assert.equal(graceMinutes('24h'), 1440)
   assert.equal(graceMinutes('3d'), 4320)

@@ -29,6 +29,13 @@ A membership product SHALL be able to list any number of terms, each a whole num
 
 Verified by: `packages/kit/build/catalog.test.mts`
 
+#### Scenario: a minimum term that rolls on monthly
+
+- **WHEN** a membership marks its monthly price as only what its terms continue at, and lists a 3-month term that continues monthly
+- **THEN** the store offers the term and not the open-ended price, a checkout naming the membership itself is refused, and after the third payment the member pays the monthly price until they cancel
+
+Verified by: `packages/kit/build/payment-plans.test.mts`
+
 #### Scenario: a 3-month term paid in full
 
 - **WHEN** a buyer pays a 3-month term in full

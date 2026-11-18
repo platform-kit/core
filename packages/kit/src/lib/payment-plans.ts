@@ -30,7 +30,8 @@ export function waysToPay(d: any): WayToPay[] {
   const terms = Array.isArray(d.terms) ? d.terms : []
   const plans = Array.isArray(d.plans) ? d.plans : []
   if (!terms.length && !plans.length) return []
-  if (d.price != null && d.billing === 'subscription') out.push({ sku: d.sku, plan: 'open', payments: 1, months: null, amount: minor(d.price), then: null, committed: false })
+  /* termsOnly: the open-ended price is what a term continues at, not a way to buy */
+  if (d.price != null && d.billing === 'subscription' && d.termsOnly !== true) out.push({ sku: d.sku, plan: 'open', payments: 1, months: null, amount: minor(d.price), then: null, committed: false })
   else if (d.price != null && !terms.length) out.push({ sku: d.sku, plan: 'once', payments: 1, months: null, amount: minor(d.price), then: null, committed: false })
   for (const p of plans) {
     const n = Number(p?.payments)

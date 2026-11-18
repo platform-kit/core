@@ -79,6 +79,17 @@ terms:
 - `monthly`: the membership continues at its open-ended monthly price until it is cancelled.
 - `renew`: another term of the same length begins.
 
+To make a term a minimum that then rolls on monthly, set `termsOnly: true` beside the price. The price stays what a term continues at, but it isn't sold on its own: the store page offers only the terms, and a button elsewhere that names the membership (a Pricing row, the store's membership band) takes the buyer to that page. The build refuses `termsOnly` without terms, or with a price that no term continues at.
+
+```yaml
+price: 100 # what the term continues at
+termsOnly: true
+terms:
+  - months: 3
+    monthly: 100
+    then: monthly
+```
+
 A term paid in full that continues keeps the card it was paid with, and the store page says so. When the term ends, that card pays for what follows: the open-ended membership begins as a subscription (`monthly`), or the full price is charged for the next term (`renew`). Affirm and Afterpay can't be kept for a later charge, so checkout leaves them out for these terms.
 
 The member can turn renewal off on the Billing page at any point before the term ends. The term's own payments are still owed. Only what follows it is dropped.

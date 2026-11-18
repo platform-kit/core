@@ -76,8 +76,18 @@ export async function payAndBook(sku: any, booking: any) {
 /* a membership starts through Checkout in subscription mode; a subscriber
    choosing another plan is switched in place and told (no page leaves) */
 export async function subscribe(sku: any) {
-  const d = await call('create-checkout-session', { items: [{ sku, quantity: 1 }], return: here() })
-  return followCheckout(d)
+  try {
+    const d = await call('create-checkout-session', { items: [{ sku, quantity: 1 }], return: here() })
+    return followCheckout(d)
+  } catch (e: any) {
+    /* a membership sold in terms (openspec: payment-plans) is bought on its own page, where the terms are
+       shown and agreed to: a button anywhere else that names it takes the buyer there */
+    if (e?.code !== 'choose_term') throw e
+    const { products } = await import('./storefront.js')
+    const p = products.value.find((x: any) => x.sku === sku)
+    window.location.assign('/store/products/' + (p?.id ?? sku))
+    return null
+  }
 }
 /* a plan or a term: a commitment, bought on its own once the buyer has agreed to every payment of it
    (openspec: payment-plans). A membership term may switch in place, as subscribe does. */

@@ -11,7 +11,7 @@ sources:
     packages/kit/build/statement-keys.mts,
     packages/kit/build/docs-check.mts,
   ]
-reviewed: 2026-11-17
+reviewed: 2026-11-18
 ---
 
 Every shared record is a markdown file with a frontmatter block; the admin edits the fields as a form. `published` (boolean, default true) is on every collection and is omitted below. A field marked _build_ is written by the build, not by a person. Site-defined model records use the keys declared by that model's `fields` list; those vary by site and are not shared collection fields. This page covers shared content fields; the repository-level purpose and feature overviews are tracked separately and do not define a site's content models.
@@ -127,7 +127,8 @@ rows of `months`, `full` and/or `monthly`, and `then` — `end` · `monthly` · 
 (`upgrade` and `downgrade`, each `anytime` · `term-end` · `never`: when a member partway through a
 term may change tier); and `missed` (`restrict` — `immediately` · `after-retries` · `never` — and
 `cancelBookings`, `off` or a grace period such as `24h`). A membership with `terms` may leave out
-`price` to be sold in terms alone. [Payment plans and fixed terms](/docs/running-a-site/selling/payment-plans)
+`price` to be sold in terms alone, or set `termsOnly: true` to keep its `price` only as what a term
+continues at (`then: monthly`), so a minimum term can't be skipped. [Payment plans and fixed terms](/docs/running-a-site/selling/payment-plans)
 describes them.
 
 Across a cart of several offers: a trial is the subscription's own, since a subscription session is

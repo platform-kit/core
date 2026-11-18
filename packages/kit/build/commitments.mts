@@ -47,12 +47,14 @@ export function compileCommitments({ file, d, base, err, sessions }: Ctx): { ext
   const extra: Record<string, unknown> = {}
   const derived: any[] = []
   const has = (k: string) => d[k] != null
-  if (!has('plans') && !has('terms') && !has('changes') && !has('missed')) return { extra, derived }
+  if (!has('plans') && !has('terms') && !has('changes') && !has('missed') && !has('termsOnly')) return { extra, derived }
 
   const membership = d.kind === 'membership'
   if ((has('terms') || has('changes')) && !membership) err(`${file}: terms and changes are a membership's; this is a ${d.kind || 'product'}`)
   if (has('plans') && base.billing === 'subscription') err(`${file}: plans are for something bought once; a subscription is already paid over time`)
   if (has('plans') && (d.kind === 'good' || d.kind === 'print' || d.kind === 'apparel')) err(`${file}: plans are not offered on something that ships — an order sent cannot be taken back (Klarna and Affirm cover paying over time there)`)
+  if (has('termsOnly') && typeof d.termsOnly !== 'boolean') err(`${file}: termsOnly "${d.termsOnly}" — true or false`)
+  if (d.termsOnly === true && !has('terms')) err(`${file}: termsOnly sells this membership through its terms, and it has none`)
   if (has('missed') && !has('plans') && !has('terms')) err(`${file}: missed says what a missed payment does, and this offer has no plans or terms`)
 
   /* what a missed payment does: the defaults are the gentlest that still protect the seller */
@@ -119,8 +121,10 @@ export function compileCommitments({ file, d, base, err, sessions }: Ctx): { ext
       terms.push(row)
     }
     extra.terms = terms.sort((a, b) => a.months - b.months)
-    /* a membership sold in terms alone has no open-ended price: it is not bought as itself */
-    if (d.price == null) extra.terms_only = true
+    /* a membership sold in terms alone is not bought as itself: it has no open-ended price, or (termsOnly)
+       its price is only what a term continues at, so a minimum term can't be stepped round */
+    if (d.price == null || d.termsOnly === true) extra.terms_only = true
+    if (d.termsOnly === true && d.price != null && !terms.some((t: any) => t.then === 'monthly')) err(`${file}: termsOnly keeps the price ${d.price} for a term to continue at, and no term continues monthly — give one then: monthly, or drop the price`)
   }
 
   if (has('changes') && membership) {
