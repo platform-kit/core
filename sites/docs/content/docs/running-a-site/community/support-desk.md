@@ -4,10 +4,10 @@ description: The support chat people see, the inbox the staff answer from, the p
 order: 32
 sources:
   [
-    packages/kit/supabase/functions/support,
+    packages/kit/modules/support/functions/support,
     packages/kit/src/lib/support,
-    packages/kit/theme/src/components/support,
-    packages/kit/theme/src/components/SupportAdmin.vue,
+    packages/kit/modules/support/ui/widget,
+    packages/kit/modules/support/ui/admin/SupportAdmin.vue,
   ]
 reviewed: 2026-11-10
 ---

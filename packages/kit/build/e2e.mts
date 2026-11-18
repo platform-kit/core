@@ -310,7 +310,7 @@ async function runSite(site: any, reserved: any) {
        stack into the run's own folder: the dev server serves them from dist/ when they are there, and the ones a dev
        build left there name the dev stack — the support widget on another origin posted to it, and was refused */
     const dist = path.join(runtimeRoot, 'dist')
-    for (const sdk of ['analytics-sdk.mjs', 'support-sdk.mjs', 'comments-sdk.mjs']) {
+    for (const sdk of ['analytics-sdk.mjs', '../modules/support/build/support-sdk.mjs', 'comments-sdk.mjs']   /* the support widget's from its module's folder */) {
       const b = spawnSync(process.execPath, [path.join(HERE, sdk)], { cwd: site.directory, env: { ...process.env, ...parseEnv(base), ...stackEnv, PLATFORMKIT_DIST: dist }, encoding: 'utf8' })
       if (b.status !== 0) throw new Error(`${sdk} would not build:\n` + ((b.stdout || '') + (b.stderr || '')).trim().split('\n').slice(-8).join('\n'))
     }

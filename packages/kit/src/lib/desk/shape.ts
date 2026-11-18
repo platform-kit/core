@@ -170,7 +170,7 @@ export const sourcesIn = (rows: DeskRow[] = []) => [
    The work, as against the conversation. A chat is a conversation — it starts, it wanders, it goes
    quiet; a ticket is a piece of work with a state and an owner, not finished until it is finished.
    The arithmetic below is the desk's own, said once so a queue and a ticket can never disagree
-   about what "late" means. Pinned by build/tickets.test.mjs; the reads are tickets.js. */
+   about what "late" means. Pinned by modules/support/tests/tickets.test.mts; the reads are tickets.js. */
 
 /* the five states a piece of work is in, in the order a desk thinks about them */
 /* A TICKET IS OPEN OR IT IS RESOLVED, and that is the whole state machine.

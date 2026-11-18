@@ -156,7 +156,7 @@ try {
          and taking that for the sdk is thirty seconds of waiting for a ready event that cannot come */
       if (body && !/^\s*<!doctype|^\s*<html/i.test(body)) sdk = body
     } catch { /* down */ }
-    if (!sdk) { note('the dev server is not up at ' + appUrl + ' with dist/packs/js/sdk.js built (node build/support-sdk.mjs) — the snippet is checked by hand'); return }
+    if (!sdk) { note('the dev server is not up at ' + appUrl + ' with dist/packs/js/sdk.js built (node modules/support/build/support-sdk.mjs) — the snippet is checked by hand'); return }
     const page = (token: string) => `<!doctype html><html><head><meta charset="utf-8"><title>Another site</title></head><body style="margin:0;font-family:sans-serif"><h1 style="padding:24px">Another site's page</h1>
       <script>window.events = []; window.addEventListener('chatwidget:ready', () => events.push('ready')); window.addEventListener('chatwoot:ready', () => events.push('ready-alias')); window.addEventListener('chatwidget:on-message', () => events.push('message'))</script>
       <script>(function(d,t){ var BASE_URL="${appUrl}"; var g=d.createElement(t),s=d.getElementsByTagName(t)[0]; g.src=BASE_URL+"/packs/js/sdk.js"; g.defer=true; g.async=true; s.parentNode.insertBefore(g,s); g.onload=function(){ window.chatwootSDK.run({ websiteToken: ${JSON.stringify(token)}, baseUrl: BASE_URL }) } })(document,"script");</script></body></html>`

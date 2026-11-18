@@ -48,13 +48,13 @@
  * capped (LIMITS); the address is kept on the contact for it and nothing else.
  * A guest's `start` answers with the token the widget keeps from then on.
  */
-import { admin, json, preflight, appUrl, isServiceBearer } from '../_shared/lib.ts'
-import { sendEmail } from '../_shared/email.ts'
-import { PRESENT_MS, MIN_GAP_MS, MAX_BODY, MAX_FILE, MIME, MSG, hush, LIMITS, UUID, sha256, newToken, clean, firstName, findChoice, ipOf, madeLately, W_ATTACH, publicContact, profileOf, CONV, withAgents, withUrls, resolve, seen, threads, ownConversation, acknowledge, isLeaf, withdraw, escalate, PROMPTS, POLICY, type Contact } from '../_shared/support.ts'
-import { providersFrom } from '../_shared/agents/provider.ts'
-import type { Choice } from '../_shared/choices.ts'
+import { admin, json, preflight, appUrl, isServiceBearer } from '@pk/core/lib.ts'
+import { sendEmail } from '@pk/core/email.ts'
+import { PRESENT_MS, MIN_GAP_MS, MAX_BODY, MAX_FILE, MIME, MSG, hush, LIMITS, UUID, sha256, newToken, clean, firstName, findChoice, ipOf, madeLately, W_ATTACH, publicContact, profileOf, CONV, withAgents, withUrls, resolve, seen, threads, ownConversation, acknowledge, isLeaf, withdraw, escalate, PROMPTS, POLICY, type Contact } from '@pk/support/support.ts'
+import { providersFrom } from '@pk/core/agents/provider.ts'
+import type { Choice } from '@pk/core/choices.ts'
 /* the site's own name, for the one place the desk has to call itself something */
-import * as SITE from '../_shared/pipe/site.js'
+import * as SITE from '@pk/core/pipe/site.js'
 
 Deno.serve(async (req: Request) => {
   const pre = preflight(req); if (pre) return pre

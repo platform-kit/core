@@ -4,16 +4,16 @@ description: The support desk served as Chatwoot's Client and Application APIs w
 order: 56.98
 sources:
   [
-    packages/kit/supabase/functions/support-api,
-    packages/kit/supabase/functions/_shared/support.ts,
+    packages/kit/modules/support/functions/support-api,
+    packages/kit/modules/support/functions/_shared/support.ts,
     packages/kit/supabase/functions/_shared/api/chatwoot,
-    packages/kit/src/lib/support/chat-widget.ts,
+    packages/kit/modules/support/lib/chat-widget.ts,
     packages/kit/src/lib/chat/recorder-light.ts,
-    packages/kit/theme/src/support-embed.ts,
-    packages/kit/theme/src/pages/SupportPage.vue,
+    packages/kit/modules/support/ui/support-embed.ts,
+    packages/kit/modules/support/ui/SupportPage.vue,
     packages/kit/src/lib/interrupt.ts,
-    packages/kit/build/support-sdk.mts,
-    packages/kit/build/steps/support-sdk.mts,
+    packages/kit/modules/support/build/support-sdk.mts,
+    packages/kit/modules/support/build/steps.mts,
     packages/kit/build/interrupt.test.mts,
     packages/kit/build/support-api.test.mts,
   ]

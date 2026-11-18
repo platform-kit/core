@@ -428,7 +428,7 @@ function velite(c: any): Plugin {
          it answers uses — so a snippet copied out of somebody else's docs works against the dev
          server with one line changed, which is the whole point of answering a shape people have.
            /analytics.js, /static/array.js   the analytics script (build/analytics-sdk.mjs)
-           /packs/js/sdk.js                  the support widget, at Chatwoot's (build/support-sdk.mjs)
+           /packs/js/sdk.js                  the support widget, at Chatwoot's (modules/support/build/support-sdk.mjs)
            /packs/js/comments.js             the comment thread, at Disqus's (build/comments-sdk.mjs) */
       const PACKS: any = {
         '/analytics.js': 'dist/analytics.js',

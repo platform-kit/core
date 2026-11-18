@@ -13,10 +13,10 @@ import { existsSync } from 'node:fs'
 import { build } from 'vite'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
-import { platformkit, loadSite, loadTheme, publicSite } from '../vite/index.mjs'
+import { platformkit, loadSite, loadTheme, publicSite } from '../../../vite/index.mjs'
 /* the entry by the name a site has, or — kept as TypeScript in the source — its .ts */
-import { sourceOf } from './pipe-closure.mjs'
-const KIT_SRC = fileURLToPath(new URL('../src/', import.meta.url))
+import { sourceOf } from '../../../build/pipe-closure.mjs'
+const KIT_SRC = fileURLToPath(new URL('../../../src', import.meta.url))
 
 const c = await loadSite()
 if (c.modules.support === false) { console.log('support sdk: the support module is off — nothing built'); process.exit(0) }
@@ -27,7 +27,8 @@ if (!existsSync(path.join(c.root, '.velite')))
   throw new Error('the content has not been built: this is a step of the site phase — run platformkit build, or platformkit steps --run prepare first')
 /* a file of the kit's src by the name a site has, or — kept as TypeScript in the source — its .ts */
 const kitSrc = (p: string) => sourceOf(path.join(KIT_SRC, p)) || path.join(KIT_SRC, p)
-const entry = sourceOf(path.join(theme.src, 'support-embed.js')) || path.join(theme.src, 'support-embed.js')
+/* the embed is the support module's own (ui/support-embed.ts) */
+const entry = sourceOf(fileURLToPath(new URL('../ui/support-embed.js', import.meta.url))) || fileURLToPath(new URL('../ui/support-embed.ts', import.meta.url))
 await build({
   configFile: false,
   root: c.root,

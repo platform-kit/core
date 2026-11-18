@@ -19,11 +19,11 @@
  */
 import { createApp, h } from 'vue'
 import { api as API } from '#site'
-import SupportWidget from './components/support/SupportWidget.vue'
+import SupportWidget from './widget/SupportWidget.vue'
 import { look, applyLook } from 'platformkit/lib/look.js'
-import { setSiteBase } from 'platformkit/lib/support/api.js'
-import './tokens.css'   /* the design's tokens: without them the widget wears the host page's, and loses its hairlines and its ink */
-import './looks/design.css'
+import { setSiteBase } from '../lib/api.js'
+import 'platformkit/theme/tokens.css'   /* the design's tokens: without them the widget wears the host page's, and loses its hairlines and its ink */
+import 'platformkit/theme/looks/design.css'
 import '#site/looks'
 
 let app: any = null

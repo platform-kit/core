@@ -16,10 +16,10 @@
  * model.js, with the author standing in for the sender id.
  */
 import { reactive, ref, watch } from 'vue'
-import { supabase, configured, url as supabaseUrl } from '../supabase.js'
-import { session, beforeSignOut, onIdentity } from '../auth.js'
-import { anonId, capture } from '../analytics.js'
-import { mergeMessages } from '../chat/model.js'
+import { supabase, configured, url as supabaseUrl } from 'platformkit/lib/supabase.js'
+import { session, beforeSignOut, onIdentity } from 'platformkit/lib/auth.js'
+import { anonId, capture } from 'platformkit/lib/analytics.js'
+import { mergeMessages } from 'platformkit/lib/chat/model.js'
 
 const TOKEN_KEY = 'dl.support.token'
 const ACTIVE_KEY = 'dl.support.active'     /* "this browser has written before": boot asks for the threads */

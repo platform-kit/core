@@ -11,7 +11,7 @@ import { ref, computed, nextTick, onMounted, defineAsyncComponent } from 'vue'
 import { us } from 'platformkit/lib/content.js'
 import { micUsable } from 'platformkit/lib/chat/recorder.js'
 
-const VoiceRecorder = defineAsyncComponent(() => import('../chat/VoiceRecorder.vue'))
+const VoiceRecorder = defineAsyncComponent(() => import('platformkit/theme/components/chat/VoiceRecorder.vue'))
 
 const props = defineProps({
   placeholder: { type: String, default: '' },

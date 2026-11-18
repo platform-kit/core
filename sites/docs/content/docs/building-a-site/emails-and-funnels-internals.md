@@ -15,7 +15,7 @@ sources:
     packages/kit/modules/funnels/functions/email-track,
     packages/kit/modules/funnels/functions/email-unsubscribe,
     packages/kit/src/lib/support/when.ts,
-    packages/kit/src/lib/support/prompts.ts,
+    packages/kit/modules/support/lib/prompts.ts,
     packages/kit/build/chat-email-strings.mts,
     packages/kit/supabase/functions/send-email,
     packages/kit/modules/social-publishing/functions/social,

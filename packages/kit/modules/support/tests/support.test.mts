@@ -4,7 +4,7 @@
  * and said in words). Plain assertions; run by `npm test`.
  */
 import assert from 'node:assert/strict'
-import { seconds, spanWord, parseWhen, serialiseWhen, globToRegExp, pageMatches, holds, describeWhen } from '../src/lib/support/when.js'
+import { seconds, spanWord, parseWhen, serialiseWhen, globToRegExp, pageMatches, holds, describeWhen } from '../../../src/lib/support/when.js'
 
 let n = 0
 const t = (name: string, fn: { (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; (): void; }) => { fn(); n++ }
@@ -54,7 +54,7 @@ t('describeWhen', () => {
   assert.equal(describeWhen(parseWhen('on-site 30s, on-page /store/**, signed-in').when), 'after 30s on the site · on /store/** · signed in')
   assert.equal(describeWhen(parseWhen('page-time 1h, signed-in false, cart').when), '1h on the page · guests only · with something in the bag')
 })
-import { splitChoices, joinChoices, choiceKey, findChoice, cutAnswer, offerOf, CHOICE_CAP } from '../src/lib/support/when.js'
+import { splitChoices, joinChoices, choiceKey, findChoice, cutAnswer, offerOf, CHOICE_CAP } from '../../../src/lib/support/when.js'
 t('choices', () => {
   const r = splitChoices('Hi there!\nWhat can we help with?\n\n- I need support\n- Other')
   assert.equal(r.text, 'Hi there!\nWhat can we help with?')

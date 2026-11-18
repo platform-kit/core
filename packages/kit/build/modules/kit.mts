@@ -105,22 +105,8 @@ const LISTED: Array<ModuleDeclaration | string> = [
       env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'],
     },
   },
-  {
-    key: 'support', what: 'the widget, the desk, the prompts', needs: 'there is nowhere to keep a conversation',
-    static: false, git: true, cloud: true,
-    pages: [
-      { name: 'SupportPage', order: 180, page: 'theme:pages/SupportPage.vue', test: 'platformkit/lib/page-routes.js#support' },
-    ],
-    owns: {
-      steps: ['support-sdk'],
-      schema: ['70-support.sql', '72-tickets.sql'], functions: ['support', 'support-api'],
-      cron: [
-        { name: 'support-escalate', schedule: '*/5 * * * *', command: 'select public.run_support_escalation()' },
-        { name: 'support-retain', schedule: '20 4 * * *', command: 'select public.run_support_retention()' },
-      ],
-      env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'],
-    },
-  },
+  /* support: in its own folder, packages/kit/modules/support/ */
+  'support',
   /* social-publishing: in its own folder, packages/kit/modules/social-publishing/ */
   'social-publishing',
   {

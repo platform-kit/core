@@ -12,7 +12,7 @@ import type { PropType } from 'vue'
  * Words from content/app/ui/support.md (teaser).
  */
 import { us } from 'platformkit/lib/content.js'
-import { siteUrl } from 'platformkit/lib/support/api.js'
+import { siteUrl } from '../../lib/api.js'
 import SupportMark from './SupportMark.vue'
 
 defineProps({ prompt: { type: Object as PropType<any>, required: true } })

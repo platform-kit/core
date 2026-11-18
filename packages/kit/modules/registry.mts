@@ -7,7 +7,8 @@ import courses_steps from './courses/build/steps.mjs'
 import events_steps from './events/build/steps.mjs'
 import funnels_steps from './funnels/build/steps.mjs'
 import print_steps from './print/build/steps.mjs'
+import support_steps from './support/build/steps.mjs'
 import tts_steps from './tts/build/steps.mjs'
 
 export const MODELS: Record<string, any[]> = { "courses": courses_models, "funnels": funnels_models, "print": print_models }
-export const STEPS: Record<string, any[]> = { "bots": bots_steps, "courses": courses_steps, "events": events_steps, "funnels": funnels_steps, "print": print_steps, "tts": tts_steps }
+export const STEPS: Record<string, any[]> = { "bots": bots_steps, "courses": courses_steps, "events": events_steps, "funnels": funnels_steps, "print": print_steps, "support": support_steps, "tts": tts_steps }

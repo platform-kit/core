@@ -1,6 +1,6 @@
 /*
  * WHAT THE SUPPORT FUNCTIONS RETURN. Each returns jsonb, which the generated types can only call Json; these are the
- * shapes the SQL builds, read from supabase/schemas/70-support.sql and 72-tickets.sql (ticket_raised_with and
+ * shapes the SQL builds, read from modules/support/schema/70-support.sql and 72-tickets.sql (ticket_raised_with and
  * ticket_answer_values as glue/forms+support.sql defines them). `SupportReturns` maps each function to its shape.
  * A function that refuses says why in `error`; the success fields of a refusal are `undefined`.
  */

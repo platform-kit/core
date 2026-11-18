@@ -9,7 +9,7 @@ import CtaHost from './components/CtaHost.vue'
 import CartDrawer from './components/store/CartDrawer.vue'
 import SiteToast from './components/SiteToast.vue'
 import UsagePaymentAlert from './components/UsagePaymentAlert.vue'
-import SupportWidget from './components/support/SupportWidget.vue'
+import { SupportWidget } from 'platformkit/modules/support/index.js'
 import { pageview } from 'platformkit/lib/analytics.js'
 import { pageAt, propsOf } from 'platformkit/lib/pages.js'
 /* every page this site shows: core's and each enabled module's, in the order they are tried (openspec: modules-as-packages).

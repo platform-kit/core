@@ -1,7 +1,7 @@
 /* The work, as against the conversation: what state a ticket is in, what is owed on one, how a
    list is ordered and narrowed, and the counts a desk wants at a glance. Pure — every case names
    the moment it reckons from. */
-import { STATES, LIVE, PRIORITIES, isLive, isOwed, sortTickets, owedOn, ageOf, tally, narrow, statusOfTicket, priorityOf } from '../src/lib/desk/shape.js'
+import { STATES, LIVE, PRIORITIES, isLive, isOwed, sortTickets, owedOn, ageOf, tally, narrow, statusOfTicket, priorityOf } from '../../../src/lib/desk/shape.js'
 
 let pass = 0, fail = 0
 const ok = (msg: string, cond: boolean, detail?: string|undefined) => { if (cond) pass++; else { fail++; console.log('  FAIL  ' + msg + (detail ? ' — ' + detail : '')) } }

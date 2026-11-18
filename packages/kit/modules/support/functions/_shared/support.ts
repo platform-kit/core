@@ -4,11 +4,11 @@
  * `support-api` function (Chatwoot's Client and Application APIs) do alike, so a contact who arrives through either
  * is the same guest of the desk. The `support` function's header says what each does.
  */
-import { admin, json, getUser, appUrl } from './lib.ts'
-import { isSupport, type Role } from './roles.ts'
-import { sendEmail, WORDS } from './email.ts'
-import { addressOf } from './doors.ts'
-import { PROMPTS, POLICY, type Choice } from './marketing.ts'
+import { admin, json, getUser, appUrl } from '@pk/core/lib.ts'
+import { isSupport, type Role } from '@pk/core/roles.ts'
+import { sendEmail, WORDS } from '@pk/core/email.ts'
+import { addressOf } from '@pk/core/doors.ts'
+import { PROMPTS, POLICY, type Choice } from '@pk/core/marketing.ts'
 export { PROMPTS, POLICY, WORDS }
 export type { Choice }
 
@@ -39,7 +39,7 @@ export const firstName = (s: string | null | undefined) => String(s || '').trim(
 /* a choice by its key path, anywhere in a prompt's tree */
 /* the choice grammar is one module, shared with the client and the agents (../_shared/choices.js):
    a copy of findChoice here was the beginning of two grammars that agree until they do not */
-export { findChoice } from './choices.ts'
+export { findChoice } from '@pk/core/choices.ts'
 /* the caller's address, for the guards */
 /* the address the platform's proxy wrote, never the first x-forwarded-for entry (the caller's own); with none,
    every such caller shares one count rather than having no limit (_shared/doors.ts) */

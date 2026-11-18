@@ -109,8 +109,7 @@ const KIT_TESTS = [
   on('sessions') && ['times.test.mts'],   /* the native scheduler's arithmetic: wall time in a zone, the open starts of a host */
   on('sessions') && ['scheduling.test.mts'],   /* the site's own scheduler against the served functions and Mailpit; skipped where the site has no native type */
   on('sessions') && ['meetings.test.mts'],   /* the site's own video room in its mock: the token door, the signed events, the recording landed; skipped where no type is in a room */   /* a call's recording pulled, signed and kept, against the served functions when the stack serves them */
-  on('support') && ['support.test.mts'],
-  on('support') && ['tickets.test.mts'],   /* the work as against the conversation: what is owed on a ticket, the order, the narrowing */
+  /* (support.test and tickets.test are the support module's own, in its folder) */
   /* (agents.test.mts is the bots module's own: what a run does next) */
   ['search.test.mts'],
   ['content-kinds.test.mts'],           /* every content type can be edited with no checkout, and no build script opens content with fs */

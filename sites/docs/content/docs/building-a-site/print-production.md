@@ -23,7 +23,7 @@ sources:
     packages/kit/modules/print/functions/print-webhook,
     packages/kit/modules/print/functions/lulu-webhook,
   ]
-reviewed: 2026-11-14
+reviewed: 2026-11-17
 ---
 
 Editors' view: [Print editions](/content/docs/running-a-site/selling/print-editions). This page is the machinery.

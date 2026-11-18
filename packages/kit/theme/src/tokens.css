@@ -1,7 +1,7 @@
 /*
  * The design's tokens: the theme's own palette, type and shadow, which a look then overrides (src/looks/<name>.css,
  * whose blocks are `:root[data-look="…"]`). Its own file because the site is not the only thing that wears it: the
- * form embed and the support snippet (build/form-embed.mjs, build/support-sdk.mjs) carry the widget onto another
+ * form embed and the support snippet (build/form-embed.mjs, modules/support/build/support-sdk.mjs) carry the widget onto another
  * site's page and must bring the tokens with them — atlas.css, which used to hold this block, is the whole site's
  * stylesheet and would restyle the page it landed on. Imported first by app.js (before atlas.css) and by each embed's
  * entry. Nothing here paints: a custom property is inert until something of ours reads it.

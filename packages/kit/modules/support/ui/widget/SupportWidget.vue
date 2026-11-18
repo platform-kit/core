@@ -9,13 +9,13 @@
  */
 import { ref, shallowRef, computed, watch, onMounted } from 'vue'
 import { us } from 'platformkit/lib/content.js'
-import { route, ROUTES, INTERRUPT_ROUTES } from '../../router.js'
+import { route, ROUTES, INTERRUPT_ROUTES } from 'platformkit/theme/router.js'
 import { isStaff } from 'platformkit/lib/auth.js'
 import { IN_PREVIEW } from 'platformkit/lib/analytics.js'
 import { mayInterrupt } from 'platformkit/lib/interrupt.js'
-import { panelOpen, unread, staff, boot, open, close, openThread } from 'platformkit/lib/support/api.js'
-import { teaser, nudge, quietNudge, startPrompts, dismiss, reply, resolveDefault, fallback, track } from 'platformkit/lib/support/prompts.js'
-import { installChatWidget } from 'platformkit/lib/support/chat-widget.js'
+import { panelOpen, unread, staff, boot, open, close, openThread } from '../../lib/api.js'
+import { teaser, nudge, quietNudge, startPrompts, dismiss, reply, resolveDefault, fallback, track } from '../../lib/prompts.js'
+import { installChatWidget } from '../../lib/chat-widget.js'
 import { api as API } from '#site'
 import SupportTeaser from './SupportTeaser.vue'
 

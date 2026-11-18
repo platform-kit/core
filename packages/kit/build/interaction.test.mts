@@ -482,6 +482,22 @@ else await act('the API keeps its place before the payments and its screen opens
   await page.locator('.ak').first().waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the API screen never drew') })
 })
 
+if (!(await moduleOn('support'))) notHere('interaction: the desk in the admin', 'the support module is off')
+else await act('the desk keeps its place first in Community and its screen opens', async ({ page, clear }: any) => {
+  await go(page, '/', clear, '.pageshell')
+  await signIn(page, clear, 'admin@example.com')
+  await go(page, '/admin', clear, '.ad-rail')
+  const item = page.locator('.ad-navitem[data-key="support"]').first()
+  await item.waitFor({ state: 'attached', timeout: WAIT * 2 }).catch(() => { throw new Error('the rail carries no support item') })
+  /* it names the item it precedes, so it stands where the rail always had it: first in Community, before the comments */
+  const order: string[] = await item.locator('xpath=..').locator('.ad-navitem').evaluateAll((els: any[]) => els.map((e) => e.dataset.key))
+  if (order[0] !== 'support') throw new Error('the community group reads ' + order.join(', '))
+  const fold = item.locator('xpath=ancestor::div[contains(@class, "ad-navgroup")]/preceding-sibling::button[1]')
+  if ((await fold.getAttribute('aria-expanded')) !== 'true') await fold.click()
+  await item.click({ timeout: WAIT })
+  await page.locator('.ad-analytics .su-tools').first().waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the desk never drew') })
+})
+
 if (!(await moduleOn('social-publishing'))) notHere('interaction: social in the admin', 'the social-publishing module is off')
 else await act('social keeps its group after People and its screen opens', async ({ page, clear }: any) => {
   await go(page, '/', clear, '.pageshell')
@@ -518,7 +534,11 @@ else await act('the print editions keep their place in the Store and open a book
   await page.locator('.pr-grid').first().waitFor({ state: 'visible', timeout: WAIT * 2 }).catch(() => { throw new Error('the print editions never drew their list') })
   if (await page.locator('.ad-analytics .pr-grid').count()) throw new Error('the print editor is drawn inside the dashboards\' frame')
   /* a book at its address: the screen is handed the rest of it */
-  if (BOOK) {
+  /* a book opened is set on this machine, which needs Typst's native compiler — an optional package a machine without
+     printed books leaves out, and opening one there answers that it cannot set it */
+  const typst = (() => { try { import.meta.resolve('@myriaddreamin/typst-ts-node-compiler'); return true } catch { return false } })()
+  if (!typst) console.log('    (a book at its address not opened: this machine has no Typst native compiler to set it)')
+  if (BOOK && typst) {
     await go(page, '/admin/print/' + BOOK.slug, clear, '.pr-title')
     if (await page.locator('.pr-grid').count()) throw new Error('a book at its address still shows the list')
   }

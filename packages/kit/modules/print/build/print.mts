@@ -53,7 +53,7 @@ const ROOT = process.cwd()
 const args = process.argv.slice(2)
 const has = (k: string) => args.includes(k)
 const arg = (k: string) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : null }
-const WORK = path.join(path.dirname(fileURLToPath(import.meta.url)), 'print')   /* the templates and fonts travel with the kit (the theme's, in phase 2) */
+const WORK = path.dirname(fileURLToPath(import.meta.url))   /* the templates and fonts travel with the kit, beside this script in print's build folder */
 const BUCKET = 'print'
 /* the covers as art for the store's book (public/print/<slug>/<edition>/cover-<key>.svg): the
    same Typst compiled to SVG, its glyphs paths, so the page draws the real jacket with no fonts;

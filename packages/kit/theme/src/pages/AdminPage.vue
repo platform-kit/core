@@ -46,7 +46,6 @@ const SITE_NAME = ((Array.isArray(SITE_RAW) ? SITE_RAW[0] : SITE_RAW) || {}).nam
 import Orders from '../components/Orders.vue'
 import Bookings from '../components/Bookings.vue'
 import EmailsAdmin from '../components/admin/EmailsAdmin.vue'
-import SupportAdmin from '../components/SupportAdmin.vue'
 import CommentsAdmin from '../components/CommentsAdmin.vue'
 import NetworkAdmin from '../components/NetworkAdmin.vue'
 import PeopleAdmin from '../components/admin/PeopleAdmin.vue'
@@ -345,7 +344,7 @@ const NAV = [
   { key: 'sales', items: ['orders', 'bookings', 'payouts'] },   /* and what was: every order and what became of it — the printed ones are a FILTER of it rather than a page, since a parcel from a printer and a parcel off a shelf are the same fact about one sale — what cal.com mirrored, and what is owed */
   { key: 'marketing', items: ['emails', 'ads', 'experiments'] },   /* reaching people, and the tests of it; a blast is a tab of Emails and the funnels' numbers a tab of Funnels */
   { key: 'forms', items: ['forms', 'form-responses', 'form-analytics'] },
-  { key: 'community', items: ['support', 'comments', 'community', 'network'] },   /* people reaching the desk, or each other; the policy is a tab of Comments and the spaces a tab of Community */
+  { key: 'community', items: ['comments', 'community', 'network'] },   /* people reaching the desk, or each other; the policy is a tab of Comments and the spaces a tab of Community */
   { key: 'people', items: ['people', 'teams', 'providers'] },   /* everyone with an account, the teams they are in, and whoever sells through the site */
   { key: 'settings', items: ['site', 'strings', 'payments'] },   /* what is SET, never what is read */
 ]
@@ -474,7 +473,6 @@ const IC: any = {
   entries: '<rect x="3.5" y="4" width="13" height="4" rx="1.2"/><rect x="3.5" y="11" width="13" height="4" rx="1.2"/><path d="M6 6h.01M6 13h.01"/>',
   'form-responses': '<path d="M4 4.5h12v11H4z"/><path d="M7 8h6M7 11h6"/><path d="m5 15.5 2-2 2 2"/>',
   'form-analytics': '<path d="M3.5 16.5h13"/><path d="M6 13V9M10 13V5M14 13v-3"/>',
-  support: '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v5a2.5 2.5 0 0 1-2.5 2.5H9l-3.5 3v-3h-.5A2.5 2.5 0 0 1 2.5 11.5v-5Z"/><path d="M7 8.5h6M7 11h3.5"/>',
   spaces: '<path d="M6.5 3.5 5 16.5M12 3.5l-1.5 13M3.5 7.5h13M3 12.5h13"/>',
   teams: '<circle cx="10" cy="7" r="2.4"/><path d="M5.6 16c0-2.4 2-4 4.4-4s4.4 1.6 4.4 4"/><circle cx="4.6" cy="8.4" r="1.7"/><circle cx="15.4" cy="8.4" r="1.7"/><path d="M2 14.6c0-1.7 1.2-2.8 2.6-2.8M18 14.6c0-1.7-1.2-2.8-2.6-2.8"/>',
   providers: '<path d="M10 3v14"/><path d="M13.5 6.2c-.6-.9-1.9-1.4-3.5-1.4-2 0-3.3.9-3.3 2.3 0 3.3 7 1.7 7 5 0 1.5-1.4 2.5-3.7 2.5-1.8 0-3.1-.6-3.8-1.6"/>',
@@ -1185,9 +1183,6 @@ onMounted(async () => {
         <SpacesAdmin />
       </div>
 
-      <div v-else-if="view === 'support'" class="ad-analytics">
-        <SupportAdmin :name="parsed.name" @open="navigate(ROUTES.admin + '/support/' + $event)" />
-      </div>
 
       <!-- every comment on the site, for whoever is responsible for all of them. The desk's own
            queue is what is WAITING on the conversations no room owns; this is the whole of it. -->

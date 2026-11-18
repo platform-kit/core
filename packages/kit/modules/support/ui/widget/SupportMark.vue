@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import SiteMark from '../SiteMark.vue'
+import SiteMark from 'platformkit/theme/components/SiteMark.vue'
 /*
  * Who is on the other side, as a round mark: the site's own mark until a person has answered,
  * and then that person's initials (there are no profile pictures) — so a thread reads as the

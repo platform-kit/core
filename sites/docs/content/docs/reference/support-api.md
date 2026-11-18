@@ -4,12 +4,12 @@ description: Every route, field, event and error of the Chatwoot-compatible Supp
 order: 85.8
 sources:
   [
-    packages/kit/supabase/functions/support-api/index.ts,
-    packages/kit/supabase/functions/_shared/support.ts,
+    packages/kit/modules/support/functions/support-api/index.ts,
+    packages/kit/modules/support/functions/_shared/support.ts,
     packages/kit/supabase/functions/_shared/api/chatwoot,
     packages/kit/supabase/functions/_shared/api/keys.ts,
-    packages/kit/supabase/schemas/70-support.sql,
-    packages/kit/src/lib/support/chat-widget.ts,
+    packages/kit/modules/support/schema/70-support.sql,
+    packages/kit/modules/support/lib/chat-widget.ts,
     packages/kit/build/support-api.test.mts,
   ]
 reviewed: 2026-11-14

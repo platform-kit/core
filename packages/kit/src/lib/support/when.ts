@@ -1,7 +1,7 @@
 /*
  * When a chat prompt shows: the `when:` line of a funnel's chat step, read and judged here
  * with no imports and no environment, so the build (which checks it), the admin (which edits
- * and describes it), the widget (which watches for it) and build/support.test.mjs (which pins
+ * and describes it), the widget (which watches for it) and modules/support/tests/support.test.mts (which pins
  * it) share one rule. Entirely the browser's business — nothing is sent: the widget keeps
  * time and, when every trigger on the line holds, shows the prompt once.
  *

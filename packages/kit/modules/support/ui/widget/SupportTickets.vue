@@ -15,7 +15,7 @@
  */
 import { ref, computed, onMounted } from 'vue'
 import { us } from 'platformkit/lib/content.js'
-import { tickets, ticket, loadTickets, openTicket, closeTicket, sayOnTicket, raiseTicket } from 'platformkit/lib/support/api.js'
+import { tickets, ticket, loadTickets, openTicket, closeTicket, sayOnTicket, raiseTicket } from '../../lib/api.js'
 import { whenOf } from 'platformkit/lib/chat/model.js'
 import SupportMark from './SupportMark.vue'
 

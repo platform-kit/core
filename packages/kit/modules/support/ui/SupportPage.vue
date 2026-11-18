@@ -3,13 +3,13 @@
    and a plain way in for a reader whose page has no room for the widget. The panel as the widget mounts it, on the
    site's ground, no launcher (the page is the panel); the same threads, the same token. Words: support.md `widget.page`. */
 import { onMounted, onBeforeUnmount } from 'vue'
-import { ROUTES, navigate } from '../router.js'
+import { ROUTES, navigate } from 'platformkit/theme/router.js'
 import { setHead } from 'platformkit/lib/seo.js'
 import { us } from 'platformkit/lib/strings.js'
-import { boot, open, close } from 'platformkit/lib/support/api.js'
-import { resolveDefault, fallback } from 'platformkit/lib/support/prompts.js'
-import SupportPanel from '../components/support/SupportPanel.vue'
-import SiteMark from '../components/SiteMark.vue'
+import { boot, open, close } from '../lib/api.js'
+import { resolveDefault, fallback } from '../lib/prompts.js'
+import SupportPanel from './widget/SupportPanel.vue'
+import SiteMark from 'platformkit/theme/components/SiteMark.vue'
 
 const W = (us('support').widget || {}).page || {}
 setHead({ title: W.title || '', description: W.lead || '', path: ROUTES.support, noindex: true })

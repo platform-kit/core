@@ -9,7 +9,7 @@
  * asks about them.
  *
  * The arithmetic is pure, lives in shape.js with the rest of the desk's own and is pinned by
- * build/tickets.test.mjs — what a ticket's state is worth in an ordering, what is owed on one, how
+ * modules/support/tests/tickets.test.mts — what a ticket's state is worth in an ordering, what is owed on one, how
  * long it has been open, how a list narrows — and is re-exported here so a surface has one place
  * to ask. The reads are the database's, and every write goes through a function there, because a status change is both a
  * column and a line on the timeline and a surface that writes one without the other leaves a

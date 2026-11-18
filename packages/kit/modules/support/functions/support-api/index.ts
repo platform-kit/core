@@ -21,13 +21,13 @@
  *   GET  /api/v1/profile   GET|POST …/webhooks   PATCH|DELETE …/webhooks/{id}
  *   POST /deliver { event, id }                                               the database's, with the service bearer
  */
-import { admin, appUrl, isServiceBearer } from '../_shared/lib.ts'
-import { isAdmin, isSupport, type Role } from '../_shared/roles.ts'
-import { tokenOf, keyOf, rateLimit } from '../_shared/api/keys.ts'
-import { API_ON, SPACE, SUPPORT_ON } from '../_shared/api/flags.ts'
-import * as SITE from '../_shared/pipe/site.js'
-import { MSG, CONV, LIMITS, MAX_BODY, MIN_GAP_MS, UUID, sha256, newToken, clean, ipOf, madeLately, profileOf, nameOf, withAgents, withUrls, hush, byToken, seen, threads, ownConversation, acknowledge, PROMPTS, type Contact } from '../_shared/support.ts'
-import { messageOf, clientConversationOf, clientContactOf, conversationOf, contactOf, agentOf, inboxOf, webhookOf, webhookPayload, EVENTS, errorOf, contactSender } from '../_shared/api/chatwoot/shapes.ts'
+import { admin, appUrl, isServiceBearer } from '@pk/core/lib.ts'
+import { isAdmin, isSupport, type Role } from '@pk/core/roles.ts'
+import { tokenOf, keyOf, rateLimit } from '@pk/core/api/keys.ts'
+import { API_ON, SPACE, SUPPORT_ON } from '@pk/core/api/flags.ts'
+import * as SITE from '@pk/core/pipe/site.js'
+import { MSG, CONV, LIMITS, MAX_BODY, MIN_GAP_MS, UUID, sha256, newToken, clean, ipOf, madeLately, profileOf, nameOf, withAgents, withUrls, hush, byToken, seen, threads, ownConversation, acknowledge, PROMPTS, type Contact } from '@pk/support/support.ts'
+import { messageOf, clientConversationOf, clientContactOf, conversationOf, contactOf, agentOf, inboxOf, webhookOf, webhookPayload, EVENTS, errorOf, contactSender } from '@pk/core/api/chatwoot/shapes.ts'
 
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, accept, api_access_token, api-access-token, x-support-token', 'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS' }
 const site = () => ({ name: SITE.name || 'Support', space: SPACE, url: appUrl() })

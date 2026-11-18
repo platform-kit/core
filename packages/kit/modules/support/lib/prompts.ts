@@ -14,14 +14,14 @@
  * cards, the prerender, or for the staff.
  */
 import { ref, watch } from 'vue'
-import { route, INTERRUPT_ROUTES } from '../router.js'
-import { session, onIdentity } from '../auth.js'
-import { supabase, configured } from '../supabase.js'
-import { get as storeGet, set as storeSet } from '../store.js'
-import { IN_PREVIEW, capture } from '../analytics.js'
-import { items as cartItems } from '../cart.js'
-import { holds } from './when.js'
-import { mayInterrupt, newPageView, claimCorner, releaseCorner } from '../interrupt.js'
+import { route, INTERRUPT_ROUTES } from 'platformkit/lib/router.js'
+import { session, onIdentity } from 'platformkit/lib/auth.js'
+import { supabase, configured } from 'platformkit/lib/supabase.js'
+import { get as storeGet, set as storeSet } from 'platformkit/lib/store.js'
+import { IN_PREVIEW, capture } from 'platformkit/lib/analytics.js'
+import { items as cartItems } from 'platformkit/lib/cart.js'
+import { holds } from 'platformkit/lib/support/when.js'
+import { mayInterrupt, newPageView, claimCorner, releaseCorner } from 'platformkit/lib/interrupt.js'
 import { staff, panelOpen, thread } from './api.js'
 
 const SHOWN_KEY = 'dl.support.shown'

@@ -18,7 +18,7 @@ The admin SHALL ask for each part of a structured value with a control that fits
 #### Scenario: a round trip through the editor
 
 - **WHEN** a value is saved from its controls
-- **THEN** the file holds exactly what the build's parser would produce from the same value, and re-opening the editor shows the same controls filled the same way (`build/support.test.mts`, `build/funnels.mjs --check`)
+- **THEN** the file holds exactly what the build's parser would produce from the same value, and re-opening the editor shows the same controls filled the same way (`modules/support/tests/support.test.mts`, `build/funnels.mjs --check`)
 
 ### Requirement: The admin reads the files, never the compiled output
 

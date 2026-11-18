@@ -13,7 +13,7 @@
  */
 import { watch } from 'vue'
 import { panelOpen, contact, thread, open, close, forget, token, booted } from './api.js'
-import { url as supabaseUrl } from '../supabase.js'
+import { url as supabaseUrl } from 'platformkit/lib/supabase.js'
 
 let installed: any = null
 const pending = { contact: {}, conversation: {} }
