@@ -130,7 +130,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
   - **The site's own data:** the library, articles, entries from a content model.
   - **Closers:** call to action, countdown, close, footer.
 - Hero visuals: a picture, video, browser frame, phone or laptop mock-up, or a visual the site provides; an email sign-up and star ratings can sit in the hero.
-- Pricing with a billing-period switch and a comparison table; statistics that count up as they appear.
+- Pricing with a billing-period switch, a comparison table, and rows kept behind a "see more" button; statistics that count up as they appear.
 - Every section shares one set of look options: tone, glow, background texture (grain, dots, grid, gradient, aurora), spacing, width, entrance animation and anchor.
 - Per-page search title, description, share image, and an optional reading-progress bar.
 - Mistakes are caught before a page is saved.

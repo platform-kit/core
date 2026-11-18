@@ -151,7 +151,7 @@ plans-full: {months} months, {amount} paid now
 plans-monthly: {months} months, {amount} a month
 plans-instalments: {n} monthly payments of {amount}
 plans-then-end: Your membership ends after the term.
-plans-then-monthly: After the term, it continues at the usual monthly price until you cancel.
+plans-then-monthly: After the term, it continues at {amount} a month until you cancel.
 plans-then-renew: After the term, a new term of the same length begins.
 plans-commitment: You're agreeing to {n} payments of {amount}, {total} in all. They can't be stopped partway, and a missed payment pauses your access until it's paid.
 plans-commitment-full: You're paying {amount} now for {months} months.

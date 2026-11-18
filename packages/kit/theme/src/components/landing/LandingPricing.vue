@@ -31,6 +31,9 @@ import { glyph } from './icons.js'
  * sign-in first when there is none and carrying on once it lands. A rung without
  * one links to its `href`.
  *
+ * A rung marked `more` waits behind a button under the others (`moreLabel`), so the page leads with the
+ * rungs it means to sell and still lists the rest — a one-off session beside three memberships, say.
+ *
  * Slots for a look's skin (src/lib/look.js): `head` and `tiers`.
  */
 const props = defineProps({
@@ -46,6 +49,7 @@ const props = defineProps({
   compare: { type: Object as PropType<any>, default: () => ({}) },     /* { heading, rows: [{ label, cells: ['yes' | 'no' | 'words'] }] } */
   featuredLabel: { type: String, default: '' },   /* the word on the featured rung's flag, e.g. "Most popular" */
   filter: { type: Object as PropType<any>, default: () => ({}) },  /* { label, default, options: [{ tag, label }] } */
+  moreLabel: { type: String, default: '' },     /* the button that shows the rungs marked `more`, e.g. See more options */
   /* a subscriber's rungs: the one they are on, and the others as a switch */
   ctaCurrent: { type: String, default: '' },
   ctaSwitch: { type: String, default: '' },
@@ -59,7 +63,11 @@ const when = (iso: string|number|Date) => { try { return new Intl.DateTimeFormat
 const options = computed(() => ((props.filter && props.filter.options) || []).filter((o: { tag: any; label: any }) => o && o.tag && o.label))
 const toggled = computed(() => options.value.length >= 2)
 const active = ref((props.filter && props.filter.default) || (options.value[0] && options.value[0].tag) || '')
-const shown = (t: { tags: string|any[] }) => !toggled.value || !Array.isArray(t.tags) || !t.tags.length || t.tags.includes(active.value)
+const tagged = (t: { tags: string|any[] }) => !toggled.value || !Array.isArray(t.tags) || !t.tags.length || t.tags.includes(active.value)
+/* the rungs marked `more` wait for the button; once pressed, they stay */
+const opened = ref(false)
+const shown = (t: { tags: string|any[]; more?: boolean }) => (opened.value || !t.more) && tagged(t)
+const waiting = computed(() => !opened.value && props.tiers.some((t: any) => t && t.more && tagged(t)))
 /* a feature line written "- Priority support" is one the rung lacks: drawn crossed */
 const featLines = (t: { features: any }) => (t.features || []).map((f: string) => (/^-\s+/.test(f) ? { text: f.replace(/^-\s+/, ''), off: true } : { text: f, off: false }))
 const chosen = ref(0)
@@ -212,6 +220,7 @@ const cell = (c: string|null) => (c == null || c === '' ? 'blank' : YES.test(Str
           </div>
         </template>
       </div>
+      <div v-if="waiting" class="lpr-more lprv lpd2"><button type="button" class="lpr-more-btn" @click="opened = true"><span v-html="md(moreLabel || 'See more')"></span></button></div>
       <p v-if="fine" class="lpr-fine lprv lpd2" v-html="md(fine)"></p>
       <!-- the plans by their features -->
       <div v-if="compare.rows && compare.rows.length && compareCols.length" class="lpr-compare lprv">
@@ -276,6 +285,10 @@ const cell = (c: string|null) => (c == null || c === '' ? 'blank' : YES.test(Str
 .lpr-opt.on { color: var(--paper); background: var(--ink) }
 .lpr-toggle + .lpr-tiers { margin-top: 24px }
 .lpr-tiers { display: flex; flex-direction: column; gap: 20px; margin-top: 36px }
+.lpr-more { display: flex; justify-content: center; margin-top: 20px }
+.lpr-more-btn { background: none; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 999px; padding: 10px 20px; font: inherit; font-size: .95rem; color: inherit; cursor: pointer }
+.lpr-more-btn:hover { border-color: currentColor }
+.lpr-more-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
 /* a row of columns: as many as the page put between two bands */
 .lpr-row { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 20px; align-items: stretch }
 .lpr-tier { display: flex; flex-direction: column; padding: 28px 26px 26px; position: relative }

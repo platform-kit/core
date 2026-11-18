@@ -35,7 +35,10 @@ const commitment = computed(() => {
   if (w.plan === 'full') return fill(P.value['plans-commitment-full'], { amount, months: w.months ?? '' })
   return fill(P.value['plans-commitment'], { n: w.payments, amount, total: money(w.amount * w.payments, currency.value) })
 })
-const then = computed(() => (way.value?.months && way.value.then ? P.value['plans-then-' + way.value.then] : ''))
+/* what follows a term, with what it costs: a monthly continuation is the membership's own price */
+const then = computed(() => (way.value?.months && way.value.then
+  ? fill(P.value['plans-then-' + way.value.then], { amount: props.product?.price != null ? money(Math.round(Number(props.product.price) * 100), currency.value) : '' })
+  : ''))
 /* what is agreed to and what follows, as one sentence pair: written in the template, the space between them is lost */
 /* a term paid in full that continues is charged again on the same card, and the buyer is told so */
 const kept = computed(() => (way.value?.plan === 'full' && way.value.then && way.value.then !== 'end' ? P.value['plans-card-kept'] : ''))

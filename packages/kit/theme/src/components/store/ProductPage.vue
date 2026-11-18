@@ -119,8 +119,9 @@ const lineLabel = computed(() => {
 const owned = computed(() => isOnline.value && ownedOnline.value)
 const priceText = computed(() => {
   if (!p.value || (!offer.value && !p.value.available)) return P.unavailable
-  /* a membership sold in terms alone has no price of its own: the least a way of paying for it costs */
-  if (p.value.price == null || p.value.termsOnly === true) { const ways = waysToPay(p.value); if (ways.length) return fill(P['from-price'] || '{price}', { price: money(Math.min(...ways.map((w) => w.amount)), p.value.currency) }) }
+  /* a membership sold in terms alone has no price of its own: the least a way of paying for it costs in all —
+     a term's whole price, never one monthly payment of it, which would read as the price of the term */
+  if (p.value.price == null || p.value.termsOnly === true) { const ways = waysToPay(p.value); if (ways.length) return fill(P['from-price'] || '{price}', { price: money(Math.min(...ways.map((w) => w.amount * w.payments)), p.value.currency) }) }
   /* print prices by format; everything else by the chosen variant — and before a choice is
      made, the cheapest with "from", since any single number would be one somebody is not
      charged. Where every shape costs the same there is nothing to qualify. */
