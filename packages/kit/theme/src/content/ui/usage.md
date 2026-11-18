@@ -110,6 +110,10 @@ billing-load-error: We couldn't check whether you have an active membership. Try
 billing-error: Your membership settings could not be updated. Try again.
 billing-manage-error: Membership management could not be opened. Try again.
 billing-commitments: Your plans
+billing-commitment-title-full: {what}, {months} months paid in full
+billing-commitment-title-term: {what}, {months} months paid monthly
+billing-commitment-title-plan: {what}, {n} monthly payments
+billing-commitment-update: Update payment method
 billing-commitment-payments: Payments made
 billing-commitment-payments-value: {made} of {total}
 billing-commitment-each: Each payment

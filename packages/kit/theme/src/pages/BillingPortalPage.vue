@@ -35,9 +35,16 @@ const moneyOf = (minor: number, currency: string) => {
   catch { return ((Number(minor) || 0) / 100).toFixed(2) }
 }
 const titleOf = (sku: string) => products.find((offer: any) => offer.sku === sku)?.title || sku
+const commitmentTitle = (c: any) => {
+  const what = titleOf(c.of_sku)
+  const key = c.plan === 'full' ? 'full' : c.term_months ? 'term' : 'plan'
+  return (W.value['billing-commitment-title-' + key] || '{what}').replace('{what}', what).replace('{months}', String(c.term_months ?? '')).replace('{n}', String(c.payments_total))
+}
+/* a plan on a subscription with payments still to make: it can't be cancelled until the last one */
+const binding = (c: any) => !!c.subscription_id && c.status !== 'defaulted' && c.payments_made < c.payments_total
 const commitmentStatus = (c: any) => c.status === 'defaulted' ? 'defaulted' : c.status === 'restricted' ? 'restricted' : c.missed_at ? 'missed' : 'active'
 /* the subscription can't be cancelled from here while a plan on it still owes payments */
-const locked = computed(() => commitments.value.some((c: any) => c.subscription_id && c.status !== 'defaulted' && c.payments_made < c.payments_total))
+const locked = computed(() => commitments.value.some(binding))
 const hasPaymentMethod = ref(false)
 const usagePanel = ref<any>(null)
 let loadGeneration = 0
@@ -286,9 +293,9 @@ onBeforeUnmount(() => {
             </section>
             <section v-if="state === 'ready' && commitments.length" class="billing-card" aria-labelledby="billing-commitments-title">
               <h2 id="billing-commitments-title" class="billing-card-title">{{ W['billing-commitments'] }}</h2>
-              <div v-for="c in commitments" :key="c.sku + c.starts_at" class="billing-commitment">
+              <section v-for="c in commitments" :key="c.sku + c.starts_at" class="billing-commitment">
+                <h3 class="billing-commitment-title">{{ commitmentTitle(c) }}</h3>
                 <dl class="billing-details">
-                  <div><dt>{{ W['billing-plan'] }}</dt><dd>{{ titleOf(c.of_sku) }}</dd></div>
                   <div><dt>{{ W['billing-status'] }}</dt><dd><span class="billing-status-pill" :class="commitmentStatus(c) === 'active' ? 'is-active' : 'is-attention'">{{ W['billing-commitment-status-' + commitmentStatus(c)] }}</span></dd></div>
                   <div v-if="c.plan === 'full'"><dt>{{ W['billing-commitment-paid'] }}</dt><dd>{{ moneyOf(c.amount_minor, c.currency) }}</dd></div>
                   <template v-else>
@@ -299,8 +306,11 @@ onBeforeUnmount(() => {
                   <div v-if="c.owed_minor > 0"><dt>{{ W['billing-commitment-owed'] }}</dt><dd>{{ moneyOf(c.owed_minor, c.currency) }}</dd></div>
                 </dl>
                 <p v-if="commitmentStatus(c) !== 'active'" class="billing-notice">{{ W['billing-commitment-pay'] }}</p>
-              </div>
-              <p v-if="locked" class="billing-muted">{{ W['billing-commitment-locked'] }}</p>
+                <p v-else-if="binding(c)" class="billing-muted">{{ W['billing-commitment-locked'] }}</p>
+                <div v-if="commitmentStatus(c) !== 'active' && usesProviderPortal" class="billing-actions">
+                  <button class="billing-button billing-primary" type="button" :disabled="busy" @click="update('manage')">{{ W['billing-commitment-update'] }}</button>
+                </div>
+              </section>
             </section>
             <section v-if="state === 'ready' && subscription" class="billing-card">
               <dl class="billing-details">
@@ -376,7 +386,8 @@ onBeforeUnmount(() => {
 .billing-card p { margin: 0 }
 .billing-card-title { margin: 0; font-family: var(--f); font-size: 1.125rem; font-weight: 600; line-height: 1.35; letter-spacing: -.01em }
 .billing-commitment { display: grid; gap: 12px }
-.billing-commitment + .billing-commitment { padding-top: 6px }
+.billing-commitment + .billing-commitment { margin-top: 14px }
+.billing-commitment-title { margin: 0; font-family: var(--f); font-size: 1rem; font-weight: 600; line-height: 1.4 }
 .billing-card > .billing-button { justify-self: start }
 .billing-empty { display: grid; justify-items: start; gap: 14px; width: min(100%, 680px); padding: 0 }
 .billing-empty-copy { display: grid; gap: 6px }
