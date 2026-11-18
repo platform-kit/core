@@ -236,6 +236,7 @@ export const SECTION_SCHEMAS: any = {
       heading: text('Heading'),
       lead: opt('Lead'),
       featuredLabel: opt('The flag on the featured rung (e.g. Most popular)'),
+      payDefault: z.enum(['full', 'monthly']).describe('Where the pay-in-full / pay-monthly switch starts, when a rung can be paid both ways').default('full'),
       moreLabel: opt('The button that shows the rungs marked "more" (e.g. See more options)'),
       layout: z.enum(['columns', 'rows', 'single', 'choice', 'selector']).describe('Layout').default('columns'),
       selectorLabel: opt('The word before the total (the selector)'),
@@ -263,6 +264,10 @@ export const SECTION_SCHEMAS: any = {
         featured: z.boolean().describe('The rung to draw attention to').optional(),
         wide: z.boolean().describe('Drawn as a band across the row, not a column — for a rung of a different kind (the free tier, a one-off)').optional(),
         tags: z.array(z.string()).describe('Words the toggle filters on (e.g. weekly); none means always shown').optional(),
+        prices: z.object({
+          full: z.object({ price: line('Price'), per: opt('Period'), note: opt('The line under it'), total: z.number().describe('The whole amount, in cents, for the saving').optional(), sku: opt('Offer this price buys, when not the rung’s own') }).describe('Paid in full').optional(),
+          monthly: z.object({ price: line('Price'), per: opt('Period'), note: opt('The line under it'), total: z.number().describe('The whole amount, in cents, for the saving').optional(), sku: opt('Offer this price buys, when not the rung’s own') }).describe('Paid monthly').optional(),
+        }).describe('Both ways to pay, for the switch over the rungs; a rung with a sku sold in terms has them already').optional(),
         more: z.boolean().describe('Kept behind the "see more" button, so the page leads with the others').optional(),
       })).describe('The rungs, cheapest first; the columns run together, a wide rung breaks the row').optional(),
       fine: opt('Line under the columns'),

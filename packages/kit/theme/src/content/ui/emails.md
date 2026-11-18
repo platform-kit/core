@@ -168,6 +168,12 @@ subject: A plan for {{what}} is in default
 
 subject: Your {{what}} term ends on {{ends}}
 
+## price-change
+
+### mail
+
+subject: The price of {{what}} is changing
+
 ## term-continues
 
 ### mail

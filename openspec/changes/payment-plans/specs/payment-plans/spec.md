@@ -158,3 +158,25 @@ Plans and terms SHALL behave the same on the Stripe and Hyperswitch payment prov
 - **THEN** the buyer's access, the emails, the payments counted and the end of the term are the same on both
 
 Verified by: the flow on Stripe test mode and on the local Hyperswitch, recorded in the change's verification
+
+### Requirement: A Pricing page shows paying in full and monthly with one switch
+
+Where any row of a Pricing section can be paid both in full and monthly, the section SHALL show one switch over the rows choosing which price every such row shows, with the other price said under it and the largest saving on the switch. A row with one price SHALL show it under either choice. A row naming an offer sold in terms SHALL take its prices from that offer, and its button SHALL open the offer's page with the chosen way of paying selected. A section with no such row SHALL show no switch.
+
+#### Scenario: the switch flips the programs and leaves the rest
+
+- **WHEN** a Pricing section lists a monthly membership and two offers sold in 3-month terms, and the reader chooses "Pay monthly"
+- **THEN** both term offers show their monthly price with the full price said under it, and the monthly membership shows its price unchanged
+
+Verified by: rendering the DharmaLab pricing page in both states, at desktop and phone widths
+
+### Requirement: A price change keeps existing subscribers unless the offer says to move them
+
+When a subscription offer's price changes, subscribers already paying it SHALL keep their price, unless the offer's file says to move them. An offer that moves them SHALL tell each subscriber once, a notice period ahead (thirty days unless the file says otherwise), of the new price and the renewal it starts at, and SHALL move the subscription to the new price at that renewal and not before. A subscriber partway through a term, already changing plan, or cancelling SHALL NOT be moved.
+
+#### Scenario: a member on an old price is told, then moved at the named renewal
+
+- **WHEN** an offer that moves existing subscribers raises its price, and a member pays the old one
+- **THEN** they are told once of the new price and the renewal at least thirty days away where it starts, nothing changes until then, and from that renewal they pay the new price
+
+Verified by: `packages/kit/build/payment-plans-repricing.test.mts`

@@ -26,6 +26,11 @@ sources:
     packages/kit/content/emails/payment-missed.json,
     packages/kit/content/emails/payment-missed-notice.json,
     packages/kit/content/emails/payment-default-notice.json,
+    packages/kit/modules/memberships/functions/repricings,
+    packages/kit/supabase/schemas/45-repricings.sql,
+    packages/kit/build/payment-plans-repricing.test.mts,
+    packages/kit/theme/src/components/landing/LandingPricing.vue,
+    packages/kit/modules/memberships/emails/price-change.json,
   ]
 reviewed: 2026-11-18
 ---
@@ -102,6 +107,12 @@ changes:
   downgrade: term-end
 ```
 
+## Paying in full or monthly, on the Pricing page
+
+A Pricing row whose `sku` is an offer sold in terms shows both of its prices: paid in full, and monthly for the term. One switch over the rows chooses which every row shows ("Pay in full" or "Pay monthly"), with the other said under the price and the most a row saves on the switch. A row with one price shows it under either. The prices are read from the product file, so the page can't disagree with what checkout charges. The section's `payDefault` (`full` or `monthly`) is where the switch starts, and its words are the store's strings (`pricing-pay-…`, `pricing-per-…`, `pricing-note-…`). A row's button opens the offer's page with that way of paying already chosen.
+
+A row may also write both prices itself (`prices`, keyed `full` and `monthly`, each with its price, period, the line under it, and optionally a `sku` of its own), for two offers sold as one choice, such as monthly and yearly.
+
 ## A missed payment
 
 `missed` says what happens when a payment fails. These are the defaults:
@@ -116,6 +127,17 @@ missed:
 - `cancelBookings` cancels the buyer's upcoming bookings, without refund, once a payment has been outstanding for the grace period. It needs the sessions module. Bookings cancelled this way stay cancelled after the payment is made.
 
 When the payment provider stops retrying, the rest of the commitment is recorded as owed, and access stays off until it is paid.
+
+## A price change
+
+When an offer's price changes, whoever already pays it stays on the price they signed up at. That's the default, and it's what a payment provider does by itself. A subscription offer can move them instead:
+
+```yaml
+existing: move # or keep, the default
+notice: 30d # how far ahead they are told; 30 days unless written
+```
+
+The memberships module's `repricings` function runs daily. It emails each member still on an old price once (`price-change`), naming the renewal the new price starts at, the first one at least the notice away, and records it in `repricings`. When that renewal is the next one, it moves the subscription to the new price from then, through the same scheduled change a member's own plan switch uses. Nothing is charged early. A member partway through a term, already changing plan, or cancelling isn't moved, and a notice already sent to them is withdrawn.
 
 ## What the build checks
 

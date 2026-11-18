@@ -94,6 +94,7 @@ export const STATE = {
   subscriptions: 'somebody is paying',
   entitlements: 'what that got them',
   commitments: 'somebody agreed to pay it all',
+  repricings: 'a subscriber moved to a new price',
   usage_events: 'what a person and an assistant spent, in measured usage',
   usage_grants: 'the units a payment or subscription period gave somebody',
   usage_meter_reports: 'whether recorded overage reached the selected provider or was settled with a PlatformKit renewal, and when safe retries end',

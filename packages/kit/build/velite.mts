@@ -331,6 +331,9 @@ export async function kitConfig(): Promise<any> {
         terms: s.array(s.object({ months: s.number().int(), full: s.number().optional(), monthly: s.number().optional(), then: s.enum(['end', 'monthly', 'renew']).optional() })).optional(),
         /* the open-ended price is what a term continues at, never sold by itself (openspec: payment-plans) */
         termsOnly: s.boolean().optional(),
+        /* a price change: subscribers kept on their price (keep) or moved at a renewal after notice (move) */
+        existing: s.enum(['keep', 'move']).optional(),
+        notice: s.string().optional(),
         changes: s.object({ upgrade: s.enum(['anytime', 'term-end', 'never']).optional(), downgrade: s.enum(['anytime', 'term-end', 'never']).optional() }).optional(),
         missed: s.object({ restrict: s.enum(['immediately', 'after-retries', 'never']).optional(), cancelBookings: s.union([s.string(), s.literal(false)]).optional() }).optional(),
         sessions: s.array(s.object({ type: s.string(), weekly: s.number().default(0), monthly: s.number().default(0) })).default([]),   /* a membership's sessions included: booking types with how many a week and a month (0 = no limit); a listed type is the tier's whatever the type's own rules say */

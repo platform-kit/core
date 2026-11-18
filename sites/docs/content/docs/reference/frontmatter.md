@@ -128,7 +128,7 @@ rows of `months`, `full` and/or `monthly`, and `then` — `end` · `monthly` · 
 term may change tier); and `missed` (`restrict` — `immediately` · `after-retries` · `never` — and
 `cancelBookings`, `off` or a grace period such as `24h`). A membership with `terms` may leave out
 `price` to be sold in terms alone, or set `termsOnly: true` to keep its `price` only as what a term
-continues at (`then: monthly`), so a minimum term can't be skipped. [Payment plans and fixed terms](/docs/running-a-site/selling/payment-plans)
+continues at (`then: monthly`), so a minimum term can't be skipped. On any subscription, `existing` (`keep`, the default, or `move`) and `notice` (such as `30d`) say what a price change does to whoever already pays it. [Payment plans and fixed terms](/docs/running-a-site/selling/payment-plans)
 describes them.
 
 Across a cart of several offers: a trial is the subscription's own, since a subscription session is

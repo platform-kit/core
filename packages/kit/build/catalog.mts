@@ -49,7 +49,7 @@ import { uiScope } from './strings-io.mjs'
 import { problems as repeatProblems } from '../src/lib/recurrence.js'
 import { usageOf } from './site.mjs'
 import { isMain } from './is-main.mjs'
-import { compileCommitments } from './commitments.mjs'
+import { compileCommitments, graceMinutes } from './commitments.mjs'
 
 const OUT_AT = 'supabase/functions/_shared/catalog.json'
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -233,6 +233,20 @@ for (const { file, data: d } of files('content/store/products')) {
      none of them has a record byte-identical to the one it had before any of this existed, which
      is what the test asserts rather than hopes. */
   if (billing === 'subscription' && d.trial != null) offers[sku].trial = Number(d.trial)
+  /* WHAT A PRICE CHANGE DOES TO WHOEVER ALREADY PAYS IT (openspec: payment-plans). Kept on their price,
+     as a provider does by itself (the default, which writes nothing), or moved to the new one at a renewal
+     after `notice` — the memberships module's repricings job does the telling and the moving. */
+  if (d.existing != null || d.notice != null) {
+    const existing = d.existing ?? 'keep'
+    if (billing !== 'subscription') err(`${file}: existing and notice say what a price change does to subscribers; this is bought once`)
+    else if (!['keep', 'move'].includes(existing)) err(`${file}: existing "${d.existing}" — keep | move`)
+    else if (d.notice != null && existing !== 'move') err(`${file}: notice is how long subscribers are told before a price change moves them, and existing is keep`)
+    else if (existing === 'move') {
+      const minutes = graceMinutes(d.notice ?? '30d')
+      if (!minutes) err(`${file}: notice "${d.notice}" — a period such as 30d`)
+      else { offers[sku].existing = 'move'; offers[sku].notice_days = Math.max(1, Math.ceil(minutes / 1440)) }
+    }
+  }
   if (d.tax && (d.tax.automatic || d.tax.registration)) {
     offers[sku].tax = { ...(d.tax.automatic ? { automatic: true } : {}), ...(d.tax.registration ? { registration: true } : {}) }
   }

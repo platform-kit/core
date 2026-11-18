@@ -4266,6 +4266,59 @@ export type Database = {
           },
         ]
       }
+      repricings: {
+        Row: {
+          applied_at: string | null
+          created_at: string
+          currency: string
+          effective_at: string
+          from_amount: number
+          id: string
+          notified_at: string
+          offer_key: string
+          status: string
+          subscription_id: string
+          to_amount: number
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          created_at?: string
+          currency: string
+          effective_at: string
+          from_amount: number
+          id?: string
+          notified_at?: string
+          offer_key: string
+          status?: string
+          subscription_id: string
+          to_amount: number
+          user_id: string
+        }
+        Update: {
+          applied_at?: string | null
+          created_at?: string
+          currency?: string
+          effective_at?: string
+          from_amount?: number
+          id?: string
+          notified_at?: string
+          offer_key?: string
+          status?: string
+          subscription_id?: string
+          to_amount?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repricings_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       results: {
         Row: {
           answered: number
@@ -8609,6 +8662,7 @@ export type Database = {
       }
       payouts_sweep: { Args: never; Returns: number }
       person_bookings: { Args: { p_user: string | null }; Returns: Json }
+      person_commitments: { Args: { p_user: string | null }; Returns: Json }
       person_purchases: {
         Args: { p_lim?: number | null; p_paid_only?: boolean | null; p_user: string | null }
         Returns: Json
@@ -8692,6 +8746,7 @@ export type Database = {
       }
       run_agent_schedules: { Args: never; Returns: undefined }
       run_agents: { Args: never; Returns: undefined }
+      run_commitment_bookings: { Args: never; Returns: undefined }
       run_content_push: { Args: never; Returns: undefined }
       run_course_notices: { Args: never; Returns: undefined }
       run_email_funnels: { Args: never; Returns: undefined }
@@ -8700,6 +8755,7 @@ export type Database = {
       run_network_crawl: { Args: never; Returns: undefined }
       run_network_project: { Args: never; Returns: undefined }
       run_print_jobs: { Args: never; Returns: undefined }
+      run_repricings: { Args: never; Returns: undefined }
       run_session_recordings: { Args: never; Returns: undefined }
       run_session_recordings_retain: { Args: never; Returns: undefined }
       run_session_reminders: { Args: never; Returns: undefined }
@@ -8710,6 +8766,7 @@ export type Database = {
       run_spaces_sweep: { Args: never; Returns: undefined }
       run_support_escalation: { Args: never; Returns: undefined }
       run_support_retention: { Args: never; Returns: undefined }
+      run_term_reminders: { Args: never; Returns: undefined }
       run_usage_meter_reports: { Args: never; Returns: undefined }
       search_content: {
         Args: {

@@ -9,6 +9,7 @@ import { isSignedIn, plan, planKey, planNextKey, planNextAt, refreshEntitlements
 import { subscribe, checkout, openPortal, money } from 'platformkit/lib/commerce.js'
 import { toast } from 'platformkit/lib/toast.js'
 import { glyph } from './icons.js'
+import { waysToPay } from 'platformkit/lib/payment-plans.js'
 /*
  * Pricing: the value ladder. Every rung is the page's own words — a name, a
  * price and its period as written, a line, the features, a button — and the
@@ -31,6 +32,12 @@ import { glyph } from './icons.js'
  * sign-in first when there is none and carrying on once it lands. A rung without
  * one links to its `href`.
  *
+ * HOW TO PAY. A rung whose offer is sold for a term (its `sku`'s product file lists `terms`) carries both
+ * prices, in full and monthly, read from that file so the page can never disagree with the checkout; a rung
+ * may also write its own (`prices`, keyed `full` and `monthly`). When any rung has both, one switch over the
+ * rungs chooses which every rung shows, the other said under the price, and the saving on the switch.
+ * A rung with one price shows it under either. `payDefault` is where the switch starts.
+ *
  * A rung marked `more` waits behind a button under the others (`moreLabel`), so the page leads with the
  * rungs it means to sell and still lists the rest — a one-off session beside three memberships, say.
  *
@@ -49,7 +56,8 @@ const props = defineProps({
   compare: { type: Object as PropType<any>, default: () => ({}) },     /* { heading, rows: [{ label, cells: ['yes' | 'no' | 'words'] }] } */
   featuredLabel: { type: String, default: '' },   /* the word on the featured rung's flag, e.g. "Most popular" */
   filter: { type: Object as PropType<any>, default: () => ({}) },  /* { label, default, options: [{ tag, label }] } */
-  moreLabel: { type: String, default: '' },     /* the button that shows the rungs marked `more`, e.g. See more options */
+  moreLabel: { type: String, default: '' },
+  payDefault: { type: String, default: 'full' },  /* full | monthly: where the switch over the rungs starts */     /* the button that shows the rungs marked `more`, e.g. See more options */
   /* a subscriber's rungs: the one they are on, and the others as a switch */
   ctaCurrent: { type: String, default: '' },
   ctaSwitch: { type: String, default: '' },
@@ -73,7 +81,34 @@ const featLines = (t: { features: any }) => (t.features || []).map((f: string) =
 const chosen = ref(0)
 const ticked = ref<any>({})
 const selTotal = computed(() => rows.value.reduce((n, t, i) => n + (ticked.value[i] ? Number(String(t.price || '').replace(/[^\d.]/g, '')) || 0 : 0), 0))
-const rows = computed(() => props.tiers.map((t) => {
+/* HOW TO PAY: the switch's words are the store's strings; the prices a rung's own, or its offer's terms */
+const PU = computed(() => (us('store').product || {}).ui || {})
+const PAY_KEYS = ['full', 'monthly'] as const
+const payKey = ref<string>(PAY_KEYS.includes(props.payDefault as any) ? props.payDefault : 'full')
+const fillIn = (s: string, v: Record<string, string | number>) => Object.entries(v).reduce((a, [k, x]) => a.split(`{${k}}`).join(String(x)), s || '')
+const cash = (minor: number, currency = 'usd') => new Intl.NumberFormat(undefined, { style: 'currency', currency: currency.toUpperCase(), maximumFractionDigits: minor % 100 ? 2 : 0 }).format(minor / 100)
+function pricesOf(t: any, offer: any): Record<string, { price: string; per: string; note: string; total: number; sku?: string }> | null {
+  if (t.prices && typeof t.prices === 'object') {
+    const out: any = {}
+    for (const k of PAY_KEYS) if (t.prices[k]) out[k] = { price: t.prices[k].price || '', per: t.prices[k].per || '', note: t.prices[k].note || '', total: Number(t.prices[k].total) || 0, ...(t.prices[k].sku ? { sku: t.prices[k].sku } : {}) }
+    return Object.keys(out).length ? out : null
+  }
+  if (!offer) return null
+  const ways = waysToPay(offer)
+  const full = ways.find((w) => w.plan === 'full')
+  const monthly = ways.find((w) => w.plan === 'monthly' && w.months && (!full || w.months === full.months))
+  if (!full || !monthly) return null
+  const cur = offer.currency || 'usd', months = full.months ?? ''
+  return {
+    full: { price: cash(full.amount, cur), per: fillIn(PU.value['pricing-per-full'], { months }), note: fillIn(PU.value['pricing-note-full'], { amount: cash(monthly.amount, cur), months }), total: full.amount },
+    monthly: { price: cash(monthly.amount, cur), per: fillIn(PU.value['pricing-per-monthly'], { months }), note: fillIn(PU.value['pricing-note-monthly'], { months, total: cash(full.amount, cur) }), total: monthly.amount * monthly.payments },
+  }
+}
+const rows = computed(() => props.tiers.map((t0) => {
+  const prices = pricesOf(t0, t0.sku ? PRODUCTS.find((p: { sku: any }) => p.sku === t0.sku) : null)
+  const alt = prices ? prices[payKey.value] ?? null : null
+  /* a hand-written price may name its own offer (monthly and yearly as two products): the button buys that */
+  const t = alt?.sku ? { ...t0, sku: alt.sku } : t0
   const offer = t.sku ? PRODUCTS.find((p: { sku: any }) => p.sku === t.sku) : null
   const subscription = !!offer && offer.billing === 'subscription'
   /* a rung is the reader's by the offer's key, so a renamed sku still finds its subscriber */
@@ -84,8 +119,15 @@ const rows = computed(() => props.tiers.map((t) => {
      subscribe should know the first days are free before they press, and the only place that can
      say so is here — Stripe's own page is the one after the decision. */
   const trialDays = Number(offer && offer.trial) || 0
-  return { ...t, priceText: t.price || '', perText: t.per || '', link: withBooker(t.href || ''), buys: !!offer, current, pending, switching, trialDays,
+  return { ...t, prices, priceText: alt ? alt.price : t.price || '', perText: alt ? alt.per : t.per || '', note: alt ? alt.note : '', link: withBooker(t.href || ''), buys: !!offer, current, pending, switching, trialDays,
     label: current ? (props.ctaCurrent || t.cta) : pending ? (props.ctaPending || t.cta).replace('{date}', when(planNextAt.value)) : switching ? (props.ctaSwitch || t.cta) : t.cta }
+}))
+
+/* the switch shows where any rung can be paid both ways; each option's saving is the most a rung saves by it */
+const paying = computed(() => rows.value.some((t: any) => t.prices && PAY_KEYS.every((k) => t.prices[k])))
+const payOptions = computed(() => PAY_KEYS.map((key) => {
+  const saving = Math.max(0, ...rows.value.filter((t: any) => t.prices && t.prices[key]).map((t: any) => Math.max(...Object.values(t.prices).map((p: any) => p.total)) - t.prices[key].total))
+  return { key, label: PU.value['pricing-pay-' + key] || key, save: saving > 0 ? fillIn(PU.value['pricing-pay-save'], { amount: cash(saving) }) : '' }
 }))
 
 /* buying from the page: sign in first when there is none, then the offer's own
@@ -95,6 +137,15 @@ const busy = ref('')
 let pending = ''
 async function buy(t: { buys: any; sku: string; current: any; pending: any; name: string }) {
   if (!t.buys || busy.value) return
+  /* an offer sold in terms or on a plan is bought on its own page, where what is agreed to is shown — with the
+     way the switch shows already chosen, and before any sign-in: the page asks for one itself */
+  const sold = PRODUCTS.find((p: { sku: any }) => p.sku === t.sku)
+  if (sold && waysToPay(sold).length) {
+    const { products } = await import('platformkit/lib/storefront.js')
+    const sp = products.value.find((x: any) => x.sku === t.sku)
+    window.location.assign('/store/products/' + (sp?.id ?? t.sku) + '?pay=' + payKey.value)
+    return
+  }
   if (!isSignedIn.value) { pending = t.sku; if ((window as any).DLauth) (window as any).DLauth.open({ intent: 'buy' }); return }
   const offer = PRODUCTS.find((p: { sku: any }) => p.sku === t.sku)
   busy.value = t.sku
@@ -152,6 +203,12 @@ const cell = (c: string|null) => (c == null || c === '' ? 'blank' : YES.test(Str
           <span v-html="md(o.label)"></span>
         </button>
       </div>
+      <!-- how to pay: one switch for every rung that can be paid both ways -->
+      <div v-if="paying" class="lpr-toggle lpr-pay lprv lpd1" role="tablist" :aria-label="PU['pricing-pay-label'] || ''">
+        <button v-for="o in payOptions" :key="o.key" type="button" role="tab" class="lpr-opt" :class="{ on: payKey === o.key }" :aria-selected="payKey === o.key" @click="payKey = o.key">
+          <span v-html="md(o.label)"></span><span v-if="o.save" class="lpr-opt-save">{{ o.save }}</span>
+        </button>
+      </div>
       <slot name="tiers" :tiers="rows" :md="md">
       <!-- the choice: rungs as rows with a radio, one button for the chosen -->
       <div v-if="layout === 'choice'" class="lpr-picklist lprv lpd1">
@@ -187,6 +244,7 @@ const cell = (c: string|null) => (c == null || c === '' ? 'blank' : YES.test(Str
               <span class="lpr-name" v-html="md(t.name)"></span>
               <span class="lpr-price"><i v-if="t.from" class="lpr-from" v-html="md(t.from)"></i><b v-html="md(t.priceText)"></b><i v-if="t.perText" v-html="md(t.perText)"></i></span>
               <span v-if="t.trialDays && !t.current" class="lpr-trial">{{ (SW['trial-free'] || '').replace('{n}', t.trialDays) }}</span>
+              <span v-if="t.note" class="lpr-note" v-html="md(t.note)"></span>
               <p v-if="t.tagline" class="lpr-tag" v-html="md(t.tagline)"></p>
               <ul v-if="t.features && t.features.length" class="lpr-feats">
                 <li v-for="(f, j) in featLines(t)" :key="j" :class="{ 'lpr-off': f.off }" v-html="md(f.text)"></li>
@@ -206,6 +264,7 @@ const cell = (c: string|null) => (c == null || c === '' ? 'blank' : YES.test(Str
               <span class="lpr-name" v-html="md(t.name)"></span>
               <span class="lpr-price"><b v-html="md(t.priceText)"></b><i v-if="t.perText" v-html="md(t.perText)"></i></span>
               <span v-if="t.trialDays && !t.current" class="lpr-trial">{{ (SW['trial-free'] || '').replace('{n}', t.trialDays) }}</span>
+              <span v-if="t.note" class="lpr-note" v-html="md(t.note)"></span>
               <p v-if="t.tagline" class="lpr-tag" v-html="md(t.tagline)"></p>
             </div>
             <ul v-if="t.features && t.features.length" class="lpr-feats lpr-band-feats">
@@ -284,6 +343,10 @@ const cell = (c: string|null) => (c == null || c === '' ? 'blank' : YES.test(Str
 .lpr-opt:hover { color: var(--ink) }
 .lpr-opt.on { color: var(--paper); background: var(--ink) }
 .lpr-toggle + .lpr-tiers { margin-top: 24px }
+.lpr-toggle + .lpr-pay { margin-left: 12px }
+.lpr-opt-save { margin-left: 8px; font-size: 12px; font-weight: 600; color: var(--accent) }
+.lpr-opt.on .lpr-opt-save { color: color-mix(in srgb, var(--accent) 55%, var(--paper)) }
+.lpr-note { display: block; margin-top: 4px; font-size: 13.5px; color: var(--ink3) }
 .lpr-tiers { display: flex; flex-direction: column; gap: 20px; margin-top: 36px }
 .lpr-more { display: flex; justify-content: center; margin-top: 20px }
 .lpr-more-btn { background: none; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 999px; padding: 10px 20px; font: inherit; font-size: .95rem; color: inherit; cursor: pointer }

@@ -160,6 +160,20 @@ await t('termsOnly is refused where nothing could continue at its price, or ther
   await refused({ coaching: MEMBERSHIP + `\ntermsOnly: true` }, /it has none/)
 })
 
+await t('a price change keeps existing subscribers by default, and moves them only where the file says', async () => {
+  const kept: any = Object.values((await catalogOf({ coaching: MEMBERSHIP })).offers).find((o: any) => o.sku === 'coaching')
+  assert.equal(kept.existing, undefined, 'keeping them writes nothing: the record is the one it always was')
+  const moved: any = Object.values((await catalogOf({ coaching: MEMBERSHIP + '\nexisting: move\nnotice: 14d' })).offers).find((o: any) => o.sku === 'coaching')
+  assert.equal(moved.existing, 'move')
+  assert.equal(moved.notice_days, 14)
+  const byDefault: any = Object.values((await catalogOf({ coaching: MEMBERSHIP + '\nexisting: move' })).offers).find((o: any) => o.sku === 'coaching')
+  assert.equal(byDefault.notice_days, 30, 'thirty days unless the file says')
+  await refused({ coaching: MEMBERSHIP + '\nexisting: shift' }, /keep \| move/)
+  await refused({ coaching: MEMBERSHIP + '\nnotice: 30d' }, /existing is keep/)
+  await refused({ coaching: MEMBERSHIP + '\nexisting: move\nnotice: soon' }, /a period such as 30d/)
+  await refused({ book: 'title: B\nsku: b\nkey: b0000001\nkind: course\nprice: 10\nexisting: move' }, /this is bought once/)
+})
+
 await t('a grace period reads as minutes', () => {
   assert.equal(graceMinutes('24h'), 1440)
   assert.equal(graceMinutes('3d'), 4320)

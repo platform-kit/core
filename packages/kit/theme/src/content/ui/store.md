@@ -157,6 +157,14 @@ plans-commitment: You're agreeing to {n} payments of {amount}, {total} in all. T
 plans-commitment-full: You're paying {amount} now for {months} months.
 plans-card-kept: The card you pay with is kept for that, and you can turn renewal off on your billing page before the term ends.
 plans-agree: I agree to every payment of this plan
+pricing-pay-label: How you pay
+pricing-pay-full: Pay in full
+pricing-pay-monthly: Pay monthly
+pricing-pay-save: save up to {amount}
+pricing-per-full: / {months} months
+pricing-per-monthly: / month
+pricing-note-full: or {amount} a month for {months} months
+pricing-note-monthly: for {months} months, or {total} paid in full
 plans-cta: Continue to payment
 
 ### print

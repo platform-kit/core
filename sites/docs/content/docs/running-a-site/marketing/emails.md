@@ -10,6 +10,7 @@ sources:
     packages/kit/theme/src/components/admin/EmailsAdmin.vue,
     packages/kit/build/auth-config.mts,
     packages/kit/modules/memberships/emails/term-continues.json,
+    packages/kit/modules/memberships/emails/price-change.json,
   ]
 reviewed: 2026-11-18
 ---
@@ -35,6 +36,7 @@ Every email the site sends is a **design** built in the admin, compiled at build
 | **course-complete**                                          | To somebody who finished a course, with their certificate's address where the course gives one                                                                                                                                                                        |
 | **payment-missed**                                           | To somebody whose payment on a plan or a term failed, saying whether their access is paused and where to pay                                                                                                                                                          |
 | **payment-missed-notice**, **payment-default-notice**        | To the site's administrators: a payment on a plan or a term missed, and the provider no longer retrying it, with what is owed                                                                                                                                         |
+| **price-change**                                             | To a member still on an offer's old price, where the offer moves existing members: the new price and the renewal it starts at                                                                                                                                         |
 | **term-ending**, **term-continues**                          | To a member a week before a fixed term ends: that it ends, or what follows it and what that costs. **term-ending** also goes when the card kept for a renewal is declined                                                                                             |
 | **provider-terms**                                           | The moment a new version of the providers' terms is published — to every provider still on an earlier one, with the terms themselves in the letter                                                                                                                    |
 | **session-reminder**                                         | To the person, at each of the hours before the session the sending rules name (24 and 1 by default)                                                                                                                                                                   |

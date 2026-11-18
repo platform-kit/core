@@ -14,7 +14,9 @@ const props = defineProps<{ product: any; busy?: boolean }>()
 const emit = defineEmits<{ (e: 'run', fn: () => Promise<unknown>, evt: Record<string, unknown>): void }>()
 const P = computed(() => (us('store').product || {}).ui || {})
 const ways = computed(() => waysToPay(props.product))
-const chosen = ref(0)
+/* the way a Pricing page's switch had chosen (?pay=full | monthly), else the first */
+const asked = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('pay') : null
+const chosen = ref(Math.max(0, ways.value.findIndex((w) => w.plan === asked)))
 const agreed = ref(false)
 watch(chosen, () => { agreed.value = false })
 const way = computed<WayToPay | undefined>(() => ways.value[chosen.value])

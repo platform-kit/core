@@ -38,6 +38,9 @@ export type Offer = {
   plans?: { payments: number; each: number; sku: string }[]
   terms?: { months: number; then: 'end' | 'monthly' | 'renew'; full?: { sku: string; amount: number }; monthly?: { sku: string; amount: number } }[]
   terms_only?: boolean
+  /* a price change moves existing subscribers, told this many days ahead (repricings) */
+  existing?: 'move'
+  notice_days?: number
   changes?: { upgrade: 'anytime' | 'term-end' | 'never'; downgrade: 'anytime' | 'term-end' | 'never' }
   missed?: { restrict: string; cancel_bookings_after_minutes: number | null }
   commitment?: { of: string; plan: 'full' | 'monthly'; payments: number; months: number | null; then: 'end' | 'monthly' | 'renew'; missed: { restrict: string; cancel_bookings_after_minutes: number | null } }
