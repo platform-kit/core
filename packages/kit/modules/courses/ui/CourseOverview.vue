@@ -1,9 +1,12 @@
 <!--
   A COURSE'S OVERVIEW (openspec: courses): what it is, where this reader stands in it and the one thing to do next, and
-  its curriculum as modules that fold, each saying how much of it is done and when it opens. The card beside the
-  curriculum is the reader's: their progress and next step, or what getting in takes, then the course's facts. A course
-  whose page says more than its opening paragraph shows that description and the curriculum as two tabs, Overview and
-  Contents: Overview first for someone not enrolled, Contents for someone enrolled, the open one kept in the address.
+  its curriculum as modules that fold, each saying how much of it is done and when it opens. One column of two: the
+  title, the opening paragraph and the curriculum on the left; on the right one card that stays in view, the course's
+  picture at its head where it has one, then the reader's progress and next step, or what getting in takes, then the
+  course's facts. A course with no picture shows none here: a drawn cover would only repeat the title beside it. A course
+  whose page says more than its opening paragraph shows the curriculum and that description as two tabs, Contents and
+  Overview, Contents first and open: the opening paragraph already says what the course is, so the page leads with what
+  is in it. The open tab is kept in the address.
 -->
 <template>
   <div class="crs-wrap crs-ov">
@@ -16,19 +19,17 @@
     <template v-else>
       <a v-if="!alone" class="crs-crumb" :href="base"><CourseIcon name="back" :size="15" />{{ K.back }}</a>
 
-      <div class="crs-ov-hero">
-        <div class="crs-ov-hero-text">
+      <div class="crs-ov-body">
+        <div class="crs-ov-head">
           <p class="crs-kicker">{{ K.kicker }}</p>
           <h1>{{ state.title }}</h1>
           <p v-if="lead" class="crs-lead">{{ lead }}</p>
         </div>
-        <CourseCover :slug="state.slug" :title="state.title" :image="state.image" :meta="metaLine" size="hero" />
-      </div>
 
-      <div class="crs-ov-body">
-        <!-- the reader's card: where they stand and what is next, or what getting in takes; then the course's facts -->
+        <!-- the reader's card: the course's picture, where they stand and what is next, or what getting in takes; then the course's facts -->
         <div class="crs-ov-side">
           <div class="crs-side-card">
+            <CourseCover v-if="state.image" :slug="state.slug" :title="state.title" :image="state.image" size="side" />
             <template v-if="state.enrollment">
               <div v-if="state.enrollment.completed_at" class="crs-done-head">
                 <span class="crs-done-badge"><CourseIcon name="award" :size="22" /></span>
@@ -209,14 +210,13 @@ function toggle(m: any) {
 }
 const allOpen = computed(() => modules.value.every(isOpen))
 
-/* the page's two tabs, where it has a description: the reader's choice, else the address, else Overview for someone
-   not yet in the course and Contents for someone in it */
-const TABS = ['overview', 'contents'] as const
+/* the page's two tabs, where it has a description: the reader's choice, else the address, else Contents */
+const TABS = ['contents', 'overview'] as const
 type Tab = (typeof TABS)[number]
 const fromAddress = (): Tab | null => { if (typeof location === 'undefined') return null; const h = location.hash.slice(1); return (TABS as readonly string[]).includes(h) ? (h as Tab) : null }
 const chosen = ref<Tab | null>(fromAddress())
 watch(() => props.state && props.state.slug, () => { chosen.value = fromAddress() })
-const tab = computed<Tab>(() => chosen.value || (props.state && props.state.enrollment ? 'contents' : 'overview'))
+const tab = computed<Tab>(() => chosen.value || 'contents')
 function choose(t: Tab) {
   chosen.value = t
   if (typeof history !== 'undefined') history.replaceState(history.state, '', location.pathname + location.search + '#' + t)
