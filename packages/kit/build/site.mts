@@ -380,7 +380,8 @@ export const inference = ${JSON.stringify(inferenceOf(c))}
    joined one, so the only people who could find the way in were the people already inside. */
 export const spacesOf = (c: any) => ({
   nav: (c.spaces && (c.spaces.nav === 'word' || c.spaces.nav === 'icon')) ? c.spaces.nav : undefined,
-  link: (c.spaces && c.spaces.link === 'members') ? 'members' : 'always',
+  /* 'none': the community stays, reached from the site's own links (a footer, a page), and the header draws no way in */
+  link: (c.spaces && (c.spaces.link === 'members' || c.spaces.link === 'none')) ? c.spaces.link : 'always',
 })
 /* the content API's public settings: the space id (the site's slug unless the config says) and whether Delivery is public */
 export const apiOf = (c: any) => ({ space: String((c.api && c.api.space) || String(c.name || 'site').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')), public: !(c.api && c.api.public === false) })

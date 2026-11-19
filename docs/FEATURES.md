@@ -149,7 +149,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 
 - Edit the header in Site settings: each link's destination (chosen from pages that exist), icon, and who sees it (guests, signed-in readers, paying readers, members, a tier, or staff); one link can be the call-to-action button.
 - Links to switched-off modules disappear on their own.
-- The header fits itself to the screen: search shrinks to an icon and links move into the menu as space runs out. It shows the bag count, the account menu, and community and network buttons.
+- The header fits itself to the screen: search shrinks to an icon and links move into the menu as space runs out. It shows the bag count, the account menu, and community and network buttons; a site can leave the community button out (`spaces.link: none`) and link it from its own nav or footer.
 - Set a site-wide footer.
 
 ### Search engines and sharing
@@ -650,4 +650,4 @@ For the project's objectives and intended audience, see [PURPOSE.md](./PURPOSE.m
 ---
 
 **Sources:** `openspec/specs`, `packages/kit/build/modules/kit.mts`, `packages/kit/build/modes.mts`, `packages/kit/build`, `packages/kit/supabase`, `packages/kit/src/lib`, `packages/kit/src/payment-provider.mts`, `packages/kit/src/payment-provider.d.ts`, `packages/kit/theme/src`, `sites/demo/platformkit.config.ts`
-**Reviewed:** `2026-11-18`
+**Reviewed:** `2026-11-19`

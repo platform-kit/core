@@ -37,6 +37,7 @@ eq('nav: nonsense', spacesOf({ spaces: { nav: 'sideways' } }), { nav: undefined,
 /* keeping the link to members is the opt-in, never the default */
 eq('link: members', spacesOf({ spaces: { link: 'members' } }), { nav: undefined, link: 'members' })
 eq('link: always', spacesOf({ spaces: { link: 'always' } }), { nav: undefined, link: 'always' })
+eq('link: none', spacesOf({ spaces: { link: 'none' } }), { nav: undefined, link: 'none' })
 eq('link: nonsense', spacesOf({ spaces: { link: 'sometimes' } }), { nav: undefined, link: 'always' })
 eq('both', spacesOf({ spaces: { nav: 'icon', link: 'members' } }), { nav: 'icon', link: 'members' })
 
@@ -44,7 +45,7 @@ eq('both', spacesOf({ spaces: { nav: 'icon', link: 'members' } }), { nav: 'icon'
 const shows = (cfg: { spaces?: { link: string }|{ link: string } }, rooms: any, signedIn: boolean, inRoom: boolean) => {
   const s = spacesOf(cfg)
   const open = rooms.some((r: { discoverable: boolean }) => r.discoverable !== false)
-  return (s.link === 'always' && open) || (signedIn && inRoom)
+  return s.link !== 'none' && ((s.link === 'always' && open) || (signedIn && inRoom))
 }
 const word = (cfg: { spaces?: { nav: string }|{ nav: string } }, rooms: any) => {
   const s = spacesOf(cfg)
@@ -58,6 +59,7 @@ eq('a visitor sees an open community', shows({}, OPEN, false, false), true)
 eq('a visitor sees no private room', shows({}, PRIVATE, false, false), false)
 eq('a member of a private room still sees it', shows({}, PRIVATE, true, true), true)
 eq('members-only hides it from a visitor', shows({ spaces: { link: 'members' } }, OPEN, false, false), false)
+eq('none hides it from a member too', shows({ spaces: { link: 'none' } }, OPEN, true, true), false)
 eq('members-only still shows it to a member', shows({ spaces: { link: 'members' } }, OPEN, true, true), true)
 eq('no rooms at all, nobody sees it', shows({}, [], false, false), false)
 

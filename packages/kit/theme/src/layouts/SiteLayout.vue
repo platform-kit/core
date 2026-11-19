@@ -115,7 +115,7 @@ const NAV_HAS_SPACES = ALL_LINKS.some((l: any) => {
    theme's (network.md nav), so no site has to name it. */
 const NW = computed(() => us('network').nav.main)
 const networkOn = computed(() => moduleOn('network') && isSignedIn.value)
-const spacesOn = computed(() => moduleOn('spaces') && !NAV_HAS_SPACES
+const spacesOn = computed(() => moduleOn('spaces') && !NAV_HAS_SPACES && SPACE_LINK !== 'none'
   && ((SPACE_LINK === 'always' && OPEN_ROOM) || (isSignedIn.value && inSpaces.value)))
 /*
  * THE HEADER FITS ITSELF.
