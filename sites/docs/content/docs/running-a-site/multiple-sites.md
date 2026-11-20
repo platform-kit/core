@@ -38,7 +38,7 @@ sources:
     deploy/nginx,
     package.json,
   ]
-reviewed: 2026-11-17
+reviewed: 2026-11-19
 ---
 
 The workspace root contains PlatformKit's packages and generic fixtures. A separately owned site stays in its own Git repository; it is fetched to `sites/external/<name>` and is not part of the root npm workspaces. The root registry is `platformkit.sites.json`. `platformkit sites` lists both kinds of sites. Use `platformkit sites --json` for their full paths and pin information. A registered repository that has not been fetched is listed with the command needed to fetch it. Site names are DNS labels. `PLATFORMKIT_DEFAULT_SITE` selects the site used by root commands (default `sites/docs`) and accepts either a site name or a path. `PLATFORMKIT_SITES` explicitly selects one or more sites for multi-site development, taking precedence over the default; `PLATFORMKIT_ROOT_SITE` optionally names a configured site at the workspace root.
@@ -51,7 +51,7 @@ Register and fetch the exact commit you want to use:
 platformkit sites fetch <name> [--url <git-url>] --ref <40-character-commit>
 ```
 
-The URL may be HTTPS, SSH, or a local Git URL. Instead of `--url`, set `PLATFORMKIT_SITE_<NAME>_GIT_URL`, with the site name uppercased and hyphens changed to underscores. The full commit SHA is required; a moving branch or tag is not a reproducible pin. Fetching checks out that commit and records the remote and pin in `platformkit.sites.json`. The registry is local state, and fetched checkouts under `sites/external/` are gitignored while generic fixtures remain tracked. Fetching does not run the site's package lifecycle scripts. Install its dependencies explicitly from the checkout:
+The URL may be HTTPS, SSH, or a local Git URL. Instead of `--url`, set `PLATFORMKIT_SITE_<NAME>_GIT_URL`, with the site name uppercased and hyphens changed to underscores. The full commit SHA is required; a moving branch or tag is not a reproducible pin. Fetching checks out that commit and records the remote and pin in `platformkit.sites.json`. The registry is local state, and fetched checkouts under `sites/external/` are gitignored while generic fixtures remain tracked. Fetching does not run the site's package lifecycle scripts. A fetched site's `.env` stays out of its repository even if its `.gitignore` omits it: the kit writes the rule into the checkout's `.git/info/exclude` the first time it runs there. Install its dependencies explicitly from the checkout:
 
 ```sh
 cd sites/external/<name>

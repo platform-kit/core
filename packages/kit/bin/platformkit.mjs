@@ -140,6 +140,13 @@ if (!['dev', 'sites', 'stop'].includes(cmd) && !['ts', 'js'].some((e) => fs.exis
   process.exit(1)
 }
 
+/* a site's .env never reaches its repository, whatever its .gitignore says (build/env-guard.mts) */
+if (!['help', '--help', 'sites', 'stop'].includes(cmd)) {
+  const { guardEnv } = await import(pathToFileURL(KIT('env-guard.mjs')).href)
+  const refused = guardEnv(site)
+  if (refused) { console.error(refused); process.exit(1) }
+}
+
 if (!['help', '--help', 'sites', 'stop'].includes(cmd)) {
   const relativeSite = sourceRoot ? path.relative(sourceRoot, site) : null
   const usesWorkspaceSource = sourceRoot && (relativeSite === '' || (!relativeSite.startsWith(`..${path.sep}`) && relativeSite !== '..' && !path.isAbsolute(relativeSite)))

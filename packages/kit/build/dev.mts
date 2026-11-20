@@ -33,12 +33,15 @@ import { copyRuntimeSupabaseProject, createRunRecord, quietOnClosedStreams, sign
 import { takeOver, takeOverLine, watchParent } from './dev-owner.mjs'
 import { portRequest } from './dev-ports.mjs'
 import type { Readable } from 'node:stream'
+import { guardEnv } from './env-guard.mjs'
 
 const args = process.argv.slice(2)
 const flag = (n: string) => args.includes(n)
 const opt = (n: string, d: any) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d }
 const say = (m: string) => console.log(`\x1b[36m›\x1b[0m ${m}`)
 const die = (m: string) => { console.error(`\n\x1b[31m✖\x1b[0m ${m}\n`); process.exit(1) }
+/* every site this run serves, the workspace's included: its .env stays out of its repository (build/env-guard.mts) */
+{ const refused = guardEnv(process.cwd()); if (refused) { console.error(refused); process.exit(1) } }
 const siteEnv = { ...loadEnv('development', process.cwd(), 'PLATFORMKIT_'), ...process.env }
 const workspace = workspaceRoot(process.cwd())
 const siteName = siteNameFor(workspace, process.cwd(), siteEnv)

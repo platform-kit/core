@@ -10,6 +10,8 @@ sources:
     packages/kit/build/hosts.mts,
     packages/kit/build/sites.mts,
     packages/kit/build/dev.mts,
+    packages/kit/build/env-guard.mts,
+    packages/kit/build/env-guard.test.mts,
     packages/kit/build/dev-workspace.mts,
     packages/kit/build/dev-runtime.mts,
     packages/kit/build/runtime-paths.mts,
@@ -41,6 +43,10 @@ reviewed: 2026-11-19
 ---
 
 Local values belong in ignored `.env` files: workspace-wide settings live at the workspace root, and site-specific settings live beside the selected site package. The root `.env.example` indexes every environment name read by Core, separates operator settings from test controls and internal markers, and leaves credentials blank; `sites/demo/.env.example` shows the demo site's local settings. A site-owned payment module declares its own server secret names in `paymentProviders[].secrets` and `owns.env`; those values stay outside browser bundles and the deploy sends the selected provider's declared secrets to the functions. The docs check verifies the root example against Core's environment reads and source-tracks the repository's purpose and feature overviews separately from this settings reference. Production values live only in the deploy environment and the functions' secrets.
+
+**A site's `.env` never reaches its repository.** The kit doesn't rely on the site's `.gitignore` for this. Every `platformkit` command, and every site that `npm run dev` serves, writes `.env` and `.env.*` (but not `.env.example`) into the clone's own `.git/info/exclude`, so `git add .` passes over them in any site repository, with or without a `.gitignore`. A file forced in with `git add -f`, or committed before the rule existed, stops every command until it is taken out with `git rm --cached`; the file stays on disk. Rotate any key such a file held if it was ever pushed, because removing it doesn't remove it from the history.
+
+**Stack values come from the run, not the file.** `npm run dev` gives each site its own stack's `SUPABASE_URL`, `VITE_SUPABASE_URL`, keys and `APP_URL`. Leave those out of a site's `.env`: a value copied from another setup points the browser at the wrong database.
 
 ## Always needed by the deploy
 
