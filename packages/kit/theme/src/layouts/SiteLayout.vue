@@ -359,13 +359,18 @@ const props = defineProps({
           </button>
           <div v-if="acctOpen" class="siteacct-menu" role="menu">
             <span class="siteacct-email">{{ user.email }}</span>
-            <a class="siteacct-out siteacct-admin" role="menuitem" :href="ROUTES.account" @click="acctOpen = false">{{ A.account }}</a>
-            <a class="siteacct-out siteacct-admin" :class="{ on: current === ROUTES.billing }" :aria-current="current === ROUTES.billing ? 'page' : undefined" role="menuitem" :href="ROUTES.billing" @click="acctOpen = false">{{ BILLING_LABEL }}</a>
-            <a v-if="isStaff" class="siteacct-out siteacct-admin" role="menuitem" :href="ROUTES.admin" @click="acctOpen = false">{{ A.admin }}</a>
+            <a class="siteacct-out siteacct-admin siteacct-row" role="menuitem" :href="ROUTES.account" @click="acctOpen = false"><span>{{ A.account }}</span><svg class="siteacct-ic" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="7" r="3.4" /><path d="M3.5 17.5a6.5 6.5 0 0 1 13 0" /></svg></a>
+            <a class="siteacct-out siteacct-admin siteacct-row" :class="{ on: current === ROUTES.billing }" :aria-current="current === ROUTES.billing ? 'page' : undefined" role="menuitem" :href="ROUTES.billing" @click="acctOpen = false"><span>{{ BILLING_LABEL }}</span><svg class="siteacct-ic" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="11" rx="2" /><path d="M2.5 8.5h15M5.5 12.5h3" /></svg></a>
+            <a v-if="isStaff" class="siteacct-out siteacct-admin siteacct-row" role="menuitem" :href="ROUTES.admin" @click="acctOpen = false"><span>{{ A.admin }}</span><svg class="siteacct-ic" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h12M4 10h12M4 15h12" /><circle cx="7" cy="5" r="1.6" fill="var(--paper)" /><circle cx="13" cy="10" r="1.6" fill="var(--paper)" /><circle cx="8" cy="15" r="1.6" fill="var(--paper)" /></svg></a>
             <!-- a subscriber's billing: the portal (cards, invoices, cancel) -->
-            <button v-if="plan" type="button" class="siteacct-out" role="menuitem" @click="acctOpen = false; openPortal()">{{ A.manage }}</button>
-            <button type="button" class="siteacct-out" role="menuitem" @click="flipTheme">{{ isDark ? t('nav.theme-light') : t('nav.theme-dark') }}</button>
-            <button type="button" class="siteacct-out" role="menuitem" @click="doSignOut">{{ A.signout }}</button>
+            <button v-if="plan" type="button" class="siteacct-out siteacct-row" role="menuitem" @click="acctOpen = false; openPortal()"><span>{{ A.manage }}</span><svg class="siteacct-ic" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.5 3.5h5v5M16.5 3.5 9.5 10.5M14.5 11.5v4a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h4" /></svg></button>
+            <!-- a switch, not a label: the words stay "Dark mode" and the switch says whether it is on -->
+            <button type="button" class="siteacct-out siteacct-row" role="menuitemcheckbox" :aria-checked="isDark" @click="flipTheme">
+              <span>{{ t('nav.theme-dark') }}</span><i class="siteswitch" :class="{ on: isDark }" aria-hidden="true" />
+            </button>
+            <button type="button" class="siteacct-out siteacct-row" role="menuitem" @click="doSignOut">
+              <span>{{ A.signout }}</span><svg class="siteacct-ic" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.5H5a1.5 1.5 0 0 0-1.5 1.5v10A1.5 1.5 0 0 0 5 16.5h3M12.5 13.5 16 10l-3.5-3.5M16 10H7.5" /></svg>
+            </button>
           </div>
         </div>
         <!-- sign-in only where a module reads the account; a signed-in staff member keeps their menu anywhere -->
@@ -474,4 +479,12 @@ const props = defineProps({
 .siteacct-out:hover { background: color-mix(in srgb, var(--ink) 6%, transparent) }
 .siteacct-out.on { background: color-mix(in srgb, var(--ink) 6%, transparent) }
 .siteacct-admin { text-decoration: none; box-sizing: border-box }
+/* every row of the account menu: its words on the left, at the far right what it is or does — a person,
+   a card, the sliders of the admin, the theme's on/off switch, the door of sign out */
+.siteacct-row { display: flex; align-items: center; justify-content: space-between; gap: 12px }
+.siteswitch { flex: none; position: relative; width: 30px; height: 18px; border-radius: 999px; background: color-mix(in srgb, var(--ink) 18%, transparent); transition: background .2s ease }
+.siteswitch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--paper); box-shadow: 0 1px 2px #0004; transition: transform .2s ease }
+.siteswitch.on { background: var(--ink) }
+.siteswitch.on::after { transform: translateX(12px) }
+.siteacct-ic { flex: none; color: var(--ink2) }
 </style>
