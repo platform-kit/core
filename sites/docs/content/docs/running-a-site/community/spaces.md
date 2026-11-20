@@ -9,7 +9,7 @@ sources:
     packages/kit/src/lib/community,
     packages/kit/theme/src/pages/SpacesPage.vue,
   ]
-reviewed: 2026-11-14
+reviewed: 2026-11-20
 ---
 
 Spaces are the site's shared places for people to gather. A community can have a public front page, discoverable spaces, and rooms for different kinds of conversation. The site's owner decides how each space is presented and who can enter; the people who actually join are recorded as membership, not listed in a content file.
@@ -18,7 +18,7 @@ Spaces are the site's shared places for people to gather. A community can have a
 
 A space has a name, description, optional cover, and an ordered set of rooms. It may appear in the community directory or remain private to its members. A space can be open to join, accept requests, or require approval. A welcome room can orient new members, and room groups can make a larger community easier to browse.
 
-Rooms support different kinds of activity: ongoing conversation, a forum, or a feed, with optional community features such as events, polls, voice, files, and moderation. A room can be public within its space or private. The community's front page can show the feed, events, people, and other sections the site chooses to offer.
+Rooms support different kinds of activity: ongoing conversation, a forum, or a feed, with optional community features such as events, polls, voice, files, and moderation. A room can be public within its space or private. The community's front page can show the feed, events, people, and other sections the site chooses to offer. A room fills the window and scrolls inside it, so its message box stays at the bottom; a place the site adds to be read, such as a page of results, can instead grow the page, with the menu staying beside it as you scroll.
 
 ## Membership and permissions
 

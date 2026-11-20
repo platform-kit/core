@@ -206,8 +206,11 @@ function gatedOf(m: any) {
 /*
  * A PLACE IN THE COMMUNITY, by registration (openspec: community-places-by-registration): a row of the
  * social navigation's first section after the kit's own, its page at /feed/<key> (and under it), and the
- * old addresses it takes over. { key, word, icon, component, wide?, shows?, claims? }:
+ * old addresses it takes over. { key, word, icon, component, wide?, scroll?, shows?, claims? }:
  *   word     a key of ## rail in the spaces strings (a site adds it in its own spaces.md)
+ *   scroll   'frame' (the default): the place fills the window under the header and scrolls inside, as a room
+ *            does, its composer pinned; 'page': the place is a page to read, so it grows the page and the
+ *            navigation stays beside it as it scrolls
  *   shows    'signed-in' (the default) or 'everyone'
  *   claims   addresses that forward to it, with what follows them; '!/x' keeps one out
  * A key the community already uses, or an address two places claim, is refused here.
@@ -248,7 +251,9 @@ export function placesOf(list: any) {
       if (claimed.has(bare)) throw new Error(`${at}: "${bare}" is claimed by "${claimed.get(bare)}" already`)
       claimed.set(bare, key)
     }
+    if (x.scroll != null && x.scroll !== 'frame' && x.scroll !== 'page') throw new Error(`${at}: scroll is 'frame' or 'page', not "${x.scroll}"`)
     return { key, word: String(x.word || key), icon: String(x.icon || 'star'), component: x.component, wide: x.wide === true,
+      scroll: x.scroll === 'page' ? 'page' : 'frame',
       shows: x.shows === 'everyone' ? 'everyone' : 'signed-in', claims }
   })
 }

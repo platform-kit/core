@@ -98,7 +98,8 @@ ok('the people of a set of posts, once each', eq(peopleIn([{ author_id: 'a' }, {
   /* a place in the community, by registration (openspec: community-places-by-registration) */
   const refuses = (list: { key: string; component: string; }[]|{ key: string; }[]|{ key: string; component: string; claims: string[]; }[]) => { try { placesOf(list); return false } catch (e) { return true } }
   const pl = placesOf([{ key: 'journal', word: 'journal', icon: 'pencil', component: './src/J.vue', claims: ['/app', '!/app/call'] }])
-  ok('a registered place is read with its defaults', pl.length === 1 && pl[0].key === 'journal' && pl[0].shows === 'signed-in' && pl[0].wide === false && pl[0].claims.join() === '/app,!/app/call')
+  ok('a registered place is read with its defaults', pl.length === 1 && pl[0].key === 'journal' && pl[0].shows === 'signed-in' && pl[0].wide === false && pl[0].scroll === 'frame' && pl[0].claims.join() === '/app,!/app/call')
+  ok('a place may be a page to read, which grows the page; anything else for scroll is refused', placesOf([{ key: 'journal', component: './J.vue', scroll: 'page' }])[0].scroll === 'page' && refuses([{ key: 'journal', component: './J.vue', scroll: 'window' } as any]))
   ok('no places of a site\'s own unless the config registers some', communityOf({ modules: { courses: false } }).places.length === 0)
   ok('…the kit\'s Courses is the one place it brings, where courses are on', communityOf({}).places.map((p) => p.key).join() === 'courses')
   ok('a key the community already uses is refused', refuses([{ key: 'events', component: './x.vue' }]) && refuses([{ key: 'coaching', component: './x.vue' }]))

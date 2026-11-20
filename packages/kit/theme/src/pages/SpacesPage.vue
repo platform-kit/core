@@ -714,6 +714,11 @@ const REGISTRY = [
   ...(SITE_PLACES || []).map((x) => ({ ...x, component: x.load ? defineAsyncComponent(x.load) : null, props: () => ({ rest: placeRest.value }) })),
 ]
 const placeOf: any = (k: any) => REGISTRY.find((x) => x.key === k) || null
+/* A PLACE TO READ GROWS THE PAGE (community.places scroll: 'page'). The frame is the window's height so a room can
+   keep its composer at the bottom; a page of results or lessons has no composer, and scrolling it inside a panel
+   cost it the browser's own scrolling — the phone's bar never folds away, back does not return to where you were.
+   Such a place lengthens the page instead, and the navigation stays beside it as it scrolls. */
+const FLOW = computed(() => !!(placeOf(view.value) && placeOf(view.value).scroll === 'page'))
 const MINE = [...SITE_PLACE_KEYS, 'net', 'net-notes', 'index', 'support', 'clients', 'comments', 'social-comments', 'social-dms', 'tickets', 'my-tickets', 'coaching', 'dms', 'unreads', 'threads', 'mentions', 'saved', 'drafts', 'discover']
 const inSpace = computed(() => !MINE.includes(view.value) && !(view.value === 'events' && eventsAll.value))
 const reportable = computed(() => !!space.value && space.value.kind !== 'staff' && !!channel.value && channel.value.kind !== 'dm')
@@ -1077,7 +1082,7 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
 
 <template>
   <SiteLayout :current="ROUTES.spaces">
-  <div class="sp-page" :class="{ 'sp-social': SOCIAL }" :style="paint()">
+  <div class="sp-page" :class="{ 'sp-social': SOCIAL, 'sp-flow': FLOW }" :style="paint()">
     <!-- on a phone only: the one way to the nav, and which space this is -->
     <div class="sp-bar-m">
       <button type="button" class="sp-open" :aria-label="CH.spaces" @click="railOpen = true">☰</button>
@@ -1927,6 +1932,13 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
 }
 @media (prefers-reduced-motion: reduce) { .sp-page:not(.sp-social) .sp-nav { transition: none } }
 
+/* a place to read (FLOW): the page grows with it; the navigation sticks beside it on a wide screen */
+.sp-page.sp-flow { height: auto; min-height: calc(100dvh - var(--headh)) }
+.sp-flow .sp-body { height: auto; min-height: calc(100dvh - var(--headh)); align-items: start }
+.sp-flow .sp-body > .sp-plain { height: auto; min-height: calc(100dvh - var(--headh)); align-self: stretch }
+@media (min-width: 901px) {
+  .sp-flow .sp-nav { position: sticky; top: 0; align-self: start; max-height: 100dvh; overflow-y: auto }
+}
 /* ---------------------------------------------------------------------------------------------
    THE SOCIAL LAYOUT (community.layout: social): the navigation on the left, one column in the
    middle with the open space's header above it, and the sidebar on the right — a thread or a card
