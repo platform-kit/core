@@ -51,7 +51,9 @@
   --lv2: #ffa509;
   --lv3: #ffd106; --rs0: #ffd106; --rs1: #ffa509; --rs2: #ff7b2e; --rs3: #f04a3a; --rs4: #c41e2a;
   --lvcatch: #ff5252;
-  --lvshadow: #050607;
+  /* a shadow is the strongest mark on the strip: black on paper, so the lightest thing on a dark ground —
+     black there sat on the unasked navy and the two read as one */
+  --lvshadow: #eef1f6;
   --c1: #0e5f5c;
   --c2: #158f8a;
   --c3: #35bdb6;
@@ -76,7 +78,7 @@
     --lv2: #ffa509; 
     --lv3: #ffd106; --rs0: #ffd106; --rs1: #ffa509; --rs2: #ff7b2e; --rs3: #f04a3a; --rs4: #c41e2a;
     --lvcatch: #ff5252;
-    --lvshadow: #050607;
+    --lvshadow: #eef1f6;
     --c1: #0e5f5c;
     --c2: #158f8a;
     --c3: #35bdb6;

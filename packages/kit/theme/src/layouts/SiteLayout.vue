@@ -369,6 +369,7 @@ const props = defineProps({
             <img v-if="face" :src="face" alt="" width="30" height="30" />
             <template v-else>{{ initial }}</template>
           </button>
+          <Transition name="acctmenu">
           <div v-if="acctOpen" class="siteacct-menu" role="menu">
             <span class="siteacct-email">{{ user.email }}</span>
             <a class="siteacct-out siteacct-admin siteacct-row" role="menuitem" :href="ROUTES.account" @click="acctOpen = false"><span>{{ A.account }}</span><svg class="siteacct-ic" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="7" r="3.4" /><path d="M3.5 17.5a6.5 6.5 0 0 1 13 0" /></svg></a>
@@ -386,6 +387,7 @@ const props = defineProps({
               <span>{{ A.signout }}</span><svg class="siteacct-ic" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.5H5a1.5 1.5 0 0 0-1.5 1.5v10A1.5 1.5 0 0 0 5 16.5h3M12.5 13.5 16 10l-3.5-3.5M16 10H7.5" /></svg>
             </button>
           </div>
+          </Transition>
         </div>
         <!-- sign-in only where a module reads the account; a signed-in staff member keeps their menu anywhere -->
         <button v-else-if="ACCOUNTS_ON" type="button" class="sitecta" @click="openAuth">{{ A['btn-signin'] }}</button>
@@ -486,6 +488,13 @@ const props = defineProps({
 .siteavatar-face img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit }
 .siteacct-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 210px; background: var(--paper); color: var(--ink);
   border: 1px solid var(--hair); border-radius: 12px; padding: 8px; box-shadow: 0 18px 40px -20px #0009; z-index: 50 }
+/* the menu unfolds from the picture: a short fade, a few pixels of drop and a slight scale from its
+   top-right corner, quicker out than in — an answer to the pointer, not a show */
+.siteacct-menu { transform-origin: top right }
+.acctmenu-enter-active { transition: opacity .18s ease-out, transform .22s cubic-bezier(.2, .9, .3, 1.15) }
+.acctmenu-leave-active { transition: opacity .12s ease-in, transform .12s ease-in }
+.acctmenu-enter-from, .acctmenu-leave-to { opacity: 0; transform: translateY(-6px) scale(.96) }
+@media (prefers-reduced-motion: reduce) { .acctmenu-enter-active, .acctmenu-leave-active { transition: opacity .12s linear } .acctmenu-enter-from, .acctmenu-leave-to { transform: none } }
 /* the gap between the picture and the menu, made part of the menu so the pointer can cross it */
 .siteacct-menu::before { content: ""; position: absolute; left: 0; right: 0; top: -10px; height: 10px }
 .siteacct-email { display: block; font-family: var(--m); font-size: 11px; color: var(--ink3); padding: 6px 10px 8px;

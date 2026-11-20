@@ -16,6 +16,8 @@ const props = defineProps({
   heading: { type: String, default: '' },
   lead: { type: String, default: '' },
   empty: { type: String, default: '' },
+  /* drawn inside the host's own section: no card and no heading of its own */
+  bare: { type: Boolean, default: false },
   title: { type: Function as PropType<(r: RecordingRow) => string>, default: (r: RecordingRow) => r.ref },
   chapters: { type: Function as PropType<(r: RecordingRow) => Record<string, any>>, default: () => ({}) },
 })
@@ -39,8 +41,8 @@ async function removeAll() { for (const r of rows.value) await deleteRecording(r
 </script>
 
 <template>
-  <section v-if="owner && loaded" class="rl">
-    <header class="rl-head">
+  <section v-if="owner && loaded" class="rl" :class="{ 'rl-bare': bare }">
+    <header v-if="!bare" class="rl-head">
       <h2 class="rl-h">{{ heading || W['list-title'] }}</h2>
       <p v-if="lead" class="rl-lead">{{ lead }}</p>
     </header>
@@ -54,7 +56,7 @@ async function removeAll() { for (const r of rows.value) await deleteRecording(r
           </div>
           <div class="rl-acts">
             <button type="button" class="rl-btn rl-primary" :aria-expanded="open === r.id" @click="open = open === r.id ? '' : r.id">{{ open === r.id ? W.close : W.open }}</button>
-            <button type="button" class="rl-btn" @click="asking = r.id">{{ W.delete }}</button>
+            <button type="button" class="rl-quiet" @click="asking = r.id">{{ W.delete }}</button>
           </div>
         </div>
         <div v-if="asking === r.id" class="rl-ask" role="alertdialog">
@@ -78,6 +80,9 @@ async function removeAll() { for (const r of rows.value) await deleteRecording(r
 
 <style scoped>
 .rl { margin-top: 28px; padding: 28px; border: 1px solid var(--hair); border-radius: 18px; background: var(--card, var(--paper)) }
+.rl-bare { margin: 0; padding: 0; border: 0; border-radius: 0; background: none }
+.rl-bare .rl-empty, .rl-bare .rl-list { margin-top: 0 }
+.rl-bare .rl-item:first-child { border-top: 0; padding-top: 0 }
 .rl-h { margin: 0; font-size: clamp(1.3rem, 2.4vw, 1.6rem); color: var(--ink) }
 .rl-lead { margin: 8px 0 0; color: var(--ink2); line-height: 1.5 }
 .rl-empty { margin: 16px 0 0; color: var(--ink2) }
@@ -86,8 +91,11 @@ async function removeAll() { for (const r of rows.value) await deleteRecording(r
 .rl-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px }
 .rl-what { display: grid; gap: 2px; min-width: 0 }
 .rl-meta { font-size: .88rem; color: var(--ink2) }
-.rl-acts { display: flex; gap: 8px }
-.rl-btn { padding: 8px 14px; border: 1px solid var(--hair); border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-size: .9rem; cursor: pointer }
+.rl-acts { display: flex; align-items: center; gap: 14px }
+/* deleting is offered, not pushed: a quiet word beside the one real action, asked twice */
+.rl-quiet { padding: 6px 2px; border: 0; background: none; font: inherit; font-size: .88rem; color: var(--ink3, var(--ink2)); cursor: pointer }
+.rl-quiet:hover { color: #b42318 }
+.rl-btn { padding: 8px 18px; border: 1px solid var(--hair); border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-size: .9rem; cursor: pointer }
 .rl-primary { background: var(--ink); color: var(--paper); border-color: var(--ink) }
 .rl-danger { border-color: #b42318; color: #b42318 }
 .rl-ask { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 10px; font-size: .92rem; color: var(--ink2) }

@@ -84,6 +84,8 @@ tokens:
   '--paper': { light: '#fff', dark: '#0b0b0d' }
 ```
 
+A night value is the day's contrast, not the day's colour. The shadow token (`--lvshadow`) is near-black by day, the strongest mark on a strip, and near-white by night: black on a dark ground sat on the unanswered navy (`--lv0`), and the two read as one.
+
 Three things follow from how it is stored:
 
 - **A colour nobody changed is absent**, not a copy of the default. Storing the default would freeze it — every site that had "changed" nothing would keep the old colour the day the look was retuned. So _Put back_ deletes the key.
