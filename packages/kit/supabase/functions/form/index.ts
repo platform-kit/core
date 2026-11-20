@@ -26,7 +26,7 @@
 import { admin, json, preflight, getUser, appUrl } from '../_shared/lib.ts'
 import { offer } from '../_shared/offers.ts'
 import { formsNow } from '../_shared/forms-live.ts'   /* forms.json in git mode; the rows parsed in cloud mode, so a form written through the API or the admin takes answers at once */
-import { grade } from '../_shared/forms/score.ts'
+import { grade, isRight } from '../_shared/forms/score.ts'
 import { definitionOf } from '../_shared/api/typeform/definition.ts'
 import { itemOf, webhookPayloadOf, fileUrlOf } from '../_shared/api/typeform/response.ts'
 import { throughDoor } from '../_shared/doors.ts'
@@ -34,7 +34,7 @@ import { fresh } from '../_shared/compiled.ts'
 import type { Json } from '../_shared/database.types.ts'   /* the compiled artefacts, re-read within a few seconds of a publish */
 
 type Field = { name: string; kind: string; required: boolean; multiple: boolean; values?: string[]; slide: number }
-type Form = { title: string; fields: Field[]; kit: { published: boolean; once: boolean; respond: string; embedOrigins: string[]; webhook: string; pass: number | null; score: Record<string, string>; paid?: string; ticket?: string; ticketTitle?: string; ticketPriority?: string; workbook?: boolean }; settings: { page: string }; api?: any }
+type Form = { title: string; fields: Field[]; kit: { published: boolean; once: boolean; respond: string; embedOrigins: string[]; webhook: string; pass: number | null; score: Record<string, string>; paid?: string; ticket?: string; ticketTitle?: string; ticketPriority?: string; workbook?: boolean; onFailure?: string }; settings: { page: string }; api?: any }
 /* the row an answer is about: a line of text, as a list keeps its rows */
 const rowOf = (v: unknown) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, 200)
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -85,9 +85,18 @@ async function findResponse(slug: string, form: Form, w: { user: any; anon: stri
   const rows = data ?? []
   const open = rows.find((r) => !r.completed_at)
   const done = rows.find((r) => r.completed_at)
-  if (form.kit.workbook) return { row: open ?? done ?? null, already: false }
-  if (form.kit.once && done) return { row: done, already: true }
-  return { row: open ?? null, already: false }
+  if (form.kit.workbook) return { row: open ?? done ?? null, already: false, done: null }
+  if (form.kit.once && done) return { row: done, already: true, done }
+  return { row: open ?? null, already: false, done: done ?? null }
+}
+
+/* WHAT A FAILED ATTEMPT RETAKES (openspec: courses). On a `retake-missed` quiz whose last finished attempt failed, the
+   answers it got right are carried into the next attempt — asked no more, and graded with the rest. */
+async function carriedOf(form: Form, done: { id: string; passed: boolean | null } | null) {
+  if (form.kit.onFailure !== 'retake-missed' || !done || done.passed !== false) return {}
+  const view = await responseView(done.id)
+  const score = form.kit.score || {}
+  return Object.fromEntries(Object.keys(score).filter((n) => isRight(score[n], (view.answers as any)[n])).map((n) => [n, (view.answers as any)[n]]))
 }
 
 async function hmacRaw(secret: string, body: string) {
@@ -193,13 +202,14 @@ Deno.serve(async (req: Request) => {
 
   /* ---- my answers so far ---- */
   if (!multipart && body.action === 'get') {
-    const { row, already } = await findResponse(slug, form, w, rowOf(body.item))
+    const { row, already, done } = await findResponse(slug, form, w, rowOf(body.item))
+    const carried = await carriedOf(form, done)
     /* a paid form says so here, so the runner can take them to the checkout before the first
        question rather than after it. A response already open was paid for when it was started. */
     const pay = form.kit.paid && !row && !credit ? { unpaid: true, sku: form.kit.paid } : {}
-    if (!row) return json({ answers: {}, completed: false, ...pay })
+    if (!row) return json({ answers: {}, completed: false, carried, ...pay })
     const view = await responseView(row.id)
-    return json({ response_id: row.id, answers: view.answers, last_slide: view.last_slide, completed: !!row.completed_at, already, score: row.score, total: row.total, passed: row.passed })
+    return json({ response_id: row.id, answers: view.answers, last_slide: view.last_slide, completed: !!row.completed_at, already, score: row.score, total: row.total, passed: row.passed, carried: row.completed_at ? {} : carried })
   }
   if (form.kit.paid) {
     const { row } = await findResponse(slug, form, w)
@@ -228,7 +238,7 @@ Deno.serve(async (req: Request) => {
     answers.push({ field: k, value })
   }
   const item = form.kit.workbook ? rowOf(body._item) : ''
-  const { row: found, already } = await findResponse(slug, form, w, item)
+  const { row: found, already, done: lastDone } = await findResponse(slug, form, w, item)
   if (already) return json({ error: 'already answered', code: 'already' }, 409)
   let id = found ? found.id : ''
   if (!id) {
@@ -236,6 +246,11 @@ Deno.serve(async (req: Request) => {
     const { data, error } = await admin.from('form_responses').insert({ form: slug, ...ident(w), private: !!form.kit.workbook, item: item || null, origin: req.headers.get('x-form-origin') || req.headers.get('origin') || null, meta: metaOf(req, body) }).select('id').single()
     if (error) return json({ error: error.message }, 500)
     id = data.id
+    /* a retake of only what was missed starts with the right answers of the attempt it follows */
+    const carried = await carriedOf(form, lastDone)
+    const posted = new Set(answers.map((a) => a.field))
+    const rows = Object.entries(carried).filter(([k]) => !posted.has(k)).map(([field, value]) => ({ response_id: id, field, value: value as Json, slide: null, answered_at: new Date().toISOString() }))
+    if (rows.length) { const { error: ce } = await admin.from('form_answers').insert(rows); if (ce) return json({ error: ce.message }, 500) }
   }
   for (const a of answers) {
     const rec: any = { response_id: id, field: a.field, value: a.file ? a.value : a.value, slide, answered_at: new Date().toISOString(), file_path: null, file_name: null, file_type: null, file_size: null }

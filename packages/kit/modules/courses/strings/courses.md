@@ -138,6 +138,7 @@ quiz-score: You scored {score} of {total}
 quiz-best: Your best score: {score} of {total}
 quiz-need: You need {pass} of {total} to pass. Look back over the lessons and try again whenever you're ready.
 try-again: Try again
+try-again-missed: Retake missed questions ({n})
 retake: Take it again
 achievement-earned: Achievement earned
 see-achievement: See it

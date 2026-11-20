@@ -104,7 +104,7 @@
                   <!-- the achievement this quiz earns, once it is held -->
                   <a v-if="earned && result.passed !== false" class="crs-quiz-award" :href="ROUTES.awards + '/' + earned.slug"><CourseIcon name="award" :size="15" />{{ S['achievement-earned'] }}: {{ earned.title }}</a>
                 </div>
-                <button type="button" class="btn" :class="{ solid: result.passed === false }" @click="again">{{ result.passed === false ? S['try-again'] : S.retake }}</button>
+                <button type="button" class="btn" :class="{ solid: result.passed === false }" @click="again">{{ result.passed === false ? (retakesMissed && result.total ? fill(S['try-again-missed'], { n: result.total - result.score }) : S['try-again']) : S.retake }}</button>
               </div>
               <FormRun v-else :key="lessonKey + ':' + runs" :form="formDoc" embed class="crs-quiz-run" @complete="onForm" />
             </div>
@@ -247,10 +247,13 @@ const bookCover = computed(() => (bookSlug.value ? bookCoverOf(bookSlug.value) :
 const goWord = computed(() => (({ article: S.value['read-article'], form: S.value['answer-form'], session: S.value['book-session'] } as any)[props.lesson && props.lesson.kind] || S.value.open))
 /* A FORM LESSON'S FORM, run here. Its result replaces the form's own end: the attempt just made, or, opening a lesson
    already passed, the reader's best. Finishing it is recorded by the server as the response completes, so the course
-   is only asked again. Try again and Take it again start the form afresh; a retake never undoes the lesson. */
+   is only asked again. Try again and Take it again start the form afresh — after a failed attempt, a quiz that says
+   `retake-missed` asks only the questions it got wrong; a retake never undoes the lesson. */
 const formDoc = computed(() => (props.lesson && props.lesson.kind === 'form' ? (FORMS || []).find((f: any) => f.slug === props.lesson.ref && f.published !== false) || null : null))
 const passMark = computed(() => (formDoc.value && formDoc.value.model.kit && formDoc.value.model.kit.pass) || 0)
 const result = ref<any>(null), runs = ref(0)
+/* a quiz that, failed, is retaken only where it was missed (`#! on-failure = retake-missed`) */
+const retakesMissed = computed(() => !!(formDoc.value && formDoc.value.model.kit && formDoc.value.model.kit.onFailure === 'retake-missed'))
 watch(() => [props.lessonKey, here.value && here.value.quiz && here.value.quiz.passed], ([, passed], was) => {
   if (was && was[0] === props.lessonKey && result.value) return
   const q = here.value && here.value.quiz

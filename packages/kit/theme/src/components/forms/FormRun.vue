@@ -55,11 +55,29 @@ const state = reactive<any>({
     if (r && r.completed) finish(r)
   },
   active: null,   /* the screen on stage, for the Next control */
-  restart: () => { for (const k of Object.keys(answers)) delete answers[k]; state.grade = null; state.already = false; done.value = false; startAt.value = 0; key.value++ },
+  restart: async () => {
+    for (const k of Object.keys(answers)) delete answers[k]
+    state.grade = null; state.already = false; done.value = false; startAt.value = 0; carried.value = {}
+    /* a quiz that retakes only what was missed asks the server which answers carry over */
+    if (kit.value.onFailure === 'retake-missed' && settings.value.page === 'form-slides') {
+      try { const r = await getResponse(props.form.slug, aboutItem.value); if (r && r.carried) { carried.value = r.carried; Object.assign(answers, r.carried) } } catch { /* the whole quiz, then */ }
+    }
+    key.value++
+  },
 })
 const ctx = () => context(state.data, answers)
 const key = ref(0)
-const screens = computed(() => { void key.value; return [...pre.value, ...formScreens(model.value, ctx)].map((s: any) => ({ ...s, state })) })
+/* the right answers a failed attempt carries into this one (`#! on-failure = retake-missed`): their slides aren't asked again */
+const carried = ref<Record<string, unknown>>({})
+const screens = computed(() => { void key.value; return [...pre.value, ...unasked(formScreens(model.value, ctx))].map((s: any) => ({ ...s, state })) })
+/* the slides whose questions are all carried, passed over: the last slide still asked closes the response, and the
+   progress is spread over the slides that are asked */
+function unasked(list: any[]) {
+  const have = Object.keys(carried.value)
+  if (!have.length) return list
+  const out = list.filter((s) => !(s.type === 'body' && s.fields.length && s.fields.every((f: any) => have.includes(f.name))))
+  return out.map((s, i) => ({ ...s, last: !!(out[i + 1] && out[i + 1].end), first: i === 0, progress: s.end ? 100 : Math.round((100 * i) / Math.max(out.length - 1, 1)) }))
+}
 
 /*
  * FOLLOWING UP ON EARLIER ANSWERS (openspec: forms-api). A workbook form names earlier answers (`uses`) and may be
@@ -159,7 +177,8 @@ function onAnswer(screen: { index: number; last: any }, values: any) {
   capture('form_slide', { form: props.form.slug, slide: screen.index })
   if (screen.last && settings.value.page !== 'form-slides') finish(null)
   /* a slide that is the last before the end, on a form: the post said completed; redirect if the end says so */
-  const end = screens.value[screen.index + 1]
+  const list = screens.value
+  const end = list[list.findIndex((s: any) => s.id === (screen as any).id) + 1]
   if (screen.last && end && end.redirect && !props.embed) setTimeout(() => { location.href = end.redirect }, 400)
 }
 function onComplete() { /* the runner has run past the end slide: nothing beyond it */ }
@@ -202,6 +221,7 @@ onMounted(async () => {
     if (settings.value.page === 'form-slides' && kit.value.published !== false) {
       const r = await getResponse(props.form.slug, aboutItem.value)
       if (r && r.answers) Object.assign(answers, r.answers)
+      if (r && r.carried && Object.keys(r.carried).length) { carried.value = r.carried; Object.assign(answers, r.carried) }
       if (r && r.last_slide != null) lastSlide.value = r.last_slide
       /* WHAT IT COSTS. A paid form says so before the first question rather than after it — and
          a response already open was paid for when it was started, so it is theirs to finish. */
@@ -236,7 +256,9 @@ function placeStart() {
   if (kit.value.workbook) { startAt.value = 0; return }
   if (pre.value.length) { startAt.value = 0; return }
   /* the slide after the last one posted (the server says which), never the end */
-  startAt.value = lastSlide.value == null ? 0 : Math.min(pre.value.length + lastSlide.value + 1, list.length - 1)
+  if (lastSlide.value == null) { startAt.value = 0; return }
+  const at = list.findIndex((s: any, i: number) => i >= pre.value.length && s.index > lastSlide.value)
+  startAt.value = at < 0 ? list.length - 1 : at
 }
 const shown = computed(() => (state.signin || state.unpaid || !ready.value ? [] : screens.value.slice(startAt.value)))
 </script>

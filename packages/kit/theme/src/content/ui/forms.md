@@ -335,6 +335,9 @@ webhooks-last: last delivered {at}
 quiz-heading: Scoring
 quiz-lead: Mark the right answer on a choice field to make the form a quiz.
 pass: Pass mark (right answers)
+on-failure: After a failed attempt
+retake-all: Retake the whole quiz
+retake-missed: Retake only the questions missed
 right: Right answer
 right-none: not scored
 delete: Delete this form

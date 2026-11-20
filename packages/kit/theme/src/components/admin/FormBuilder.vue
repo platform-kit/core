@@ -89,7 +89,8 @@ const setKit = (k: any, v: any) => {
   else if (k === 'respond') c.respond = v && v !== 'anyone' ? v : null
   else if (k === 'embedOrigins') c['embed-origins'] = v.length ? v.join(', ') : null
   else if (k === 'webhook') c.webhook = v || null
-  else if (k === 'pass') c.pass = v === '' || v == null ? null : String(v)
+  else if (k === 'pass') { c.pass = v === '' || v == null ? null : String(v); if (c.pass == null && kit.value.onFailure !== 'retake-all') setKit('onFailure', 'retake-all') }
+  else if (k === 'onFailure') c['on-failure'] = v && v !== 'retake-all' ? v : null
   else if (k === 'score') c.score = Object.keys(v).length ? Object.entries(v).map(([f, a]) => `${f}: ${a}`).join(', ') : null
 }
 const origins = computed(() => kit.value.embedOrigins || [])
@@ -264,6 +265,7 @@ async function remove() {
             <select class="ui-select" :value="rightOf(f)" @change="setRight(f, ($event.target as any).value)"><option value="">{{ WS['right-none'] }}</option><option v-for="c in choicesOf(f)" :key="c.value" :value="c.value">{{ c.label }}</option></select>
           </div>
           <label v-if="Object.keys(kit.score || {}).length" class="ui-field fb-num"><span>{{ WS.pass }}</span><input class="ui-input" type="number" min="0" :max="Object.keys(kit.score).length" :value="kit.pass ?? ''" @input="setKit('pass', ($event.target as any).value === '' ? null : Number(($event.target as any).value))" /></label>
+          <label v-if="kit.pass != null && !kit.once" class="ui-field"><span>{{ WS['on-failure'] }}</span><select class="ui-select" :value="kit.onFailure || 'retake-all'" @change="setKit('onFailure', ($event.target as any).value)"><option value="retake-all">{{ WS['retake-all'] }}</option><option value="retake-missed">{{ WS['retake-missed'] }}</option></select></label>
         </div>
         <div class="ui-cardrow fb-danger"><span class="ui-hint">{{ WS['delete-hint'] }}</span><span class="ui-grow" /><button type="button" class="ui-btn ui-ghost ui-danger ui-sm" @click="remove">{{ WS.delete }}</button></div>
       </div>

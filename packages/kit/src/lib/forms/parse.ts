@@ -8,7 +8,7 @@
  *
  * The language, as forms.md's docs describe it:
  *   #! key = value                        a setting (forms.md's, or the kit's few: published, once,
- *                                         respond, embed-origins, webhook, pass, score)
+ *                                         respond, embed-origins, webhook, pass, score, on-failure)
  *   ---                                   a slide boundary (`slide-delimiter`)
  *   -> start [-> Button]  -> end [-> url] a start slide, an end slide
  *   -> <condition>                        a jump condition: the slide is shown only when it holds
@@ -37,7 +37,7 @@ import { unescape } from '../../../vendor/formsmd/helpers.js'
 export const KINDS = Object.values(TYPES).map(([, kind]) => kind)
 export const FORMSMD_TYPE = Object.fromEntries(Object.values(TYPES).map(([type, kind]) => [kind, type]))
 /* the kit's own settings: what the file says about its life on the site */
-export const KIT_SETTINGS = ['published', 'once', 'respond', 'embed-origins', 'webhook', 'pass', 'score', 'paid', 'ticket', 'ticket-title', 'ticket-priority', 'workbook', 'uses', 'about']
+export const KIT_SETTINGS = ['published', 'once', 'respond', 'embed-origins', 'webhook', 'pass', 'score', 'paid', 'ticket', 'ticket-title', 'ticket-priority', 'workbook', 'uses', 'about', 'on-failure']
 /* forms.md's settings that name where the data goes: the kit's backend is where, so a file never sets them */
 export const REFUSED_SETTINGS = ['post-url', 'get-url', 'post-sheet-name']
 /* forms.md's theming settings: read (the file is theirs) and ignored (the site's design draws the form) */
@@ -48,7 +48,7 @@ const isUrl = (v: string) => /^https?:\/\/[^\s]+$/.test(v)
 
 /* the kit's settings off the `#!` lines: parsed, validated, and the refused ones named */
 function kitSettings(lines: any) {
-  const kit: any = { published: true, once: false, respond: 'anyone', embedOrigins: [], webhook: '', pass: null, score: {}, paid: '', ticket: '', ticketTitle: '', ticketPriority: '', workbook: false, uses: {}, about: null }
+  const kit: any = { published: true, once: false, respond: 'anyone', embedOrigins: [], webhook: '', pass: null, score: {}, paid: '', ticket: '', ticketTitle: '', ticketPriority: '', workbook: false, uses: {}, about: null, onFailure: 'retake-all' }
   const errors: any = []
   lines.forEach((raw: string, i: number) => {
     const t = raw.trim()
@@ -89,6 +89,8 @@ function kitSettings(lines: any) {
     else if (key === 'ticket-priority') kit.ticketPriority = value
     else if (key === 'embed-origins') { const list = value.split(',').map((s: string) => s.trim()).filter(Boolean); const bad = list.find((o: string) => !/^https?:\/\/[^\s/]+$/.test(o)); if (bad) errors.push({ line, message: `"embed-origins" lists origins (https://example.com), not "${bad}"` }); else kit.embedOrigins = list }
     else if (key === 'webhook') { if (!isUrl(value)) errors.push({ line, message: '"webhook" is a url' }); else kit.webhook = value }
+    /* WHAT A FAILED ATTEMPT RETAKES: the whole quiz (the default), or only the questions it got wrong */
+    else if (key === 'on-failure') { if (!['retake-all', 'retake-missed'].includes(value)) errors.push({ line, message: '"on-failure" is retake-all or retake-missed' }); else kit.onFailure = value }
     else if (key === 'pass') { if (!/^\d+$/.test(value)) errors.push({ line, message: '"pass" is a whole number of right answers' }); else kit.pass = Number(value) }
     else if (key === 'score') {
       for (const pair of value.split(',')) {
@@ -109,6 +111,12 @@ function kitSettings(lines: any) {
     const clash = [kit.once && 'once', kit.pass != null && 'pass', Object.keys(kit.score).length && 'score', kit.paid && 'paid', kit.webhook && 'webhook', kit.ticket && 'ticket'].filter(Boolean)
     if (clash.length) errors.push({ line, message: `a workbook form keeps a reader's answers to themselves and lets them revise them, so it can't also set ${clash.join(', ')}` })
     kit.respond = 'authenticated'
+  }
+  /* a failed attempt needs a pass mark to fail, and a second attempt to retake */
+  if (kit.onFailure !== 'retake-all') {
+    const line = lines.findIndex((l: string) => /^\s*#!\s*on-failure\s*=/.test(l)) + 1
+    const clash = [kit.pass == null && 'no pass mark', kit.workbook && 'workbook', kit.once && 'once'].filter(Boolean)
+    if (clash.length) errors.push({ line, message: `"on-failure" says what a failed attempt retakes, so it can't go with ${clash.join(', ')}` })
   }
   if (!kit.workbook && (Object.keys(kit.uses).length || kit.about)) {
     const line = lines.findIndex((l: string) => /^\s*#!\s*(uses|about)\s*=/.test(l)) + 1

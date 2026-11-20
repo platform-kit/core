@@ -43,7 +43,7 @@ const m = parseForm(fixture('every-kind.md'))
 t('the fixture parses with no error', () => assert.deepEqual(m.errors, []))
 t('the settings: forms.md\'s (defaults filled) and the kit\'s', () => {
   assert.equal(m.settings.title, 'Every kind'); assert.equal(m.settings['page-progress'], 'show'); assert.equal(m.settings.page, 'form-slides'); assert.equal(m.settings.accent, '0, 102, 255')
-  assert.deepEqual(m.kit, { published: true, once: true, respond: 'anyone', embedOrigins: ['https://example.com', 'http://localhost:3000'], webhook: 'https://example.com/hook', pass: 1, score: { pick: 'b' }, paid: '', ticket: '', ticketTitle: '', ticketPriority: '', workbook: false, uses: {}, about: null })
+  assert.deepEqual(m.kit, { published: true, once: true, respond: 'anyone', embedOrigins: ['https://example.com', 'http://localhost:3000'], webhook: 'https://example.com/hook', pass: 1, score: { pick: 'b' }, paid: '', ticket: '', ticketTitle: '', ticketPriority: '', workbook: false, uses: {}, about: null, onFailure: 'retake-all' })
 })
 t('the data block is read', () => assert.deepEqual(m.data, { brand: 'Acme', plans: ['Free', 'Pro'] }))
 t('the slides: start first, the bodies, the end last', () => assert.deepEqual(m.slides.map((s) => s.type), ['start', 'body', 'body', 'body', 'body', 'end']))
@@ -219,6 +219,23 @@ t('following up is a workbook form\'s, and its references are refused when malfo
   assert.match(parseForm('#! uses = a: f.x\n\nx = TextInput(| question = Q)').errors[0].message, /only a workbook form/)
   assert.match(parseForm('#! workbook = true\n#! uses = a: Bad Form.x\n\nx = TextInput(| question = Q)').errors[0].message, /name: form.field/)
   assert.match(parseForm('#! workbook = true\n#! about = a: f.x[0]\n\nx = TextInput(| question = Q)').errors[0].message, /whole list/)
+})
+
+/* ---- what a failed attempt retakes ---- */
+t('a quiz retakes the whole of itself unless it says it retakes what was missed', () => {
+  const quiz = '#! score = x: a\n#! pass = 1\n'
+  const field = '\nx = ChoiceInput(| question = Q | choices = a, b)'
+  assert.equal(parseForm(quiz + field).kit.onFailure, 'retake-all')
+  const m = parseForm(quiz + '#! on-failure = retake-missed\n' + field)
+  assert.deepEqual(m.errors, []); assert.equal(m.kit.onFailure, 'retake-missed')
+})
+t('on-failure is refused where no attempt can fail or be taken again', () => {
+  const field = '\nx = ChoiceInput(| question = Q | choices = a, b)'
+  const e = (head: string) => parseForm(head + field).errors.map((x: any) => x.line + ' ' + x.message).join(' / ')
+  assert.match(e('#! on-failure = retake-missed\n'), /^1 .*no pass mark/)
+  assert.match(e('#! score = x: a\n#! pass = 1\n#! once = true\n#! on-failure = retake-missed\n'), /^4 .*once/)
+  assert.match(e('#! workbook = true\n#! on-failure = retake-missed\n'), /workbook/)
+  assert.match(e('#! score = x: a\n#! pass = 1\n#! on-failure = some\n'), /retake-all or retake-missed/)
 })
 
 console.log(`forms: ${n - bad}/${n} pass`)

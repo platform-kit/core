@@ -44,6 +44,9 @@ A form's webhook subscriptions carry a **source**: one made through the Forms AP
 | `webhook`       | a url every finished response is posted to                                                     |
 | `pass`          | a quiz's pass mark, in right answers                                                           |
 | `score`         | the right answers, `field: answer, field: answer` (a choice allowing several: `field: a \| b`) |
+| `on-failure`    | what an attempt after a failed one asks: `retake-all` (default) or `retake-missed`             |
+
+With `retake-missed`, the `form` function copies the right answers of a person's last attempt, where it failed, into the next attempt as it is created, and `get` returns them as `carried`. The runner passes over every slide whose questions are all carried, closes the response on the last slide still asked, and spreads the progress over the slides asked. The attempt is graded on every question, carried ones included. It needs a pass mark, and is refused with `workbook` or `once`.
 
 forms.md's theming settings (`accent`, `color`, `font-family`, `rounded`…) are read and ignored: the site's design draws the form. `post-url`, `get-url` and `post-sheet-name` are refused — the kit's backend is where the data goes.
 
