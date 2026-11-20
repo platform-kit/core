@@ -64,7 +64,8 @@ An open admission lets the person check out for `open-for`. When they pay, it is
 - **Review.** Sales → Applications lists admissions waiting for a decision, newest first, with the form's answers and the person's link. Approve or Decline, with an optional note. Approving moves the admission to `approved` when a required call follows, or to `open` otherwise, and emails the buyer.
 - **The call.** Booking the offer's call records the booking on the admission (`booked`). When the sessions module marks the booking held, the admission opens. The host's booking view has "Not a fit", which closes it and sends the declined email.
 - **Checkout.** `create-checkout-session` looks up the offer's `before` block. If it gates the offer, it requires an `open` admission for this person and sku with `open_until` in the future, and refuses with a clear error otherwise. The success webhook marks the admission `used`.
-- **Expiry.** The existing hourly sweep expires admissions past `open_until`, and sends the "about to close" email a day before.
+- **Expiry.** The existing hourly sweep expires admissions past `open_until`.
+- **Following up.** The kit sends no reminder of its own. A site writes a funnel with `admission: open` (and `abandoned-offer` or the offer's own `goal`) for as many emails as it wants, each linking to `/checkout/<sku>`; paying moves the admission to `used`, which takes the person out of the audience. `admission: applied` and `admission: declined` are there for a site that wants to write to those people too.
 
 ## Screens
 

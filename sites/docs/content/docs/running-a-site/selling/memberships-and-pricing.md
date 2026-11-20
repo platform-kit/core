@@ -13,7 +13,7 @@ sources:
     packages/kit/theme/src/components/landing/LandingPricing.vue,
     packages/kit/src/lib/auth.ts,
   ]
-reviewed: 2026-11-18
+reviewed: 2026-11-20
 ---
 
 A **membership** is a tier — a level — and any number of offers may belong to it: `group-coaching-weekly` and `group-coaching-monthly` are two product files with the same **tier** slug. A higher **rank** includes everything below it. Never assume one membership product.
@@ -44,7 +44,7 @@ The store's membership band shows one card per tier with a price and a Join butt
 
 ## The pricing page
 
-The pricing page is a landing page with a **Pricing** section: rows you write in the page builder — a name, a glyph, a price line (with a "from" before it when it is a floor), features (one written `- ` is drawn crossed out: what the rung lacks), a button — as columns, rows, one rung, a choice list with a radio per rung, or a selector whose ticked options add up to a total. A row with a **sku** _buys from the page_: sign in first (the modal says why), then the offer's own checkout. So a site can sell a membership with the store switched off. An optional toggle lets the page flip between weekly and monthly rows; the rows stand as columns, as bands, or as one rung alone, the featured one outlined, in ink or in the accent, and a **compare** table of the plans by their features can sit under them. A row marked **more** waits behind a button under the others (its words are the section's `moreLabel`, "See more" unless the page says otherwise), so the page leads with the rows it means to sell and still lists the rest, such as a one-off session beside the memberships. A row naming a membership sold in terms alone takes the buyer to its store page, where the terms are agreed to.
+The pricing page is a landing page with a **Pricing** section: rows you write in the page builder — a name, a glyph, a price line (with a "from" before it when it is a floor), features (one written `- ` is drawn crossed out: what the rung lacks), a button — as columns, rows, one rung, a choice list with a radio per rung, or a selector whose ticked options add up to a total. A row with a **sku** _buys from the page_: sign in first (the modal says why), then the offer's own checkout. So a site can sell a membership with the store switched off. An optional toggle lets the page flip between weekly and monthly rows; the rows stand as columns, as bands, or as one rung alone, the featured one outlined, in ink or in the accent, and a **compare** table of the plans by their features can sit under them. A row marked **more** waits behind a button under the others (its words are the section's `moreLabel`, "See more" unless the page says otherwise), so the page leads with the rows it means to sell and still lists the rest, such as a one-off session beside the memberships. A row naming a membership sold in terms or on a plan takes the buyer to its checkout page (`/checkout/<sku>`), where the terms are agreed to, with or without the store.
 
 ## What a member gets
 

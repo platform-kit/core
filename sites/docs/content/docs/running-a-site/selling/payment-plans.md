@@ -30,9 +30,12 @@ sources:
     packages/kit/supabase/schemas/45-repricings.sql,
     packages/kit/build/payment-plans-repricing.test.mts,
     packages/kit/theme/src/components/landing/LandingPricing.vue,
+    packages/kit/theme/src/pages/CheckoutPage.vue,
+    packages/kit/theme/src/content/ui/checkout.md,
+    packages/kit/src/lib/page-routes.ts,
     packages/kit/modules/memberships/emails/price-change.json,
   ]
-reviewed: 2026-11-18
+reviewed: 2026-11-20
 ---
 
 A payment plan sells something for one price, or in a set number of monthly payments at a price you write. A fixed term sells a membership for a number of months, paid in full or monthly. Either way the buyer commits to every payment: the full amount is owed, whether or not they use what they bought.
@@ -112,6 +115,10 @@ changes:
 A Pricing row whose `sku` is an offer sold in terms shows both of its prices: paid in full, and monthly for the term. One switch over the rows chooses which every row shows ("Pay in full" or "Pay monthly"), with the other said under the price and the most a row saves on the switch. A row with one price shows it under either. The prices are read from the product file, so the page can't disagree with what checkout charges. The section's `payDefault` (`full` or `monthly`) is where the switch starts, and its words are the store's strings (`pricing-pay-…`, `pricing-per-…`, `pricing-note-…`). A row's button opens the offer's page with that way of paying already chosen.
 
 A row may also write both prices itself (`prices`, keyed `full` and `monthly`, each with its price, period, the line under it, and optionally a `sku` of its own), for two offers sold as one choice, such as monthly and yearly.
+
+## An offer's own checkout page
+
+Every offer has a checkout page at `/checkout/<sku>`: what the offer is (its subtitle and the body of its file), its ways to pay with what each commits the buyer to, and the button to the payment provider. It belongs to the core, not the store, so a membership or a programme sells with the store module switched off, and with the store off an offer's old store address forwards to it. The Pricing section sends an offer sold in terms or on a plan there, with the way to pay its switch had chosen (`?pay=full` or `?pay=monthly`). It is the address to link from an email or a page. Somebody signed out is asked to sign in when they choose to pay, and carries straight on to the payment. Somebody who already holds the offer is sent to billing instead. `/checkout` with no offer opens the reader's own latest unfinished checkout. The words are the `checkout` strings.
 
 ## A missed payment
 

@@ -80,12 +80,12 @@ export async function subscribe(sku: any) {
     const d = await call('create-checkout-session', { items: [{ sku, quantity: 1 }], return: here() })
     return followCheckout(d)
   } catch (e: any) {
-    /* a membership sold in terms (openspec: payment-plans) is bought on its own page, where the terms are
-       shown and agreed to: a button anywhere else that names it takes the buyer there */
+    /* a membership sold in terms (openspec: payment-plans) is bought on its own checkout page, where the terms are
+       shown and agreed to: a button anywhere else that names it takes the buyer there (openspec: offer-checkout-page) */
     if (e?.code !== 'choose_term') throw e
     const { products } = await import('./storefront.js')
     const p = products.value.find((x: any) => x.sku === sku)
-    window.location.assign('/store/products/' + (p?.id ?? sku))
+    window.location.assign('/checkout/' + (p?.sku ?? sku))
     return null
   }
 }

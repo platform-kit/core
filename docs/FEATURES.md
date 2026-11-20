@@ -319,6 +319,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - A membership band in the store: "Become a member", "Switch to this", "You're a member".
 - Fixed terms: a membership sold for 3, 6 or 12 months (any number of terms), each paid in full or monthly at prices the site sets, with the full amount owed. What follows a term is the site's choice (it ends, continues monthly, or renews), and so is when a member may change tier mid-term. A term paid in full that continues keeps the card it was paid with and charges it when the term ends. A term can also be a minimum: the membership is then sold only through its terms, and rolls on monthly afterwards until cancelled.
 - Payment plans: anything sold once that doesn't ship can also be sold in a set number of monthly payments. The buyer agrees to every payment before checkout and can't cancel partway.
+- Every offer has its own checkout page (`/checkout/<sku>`), with or without the store: what it is, the ways to pay and what each commits to, and the payment. It is the address to link from an email; `/checkout` alone reopens the reader's latest unfinished checkout.
 - A missed payment on a plan or a term pauses access at once or after the retries (the site chooses), emails the buyer and the administrators, and can cancel the buyer's upcoming bookings without refund after a grace period. Paying restores access.
 - The Billing page lists each plan or term with payments made and left, when a term ends, and anything owed. A member is reminded a week before every term ends, with what follows and what it costs, and can turn renewal off there. An administrator sees the same on the person's page in the admin.
 - When a membership's price changes, existing members keep their price unless the site chooses to move them; then each is emailed 30 days ahead (or as the site sets) and moved at the first renewal at least that far away.
@@ -422,7 +423,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 ### Funnels and campaigns (`funnels`)
 
 - Multi-step email funnels and one-off blasts, with a goal page to measure.
-- Audiences built from rules: inactive, signed up, time since purchase or session, subscription, interest, level, answered, bought, not bought, role, community access and confirmed address, with a live count of who matches now.
+- Audiences built from rules: inactive, signed up, time since purchase or session, a checkout left unfinished (for any offer or chosen ones), subscription, interest, level, answered, bought, not bought, role, community access and confirmed address, with a live count of who matches now.
 - Steps timed by elapsed time, with daily, weekly and monthly sending caps, per-funnel cooldowns and opt-outs; "Run now" for a funnel.
 - A blast shows its count and asks for confirmation; a sent blast is kept as a read-only record and can resume without sending twice.
 - Editing or renaming a campaign never re-sends it to people who already had it.
@@ -650,4 +651,4 @@ For the project's objectives and intended audience, see [PURPOSE.md](./PURPOSE.m
 ---
 
 **Sources:** `openspec/specs`, `packages/kit/build/modules/kit.mts`, `packages/kit/build/modes.mts`, `packages/kit/build`, `packages/kit/supabase`, `packages/kit/src/lib`, `packages/kit/src/payment-provider.mts`, `packages/kit/src/payment-provider.d.ts`, `packages/kit/theme/src`, `sites/demo/platformkit.config.ts`
-**Reviewed:** `2026-11-19`
+**Reviewed:** `2026-11-20`

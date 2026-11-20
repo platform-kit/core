@@ -406,7 +406,18 @@ export async function keepOffTables(db: any, sql: string, schema: string) {
       join pg_type b on b.oid = case when ty.typelem <> 0 then ty.typelem else ty.oid end
      where t.relnamespace = 'public'::regnamespace and t.relname = any($1) and b.typnamespace = 'public'::regnamespace`, [kept])
   for (const r of more.rows) names.add(r.n)
-  const out = []
+  /* A KEPT TABLE'S TRIGGERS GO BEFORE THEIR FUNCTIONS. The diff drops a module's trigger functions and never says
+     DROP TRIGGER, because it meant to drop the whole table and the triggers with it; keeping the table keeps the
+     triggers, and the first DROP FUNCTION one of them calls stops the plan ("other objects depend on it"). So every
+     trigger on a kept table whose function this diff drops is dropped first. Switching the module back on declares
+     both again. */
+  const dropped = new Set([...sql.matchAll(/drop\s+function\s+(?:if\s+exists\s+)?"?public"?\s*\.\s*"?([a-z_][a-z0-9_]*)"?/gi)].map((m) => m[1]))
+  const triggers = (await db.query(`
+    select t.tgname as trigger, c.relname as tbl, p.proname as fn from pg_trigger t
+      join pg_class c on c.oid = t.tgrelid join pg_proc p on p.oid = t.tgfoid
+     where not t.tgisinternal and c.relnamespace = 'public'::regnamespace and c.relname = any($1)`, [kept])).rows
+    .filter((r: any) => dropped.has(r.fn))
+  const out: string[] = triggers.map((r: any) => `DROP TRIGGER IF EXISTS "${r.trigger}" ON "public"."${r.tbl}";`)
   for (const st of statements(sql)) {
     if (/^drop\s+(policy|trigger)\b/i.test(st.text) || /^set\s/i.test(st.text)) { out.push(st.raw); continue }
     const refs = [...st.text.matchAll(/"?public"?\s*\.\s*"?([a-z_][a-z0-9_]*)"?/gi)].map((m) => m[1])

@@ -11,7 +11,7 @@ sources:
     packages/kit/build/statement-keys.mts,
     packages/kit/build/docs-check.mts,
   ]
-reviewed: 2026-11-18
+reviewed: 2026-11-20
 ---
 
 Every shared record is a markdown file with a frontmatter block; the admin edits the fields as a form. `published` (boolean, default true) is on every collection and is omitted below. A field marked _build_ is written by the build, not by a person. Site-defined model records use the keys declared by that model's `fields` list; those vary by site and are not shared collection fields. This page covers shared content fields; the repository-level purpose and feature overviews are tracked separately and do not define a site's content models.
@@ -314,7 +314,7 @@ Everything about the spaces surface that is not one space, and **content rather 
 
 A funnel: `title`, `published`, `design` (campaign), `cooldown` (a span), `audience` (the rules), `goal` (optional: a path on the site beginning with `/`, the page somebody reaching means the email worked — counted by the funnel analytics), then a `# ` step each with `id` (_build_), `after` (a span), `subject`, the body — or `channel: chat`, `when`, `teaser`, `image`, a closing `- ` list of choices. A blast: `title`, `subject`, `design`, `audience`, `respect-cooldown`, `goal` (the same), `status`, `sent_at`, `sent`. The policy: `daily`, `weekly`, `monthly`, `blasts-respect-cooldown`, `support-wait`, `support-presence`, `support-keep-files`, `recordings-keep` (days; 0 forever), `session-reminders` (a list of hours before a native session; absent = 24 and 1, empty = none).
 
-The audience rules: `inactive`, `signed-up`, `since-purchase`, `since-session` (a span, `7d+`, or `none`); `subscription`, `interest`, `level`, `bought`, `not-bought` (lists); `answered` (`area.key = answer`); `verified` (boolean).
+The audience rules: `inactive`, `signed-up`, `since-purchase`, `since-session`, `abandoned-checkout` (a span, `7d+`, or `none`); `abandoned-offer` (a list of skus narrowing `abandoned-checkout`); `subscription`, `interest`, `level`, `bought`, `not-bought` (lists); `answered` (`area.key = answer`); `verified` (boolean).
 
 ## Content models — `content/models/<key>.md` and `content/models/<key>/*.md`
 

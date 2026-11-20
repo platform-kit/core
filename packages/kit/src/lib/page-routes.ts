@@ -26,6 +26,7 @@ export const share: PageTest = (r) => at(r, ROUTES.share)
 export const admin: PageTest = (r) => at(r, ROUTES.admin)
 export const hyperswitchCheckout: PageTest = (r) => r === ROUTES.hyperswitchCheckout
 export const billing: PageTest = (r) => r === ROUTES.billing
+export const offerCheckout: PageTest = (r) => (r === ROUTES.checkout || r.startsWith(ROUTES.checkout + '/')) && r !== ROUTES.hyperswitchCheckout && !r.startsWith(ROUTES.hyperswitchCheckout + '/')
 export const commentsEmbed: PageTest = (r) => r.startsWith(ROUTES.embed + '/comments')
 export const award: PageTest = (r) => r.startsWith(ROUTES.awards + '/')
 export const person: PageTest = (r) => (r === ROUTES.account || r.startsWith(ROUTES.people + '/')) && !isPageRoute(r)

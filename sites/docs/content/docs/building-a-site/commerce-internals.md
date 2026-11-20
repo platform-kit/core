@@ -59,7 +59,7 @@ sources:
     packages/kit/build/checkout-params.test.mts,
     packages/kit/build/payment-providers.test.mts,
   ]
-reviewed: 2026-11-18
+reviewed: 2026-11-20
 ---
 
 ## The payment-provider contract foundation
@@ -382,7 +382,7 @@ A product's `key` (eight hex characters, given once by the admin's writer or `no
 
 ## The checkout and the ledger
 
-`create-checkout-session` makes the Stripe Checkout session: the lines by sku, a print or download line's **variant** (contents, cloth, foil — `variantOf` / `parseVariant`) checked against the offer's choices, the shipping options for the one country the buyer chose (`allowed_countries` is that country alone; each option carries its level as metadata; the phone collected), a paid session's chosen time in the metadata, `metadata.guest` for a cart with no JWT. Checkout returns to `/app?checkout=success&session=…` (a cancel to the page it started from, a path on this site only).
+`create-checkout-session` makes the Stripe Checkout session: the lines by sku, a print or download line's **variant** (contents, cloth, foil — `variantOf` / `parseVariant`) checked against the offer's choices, the shipping options for the one country the buyer chose (`allowed_countries` is that country alone; each option carries its level as metadata; the phone collected), a paid session's chosen time in the metadata, `metadata.guest` for a cart with no JWT. Checkout returns to `/app?checkout=success&session=…` (a cancel to the page it started from, a path on this site only). For a signed-in buyer it records each offer opened in `checkouts_started` (46-checkouts.sql; a plan or a term under the offer it pays for), which is how a funnel finds a checkout left unfinished; a failure to record never stops the sale.
 
 `_shared/ledger.ts` is what a payment writes — purchases, subscriptions, entitlements, a session's credit and its booking, a print order sent to the printer, the order's email once per session — called by the **webhook** with Stripe's objects and by **`confirm-checkout`** on landing (the session retrieved from Stripe, checked to be the buyer's, written through the same upserts), so what was paid for is theirs on landing whether or not the webhook has arrived, and a local run needs no `stripe listen` to see a purchase land (the forwarder is still how renewals, failures and refunds arrive).
 

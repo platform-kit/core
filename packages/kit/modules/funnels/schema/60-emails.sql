@@ -327,6 +327,17 @@ CREATE OR REPLACE FUNCTION "public"."email_audience_match"("uid" "uuid", "rules"
         b.last_session is not null and
         (rules->'since_session'->>'min' is null or extract(epoch from now() - b.last_session) / 86400 >= (rules->'since_session'->>'min')::numeric) and
         (rules->'since_session'->>'max' is null or extract(epoch from now() - b.last_session) / 86400 <= (rules->'since_session'->>'max')::numeric) end))
+    /* a checkout opened and not finished (46-checkouts.sql): the span is the time since it was opened,
+       narrowed to the offers abandoned_offer names; none is "no checkout left unfinished" */
+    and (rules->'abandoned_checkout' is null or (
+      case when (rules->'abandoned_checkout'->>'none')::boolean then not exists (
+        select 1 from public.checkouts_left(b.id) l
+        where rules->'abandoned_offer' is null or l.offer_sku = any(array(select jsonb_array_elements_text(rules->'abandoned_offer'))))
+      else exists (
+        select 1 from public.checkouts_left(b.id) l
+        where (rules->'abandoned_offer' is null or l.offer_sku = any(array(select jsonb_array_elements_text(rules->'abandoned_offer'))))
+          and (rules->'abandoned_checkout'->>'min' is null or extract(epoch from now() - l.started_at) / 86400 >= (rules->'abandoned_checkout'->>'min')::numeric)
+          and (rules->'abandoned_checkout'->>'max' is null or extract(epoch from now() - l.started_at) / 86400 <= (rules->'abandoned_checkout'->>'max')::numeric)) end))
     and (rules->'subscription' is null or exists (
       select 1 from jsonb_array_elements_text(rules->'subscription') t(v)
       where (t.v = 'none' and coalesce(array_length(b.tiers, 1), 0) = 0)

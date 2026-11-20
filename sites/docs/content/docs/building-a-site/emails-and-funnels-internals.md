@@ -23,7 +23,7 @@ sources:
     packages/kit/supabase/functions/_shared/session-mail.ts,
     packages/kit/supabase/functions/_shared/ics.ts,
   ]
-reviewed: 2026-11-18
+reviewed: 2026-11-20
 ---
 
 > The compile (`build/funnels.mjs`) runs **over the store**, so the same code answers from a checkout on a
@@ -50,7 +50,7 @@ The policy (`content/emails/policy.md`, `normalizePolicy` in `_shared/emails/rul
 
 ## The audience
 
-One rule set, `_shared/emails/rules.ts` (plain JavaScript shared by the build, the admin and the functions): the rules as written for a person in the markdown, turned by `normalizeRules` into the jsonb `email_audience(rules)` takes, which reads what the account knows — the last event or answer, the profile's age, the last paid purchase, the last session attended, the live tier, the areas taken and content read, the level the sheet placed them at (**signals**, the person's own results summarised by the client since the engine runs in the browser), a statement as answered, what was bought. Every rule must hold; a list is any of; never the opted out. `email_audience_count` is the admin's count; `email_audience_me(rules)` — over the predicate factored out as `email_audience_match(uid, rules)` — is what a signed-in person asks for a chat prompt. A criterion is added in three places: the SQL function, `rules.js` (parse and describe) and `AudienceEditor.vue`.
+One rule set, `_shared/emails/rules.ts` (plain JavaScript shared by the build, the admin and the functions): the rules as written for a person in the markdown, turned by `normalizeRules` into the jsonb `email_audience(rules)` takes, which reads what the account knows — the last event or answer, the profile's age, the last paid purchase, the last session attended, the live tier, the areas taken and content read, the level the sheet placed them at (**signals**, the person's own results summarised by the client since the engine runs in the browser), a statement as answered, what was bought, a checkout opened and not paid for since (`abandoned-checkout`, narrowed by `abandoned-offer`; `checkouts_left` in 46-checkouts.sql). Every rule must hold; a list is any of; never the opted out. `email_audience_count` is the admin's count; `email_audience_me(rules)` — over the predicate factored out as `email_audience_match(uid, rules)` — is what a signed-in person asks for a chat prompt. A criterion is added in three places: the SQL function, `rules.js` (parse and describe) and `AudienceEditor.vue`.
 
 ## The runner
 

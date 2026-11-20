@@ -67,7 +67,7 @@ Verified by: `packages/kit/build/admissions-db.test.mts`
 
 ### Requirement: The server lets only admitted buyers check out
 
-Checkout SHALL refuse an offer that requires an application or a call unless the buyer has an open admission for that offer whose time has not run out. A payment SHALL use up the admission. An admission whose time runs out SHALL close, and its reader SHALL be emailed a day before it does. A reviewer SHALL be able to reopen a closed or expired admission. Payment plans and terms SHALL work unchanged once checkout is open.
+Checkout SHALL refuse an offer that requires an application or a call unless the buyer has an open admission for that offer whose time has not run out. A payment SHALL use up the admission. An admission whose time runs out SHALL close, and its reader SHALL be emailed a day before it does. A reviewer SHALL be able to reopen a closed or expired admission. Payment plans and terms SHALL work unchanged once checkout is open. Every email that opens checkout SHALL link to the offer's checkout page. A funnel's audience SHALL accept `admission` (`open`, `applied` or `declined`), matching people whose admission for any offer, or for the offers `abandoned-offer` names, is in that state.
 
 #### Scenario: a direct checkout request without approval
 
@@ -79,7 +79,14 @@ Verified by: `packages/kit/build/checkout-tamper.test.mts`
 #### Scenario: the time runs out
 
 - **WHEN** an admission's `open-for` time passes without a payment
-- **THEN** the reader was emailed a day before, checkout now refuses them, and a reviewer can reopen it
+- **THEN** checkout now refuses them, and a reviewer can reopen it
+
+Verified by: `packages/kit/build/admissions-db.test.mts`
+
+#### Scenario: a follow-up that stops when they pay
+
+- **WHEN** a site's funnel targets `admission: open` and an admitted reader pays
+- **THEN** the funnel reaches them while the admission is open and not after they pay
 
 Verified by: `packages/kit/build/admissions-db.test.mts`
 

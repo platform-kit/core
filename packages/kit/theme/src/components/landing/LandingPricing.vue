@@ -137,13 +137,11 @@ const busy = ref('')
 let pending = ''
 async function buy(t: { buys: any; sku: string; current: any; pending: any; name: string }) {
   if (!t.buys || busy.value) return
-  /* an offer sold in terms or on a plan is bought on its own page, where what is agreed to is shown — with the
-     way the switch shows already chosen, and before any sign-in: the page asks for one itself */
+  /* an offer sold in terms or on a plan is bought on its own checkout page (openspec: offer-checkout-page), where what
+     is agreed to is shown — with the way the switch shows already chosen, and before any sign-in: the page asks for one itself */
   const sold = PRODUCTS.find((p: { sku: any }) => p.sku === t.sku)
   if (sold && waysToPay(sold).length) {
-    const { products } = await import('platformkit/lib/storefront.js')
-    const sp = products.value.find((x: any) => x.sku === t.sku)
-    window.location.assign('/store/products/' + (sp?.id ?? t.sku) + '?pay=' + payKey.value)
+    window.location.assign('/checkout/' + encodeURIComponent(t.sku) + '?pay=' + payKey.value)
     return
   }
   if (!isSignedIn.value) { pending = t.sku; if ((window as any).DLauth) (window as any).DLauth.open({ intent: 'buy' }); return }

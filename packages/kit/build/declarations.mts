@@ -94,6 +94,7 @@ export const STATE = {
   subscriptions: 'somebody is paying',
   entitlements: 'what that got them',
   commitments: 'somebody agreed to pay it all',
+  checkouts_started: 'somebody opened a checkout (whether they finished is read from what they have paid for since)',
   repricings: 'a subscriber moved to a new price',
   usage_events: 'what a person and an assistant spent, in measured usage',
   usage_grants: 'the units a payment or subscription period gave somebody',

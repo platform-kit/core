@@ -44,7 +44,7 @@ sources:
     packages/kit/build/module-drop.mts,
     packages/kit/build/modules-off-db.test.mts,
   ]
-reviewed: 2026-11-19
+reviewed: 2026-11-20
 ---
 
 ## Module switches
@@ -308,7 +308,7 @@ The kit's module list in `build/modules/kit.mts` keeps every module's place: a m
 
 ## Switching a module off removes its backend
 
-Its schema files, its functions, its cron jobs, its rows and the glue that joins it to other modules are all left out of the site's assembled `supabase/` tree — so a site without the store serves no store function and declares no store table. What every site has is `core`, named in `build/modules/backend.mts` beside the glue functions that need two modules (`storefront-api` needs both the api and the store). Switching off keeps the module's data on a database that already holds it; `platformkit module drop <key>` is the separate, guarded act that removes it. [The database](/content/docs/building-a-site/the-database) has how.
+Its schema files, its functions, its cron jobs, its rows and the glue that joins it to other modules are all left out of the site's assembled `supabase/` tree — so a site without the store serves no store function and declares no store table. What every site has is `core`, named in `build/modules/backend.mts` beside the glue functions that need two modules (`storefront-api` needs both the api and the store). Switching off keeps the module's data on a database that already holds it, and the plan drops the triggers on those kept tables before it drops the module's functions they call (the diff, which meant to drop the whole table, never says so itself); `platformkit module drop <key>` is the separate, guarded act that removes it. [The database](/content/docs/building-a-site/the-database) has how.
 
 ## What each module does in each deployment shape
 

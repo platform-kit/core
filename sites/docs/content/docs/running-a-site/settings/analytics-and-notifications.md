@@ -24,7 +24,7 @@ sources:
     packages/kit/modules/push/functions/push,
     packages/kit/build/vapid.mts,
   ]
-reviewed: 2026-11-17
+reviewed: 2026-11-20
 ---
 
 ## Analytics

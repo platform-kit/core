@@ -12,7 +12,8 @@
 - [ ] 2.2 Reviewing: approve, decline and reopen, with the note
 - [ ] 2.3 The call: booking records it on the admission, a held call opens it, "Not a fit" closes it
 - [ ] 2.4 Checkout refuses a gated offer without an open admission; the success webhook uses it up
-- [ ] 2.5 The hourly sweep expires admissions and sends the reminder a day before
+- [ ] 2.5 The hourly sweep expires admissions
+- [ ] 2.6 `admission` in the audience grammar, the database and the audience editor
 
 ## 3. Screens, emails and docs
 

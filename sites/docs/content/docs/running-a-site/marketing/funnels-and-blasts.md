@@ -12,8 +12,10 @@ sources:
     packages/kit/modules/funnels/ui/admin/FunnelsAdmin.vue,
     packages/kit/modules/funnels/ui/admin/BlastsAdmin.vue,
     packages/kit/modules/funnels/ui/admin/AudienceEditor.vue,
+    packages/kit/supabase/schemas/46-checkouts.sql,
+    packages/kit/modules/funnels/schema/60-emails.sql,
   ]
-reviewed: 2026-11-10
+reviewed: 2026-11-20
 ---
 
 Marketing mail is markdown, targeted by what the account knows, under a cooldown. Marketing → **Funnels**, and the **Blasts** tab of Marketing → Emails. Module: `funnels` (and `emails` to send).
@@ -48,6 +50,10 @@ Every rule given must hold; a list means any of; the opted-out are never include
 | **answered**                                             | a specific statement as answered                                                          |
 | **bought**, **not bought**                               | a product, by sku or a book's slug — had it, or never had it                              |
 | **verified**                                             | the address has answered its confirmation                                                 |
+
+## Following up an unfinished checkout
+
+`abandoned-checkout: 3h+` reaches somebody who opened checkout at least three hours ago and has paid for nothing on that offer since: no purchase, no subscription, and no plan or term. `abandoned-offer: [sku, …]` narrows it to particular offers, and `none` means "has no checkout left open". The checkout is recorded when a signed-in person opens it (`checkouts_started`, 46-checkouts.sql). Whether it was left is worked out from what they have paid for since, so the rule works the same with every payment provider. A link to `/checkout` in the email opens the reader's latest unfinished checkout, and paying takes them out of the audience, so the follow-up stops by itself.
 
 ## The policy
 

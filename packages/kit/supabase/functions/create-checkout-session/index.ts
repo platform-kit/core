@@ -640,6 +640,13 @@ Deno.serve(async (req: Request) => {
      * is a hold, and a hold that cannot be placed simply is not placed.
      */
     await reserve(providerScopedId(selectedPaymentProvider.id, session.checkoutId), merged, variants)
+    /* the checkout is opened: kept, so one left unfinished can be followed up (46-checkouts.sql; openspec: offer-checkout-page).
+       A plan or a term is recorded against the offer it pays for. Never in the way of the sale. */
+    if (user) {
+      const rows = [...merged.keys()].map((sku) => ({ user_id: user.id, sku, offer_sku: commitmentOf(offerOf(sku))?.of ?? sku }))
+      const { error: kept } = await admin.from('checkouts_started').insert(rows)
+      if (kept) console.warn('create-checkout-session: checkout not recorded', kept.message)
+    }
      const amountTotalMinor = lines.reduce(
        (sum, line) => sum + line.unitAmountMinor * line.quantity,
        0,

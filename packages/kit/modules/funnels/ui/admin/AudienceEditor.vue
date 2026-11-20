@@ -28,6 +28,8 @@ const RULES = [
   { key: 'signed-up', label: 'Signed up', hint: 'the account\'s age', kind: 'span' },
   { key: 'since-purchase', label: 'Last purchase', hint: 'a paid order', kind: 'span', none: true },
   { key: 'since-session', label: 'Last coaching session', hint: 'attended', kind: 'span', none: true },
+  { key: 'abandoned-checkout', label: 'Left a checkout', hint: 'opened checkout and has paid for nothing there since', kind: 'span', none: true },
+  { key: 'abandoned-offer', label: 'Checkout left for', hint: 'narrows Left a checkout to these offers', kind: 'offers' },
   { key: 'subscription', label: 'Membership', hint: 'none, any, or a tier', kind: 'tiers' },
   { key: 'level', label: 'Working at', hint: 'the level their last reading placed them at', kind: 'levels' },
   { key: 'interest', label: 'Interested in', hint: 'took the area\'s diagnostic, or read content tagged with it', kind: 'areas' },
@@ -54,6 +56,8 @@ function add(key: string) { if (!key) return; if (!added.value.includes(key)) ad
 function drop(key: string) { added.value = added.value.filter((k: any) => k !== key); set(key, null) }
 
 /* the choices */
+/* every offer a checkout can be left on, by sku */
+const OFFERS = PRODUCTS.filter((p: any) => p.sku && p.kind !== 'print').map((p: any): [string, string] => [p.sku, p.title])
 const TIERS = [...new Map<string, string>(PRODUCTS.filter((p: any) => p.kind === 'membership' && p.tier).map((p: any) => [p.tier, p.title])).entries()]
 const AREAS = DOMAINS.map(([k, name]: any) => [k, name])
 const LVLS = Object.entries(LEVELS).map(([k, l]) => [k, (l as any).name])
@@ -127,6 +131,7 @@ watch(rules, () => { count.value = null })
         <button v-for="[t, name] in TIERS" :key="t" type="button" class="ui-chip" :class="{ 'ui-on': listOf('subscription').includes(t) }" @click="toggleTier(t)">{{ name }}</button>
       </div>
       <div v-else-if="r.kind === 'roles'" class="ui-chips"><button v-for="k in ROLES" :key="k" type="button" class="ui-chip" :class="{ 'ui-on': listOf('role').includes(k) }" @click="toggle('role', k)">{{ k }}</button></div>
+      <div v-else-if="r.kind === 'offers'" class="ui-chips"><button v-for="[k, name] in OFFERS" :key="k" type="button" class="ui-chip" :class="{ 'ui-on': listOf('abandoned-offer').includes(k) }" @click="toggle('abandoned-offer', k)">{{ name }}</button></div>
       <div v-else-if="r.kind === 'grants'" class="ui-chips"><button v-for="k in GRANTS" :key="k" type="button" class="ui-chip" :class="{ 'ui-on': listOf('grant').includes(k) }" @click="toggle('grant', k)">{{ k }}</button></div>
       <div v-else-if="r.kind === 'levels'" class="ui-chips"><button v-for="[k, name] in LVLS" :key="k" type="button" class="ui-chip" :class="{ 'ui-on': listOf('level').includes(k) }" @click="toggle('level', k)">{{ name }}</button></div>
       <div v-else-if="r.kind === 'areas'" class="ui-chips"><button v-for="[k, name] in AREAS" :key="k" type="button" class="ui-chip" :class="{ 'ui-on': listOf('interest').includes(k) }" @click="toggle('interest', k)">{{ name }}</button></div>
