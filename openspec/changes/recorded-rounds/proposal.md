@@ -14,7 +14,8 @@ Forms already take a recorded answer: `VoiceInput` and `VideoInput` record one a
 - **It is kept as it is made.** The recording goes up in parts while the round is under way, so a closed tab loses seconds, not the round.
 - **Only the reader can watch it.** Recordings live in a private bucket the reader alone can read. Administrators can't watch them. A site can choose to delete recordings after a number of days; by default they are kept until the reader deletes them.
 - **Watching back.** The kit provides a list of the reader's recorded rounds and a player. The player shows every statement as a chapter, along with the answer given to it, and jumps to any statement. The reader can delete one recording or all of them.
-- **Forms are unchanged.** `VoiceInput` and `VideoInput` stay as they are.
+- **The recorder lives in the shared question runner** (`Typeform.vue`), which the instrument and forms both run on. It records a whole run and marks every screen. The instrument is the first host to offer it. A form can offer it later with a `#! record` setting, using the same recorder, upload and player.
+- **A single recorded answer is unchanged.** `VoiceInput` and `VideoInput` stay as they are: one answer, one file, sent to the site.
 
 ## Capabilities
 
@@ -27,5 +28,6 @@ Forms already take a recorded answer: `VoiceInput` and `VideoInput` record one a
 - `platformkit.config.js`: `instrument.record` (`kinds`, `keep`).
 - The instrument module: one table (`round_recordings`) and one private bucket (`recordings`), both with declared grants and owner-only policies; a scheduled sweep for `keep`.
 - `src/lib/recording.ts`: the continuous recorder, its marks, uploading in parts, recovering a round left mid-way.
+- `theme/src/instrument/ui/Typeform.vue` (the runner shared with forms): starts and ends a recording around a run when its host asks, and marks each screen as it is shown and answered.
 - The theme: the choice on a round's start screen, the "Recording" indicator, `RecordingsList.vue` and `RecordingPlayer.vue`, editable strings.
 - The instrument and forms documentation.

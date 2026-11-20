@@ -11,6 +11,17 @@ The instrument already records what was answered and when (`answers`: one row pe
 - **One permission prompt**, one indicator, one thing to delete.
 - **Watching back is one film with chapters**, the way a reader wants to see it, not forty clips.
 
+## Where the recorder lives
+
+There is one question runner, `Typeform.vue`. Forms run on it through `FormRun.vue`, and the instrument runs its statement screens on it, which is why the instrument's manifest requires the forms module. So the recording belongs to the runner, not to either host:
+
+- The runner takes an optional `record` prop from its host: the kind chosen and where the recording belongs (`{ kind, source: 'instrument', ref: <test> }`).
+- It starts the recorder before the first screen and finishes it after the last.
+- It marks each screen when it is shown and when it is answered, by the screen's id (a statement's `item`, or a form slide's id).
+- The host decides whether recording is offered, asks the reader, and passes the choice in. The runner knows nothing about who may watch.
+
+The instrument is the host this change builds. A form could offer the same with a `#! record` setting (not part of this change).
+
 ## Configuration
 
 ```js
@@ -25,7 +36,7 @@ instrument: {
 
 ## The record: `round_recordings`
 
-- `id`, `user_id`, `test` (the instrument's test, as `answers.test`), `kind` (`voice` | `video`), `mime`;
+- `id`, `user_id`, `source` (`instrument`; `form` when forms take this up), `ref` (the instrument's test, as `answers.test`; a form's slug), `kind` (`voice` | `video`), `mime`;
 - `started_at`, `ended_at`, `duration_ms`;
 - `parts` (how many have been uploaded), `bytes`;
 - `marks` (jsonb): `[{ item, shown_ms, answered_ms }]`, offsets from the start of the recording, with `item` the `answers.item_id`;
@@ -73,4 +84,4 @@ When `instrument.record.kinds` isn't empty, the round's start screen offers a ch
 
 - Sharing a recording with a coach. A natural follow-up for coaching sites, but sharing is a separate act and gets its own record and consent.
 - Transcripts.
-- Recording a form as a whole, rather than one answer.
+- A form offering a whole-run recording (`#! record`). The runner, the record and the player already serve it; what is missing is the setting, and whether a form's recording is read by its staff the way its file answers are.

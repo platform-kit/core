@@ -15,7 +15,7 @@
 ## 2. The round
 
 - [ ] 2.1 The choice on the start screen, remembered per device; the indicator and Stop
-- [ ] 2.2 Marks at shown and answered, nothing waiting on them
+- [ ] 2.2 The runner (`Typeform.vue`) records a run when its host passes `record`, and marks each screen at shown and answered, nothing waiting on the marks
 
 ## 3. Watching back
 
