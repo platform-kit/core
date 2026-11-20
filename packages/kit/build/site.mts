@@ -302,6 +302,8 @@ export const networkOf = (c: any) => {
     access: n.access && typeof n.access === 'object' ? { read: !!n.access.read, write: !!n.access.write, join: n.access.join ? String(n.access.join) : null, plans: n.access.plans ? String(n.access.plans) : null } : null,
     appview: String(n.appview || 'https://api.bsky.app').replace(/\/+$/, ''),
     relay: String(n.relay || 'https://bsky.network').replace(/\/+$/, ''),
+    /* 'none': the network stays, reached from the site's own links and the community, and the header draws no button for it */
+    link: n.link === 'none' ? 'none' : 'always',
   }
 }
 /* what the browser may know: no paths */

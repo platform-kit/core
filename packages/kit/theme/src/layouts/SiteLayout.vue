@@ -114,7 +114,8 @@ const NAV_HAS_SPACES = ALL_LINKS.some((l: any) => {
    last looked. Offered to somebody signed in — a guest has no timeline — and its words are the
    theme's (network.md nav), so no site has to name it. */
 const NW = computed(() => us('network').nav.main)
-const networkOn = computed(() => moduleOn('network') && isSignedIn.value)
+/* network.link 'none': the site reaches the network another way, and the header draws no button for it */
+const networkOn = computed(() => moduleOn('network') && isSignedIn.value && ((site.network || {}).link !== 'none'))
 const spacesOn = computed(() => moduleOn('spaces') && !NAV_HAS_SPACES && SPACE_LINK !== 'none'
   && ((SPACE_LINK === 'always' && OPEN_ROOM) || (isSignedIn.value && inSpaces.value)))
 /*
