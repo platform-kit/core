@@ -482,6 +482,9 @@ verify_jwt = false
 [functions.session-recordings]
 verify_jwt = false
 
+[functions.run-recordings]
+verify_jwt = false
+
 [functions.session-reminders]
 verify_jwt = false   # the service bearer, checked inside
 

@@ -1,87 +1,78 @@
 # Design
 
-## Principle: one recording per round, and the answers stay the source of truth
+## Principle: one recording per run, and the answers stay the source of truth
 
-The instrument already records what was answered and when (`answers`: one row per statement, with `answered_at` and `latency_ms`), and works out a sitting from those times. A recording adds the picture and the sound of that same round. It needs no sitting id of its own. It carries the round's start and end, and a mark per statement saying when it was shown and answered, so playback finds each statement's moment by time and shows the answer the `answers` row holds.
+The answers already record what was answered and when: the instrument's `answers` rows (`answered_at`, `latency_ms`), and a form's responses. A recording adds the picture and the sound of the same run. It carries the run's start and end and a mark per screen saying when the screen was shown and answered, so playback finds each statement's moment by time and shows the answer the host already holds.
 
 ## Why one continuous recording, not one per statement
 
-- **The timing is the measurement.** A shadow is a pause before a yes. Starting a recorder at each statement takes a few hundred milliseconds and lands in exactly the gap being measured. A continuous recording takes nothing from the round.
+- **The timing is the measurement.** A shadow is a pause before a yes. Starting a recorder at each statement takes a few hundred milliseconds and lands in exactly the gap being measured.
 - **The first word survives.** A recorder started as a statement appears misses the start of the reply.
 - **One permission prompt**, one indicator, one thing to delete.
-- **Watching back is one film with chapters**, the way a reader wants to see it, not forty clips.
+- **Watching back is one film with chapters.**
 
-## Where the recorder lives
+## Where it lives: the runner
 
-There is one question runner, `Typeform.vue`. Forms run on it through `FormRun.vue`, and the instrument runs its statement screens on it, which is why the instrument's manifest requires the forms module. So the recording belongs to the runner, not to either host:
+There is one question runner, `Typeform.vue`. Forms run on it through `FormRun.vue`, and the instrument runs its statement screens on it, which is why the instrument's manifest requires the forms module. So the recorder belongs to the runner, and its record and bucket belong to the forms module.
 
-- The runner takes an optional `record` prop from its host: the kind chosen and where the recording belongs (`{ kind, source: 'instrument', ref: <test> }`).
-- It starts the recorder before the first screen and finishes it after the last.
-- It marks each screen when it is shown and when it is answered, by the screen's id (a statement's `item`, or a form slide's id).
-- The host decides whether recording is offered, asks the reader, and passes the choice in. The runner knows nothing about who may watch.
+- The runner takes an optional `record` prop from its host: `{ kind, source, ref, staffRead }`.
+- It starts the recorder before the first screen and finishes it after the last. It marks each screen as shown when it appears and as answered when its answer is emitted, by the screen's id (a statement's item, or a form slide's id).
+- While recording, it shows a small indicator with Stop. Stopping ends the recording, not the run.
+- The host decides whether recording is offered and asks with a `record` screen (No thanks / Voice / Video, only the kinds offered), then passes the choice in.
 
-The instrument is the host this change builds. A form could offer the same with a `#! record` setting (not part of this change).
+## Encoding: H.264 and AAC through mediabunny
 
-## Configuration
+- `Output` with `Mp4OutputFormat({ fastStart: 'fragmented' })`, which only ever appends, written to a `StreamTarget(writable, { chunked: true, chunkSize: 1 MiB })`.
+- Video: `MediaStreamVideoTrackSource(track, { codec: 'avc', bitrate: 1e6 })` from `getUserMedia` at no more than 640×480 (about 7.5 MB a minute). Sound: `MediaStreamAudioTrackSource(track, { codec: 'aac', bitrate: 96e3 })`. Voice-only is the same without the video track (`.m4a`).
+- `canEncodeVideo('avc')` must hold, or recording isn't offered on that browser. When `canEncodeAudio('aac')` doesn't hold, `registerAacEncoder()` from `@mediabunny/aac-encoder` is loaded first.
+- Mediabunny is imported only when someone chooses to record, so nobody else downloads it.
+- Proven in headless Chromium with a fake camera: H.264 and AAC encode, and the chunks arrive strictly in order.
 
-```js
-instrument: {
-  module: './src/instrument/index.js',
-  record: {
-    kinds: ['voice', 'video'],   // what the reader may choose; omitted or [] = recording off
-    keep: 0,                     // days a recording is kept; 0 = until the reader deletes it
-  },
-},
-```
+## Keeping it as it is made
 
-## The record: `round_recordings`
+Each chunk the writable receives is uploaded as the next part, `<user_id>/<recording_id>/<nnnn>.mp4` (`.m4a` for voice), in order, retried with backoff, and counted on the row. Because the format only ever appends, the parts in order are the file.
 
-- `id`, `user_id`, `source` (`instrument`; `form` when forms take this up), `ref` (the instrument's test, as `answers.test`; a form's slug), `kind` (`voice` | `video`), `mime`;
-- `started_at`, `ended_at`, `duration_ms`;
-- `parts` (how many have been uploaded), `bytes`;
-- `marks` (jsonb): `[{ item, shown_ms, answered_ms }]`, offsets from the start of the recording, with `item` the `answers.item_id`;
-- `status`: `recording` | `complete` | `partial`.
+`finish()` finalizes the output, uploads the last part, and writes `ended_at`, `duration_ms`, the marks and `complete`. A run left mid-way stays `recording`. The next time its owner lists their recordings, it is closed as `partial`, with its marks as they were last saved (they are saved with every part).
 
-This is its own record because a recording has its own lifecycle (recording, complete, partial, deleted) that an answer doesn't have.
+## The record: `run_recordings`
 
-Grants and policies, declared beside the table: the reader may insert their own row, update it while it is `recording`, and select and delete their own rows. No other role reads it, administrators included. The service role does the sweep.
+- `id`, `user_id`, `source` (`instrument` | `form`), `ref` (the instrument's test; a form's slug), `response_id` (a form's response, when there is one), `kind` (`voice` | `video`), `mime`;
+- `started_at`, `ended_at`, `duration_ms`, `parts`, `bytes`;
+- `marks` (jsonb): `[{ id, shown_ms, answered_ms }]`;
+- `status`: `recording` | `complete` | `partial`;
+- `staff_read` (boolean, false unless a form with `#! record-staff = read` made it).
 
-## The bucket: `recordings`
+It is its own record because a recording has a lifecycle (recording, complete, partial, deleted) that an answer doesn't have.
 
-Private. Paths are `<user_id>/<recording_id>/<part>.<ext>`. The reader may insert, select and delete objects under their own folder, and nobody else may. This is unlike the `forms` bucket, which staff read: a form answer is sent to the site, but a round recording is the reader's own.
+Grants and policies, declared beside it: the owner may insert their own row (with `staff_read` false for the instrument), update it while it is `recording`, and select and delete their own rows. Administrators may select a row only when `staff_read` is true. No other role reads it. The service role does the sweep.
 
-## The recorder (`src/lib/recording.ts`)
+## The bucket: `run-recordings`
 
-- `start({ kind })` asks for the microphone, or the camera and microphone, once, at the start of the round. If the reader refuses, the round goes on unrecorded and says so.
-- `MediaRecorder` with a ten-second `timeslice`. Each part is uploaded as it arrives, in order, retried with backoff, and counted on the row.
-- Video is captured at no more than 640×480 and about 1 Mbps (about 7.5 MB a minute); voice is Opus (about 0.5 MB a minute).
-- `mark(item, 'shown' | 'answered')` records `performance.now()` offsets from the recorder's start. Nothing in the round waits on it.
-- `finish()` flushes the last part, writes `ended_at`, `duration_ms` and the marks, and sets `complete`.
-- A round left mid-way (tab closed, device asleep) stays `recording`. The next time the reader opens their recordings, the client sets it to `partial` with the parts that arrived.
+Private, video/mp4 and audio/mp4 only. The owner may insert, select and delete objects under their own folder. Administrators may select an object only when its recording row says `staff_read`. Separate from `recordings`, which holds coaching calls.
+
+## Keeping and deleting
+
+`instrument.record.keep` (and a form's `#! record-keep`, same grammar) is `{ days, afterMembership }`:
+
+- A recording is due for deletion when it is more than `days` old **and** its owner holds no live membership **and**, if they ever had one, it ended more than `afterMembership` days ago.
+- `afterMembership` omitted: members are treated like everyone else.
+- `keep` omitted: kept until the owner deletes it.
+
+`run_recordings_due()` answers which rows are due. A membership's end is the latest of its subscriptions' `current_period_end` and its membership entitlements' `expires_at`. Hourly, pg_cron calls the `run-recordings` function through pg_net (as `session-recordings-retain` does). It removes the due rows' objects through Storage and then the rows, and removes objects whose row is gone (a deleted account). Answers and results are never touched.
+
+A person deletes one recording or all of theirs from the list. Objects go first, then the row.
 
 ## Watching back
 
-- `RecordingsList.vue`: the reader's recordings, newest first, each with its date, kind, length and statement count, and a way to open or delete it. A site places it wherever its results live.
-- `RecordingPlayer.vue`: fetches the parts as signed URLs and joins them into one Blob (parts from one recorder join into one valid file). Plays it in a `<video>` or `<audio>` element with a chapter list built from the marks. A site supplies, per item, the statement's text and how it was answered, so the kit shows the site's own words and colours. Clicking a chapter jumps to its `shown_ms`. The chapter being played is highlighted.
+- `RecordingsList.vue`: the person's recordings, newest first, with date, kind, length and statement count, each opened or deleted, and Delete all. It closes any left `recording` as `partial` first.
+- `RecordingPlayer.vue`: fetches the parts through signed URLs and joins them into one Blob, played in `<video>` or `<audio>`. Every mark is a chapter. The host passes, per id, the statement's text and how it was answered (a label and a colour), so the kit shows the site's own words. Choosing a chapter seeks to its `shown_ms`. The chapter being played is highlighted.
 
-## The round's screens
+## Forms
 
-When `instrument.record.kinds` isn't empty, the round's start screen offers a choice: no recording, or each kind offered. The reader's last choice is remembered on their device. While recording, a small indicator with a Stop button shows. Stopping ends the recording but not the round.
-
-## Retention and deletion
-
-- `keep > 0`: an hourly job (pg_cron through pg_net to `recordings-sweep`, as `session-recordings-retain` does) deletes rows older than `keep` days and their objects.
-- The reader deletes one recording or all of them. Objects go first, then the row.
-- When an account is deleted, its rows cascade, and the sweep removes objects with no row.
-
-## To prove first
-
-1. A Safari (WebKit) recording made with `timeslice` joins into a playable file. Chrome's WebM parts do. If Safari's MP4 fragments don't, the fallback is to upload one file at the end on Safari only, and say so in the docs.
-2. Uploading a part every ten seconds to Supabase Storage keeps up on a phone connection.
-3. Answer timing with a recording running matches timing without one, across a full round (the latency distribution compared).
+`#! record = voice | video | either` offers a whole-form recording through the same `record` screen, before the first slide. `#! record-staff = read` lets the form's staff watch it, and `#! record-keep` sets how long it is kept. The recording names the response it belongs to.
 
 ## Not done
 
-- Sharing a recording with a coach. A natural follow-up for coaching sites, but sharing is a separate act and gets its own record and consent.
+- Sharing a private recording with a coach.
 - Transcripts.
-- A form offering a whole-run recording (`#! record`). The runner, the record and the player already serve it; what is missing is the setting, and whether a form's recording is read by its staff the way its file answers are.
+- Requiring a recording to submit a form.

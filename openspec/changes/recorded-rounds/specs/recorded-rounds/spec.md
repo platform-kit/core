@@ -1,70 +1,74 @@
 ## ADDED Requirements
 
-### Requirement: A reader may choose to record a round
+### Requirement: A person may choose to record a run
 
-When a site sets `instrument.record.kinds`, a round's start screen SHALL offer the reader no recording or each kind the site offers. Recording SHALL NOT start unless the reader chooses it. A reader who refuses the device permission SHALL continue the round unrecorded and be told so. The reader SHALL be able to stop recording during the round without ending the round.
+The question runner SHALL record a run only when its host passes a recording the person chose. A host that offers recording SHALL ask with the runner's `record` screen, listing no recording and each kind offered. Recording SHALL be offered only where the browser can encode H.264. A person who refuses the device permission SHALL continue unrecorded and be told so. The person SHALL be able to stop recording during the run without ending the run.
 
 #### Scenario: opting in to video
 
-- **WHEN** a site offers voice and video and a reader chooses video and allows the camera
-- **THEN** the round is recorded from before the first statement to after the last, and an indicator shows while it records
+- **WHEN** a host offers voice and video and the person chooses video and allows the camera
+- **THEN** the run is recorded from before the first screen to after the last, and an indicator shows while it records
 
-Verified by: a round driven in a browser with a fake camera (Chromium's fake media device)
+Verified by: DharmaLab's Abundance diagnostic driven in Chromium with a fake camera
 
 #### Scenario: no choice, no recording
 
-- **WHEN** a reader starts a round without choosing to record
+- **WHEN** the person chooses No thanks
 - **THEN** no device is asked for and nothing is recorded
 
-Verified by: a round driven in a browser
+Verified by: the same, choosing No thanks
 
-### Requirement: A recording is marked at every statement and leaves the measurement unchanged
+### Requirement: A recording is H.264, marked at every screen, and leaves the measurement unchanged
 
-A recorded round SHALL be one recording, marked for every statement with when it was shown and when it was answered, relative to the recording's start. The answers and their timing SHALL be recorded exactly as in a round with no recording.
+A recording SHALL be one fragmented MP4 per run: H.264 video with AAC sound, or AAC alone for voice. It SHALL be marked for every screen with when it was shown and answered, relative to the recording's start. The answers and their timing SHALL be recorded exactly as without a recording.
 
 #### Scenario: marks match the answers
 
-- **WHEN** a reader answers twenty statements in a recorded round
-- **THEN** the recording carries twenty marks, one per answered statement, each naming the statement and its shown and answered offsets
+- **WHEN** a person answers every statement of a recorded round
+- **THEN** the recording has one mark per answered statement, and its file plays as H.264 video
 
-Verified by: `packages/kit/build/recording.test.mts` and a round driven in a browser
+Verified by: a recorded round in Chromium, its file read back with mediabunny (`avc` and `aac` tracks)
 
 ### Requirement: A recording is kept as it is made
 
-A recording SHALL be uploaded in parts while the round is under way. A round left before its end SHALL keep every part that arrived, and SHALL be shown as partial.
+A recording SHALL be uploaded in parts while the run is under way, and the parts in order SHALL be the file. A run left before its end SHALL keep every part that arrived and SHALL be listed as partial.
 
-#### Scenario: the tab closes mid-round
+#### Scenario: the tab closes mid-run
 
-- **WHEN** a reader closes the tab halfway through a recorded round and later opens their recordings
+- **WHEN** a person closes the tab halfway through a recorded run and later opens their recordings
 - **THEN** the recording is listed as partial and plays up to the last part that arrived
 
-Verified by: a round driven in a browser and closed mid-way
+Verified by: a recorded round in Chromium, closed mid-way
 
-### Requirement: Only the reader can watch their recording
+### Requirement: A recording is private unless a form shares it with its staff
 
-Round recordings and their files SHALL be readable and deletable only by the reader who made them. No other account SHALL read them, administrators included. A reader SHALL be able to delete one recording or all of their recordings. When a site sets `keep`, recordings older than that many days SHALL be deleted with their files.
+A recording and its files SHALL be readable and deletable by the person who made it. No other account SHALL read them, administrators included, unless the recording was made for a form that sets `#! record-staff = read`, in which case administrators SHALL be able to read it. The instrument's recordings SHALL always be private.
 
-#### Scenario: another account, and an administrator
+#### Scenario: another person, and an administrator
 
-- **WHEN** another reader or an administrator asks for a reader's recording row or its file
+- **WHEN** another person or an administrator asks for an instrument recording's row or its file
 - **THEN** both are refused
 
-Verified by: `packages/kit/build/recordings-db.test.mts`
+Verified by: the policies exercised as each role on the development database, inside a transaction rolled back
 
-#### Scenario: kept for a set time
+### Requirement: Recordings are kept by membership
 
-- **WHEN** a site sets `keep: 30` and a recording is 31 days old when the sweep runs
-- **THEN** the row and its files are gone
+With `keep: { days, afterMembership }`, a recording SHALL be deleted, with its files, when it is more than `days` old, its owner holds no live membership, and any membership they held ended more than `afterMembership` days ago. Answers and results SHALL never be deleted by this.
 
-Verified by: `packages/kit/build/recordings-db.test.mts`
+#### Scenario: a free reader, a member and a former member
 
-### Requirement: A reader can watch a round back by statement
+- **WHEN** `keep` is `{ days: 90, afterMembership: 90 }` and the sweep runs over three recordings, each 120 days old: one by a person who never had a membership, one by a current member, and one by a member whose membership ended 100 days ago
+- **THEN** the first and third are deleted with their files, the second is kept, and everyone's answers remain
 
-The kit SHALL list a reader's recordings and SHALL play one with a chapter for every marked statement, showing the statement and the answer given to it in the site's own words, and jumping to a statement when it is chosen.
+Verified by: `run_recordings_due` on the development database, inside a transaction rolled back
+
+### Requirement: A person can watch a run back by statement and delete it
+
+The kit SHALL list a person's recordings and play one with a chapter for every marked screen, showing the host's text and answer label for it, and seeking to it when chosen. A person SHALL be able to delete one recording or all of theirs.
 
 #### Scenario: jumping to a statement
 
-- **WHEN** a reader opens a recording and chooses the seventh statement
-- **THEN** playback moves to the moment that statement was shown, and the seventh chapter is highlighted with the answer they gave
+- **WHEN** a person opens a recording and chooses the third statement
+- **THEN** playback moves to the moment it was shown, and that chapter is highlighted with the answer they gave
 
-Verified by: a recording played back in a browser
+Verified by: a recording played back in Chromium

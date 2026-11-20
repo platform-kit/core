@@ -15,7 +15,7 @@ sources:
     packages/kit/theme/src/instrument/ui/screens/form/FmList.vue,
     packages/kit/supabase/functions/form/index.ts,
   ]
-reviewed: 2026-11-10
+reviewed: 2026-11-20
 ---
 
 A form is a few questions on slides — a contact form, a survey, an application, a quiz — that somebody answers one slide at a time, in the site's design. Every answer lands in the site's own database the moment a slide is finished, so a form left half-done is picked up where it was left, on any device; a finished response can be sent on to another system; and the admin shows every response and the numbers. Module: `forms`.
@@ -39,6 +39,8 @@ The field's **name** is what its answer is filed under: set from the question th
 A piece of **text** is edited in the markdown editor. `{$ name $}` in it shows what somebody answered under that name — _Thank you, {$ name $}_ on the end slide.
 
 **Settings** holds what the document says about itself: its title and description (the page's head); how it is shown — a form slide by slide (the default), slides with nothing posted (a presentation), or one page; the progress bar (shown, hidden, or decorative); the Previous and Next controls; a restart at the end; the button text on a form slide; whether the first field takes focus on every slide; the button alignment. Then the site's own: **Published**; **One answer per person** (a second attempt from the same person is refused, and the end shows _You've already answered this one_); **Who may answer** (anyone, or signed-in people — a guest is asked to sign in first); the **sites that may embed it**; a **webhook** — an address every finished response is sent to. Under **Scoring**, mark the right answer on any choice, drop-down, picture, rating or scale field and the form is a quiz: the end slide says _4 of 5_ and _Passed_ or _Not this time_ against the pass mark you set. **After a failed attempt** says what the next attempt asks: the whole quiz again (the default), or only the questions that were wrong (`#! on-failure = retake-missed`). Then the right answers carry over, and the new attempt is scored on every question.
+
+A form may also offer to **record the whole form**, voice or video, with `#! record = voice | video | either`. The person is asked before the first slide and may say no; nothing is recorded unless they choose it. A recording is the person's own unless the form sets `#! record-staff = read`, and then its staff can watch it too, and the person is told so when asked. `#! record-keep = 90` deletes a recording after 90 days, and `#! record-keep-after-membership = 90` keeps a member's for as long as they are a member and 90 days after. A single recorded answer is still the Voice answer and Video answer fields.
 
 **Share** shows the three ways to a form — its own page, the snippet for another site, the landing section — every address the one the admin is open on — with a copy button each.
 

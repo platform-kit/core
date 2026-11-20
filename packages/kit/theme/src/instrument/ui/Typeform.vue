@@ -2,6 +2,7 @@
 import type { PropType } from 'vue'
 import { ref, computed, watch, defineAsyncComponent } from 'vue'
 import { VOICE } from 'platformkit/instrument/engine/voice.js'
+import { us } from 'platformkit/lib/strings.js'
 import ChoiceScreen from './screens/ChoiceScreen.vue'
 import InfoScreen from './screens/InfoScreen.vue'
 import LatencyScreen from './screens/LatencyScreen.vue'
@@ -21,7 +22,13 @@ const FormScreen = defineAsyncComponent(() => import('./screens/form/FormScreen.
 const props = defineProps({
   screens: { type: Array as PropType<any[]>, required: true },
   title: { type: String, default: '' },
+  /* A RUN BEING RECORDED (openspec: recorded-rounds): the recorder its host started (lib/recording.ts createRunRecorder),
+     or none. The runner only marks it — each screen as shown and as answered, by the screen's `mark` (a statement shown
+     on two screens is one chapter) or else its id — and offers Stop; the host started it and finishes it. */
+  recorder: { type: Object as PropType<any>, default: null },
 })
+const RW = computed(() => ((us('recording').page || {}).main || {}))
+const markOf = (s: any) => (s && (s.mark ?? s.id)) || ''
 const emit = defineEmits(['answer', 'complete', 'label', 'progress'])
 
 const KINDS: any = { choice: ChoiceScreen, info: InfoScreen, latency: LatencyScreen, speak: SpeakScreen, blank: BlankScreen, books: BooksScreen, pick: PickScreen, form: FormScreen }
@@ -54,7 +61,7 @@ function settle(n: number) {
 const current = computed(() => props.screens[settle(i.value)] || null)
 /* when the current screen appeared, so an answer can carry how long it took */
 let shownAt = Date.now()
-watch(current, () => { shownAt = Date.now() })
+watch(current, (s) => { shownAt = Date.now(); if (props.recorder && s) props.recorder.mark(markOf(s), 'shown') }, { immediate: true })
 const component = computed(() => (current.value ? KINDS[current.value.kind] || ChoiceScreen : null))
 
 function report() {
@@ -71,6 +78,7 @@ function onAnswer(value: any, extra?: any) {
   const s = current.value
   const ex = Object.assign({}, extra || {}, { ms: Date.now() - shownAt })
   answers.push({ id: s.id, value, extra: ex, meta: s.meta || null })
+  if (props.recorder) props.recorder.mark(markOf(s), 'answered')
   emit('answer', s, value, ex)
   i.value = settle(i.value) + 1
 }
@@ -100,6 +108,10 @@ defineExpose({ key, back, index: () => settle(i.value), total: () => props.scree
 </script>
 
 <template>
+  <div v-if="recorder && recorder.recording.value" class="tf-rec" role="status">
+    <span class="tf-rec-dot" aria-hidden="true" />{{ RW.indicator }}
+    <button type="button" class="tf-rec-stop" @click="recorder.finish()">{{ RW.stop }}</button>
+  </div>
   <component
     :is="component"
     v-if="current"
@@ -108,3 +120,13 @@ defineExpose({ key, back, index: () => settle(i.value), total: () => props.scree
     @answer="onAnswer"
   />
 </template>
+
+<style scoped>
+/* the one sign a run is being recorded, and the way to stop it; the run goes on either way */
+.tf-rec { position: fixed; top: 76px; right: 16px; z-index: 30; display: inline-flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px;
+  border: 1px solid var(--hair, #0002); border-radius: 999px; background: var(--paper, #fff); color: var(--ink, #111); font-size: .85rem; box-shadow: 0 6px 18px -10px #0006 }
+.tf-rec-dot { width: 8px; height: 8px; border-radius: 50%; background: #d92d20; animation: tf-rec-pulse 1.6s ease-in-out infinite }
+.tf-rec-stop { padding: 3px 10px; border: 1px solid var(--hair, #0002); border-radius: 999px; background: transparent; font: inherit; color: inherit; cursor: pointer }
+@keyframes tf-rec-pulse { 50% { opacity: .35 } }
+@media (prefers-reduced-motion: reduce) { .tf-rec-dot { animation: none } }
+</style>

@@ -43,7 +43,7 @@ const m = parseForm(fixture('every-kind.md'))
 t('the fixture parses with no error', () => assert.deepEqual(m.errors, []))
 t('the settings: forms.md\'s (defaults filled) and the kit\'s', () => {
   assert.equal(m.settings.title, 'Every kind'); assert.equal(m.settings['page-progress'], 'show'); assert.equal(m.settings.page, 'form-slides'); assert.equal(m.settings.accent, '0, 102, 255')
-  assert.deepEqual(m.kit, { published: true, once: true, respond: 'anyone', embedOrigins: ['https://example.com', 'http://localhost:3000'], webhook: 'https://example.com/hook', pass: 1, score: { pick: 'b' }, paid: '', ticket: '', ticketTitle: '', ticketPriority: '', workbook: false, uses: {}, about: null, onFailure: 'retake-all' })
+  assert.deepEqual(m.kit, { published: true, once: true, respond: 'anyone', embedOrigins: ['https://example.com', 'http://localhost:3000'], webhook: 'https://example.com/hook', pass: 1, score: { pick: 'b' }, paid: '', ticket: '', ticketTitle: '', ticketPriority: '', workbook: false, uses: {}, about: null, onFailure: 'retake-all', record: [], recordStaff: false, recordKeep: null })
 })
 t('the data block is read', () => assert.deepEqual(m.data, { brand: 'Acme', plans: ['Free', 'Pro'] }))
 t('the slides: start first, the bodies, the end last', () => assert.deepEqual(m.slides.map((s) => s.type), ['start', 'body', 'body', 'body', 'body', 'end']))
@@ -236,6 +236,25 @@ t('on-failure is refused where no attempt can fail or be taken again', () => {
   assert.match(e('#! score = x: a\n#! pass = 1\n#! once = true\n#! on-failure = retake-missed\n'), /^4 .*once/)
   assert.match(e('#! workbook = true\n#! on-failure = retake-missed\n'), /workbook/)
   assert.match(e('#! score = x: a\n#! pass = 1\n#! on-failure = some\n'), /retake-all or retake-missed/)
+})
+
+/* ---- a whole-form recording (openspec: recorded-rounds) ---- */
+t('a form may offer a recording, say whether its staff watch it, and how long it is kept', () => {
+  const field = '\nx = TextInput(| question = Q)'
+  const none = parseForm(field).kit
+  assert.deepEqual(none.record, []); assert.equal(none.recordStaff, false); assert.equal(none.recordKeep, null)
+  const m = parseForm('#! record = either\n#! record-staff = read\n#! record-keep = 90\n#! record-keep-after-membership = 90' + field)
+  assert.deepEqual(m.errors, [])
+  assert.deepEqual(m.kit.record, ['voice', 'video']); assert.equal(m.kit.recordStaff, true); assert.deepEqual(m.kit.recordKeep, { days: 90, afterMembership: 90 })
+  assert.deepEqual(parseForm('#! record = video' + field).kit.record, ['video'])
+})
+t('the recording settings are refused when they make no sense', () => {
+  const field = '\nx = TextInput(| question = Q)'
+  const e = (head: string) => parseForm(head + field).errors.map((x: any) => x.line + ' ' + x.message).join(' / ')
+  assert.match(e('#! record = audio\n'), /voice, video or either/)
+  assert.match(e('#! record-staff = read\n'), /needs "record" first/)
+  assert.match(e('#! record = voice\n#! record-keep = forever\n'), /number of days/)
+  assert.match(e('#! record = voice\n#! record-keep-after-membership = 90\n'), /needs "record-keep"/)
 })
 
 console.log(`forms: ${n - bad}/${n} pass`)

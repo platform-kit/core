@@ -173,7 +173,9 @@ const LISTED: Array<ModuleDeclaration | string> = [
     pages: [
       { name: 'FormPage', order: 120, page: 'theme:pages/FormPage.vue', test: 'platformkit/lib/page-routes.js#form', keyBy: 'route', props: { path: 'route' } },
     ],
-    owns: { steps: ['form-embed', 'forms'], schema: ['25-forms.sql'], functions: ['form', 'forms-api'] },
+    owns: { steps: ['form-embed', 'forms'], schema: ['25-forms.sql', '26-run-recordings.sql'], functions: ['form', 'forms-api', 'run-recordings'],
+      /* a recorded run kept by membership, and the files of a deleted one (openspec: recorded-rounds) */
+      cron: [{ name: 'run-recordings-sweep', schedule: '37 * * * *', command: 'select public.run_run_recordings_sweep()' }] },
   },
   /* funnels: in its own folder, packages/kit/modules/funnels/ */
   'funnels',

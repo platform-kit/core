@@ -8,7 +8,8 @@ import type { PropType } from 'vue'
  * starts — closed, already answered, sign in first. Used by the form's own page (/form/<slug>), by a
  * landing page's Form section, and by the embed on another site.
  */
-import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, shallowRef, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { canRecord, createRunRecorder } from 'platformkit/lib/recording.js'
 import Typeform from '../../instrument/ui/Typeform.vue'
 import { formScreens } from 'platformkit/lib/forms/screens.js'
 import { context } from 'platformkit/lib/forms/logic.js'
@@ -165,6 +166,8 @@ let ro: any = null
 function finish(r: any) {
   done.value = true
   if (tf) tf.submit(props.form.slug, r && r.response_id ? r.response_id : '')
+  /* the response is named while the recording is still open — a finished one is no longer its owner's to change */
+  if (recorder.value) { const rec = recorder.value; recorder.value = null; const named = r && r.response_id ? (supabase as any).from('run_recordings').update({ response_id: r.response_id }).eq('id', rec.id) : Promise.resolve(); Promise.resolve(named).then(() => rec.finish()) }
   state.grade = Object.keys(kit.value.score || {}).length ? (r && r.score != null ? { score: r.score, total: r.total, passed: r.passed } : gradeOf(kit.value.score, answers, kit.value.pass)) : null
   capture('form_complete', { form: props.form.slug, score: state.grade ? state.grade.score : null })
   /* the response's own id goes with it: a caller that must point at what was answered — a space
@@ -182,6 +185,29 @@ function onAnswer(screen: { index: number; last: any }, values: any) {
   if (screen.last && end && end.redirect && !props.embed) setTimeout(() => { location.href = end.redirect }, 400)
 }
 function onComplete() { /* the runner has run past the end slide: nothing beyond it */ }
+
+/* A WHOLE-FORM RECORDING (`#! record`; openspec: recorded-rounds), offered before the first slide to somebody signed in,
+   never on by default. Asked in a panel rather than as a slide, so a resumed form's slide numbers stay as they were.
+   The runner marks it at every slide; finishing the form finishes it and names the response it belongs to. */
+const RW = computed(() => ((us('recording').page || {}).main || {}))
+const recAsk = ref(false)
+const recKinds = ref<string[]>([])
+const recNote = ref('')
+const recorder = shallowRef<any>(null)
+async function offerRecording() {
+  const kinds = (kit.value.record || []) as string[]
+  if (!kinds.length || !isSignedIn.value || done.value) return
+  const ok: string[] = []
+  for (const k of kinds) if (await canRecord(k as any)) ok.push(k)
+  if (ok.length) { recKinds.value = ok; recAsk.value = true }
+}
+async function chooseRecording(kind: string) {
+  recAsk.value = false
+  if (kind === 'none') return
+  const r = createRunRecorder({ kind: kind as any, source: 'form', ref: props.form.slug, staffRead: !!kit.value.recordStaff, keep: kit.value.recordKeep || null })
+  if (await r.start()) recorder.value = r
+  else recNote.value = RW.value[r.failed.value === 'denied' ? 'denied' : 'failed'] || ''
+}
 /* slide controls: the runner's back, and the current screen's submit */
 const current = ref<any>(null)
 const index = ref(0)
@@ -230,6 +256,7 @@ onMounted(async () => {
       else if (r && r.answers && Object.keys(r.answers).length) started.value = true
     }
   } catch (e) { if (e && (e as any).code === 'signin') state.signin = true }
+  await offerRecording()
   placeStart()
   ready.value = true
   if (tf) {
@@ -282,7 +309,16 @@ const shown = computed(() => (state.signin || state.unpaid || !ready.value ? [] 
           <div class="fact"><button type="button" class="qbtn" :disabled="paying" @click="pay">{{ paying ? W['pay-going'] : W['pay-button'] }}</button></div>
           <p v-if="payError" class="ff-msg" role="alert">{{ payError }}</p>
         </div>
-        <Typeform v-else-if="shown.length" ref="runner" :key="key + ':' + startAt" :screens="shown" @answer="onAnswer" @complete="onComplete" @label="(l) => (label = l)" @progress="() => sync()" />
+        <!-- a whole-form recording, offered once before the first slide (#! record) -->
+        <div v-else-if="recAsk" class="qzin fend">
+          <h3 class="qh">{{ RW['choice-title'] }}</h3>
+          <p class="qsay">{{ kit.recordStaff ? RW['choice-body-staff'] : RW['choice-body'] }}</p>
+          <div class="fact"><button type="button" class="qbtn" @click="chooseRecording('none')">{{ RW.none }}</button><button v-for="k in recKinds" :key="k" type="button" class="qbtn" @click="chooseRecording(k)">{{ RW[k] }}</button></div>
+        </div>
+        <template v-else-if="shown.length">
+          <p v-if="recNote" class="ff-msg" role="status">{{ recNote }}</p>
+          <Typeform :recorder="recorder" ref="runner" :key="key + ':' + startAt" :screens="shown" @answer="onAnswer" @complete="onComplete" @label="(l) => (label = l)" @progress="() => sync()" />
+        </template>
         <div v-else class="qzin fend"><p class="qsay">{{ W.loading }}…</p></div>
       </div>
     </div>

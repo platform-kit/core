@@ -4,6 +4,13 @@ description: The document, the parser and its model, the vendored parts of forms
 order: 56.5
 sources:
   [
+    packages/kit/src/lib/recording.ts,
+    packages/kit/supabase/schemas/26-run-recordings.sql,
+    packages/kit/supabase/functions/run-recordings,
+    packages/kit/supabase/data/forms.sql,
+    packages/kit/theme/src/components/recording,
+    packages/kit/theme/src/content/ui/recording.md,
+    packages/kit/theme/src/instrument/ui/Typeform.vue,
     packages/kit/src/lib/forms,
     packages/kit/vendor/formsmd,
     packages/kit/build/forms.mts,
@@ -20,7 +27,7 @@ sources:
     packages/kit/theme/src/pages/FormPage.vue,
     packages/kit/build/embed-content.mts,
   ]
-reviewed: 2026-11-17
+reviewed: 2026-11-20
 ---
 
 The forms module is forms.md's language on the kit's own runner, with the backend forms.md lacks. This page is how it is put together; [Forms](/docs/running-a-site/marketing/forms) is what it does.
@@ -31,20 +38,25 @@ A form's webhook subscriptions carry a **source**: one made through the Forms AP
 > machine and from the rows in an Edge Function — which is what lets a publish make this artefact
 > where the deployment will never build again ([cloud mode](/content/docs/running-a-site/settings/cloud-mode)).
 
+## A recorded run
+
+The question runner (`Typeform.vue`, which forms and the instrument share) records a whole run when its host passes a recorder (`createRunRecorder` in `src/lib/recording.ts`): one recording per run, never one per question, because the instrument's timing is its measurement and a recorder started at each statement would cost the very pause a shadow is read from. The runner marks each screen as shown and as answered, by its `mark` (a statement shown on two screens is one chapter) or else its id, and shows a Recording indicator with Stop. Video is H.264 with AAC, voice is AAC, in a fragmented MP4 through mediabunny, which only appends, so every megabyte is uploaded as the next part as it is made and the parts in order are the file. Where a browser encodes no AAC itself, `@mediabunny/aac-encoder` is registered first. The row is `run_recordings` (`26-run-recordings.sql`), the files are the private `run-recordings` bucket under `<user>/<recording>/`. Only the owner reads them, and the staff too where a form set `staff_read`; an instrument recording can never be staff-readable. `run_recordings_due` answers which recordings have outlived their `keep`, and the `run-recordings` function, called hourly, deletes them and empties the folder of every deleted recording. `RecordingsList.vue` and `RecordingPlayer.vue` show a person their recordings and play one by chapter, in the host's words.
+
 ## The document
 
 `content/forms/<slug>.md` is a [forms.md](https://docs.forms.md) document, exactly — no frontmatter of the kit's own. Its `#! key = value` settings are the frontmatter: forms.md's (`title`, `page`, `page-progress`, `slide-controls`, `restart-button`, `submit-button-text`, `autofocus`, `button-alignment`, `dir`, `slide-delimiter`, `form-delimiter`…) and the kit's few:
 
-| Setting         | Meaning                                                                                        |
-| --------------- | ---------------------------------------------------------------------------------------------- |
-| `published`     | `false` keeps the form off the site (the function answers _closed_)                            |
-| `once`          | `true`: one response per person; a second is refused                                           |
-| `respond`       | `anyone` (default) or `authenticated`                                                          |
-| `embed-origins` | the origins another site may embed it from, comma-separated                                    |
-| `webhook`       | a url every finished response is posted to                                                     |
-| `pass`          | a quiz's pass mark, in right answers                                                           |
-| `score`         | the right answers, `field: answer, field: answer` (a choice allowing several: `field: a \| b`) |
-| `on-failure`    | what an attempt after a failed one asks: `retake-all` (default) or `retake-missed`             |
+| Setting         | Meaning                                                                                                                                                                                                     |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `published`     | `false` keeps the form off the site (the function answers _closed_)                                                                                                                                         |
+| `once`          | `true`: one response per person; a second is refused                                                                                                                                                        |
+| `respond`       | `anyone` (default) or `authenticated`                                                                                                                                                                       |
+| `embed-origins` | the origins another site may embed it from, comma-separated                                                                                                                                                 |
+| `webhook`       | a url every finished response is posted to                                                                                                                                                                  |
+| `pass`          | a quiz's pass mark, in right answers                                                                                                                                                                        |
+| `score`         | the right answers, `field: answer, field: answer` (a choice allowing several: `field: a \| b`)                                                                                                              |
+| `on-failure`    | what an attempt after a failed one asks: `retake-all` (default) or `retake-missed`                                                                                                                          |
+| `record`        | a whole-form recording the respondent may choose: `voice`, `video` or `either` (none unless said); `record-staff = read` lets the staff watch it; `record-keep` and `record-keep-after-membership` are days |
 
 With `retake-missed`, the `form` function copies the right answers of a person's last attempt, where it failed, into the next attempt as it is created, and `get` returns them as `carried`. The runner passes over every slide whose questions are all carried, closes the response on the last slide still asked, and spreads the progress over the slides asked. The attempt is graded on every question, carried ones included. It needs a pass mark, and is refused with `workbook` or `once`.
 

@@ -306,8 +306,25 @@ export const networkOf = (c: any) => {
     link: n.link === 'none' ? 'none' : 'always',
   }
 }
+/* RECORDING A RUN (instrument.record; openspec: recorded-rounds): the kinds a reader may choose, none unless said, and
+   how long a recording is kept — { days, afterMembership }, both whole days; keep omitted is until its owner deletes it */
+export const keepOf = (k: any, where: string) => {
+  if (k == null) return null
+  const n = (v: any, name: string) => { if (v == null) return null; const x = Number(v); if (!Number.isInteger(x) || x < 1) throw new Error(`${where}.keep.${name}: a whole number of days, at least 1`); return x }
+  if (typeof k !== 'object') throw new Error(`${where}.keep: { days, afterMembership }`)
+  const days = n(k.days, 'days'); if (days == null) throw new Error(`${where}.keep: needs days`)
+  return { days, afterMembership: n(k.afterMembership, 'afterMembership') }
+}
+export const recordOf = (c: any) => {
+  const r = (c.instrument || {}).record
+  if (!r) return null
+  const kinds = (Array.isArray(r.kinds) ? r.kinds : []).map(String)
+  const odd = kinds.filter((k: string) => k !== 'voice' && k !== 'video')
+  if (odd.length) throw new Error(`instrument.record.kinds: ${odd.join(', ')} — the kinds are voice and video`)
+  return kinds.length ? { kinds, keep: keepOf(r.keep, 'instrument.record') } : null
+}
 /* what the browser may know: no paths */
-export const publicSite = (c: any) => ({ name: c.name, theme: c.theme, modules: c.modules, deployment: deploymentOf(c), looks: Object.keys(c.looks), defaultLook: c.defaultLook, languages: c.languages, api: apiOf(c), spaces: spacesOf(c), coaching: coachingOf(c), courses: coursesOf(c), network: networkOf(c), community: communityOf(c), payments: paymentProviderPublicSettingsOf(c) })
+export const publicSite = (c: any) => ({ name: c.name, theme: c.theme, modules: c.modules, deployment: deploymentOf(c), looks: Object.keys(c.looks), defaultLook: c.defaultLook, languages: c.languages, api: apiOf(c), spaces: spacesOf(c), coaching: coachingOf(c), courses: coursesOf(c), network: networkOf(c), record: recordOf(c), community: communityOf(c), payments: paymentProviderPublicSettingsOf(c) })
 /* how the community shows in the site's header. A site whose community is the point of it wants the
    word — "Community", "Forum", "The Guild" — and a site where it is one thing among many wants the
    icon back. The WORD itself is never here: it is nav.spaces in the strings, like every other visible
