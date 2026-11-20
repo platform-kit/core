@@ -2776,8 +2776,32 @@ details.disc > summary .tag {
   box-sizing: border-box;
   border-bottom: 1px solid var(--hair);
   background: var(--paper);
+  /* THREE COLUMNS: an empty one, the content column, and the far right. The content column holds the
+     brand, the search, the places to go and the call to action, on the same width as the page below;
+     the account and what is waiting for the person sit at the window's right edge, apart from them.
+     The right column is never narrower than what it holds, so on a narrow window the content column
+     gives way to it rather than running under it. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1120px) minmax(max-content, 1fr);
+  align-items: center;
+}
+.sitehead-end {
+  grid-column: 3;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 28px;
+  transition: opacity 0.35s ease;
+}
+.sitehead-end.settling {
+  opacity: 0;
+  pointer-events: none;
 }
 .sitehead-in {
+  grid-column: 2;
+  width: 100%;
+  min-width: 0;
   height: 100%;
   max-width: 1120px;
   margin: 0 auto;
@@ -2913,21 +2937,21 @@ details.disc > summary .tag {
 .sitehead-in[data-fit='menu'] .sitenav .sitecta {
   display: none;
 }
-.sitehead-in[data-fit='menu'] .sitenav .sitemenu-btn,
-.sitenav .sitemenu-btn.sitemenu-on {
+.sitehead-end .sitemenu-btn.sitemenu-on {
   display: inline-flex;
 }
-.sitenav .sitemenu-btn {
+.sitehead-end .sitemenu-btn {
   display: none;
 }
 @media (max-width: 900px) {
   .sitenav .sitelink {
     display: none;
   }
-  .sitenav .sitecta {
+  .sitenav .sitecta,
+  .sitehead-end .sitecta {
     display: none;
   }
-  .sitenav .sitemenu-btn {
+  .sitehead-end .sitemenu-btn {
     display: inline-flex;
   }
 }
@@ -3183,13 +3207,17 @@ button.sitecta {
   .sitenav {
     gap: 8px;
   }
+  .sitehead-end {
+    gap: 8px;
+    padding-right: 14px;
+  }
   /* a phone's bar holds four buttons at most beside the wordmark — search, the bag, the account,
      the menu; the theme and the chat go into the menu (a waiting message shows on its button) */
-  .sitenav .sitemode,
-  .sitenav .sitechat {
+  .sitehead-end .sitemode,
+  .sitehead-end .sitechat {
     display: none;
   }
-  .sitenav .sitemenu-btn {
+  .sitehead-end .sitemenu-btn {
     position: relative;
   }
 }

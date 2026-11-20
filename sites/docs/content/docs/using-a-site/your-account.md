@@ -4,6 +4,7 @@ description: Find what your account saves, how memberships and purchases work, a
 order: 31
 sources:
   [
+    packages/kit/theme/src/layouts/SiteLayout.vue,
     packages/kit/theme/src/components/AuthModal.vue,
     packages/kit/theme/src/pages/BillingPortalPage.vue,
     packages/kit/theme/src/pages/SignInPage.vue,
@@ -11,7 +12,7 @@ sources:
     packages/kit/src/lib/downloads.ts,
     packages/kit/src/lib/booking.ts,
   ]
-reviewed: 2026-11-18
+reviewed: 2026-11-20
 ---
 
 ## An account
@@ -21,6 +22,8 @@ An account keeps your place in books, your personal highlights, quiz results and
 A new account can sign in immediately. The site also sends a confirmation link to the email address. Some features—such as seeing reading results or receiving a support reply by email—require a confirmed address. Select the link in that email to confirm it.
 
 The Billing page is separate from Your account. It shows membership and payment details, and any payment plan or fixed term you're in: the payments made and left, when a term ends, anything owed, and whether a payment was missed. A plan with payments still to make can't be cancelled there; its Usage view appears only on sites with a published metered subscription. If you arrive signed out, sign in before your details appear. The reusable full-page sign-in layout has no contextual copy or artwork by default. Each route can supply a `copy` object (`eyebrow`, `title`, and `description`) and an optional `art` slot. Billing supplies route-specific sign-in copy and no artwork. The page offers the options configured for that site and includes password recovery.
+
+The account menu is the picture at the far right of the header, apart from the site's links and its main button. It holds Your account, Billing, **Dark mode** (or **Light mode**) and Sign out. Signed out, the theme switch sits there beside **Sign in** instead; on a phone, both are in the menu.
 
 Your account menu opens **Your account**, where you can choose an avatar style or upload your own picture. The picture you choose replaces the generated avatar. To create or edit a public profile page, see [A person's own page](/content/docs/running-a-site/community/people-and-profiles).
 

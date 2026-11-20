@@ -304,16 +304,15 @@ const props = defineProps({
             <path d="M13.5 13.5 L17.5 17.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
           </svg>
         </button>
-        <button type="button" class="sitetheme sitemode" :title="isDark ? t('nav.theme-light') : t('nav.theme-dark')"
-                :aria-label="isDark ? t('nav.theme-light') : t('nav.theme-dark')" @click="flipTheme">
-          <svg v-if="isDark" viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
-            <circle cx="10" cy="10" r="4.2" fill="none" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M10 1.6v2.2M10 16.2v2.2M1.6 10h2.2M16.2 10h2.2M4 4l1.6 1.6M14.4 14.4L16 16M16 4l-1.6 1.6M5.6 14.4L4 16" stroke="currentColor" stroke-width="1.5"/>
-          </svg>
-          <svg v-else viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
-            <path d="M16.5 12.1A7 7 0 0 1 7.9 3.5a7 7 0 1 0 8.6 8.6Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-          </svg>
-        </button>
+        <!-- signed out, the button starts a round; signed in, it is the door to the app -->
+        <a v-if="CTA" class="sitecta" :class="{ on: ctaOn }" :href="ctaHref">
+          {{ ctaLabel }}
+        </a>
+      </nav>
+    </div>
+    <!-- THE FAR RIGHT: the person, and what is waiting for them. Outside the content column, so the
+         column holds only the places to go and the call to action; the theme is in the account menu. -->
+    <div class="sitehead-end" :class="{ settling: !authSettled }">
         <!-- the network: the reader's timeline, and how much has happened to them since they looked -->
         <a v-if="networkOn" class="sitetheme sitechat" :class="{ on: current.startsWith(ROUTES.feed) }" :href="ROUTES.feed" :title="NW.title" :aria-label="NW.title + (netUnread ? ', ' + netUnread + ' ' + NW.notes : '')">
           <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 9 10 3.5 16.5 9v7.5h-13z" /><path d="M8 16.5v-4h4v4" /></svg>
@@ -340,6 +339,17 @@ const props = defineProps({
           </svg>
           <span v-if="bagCount" class="sitebag-n">{{ bagCount }}</span>
         </button>
+        <!-- the theme: in the account menu for a signed-in person; with no menu to hold it, here -->
+        <button v-if="!isSignedIn" type="button" class="sitetheme sitemode" :title="isDark ? t('nav.theme-light') : t('nav.theme-dark')"
+                :aria-label="isDark ? t('nav.theme-light') : t('nav.theme-dark')" @click="flipTheme">
+          <svg v-if="isDark" viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
+            <circle cx="10" cy="10" r="4.2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M10 1.6v2.2M10 16.2v2.2M1.6 10h2.2M16.2 10h2.2M4 4l1.6 1.6M14.4 14.4L16 16M16 4l-1.6 1.6M5.6 14.4L4 16" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+          <svg v-else viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
+            <path d="M16.5 12.1A7 7 0 0 1 7.9 3.5a7 7 0 1 0 8.6 8.6Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+        </button>
         <div v-if="isSignedIn" class="siteacct">
           <button type="button" class="sitetheme siteavatar" :title="A.account" :aria-label="A.account"
                   :class="{ 'siteavatar-face': face }"
@@ -354,15 +364,12 @@ const props = defineProps({
             <a v-if="isStaff" class="siteacct-out siteacct-admin" role="menuitem" :href="ROUTES.admin" @click="acctOpen = false">{{ A.admin }}</a>
             <!-- a subscriber's billing: the portal (cards, invoices, cancel) -->
             <button v-if="plan" type="button" class="siteacct-out" role="menuitem" @click="acctOpen = false; openPortal()">{{ A.manage }}</button>
+            <button type="button" class="siteacct-out" role="menuitem" @click="flipTheme">{{ isDark ? t('nav.theme-light') : t('nav.theme-dark') }}</button>
             <button type="button" class="siteacct-out" role="menuitem" @click="doSignOut">{{ A.signout }}</button>
           </div>
         </div>
         <!-- sign-in only where a module reads the account; a signed-in staff member keeps their menu anywhere -->
         <button v-else-if="ACCOUNTS_ON" type="button" class="sitecta" @click="openAuth">{{ A['btn-signin'] }}</button>
-        <!-- signed out, the button starts a round; signed in, it is the door to the app -->
-        <a v-if="CTA" class="sitecta" :class="{ on: ctaOn }" :href="ctaHref">
-          {{ ctaLabel }}
-        </a>
         <button type="button" class="sitetheme sitemenu-btn" :class="{ 'sitemenu-on': menuNeeded }" aria-label="Open menu"
                 :aria-expanded="menuOpen" @click="menuOpen = true">
           <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
@@ -371,7 +378,6 @@ const props = defineProps({
           <!-- on a phone the chat button lives in the menu, so the bar still says a message is waiting -->
           <span v-if="(chatOn && unread) || (spacesOn && spaceWaiting) || (networkOn && netUnread)" class="sitebag-n">{{ Math.min(99, (chatOn ? unread : 0) + (spacesOn ? spaceWaiting : 0) + (networkOn ? netUnread : 0)) }}{{ (chatOn ? unread : 0) + (spacesOn ? spaceWaiting : 0) + (networkOn ? netUnread : 0) > 99 ? '+' : '' }}</span>
         </button>
-      </nav>
     </div>
   </header>
 
