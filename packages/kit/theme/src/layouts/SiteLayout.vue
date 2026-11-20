@@ -219,6 +219,18 @@ startSpacesWatch()
 if (moduleOn('network')) startNetworkWatch()
 function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() }
 async function doSignOut() { acctOpen.value = false; await signOut() }
+/* THE MENU OPENS ON HOVER where there is a mouse (a phone keeps the tap). It closes a beat after the
+   pointer leaves, so crossing from the picture to the menu does not shut it, and a click on the picture
+   right after hovering open keeps it open rather than toggling it shut under the pointer. */
+let acctTimer: any = null, acctHovered = 0
+const canHover = () => typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches
+function hoverAcct(on: boolean) {
+  if (!canHover()) return
+  clearTimeout(acctTimer)
+  if (on) { if (!acctOpen.value) acctHovered = Date.now(); acctOpen.value = true }
+  else acctTimer = setTimeout(() => { acctOpen.value = false }, 200)
+}
+function clickAcct() { acctOpen.value = Date.now() - acctHovered < 600 ? true : !acctOpen.value }
 function closeAcct(e: any) { if (acctOpen.value && !(e.target.closest && e.target.closest('.siteacct'))) acctOpen.value = false }
 onMounted(() => document.addEventListener('click', closeAcct))
 onUnmounted(() => document.removeEventListener('click', closeAcct))
@@ -350,10 +362,10 @@ const props = defineProps({
             <path d="M16.5 12.1A7 7 0 0 1 7.9 3.5a7 7 0 1 0 8.6 8.6Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
           </svg>
         </button>
-        <div v-if="isSignedIn" class="siteacct">
+        <div v-if="isSignedIn" class="siteacct" @mouseenter="hoverAcct(true)" @mouseleave="hoverAcct(false)">
           <button type="button" class="sitetheme siteavatar" :title="A.account" :aria-label="A.account"
                   :class="{ 'siteavatar-face': face }"
-                  :aria-expanded="acctOpen" @click="acctOpen = !acctOpen">
+                  :aria-expanded="acctOpen" @click="clickAcct">
             <img v-if="face" :src="face" alt="" width="30" height="30" />
             <template v-else>{{ initial }}</template>
           </button>
@@ -364,9 +376,11 @@ const props = defineProps({
             <a v-if="isStaff" class="siteacct-out siteacct-admin siteacct-row" role="menuitem" :href="ROUTES.admin" @click="acctOpen = false"><span>{{ A.admin }}</span><svg class="siteacct-ic" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h12M4 10h12M4 15h12" /><circle cx="7" cy="5" r="1.6" fill="var(--paper)" /><circle cx="13" cy="10" r="1.6" fill="var(--paper)" /><circle cx="8" cy="15" r="1.6" fill="var(--paper)" /></svg></a>
             <!-- a subscriber's billing: the portal (cards, invoices, cancel) -->
             <button v-if="plan" type="button" class="siteacct-out siteacct-row" role="menuitem" @click="acctOpen = false; openPortal()"><span>{{ A.manage }}</span><svg class="siteacct-ic" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.5 3.5h5v5M16.5 3.5 9.5 10.5M14.5 11.5v4a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h4" /></svg></button>
-            <!-- a switch, not a label: the words stay "Dark mode" and the switch says whether it is on -->
-            <button type="button" class="siteacct-out siteacct-row" role="menuitemcheckbox" :aria-checked="isDark" @click="flipTheme">
-              <span>{{ t('nav.theme-dark') }}</span><i class="siteswitch" :class="{ on: isDark }" aria-hidden="true" />
+            <!-- the row names what it switches TO, and its icon is that: a moon to go dark, a sun to go light -->
+            <button type="button" class="siteacct-out siteacct-row" role="menuitem" @click="flipTheme">
+              <span>{{ isDark ? t('nav.theme-light') : t('nav.theme-dark') }}</span>
+              <svg v-if="isDark" class="siteacct-ic" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="3.6" /><path d="M10 2.2v1.8M10 16v1.8M2.2 10h1.8M16 10h1.8M4.5 4.5l1.3 1.3M14.2 14.2l1.3 1.3M15.5 4.5l-1.3 1.3M5.8 14.2l-1.3 1.3" /></svg>
+              <svg v-else class="siteacct-ic" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.5 12.1A7 7 0 0 1 7.9 3.5a7 7 0 1 0 8.6 8.6Z" /></svg>
             </button>
             <button type="button" class="siteacct-out siteacct-row" role="menuitem" @click="doSignOut">
               <span>{{ A.signout }}</span><svg class="siteacct-ic" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.5H5a1.5 1.5 0 0 0-1.5 1.5v10A1.5 1.5 0 0 0 5 16.5h3M12.5 13.5 16 10l-3.5-3.5M16 10H7.5" /></svg>
@@ -472,6 +486,8 @@ const props = defineProps({
 .siteavatar-face img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit }
 .siteacct-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 210px; background: var(--paper); color: var(--ink);
   border: 1px solid var(--hair); border-radius: 12px; padding: 8px; box-shadow: 0 18px 40px -20px #0009; z-index: 50 }
+/* the gap between the picture and the menu, made part of the menu so the pointer can cross it */
+.siteacct-menu::before { content: ""; position: absolute; left: 0; right: 0; top: -10px; height: 10px }
 .siteacct-email { display: block; font-family: var(--m); font-size: 11px; color: var(--ink3); padding: 6px 10px 8px;
   border-bottom: 1px solid var(--hair); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
 .siteacct-out { display: block; width: 100%; text-align: left; font: inherit; font-size: 13.5px; color: var(--ink); background: none;
@@ -480,11 +496,7 @@ const props = defineProps({
 .siteacct-out.on { background: color-mix(in srgb, var(--ink) 6%, transparent) }
 .siteacct-admin { text-decoration: none; box-sizing: border-box }
 /* every row of the account menu: its words on the left, at the far right what it is or does — a person,
-   a card, the sliders of the admin, the theme's on/off switch, the door of sign out */
+   a card, the sliders of the admin, the theme's moon or sun, the door of sign out */
 .siteacct-row { display: flex; align-items: center; justify-content: space-between; gap: 12px }
-.siteswitch { flex: none; position: relative; width: 30px; height: 18px; border-radius: 999px; background: color-mix(in srgb, var(--ink) 18%, transparent); transition: background .2s ease }
-.siteswitch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--paper); box-shadow: 0 1px 2px #0004; transition: transform .2s ease }
-.siteswitch.on { background: var(--ink) }
-.siteswitch.on::after { transform: translateX(12px) }
 .siteacct-ic { flex: none; color: var(--ink2) }
 </style>
