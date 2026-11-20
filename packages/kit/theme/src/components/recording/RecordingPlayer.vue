@@ -56,7 +56,7 @@ onBeforeUnmount(() => { if (url.value) URL.revokeObjectURL(url.value) })
 
 <style scoped>
 .rp { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; align-items: start }
-.rp-media { position: sticky; top: 88px }
+.rp-media { position: sticky; top: 16px }
 .rp-video { width: 100%; border-radius: 14px; background: #000; aspect-ratio: 4 / 3 }
 .rp-audio { width: 100% }
 .rp-wait { margin: 0; padding: 40px 0; text-align: center; color: var(--ink2) }
