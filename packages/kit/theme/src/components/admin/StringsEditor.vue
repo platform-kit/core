@@ -1,14 +1,19 @@
 <script setup lang="ts">
 /*
- * The `## group / ### key / field: value` files — the UI strings (dir=ui) and
- * the results copy (dir=results) — a file picked from a dropdown, every string
- * an input, and a search box that narrows the page to the strings whose key,
- * field or text match, with a count beside each file in the dropdown so a
- * string in another file is found without opening it. Saves the active file; the frontmatter goes back as it
- * was written.
+ * The `## group / ### key / field: value` files: the UI strings (dir=ui) and the results copy (dir=results), a file
+ * picked from a dropdown, every string an input, and a search box that narrows the page to the strings whose key,
+ * field or text match, with a count beside each file in the dropdown so a string in another file is found without
+ * opening it. Saves the active file; the frontmatter goes back as it was written.
+ *
+ * THE UI STRINGS ARE SHOWN WHOLE AND SAVED AS DIFFERENCES (openspec: site-strings-hold-only-their-changes). A site's
+ * file holds only the words it changes or adds; the theme's default is the rest. So every scope the theme has is
+ * listed, every default field is an input with the default as its placeholder, and a save writes only the fields
+ * whose text differs from the default. Clearing a field, or Reset, puts it back to the default and takes it out of
+ * the site's file. The results copy has no defaults and is edited as it is written.
  */
 import { ref, computed, shallowRef, watch, onMounted } from 'vue'
 import Select from 'primevue/select'
+import { groups as THEME } from '#site/strings-default'
 const props = defineProps({ dir: { type: String, default: 'ui' } })
 import pipe from '../../lib/admin/api.js'
 /* the two families of files are two models: the UI strings (`strings`) and a site's results copy (`results`) */
@@ -19,45 +24,107 @@ const q = ref('')
 const saving = ref(false)
 const msg = ref('')
 const err = ref('')
+const rev = ref(0)
 const current = computed(() => files.value.find((f: { file: string }) => f.file === active.value) || null)
 const label = (f: { scope: any; title: any; file: any }) => f.scope || f.title || f.file
+const hasDefaults = computed(() => props.dir === 'ui')
+const defaultsOf = (f: any) => (hasDefaults.value && f && (THEME as any) && (THEME as any)[f.scope]) || {}
+const clone = (x: any) => JSON.parse(JSON.stringify(x || {}))
 async function load() {
   err.value = ''
   try {
-    files.value = (await pipe.items(MODEL[props.dir] || props.dir)).map((f: { name: any }) => ({ ...f, name: f.name }))
+    const got = (await pipe.items(MODEL[props.dir] || props.dir)).map((f: any) => ({ ...f, name: f.name, groups: clone(f.groups) }))
+    /* a scope the theme has and the site has never changed is still editable: saving it creates the site's file */
+    if (hasDefaults.value) {
+      const have = new Set(got.map((f: any) => f.scope))
+      for (const scope of Object.keys((THEME as any) || {}).sort()) if (!have.has(scope)) got.push({ file: scope + '.md', name: scope, scope, title: '', fmRaw: 'scope: ' + scope, spaced: false, groups: {}, fresh: true })
+      got.sort((a: any, b: any) => String(label(a)).localeCompare(String(label(b))))
+    }
+    files.value = got
+    /* the file open last in this tab, so a reload (a dev server's, after a save adds a file) keeps the place */
+    if (!active.value) { try { active.value = sessionStorage.getItem(KEPT()) || '' } catch { /* storage refused: start at the first */ } }
     if (!active.value || !files.value.find((f: { file: string }) => f.file === active.value)) active.value = files.value[0]?.file || ''
   } catch (e) { err.value = (e as any).message }
 }
+const KEPT = () => 'pk-strings-file-' + props.dir
+watch(active, (v) => { try { if (v) sessionStorage.setItem(KEPT(), v) } catch { /* storage refused: nothing to keep */ } })
 onMounted(load)
 watch(() => props.dir, load)
 
-/* the search: a key, a field name, a group name or the text itself */
-const needle = computed(() => q.value.trim().toLowerCase())
-const hit = (s: unknown) => String(s ?? '').toLowerCase().includes(needle.value)
-function matches(file: { groups: any }) {
+/* what the page shows: the theme's groups with the site's over them, each field { value, def } */
+function shown(f: any) {
+  void rev.value
+  const d = defaultsOf(f), s = f.groups || {}
   const out: any = {}
-  for (const [g, keys] of Object.entries<Record<string, Record<string, string>>>(file.groups || {})) {
-    for (const [k, fields] of Object.entries(keys)) {
-      if (!needle.value || hit(g) || hit(k) || Object.entries(fields).some(([fn, v]) => hit(fn) || hit(v))) (out[g] = out[g] || {})[k] = fields
+  for (const g of new Set([...Object.keys(d), ...Object.keys(s)])) {
+    for (const k of new Set([...Object.keys(d[g] || {}), ...Object.keys(s[g] || {})])) {
+      const dk = (d[g] || {})[k] || {}, sk = (s[g] || {})[k] || {}
+      const fields: any = {}
+      for (const fn of new Set([...Object.keys(dk), ...Object.keys(sk)])) {
+        if (fn === 'name') continue
+        fields[fn] = { value: sk[fn] ?? '', def: dk[fn] ?? '' }
+      }
+      ;(out[g] = out[g] || {})[k] = { name: sk.name ?? dk.name ?? '', fields }
     }
   }
   return out
 }
+const valueOf = (g: string, k: string, fn: string) => (((current.value?.groups || {})[g] || {})[k] || {})[fn] ?? ''
+function setValue(g: string, k: string, fn: string, v: string) {
+  const f = current.value; if (!f) return
+  const gs = f.groups
+  if (v === '' && hasDefaults.value) { if (gs[g] && gs[g][k]) delete gs[g][k][fn] }
+  else { ((gs[g] = gs[g] || {})[k] = gs[g][k] || {})[fn] = v }
+  rev.value++
+}
+const changed = (field: any) => hasDefaults.value && field.value !== '' && field.value !== field.def
+
+/* the search: a key, a field name, a group name or the text itself (the default's text included) */
+const needle = computed(() => q.value.trim().toLowerCase())
+const hit = (s: unknown) => String(s ?? '').toLowerCase().includes(needle.value)
+const fieldHit = (fn: string, x: any) => hit(fn) || hit(x.value) || hit(x.def)
+function matches(f: any) {
+  const all = shown(f), out: any = {}
+  for (const [g, keys] of Object.entries<any>(all)) for (const [k, key] of Object.entries<any>(keys)) {
+    if (!needle.value || hit(g) || hit(k) || Object.entries<any>(key.fields).some(([fn, x]) => fieldHit(fn, x))) (out[g] = out[g] || {})[k] = key
+  }
+  return out
+}
 const visible = computed(() => (current.value ? matches(current.value) : {}))
-const visibleCount = (groups: { [s: string]: object }|ArrayLike<object>) => Object.values<object>(groups).reduce((n: number, keys) => n + Object.keys(keys).length, 0)
+const visibleCount = (groups: any) => Object.values<any>(groups).reduce((n: number, keys) => n + Object.keys(keys).length, 0)
 const countFor = (f: any) => (needle.value ? visibleCount(matches(f)) : null)
-/* the dropdown: each file, with how many of its strings match while searching */
-const fileOptions = computed(() => files.value.map((f: any) => ({ value: f.file, label: label(f), count: countFor(f), total: visibleCount(f.groups || {}) })))
-const total = computed(() => (current.value ? visibleCount(current.value.groups || {}) : 0))
-/* only show the fields that matched when the text itself is what matched */
-function fieldShown(g: any, k: any, fn: any, v: any) {
+const changedCount = (f: any) => { let n = 0; for (const keys of Object.values<any>(shown(f))) for (const key of Object.values<any>(keys)) for (const x of Object.values<any>(key.fields)) if (changed(x)) n++; return n }
+/* the dropdown: each file, with how many of its strings match while searching, and how many the site has changed */
+const fileOptions = computed(() => { void rev.value; return files.value.map((f: any) => ({ value: f.file, label: label(f), count: countFor(f), total: visibleCount(shown(f)), changed: hasDefaults.value ? changedCount(f) : null })) })
+const total = computed(() => (current.value ? visibleCount(shown(current.value)) : 0))
+function fieldShown(g: any, k: any, fn: any, x: any) {
   if (!needle.value || hit(g) || hit(k)) return true
-  return hit(fn) || hit(v)
+  return fieldHit(fn, x)
+}
+/* only the differences go to the file: a field equal to its default, or empty, is left out, and so is a key or a
+   group left with nothing (a key's name is kept only where it differs from the theme's) */
+function differences(f: any) {
+  if (!hasDefaults.value) return f.groups
+  const d = defaultsOf(f), out: any = {}
+  for (const [g, keys] of Object.entries<any>(f.groups || {})) for (const [k, fields] of Object.entries<any>(keys)) {
+    const dk = (d[g] || {})[k] || {}
+    const keep: any = {}
+    for (const [fn, v] of Object.entries<any>(fields)) if (v !== '' && v !== dk[fn]) keep[fn] = v
+    const named = Object.keys(keep).filter((x) => x !== 'name')
+    if (!named.length && !(keep.name && !dk.name && !Object.keys(dk).length)) continue
+    ;(out[g] = out[g] || {})[k] = keep
+  }
+  return out
 }
 async function save() {
   const f = current.value; if (!f) return
   saving.value = true; msg.value = ''; err.value = ''
-  try { await pipe.save(MODEL[props.dir] || props.dir, f.name, { data: { scope: f.scope, title: f.title }, parsed: { fmRaw: f.fmRaw, spaced: f.spaced, groups: f.groups } }); msg.value = 'Saved.' }
+  try {
+    const groups = differences(f)
+    await pipe.save(MODEL[props.dir] || props.dir, f.name, { data: { scope: f.scope, title: f.title }, parsed: { fmRaw: f.fmRaw, spaced: f.spaced, groups } })
+    f.groups = clone(groups); f.fresh = false; rev.value++
+    msg.value = 'Saved.'
+  }
   catch (e) { err.value = (e as any).message }
   finally { saving.value = false; setTimeout(() => { msg.value = '' }, 2500) }
 }
@@ -73,7 +140,7 @@ async function save() {
             <span v-if="value" class="se-opt"><b>{{ (fileOptions.find((o: any) => o.value === value) || {}).label }}</b><em v-if="needle" class="se-count">{{ (fileOptions.find((o: any) => o.value === value) || {}).count }}</em></span>
           </template>
           <template #option="{ option }">
-            <span class="se-opt" :class="{ dim: needle && option.count === 0 }"><b>{{ option.label }}</b><em class="se-count">{{ needle ? option.count + ' of ' + option.total : option.total }}</em></span>
+            <span class="se-opt" :class="{ dim: needle && option.count === 0 }"><b>{{ option.label }}</b><em class="se-count">{{ needle ? option.count + ' of ' + option.total : option.total }}</em><em v-if="option.changed" class="se-count se-count-ch">{{ option.changed }} changed</em></span>
           </template>
         </Select>
       </label>
@@ -85,16 +152,18 @@ async function save() {
     </div>
     <p v-if="err" class="se-err">{{ err }}</p>
     <div v-if="current" class="se-body">
+      <p v-if="hasDefaults" class="se-hint">An empty field shows the default. Type to change it; only what you change is saved to the site.</p>
       <p v-if="needle" class="se-hint">{{ visibleCount(visible) }} of {{ total }} strings in {{ label(current) }} match “{{ q }}”</p>
-      <p v-if="needle && !visibleCount(visible)" class="se-none">Nothing here matches. The tabs show where it is.</p>
+      <p v-if="needle && !visibleCount(visible)" class="se-none">Nothing here matches. The counts in the file menu show where it is.</p>
       <section v-for="(keys, gname) in visible" :key="gname" class="se-group">
         <h3>{{ gname }}</h3>
-        <div v-for="(fields, kkey) in keys" :key="kkey" class="se-key">
-          <div class="se-key-h"><code>{{ kkey }}</code><span v-if="fields.name" class="se-name">{{ fields.name }}</span></div>
-          <template v-for="(val, fname) in fields" :key="fname">
-            <label v-if="fname !== 'name' && fieldShown(gname, kkey, fname, val)" class="se-field">
+        <div v-for="(key, kkey) in keys" :key="kkey" class="se-key">
+          <div class="se-key-h"><code>{{ kkey }}</code><span v-if="key.name" class="se-name">{{ key.name }}</span></div>
+          <template v-for="(x, fname) in key.fields" :key="fname">
+            <label v-if="fieldShown(gname, kkey, fname, x)" class="se-field" :class="{ changed: changed(x) }">
               <span>{{ fname }}</span>
-              <input v-model="fields[fname]" type="text" />
+              <input :value="valueOf(String(gname), String(kkey), String(fname))" type="text" :placeholder="x.def" @input="setValue(String(gname), String(kkey), String(fname), ($event.target as HTMLInputElement).value)" />
+              <button v-if="changed(x) && x.def" type="button" class="se-reset" :title="'Default: ' + x.def" @click.prevent="setValue(String(gname), String(kkey), String(fname), '')">Reset</button>
             </label>
           </template>
         </div>
@@ -131,7 +200,14 @@ async function save() {
 .se-key-h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px }
 .se-key-h code { font-family: var(--m); font-size: 12px; color: var(--ink2) }
 .se-name { font-size: 12.5px; color: var(--ink3) }
-.se-field { display: grid; grid-template-columns: 150px 1fr; gap: 10px; align-items: center; margin: 0 0 6px }
+.se-field { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; gap: 10px; align-items: center; margin: 0 0 6px }
+.se-field input { min-width: 0 }
+@media (max-width: 560px) { .se-field { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; margin-bottom: 10px } .se-field > span { grid-column: 1 / -1 } }
+.se-field input::placeholder { color: color-mix(in srgb, var(--ink3) 62%, transparent) }
+.se-field.changed > span { color: var(--ink); font-weight: 600 }
+.se-field.changed input { border-color: var(--ink2) }
+.se-reset { font: inherit; font-size: 12px; color: var(--ink2); background: none; border: 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 0 }
+.se-count-ch { color: var(--ink) }
 .se-field > span { font-family: var(--m); font-size: 11px; color: var(--ink3); word-break: break-all }
 .se-field input { font: inherit; font-size: 13.5px; color: var(--ink); background: var(--card); border: 1px solid var(--hair); border-radius: 8px; padding: 7px 10px }
 .se-field input:focus { outline: 2px solid var(--accent2); border-color: transparent }

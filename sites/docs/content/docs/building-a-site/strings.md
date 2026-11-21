@@ -5,6 +5,7 @@ order: 45
 sources:
   [
     packages/kit/build/strings-io.mts,
+    packages/kit/build/strings.test.mts,
     packages/kit/theme/src/content/ui,
     packages/kit/src/lib/strings.ts,
     packages/kit/build/strings-admin.mts,
@@ -48,10 +49,10 @@ Build scripts should use `uiScope(scope)` from `strings-io.mjs` rather than read
 ## Add or change copy
 
 1. Find the existing scope and group for the component.
-2. Add or update the field in the site's `content/app/ui/<scope>.md`; add a new group there when the interface needs one.
+2. Add or update the field in the site's `content/app/ui/<scope>.md`; add a new group there when the interface needs one. Write only the fields you change or add: a field equal to the theme's default says nothing, and it stops a later change to the default from reaching the site.
 3. Bind the component to the field with the UI strings helper. Remove any hardcoded copy.
 4. Build and render the affected page to check that the field resolves and fits the interface.
 
 When a term must be worded consistently across multiple surfaces, keep its canonical wording in one content record and have each surface read from that record. For example, the instrument's level labels are records in the site's `glossary` scope and are read by its taxonomy module.
 
-`strings-io.mjs` merges site values over theme defaults, and `strings.test.mts` checks that merge. Standard UI-string files under `content/app` are not formatted with Prettier because formatting can change their group/key/field structure.
+`strings-io.mjs` merges site values over theme defaults, and `strings.test.mts` checks that merge. It also fails a site field equal to the theme's default (naming the file and the key), and a default group that no kit file reads — a group counts as read where a file naming its scope also names the group, so it catches a site's words left in the theme, though not every one. The theme's defaults are the kit's own words: wording only a site's code reads belongs in that site's files. Standard UI-string files under `content/app` are not formatted with Prettier because formatting can change their group/key/field structure.

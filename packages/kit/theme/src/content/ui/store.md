@@ -58,13 +58,13 @@ featured: Featured
 featured-subtitle: Where we’d start.
 membership-eyebrow: Membership
 membership-title: Every book. Every chapter. Everything new.
-membership-subtitle: One membership opens the whole shelf, every chapter, and each new book the day it lands.
+membership-subtitle: One membership opens every book, every chapter, and each new book the day it lands.
 membership-cta: Become a member
 membership-switch: Switch to this
 membership-manage: Manage membership
 membership-active: You're a member
 
-membership-point-1: Every book on the shelf, every chapter
+membership-point-1: Every book, every chapter
 membership-point-2: Your place and your highlights, on every device
 membership-point-3: Each new book, the day it lands
 view-all: View all

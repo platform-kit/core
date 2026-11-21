@@ -31,9 +31,9 @@ loading: Loading…
 ### browse
 heading: Books
 all-books: Everything
-whole-shelf: The whole shelf
+whole-shelf: All books
 empty-pre: More coming for this theme —
-empty-link: browse the whole shelf
+empty-link: browse every book
 filter-aria: Filter books by theme
 lane-articles: Articles
 more-articles: All articles
@@ -194,14 +194,6 @@ premise: A premise that caught you
 find: Which idea is most relevant to you right now?
 find-subtitle: A short second test — you answer each book's central claim, and the ones that catch tell us which idea you are ready for.
 find-cta: Answer the premises
-
-## card
-
-### actions
-
-take-quiz: Take quiz
-take-again: Take again
-view-results: View results
 
 ## coaching
 
@@ -579,7 +571,7 @@ page-error: This page couldn't be opened. Check your connection and try again.
 comments: Comments
 close: Close
 
-back: Back to the shelf
+back: Back to the library
 chapters: Chapters
 saved: Saved
 search: Search
@@ -589,7 +581,7 @@ type-title: Type & page
 bookmark-add: Bookmark this chapter
 bookmark-remove: Remove bookmark
 more: Reading tools
-missing: That book is not on the shelf.
+missing: That book is not in the library.
 ### cover
 chapters: Chapters
 reading-time: Reading time

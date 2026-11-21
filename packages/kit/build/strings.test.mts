@@ -2,6 +2,8 @@
    and nothing of the site's overwritten. Run from a site's root; in npm test. */
 import fs from 'node:fs'
 import os from 'node:os'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { parseGroups, mergeGroups, mergeUi, readScopes } from './strings-io.mjs'
 import { loadSite } from './site.mjs'
 import { loadTheme } from './theme.mjs'
@@ -108,6 +110,45 @@ ok('the merged entries carry no file path into the bundle', merged.every((e) => 
   const every = JSON.stringify(merged)
   ok('no placeholder survives the merge', !/\{(provider|providers|a-provider|your-provider|work|session)\}/.test(every))
   fs.rmSync(dir, { recursive: true, force: true })
+}
+
+/*
+ * A SITE HOLDS ONLY THE WORDS IT CHANGES OR ADDS (openspec: site-strings-hold-only-their-changes).
+ * The merge falls back to the default field by field, so a site field equal to the default says nothing, and a
+ * copied default is a line the kit can no longer reword for the site. Every one is named, with its file.
+ */
+{
+  const D = readScopes(theme.stringDirs)
+  const copied: string[] = []
+  for (const [scope, s] of Object.entries<any>(S)) {
+    const d = D[scope] && D[scope].groups
+    if (!d) continue
+    for (const [gk, keys] of Object.entries<any>(s.groups)) for (const [k, fields] of Object.entries<any>(keys)) for (const [f, v] of Object.entries<any>(fields)) {
+      if (d[gk] && d[gk][k] && d[gk][k][f] === v) copied.push(`${path.relative(c.root, s.file)} ${gk}.${k}.${f}`)
+    }
+  }
+  ok(`no site strings field repeats the theme's default${copied.length ? ' — ' + copied.length + ': ' + copied.slice(0, 8).join(', ') : ''}`, copied.length === 0)
+
+  /* and the defaults are the kit's own: a group no kit source names is a site's words left behind, or dead */
+  const KIT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+  /* a group counts as read where a file that names its scope (quoted, as <scope>.md, or the compiled <scope>/strings.json)
+     also names the group: the scope first, so a common word in an unrelated file (areas, words) is not taken for a read */
+  const src: string[] = []
+  const walk = (d: string) => {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      if (e.name === 'node_modules' || e.name === 'dist' || e.name.startsWith('.')) continue
+      const p = path.join(d, e.name)
+      if (e.isDirectory()) walk(p); else if (/\.(vue|ts|mts|js|mjs)$/.test(e.name) && !/\.test\./.test(e.name)) src.push(fs.readFileSync(p, 'utf8'))
+    }
+  }
+  for (const d of ['theme/src', 'src', 'modules', 'build', 'supabase']) if (fs.existsSync(path.join(KIT, d))) walk(path.join(KIT, d))
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')
+  const readers = (scope: string) => src.filter((t) => new RegExp('[\'"`]' + esc(scope) + '[\'"`]|/' + esc(scope) + '(\\.md\\b|/strings\\.json)').test(t)).join('\n')
+  const unread: string[] = []
+  for (const [scope, e] of Object.entries<any>(D)) for (const g of Object.keys(e.groups)) {
+    if (!new RegExp(`(\\.${esc(g)}\\b|['"\`]${esc(g)}['"\`])`).test(readers(scope))) unread.push(`${scope}.${g} (${path.relative(KIT, e.file)})`)
+  }
+  ok(`every default strings group is read by the kit${unread.length ? ' — ' + unread.join(', ') : ''}`, unread.length === 0)
 }
 
 console.log(fail ? `${fail} failed, ${pass} passed` : `all ${pass} checks passed`)

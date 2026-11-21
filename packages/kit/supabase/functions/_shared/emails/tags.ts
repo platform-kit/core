@@ -156,7 +156,7 @@ export const TAGS: any = {
   /* the frame every funnel step and blast is piped through: the markdown's html goes into an html block as {{{body}}} */
   campaign: [
     { label: 'First name', value: '{{name}}', group: 'Reader', sample: 'Ada' },
-    { label: 'Subject', value: '{{subject}}', group: 'Email', sample: 'A note from the shelf' },
+    { label: 'Subject', value: '{{subject}}', group: 'Email', sample: 'A note from us' },
     { label: 'The body (html)', value: '{{{body}}}', group: 'Email', sample: '<p>The written email goes here.</p>', description: 'the step\'s or blast\'s markdown, as html — keep it in an HTML block' },
     { label: 'Unsubscribe link', value: '{{unsubscribe_url}}', group: 'Email', sample: 'https://example.com/functions/v1/email-unsubscribe?u=…', description: 'every marketing email must carry it' },
   ],
@@ -234,7 +234,7 @@ export const SAMPLES = {
   support: { name: 'Ada', message: 'Hi — my parcel has not arrived yet. Is there a tracking number?', url: 'https://example.com/?support=0000' },
   'support-digest': { count: '2', body: '<p style="margin:0 0 12px;font-family:Georgia,serif;font-size:15px;line-height:1.5;color:#0c0d0b"><b>Ada</b> · waiting 24m<br><span style="color:#6c6f69">Hi — my parcel has not arrived yet. Is there a tracking number?</span></p><p style="margin:0 0 12px;font-family:Georgia,serif;font-size:15px;line-height:1.5;color:#0c0d0b"><b>Grace</b> · waiting 18m<br><span style="color:#6c6f69">Does the hardcover come with the PDF too?</span></p>', url: 'https://example.com/admin/support' },
   'provider-terms': { name: 'Ada', version: 'v2', signed: 'v1', body: '<p style=\"margin:0 0 14px;font-family:Georgia,serif;font-size:15px;line-height:1.6;color:#0c0d0b\">The terms go here, from the body of content/providers.md.</p>', url: 'https://example.com/app/coaching?terms=1' },
-  campaign: { name: 'Ada', subject: 'A note from the shelf', body: '<p style="margin:0 0 14px;font-family:Georgia,serif;font-size:16px;line-height:1.6;color:#0c0d0b">The written email goes here — a step of a funnel, or a blast, from its markdown.</p>', unsubscribe_url: 'https://example.com/functions/v1/email-unsubscribe?u=0000&t=0000' },
+  campaign: { name: 'Ada', subject: 'A note from us', body: '<p style="margin:0 0 14px;font-family:Georgia,serif;font-size:16px;line-height:1.6;color:#0c0d0b">The written email goes here — a step of a funnel, or a blast, from its markdown.</p>', unsubscribe_url: 'https://example.com/functions/v1/email-unsubscribe?u=0000&t=0000' },
   'session-booked': { name: 'Ada', title: 'One on one', when: 'Tuesday 7 July, 09:00 (Amsterdam)', with: 'Coach Person', where: 'In person at The studio, Keizersgracht 123, Amsterdam', join: '', manage: 'https://example.com/app/coaching' },
   /* the three moments a booking that waits passes through, with the same facts as one that does not */
   'session-held': { name: 'Ada', title: 'One on one', when: 'Tuesday 7 July, 09:00 (Amsterdam)', with: 'Coach Person', where: 'In person at The studio, Keizersgracht 123, Amsterdam', join: '', manage: 'https://example.com/app/coaching' },

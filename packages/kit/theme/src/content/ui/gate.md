@@ -25,7 +25,7 @@ heading-buy: Unlock the rest of this book
 heading-sub: Members read every book
 subtitle-signin: You've reached the end of the free chapters. Sign in — it's free — to keep going.
 subtitle-buy: Buy this book once and read every chapter, forever.
-subtitle-sub: Or become a member and read everything on the shelf.
+subtitle-sub: Or become a member and read every book in the library.
 cta-signin: Sign in to continue
 cta-buy: Buy this book
 cta-sub: Become a member

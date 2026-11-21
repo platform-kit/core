@@ -23,13 +23,6 @@ previous: Previous picture
 
 all: All
 
-## faq
-
-### toggle
-
-show: Show
-hide: Hide
-
 ## video
 
 ### play

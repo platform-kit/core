@@ -12,7 +12,7 @@ sources:
     packages/kit/modules/memberships/emails/term-continues.json,
     packages/kit/modules/memberships/emails/price-change.json,
   ]
-reviewed: 2026-11-18
+reviewed: 2026-11-20
 ---
 
 Every email the site sends is a **design** built in the admin, compiled at build time, and filled with the real facts when it is sent. Marketing → **Emails** is a rail of the designs, one open in a drag-and-drop editor mounted with the site's colours and fonts. Module: `emails`.
