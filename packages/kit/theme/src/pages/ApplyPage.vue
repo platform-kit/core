@@ -105,16 +105,23 @@ async function booked() { await loadAdmissions(); step.value = 'booked' }
 
 <style scoped>
 .ap-page { min-height: 70vh }
-.ap-shell { position: relative; max-width: 760px; margin: 0 auto; padding: 56px 16px 96px }
+.ap-shell { position: relative; max-width: 880px; margin: 0 auto; padding: 56px 16px 96px }
 .ap-eyebrow { margin: 0 0 10px; font-family: var(--mono, ui-monospace, monospace); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink2) }
 .ap-title { margin: 0 0 28px; font-size: clamp(2rem, 4.4vw, 3rem); line-height: 1.08; color: var(--ink) }
 .ap-h2 { margin: 0 0 10px; font-size: 1.35rem; color: var(--ink) }
 .ap-lede { margin: 0 0 20px; font-size: 1.08rem; line-height: 1.55; color: var(--ink2) }
 .ap-wait { min-height: 240px }
-.ap-form, .ap-call, .ap-note { padding: 28px; border: 1px solid var(--hair); border-radius: 18px; background: var(--paper) }
+.ap-call, .ap-note { padding: 28px; border: 1px solid var(--hair); border-radius: 18px; background: var(--paper) }
+/* THE FORM HOLDS ITS SHAPE: one card (the runner's own), the full column wide and one height from the first question to
+   the last, so the page does not jump as a short question gives way to a long one; the answers run the column */
+.ap-form :deep(.frun) { min-height: min(600px, 74vh); display: flex; flex-direction: column }
+.ap-form :deep(.frun .qzstage) { flex: 1; align-items: flex-start; padding: 40px clamp(20px, 5vw, 56px) 24px }
+.ap-form :deep(.frun .qzin) { max-width: none }
+.ap-form :deep(.ff-in), .ap-form :deep(.ff-choices), .ap-form :deep(.ff-inwrap) { max-width: none }
+.ap-form :deep(.fctl) { padding: 12px 20px 16px }
 .ap-cta { display: inline-flex; align-items: center; justify-content: center; font: inherit; font-size: 15.5px; font-weight: 600; color: var(--paper); background: var(--ink); border: 0; border-radius: 999px; padding: 13px 26px; cursor: pointer }
 .ap-skip { display: block; margin: 18px 0 0; padding: 0; font: inherit; font-size: 15px; color: var(--ink2); background: none; border: 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer }
 .ap-skip:hover { color: var(--ink) }
 .ap-back { display: inline-block; font-size: 15px; color: var(--ink); text-decoration: underline; text-underline-offset: 3px }
-@media (max-width: 560px) { .ap-form, .ap-call, .ap-note { padding: 20px } }
+@media (max-width: 560px) { .ap-call, .ap-note { padding: 20px } .ap-form :deep(.frun) { min-height: min(560px, 78vh) } .ap-form :deep(.frun .qzstage) { padding: 28px 18px 16px } }
 </style>

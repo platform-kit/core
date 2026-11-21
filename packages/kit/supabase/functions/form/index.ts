@@ -25,7 +25,7 @@
  */
 import { admin, json, preflight, getUser, appUrl } from '../_shared/lib.ts'
 import { offer } from '../_shared/offers.ts'
-import { offersApplyingWith, applied } from '../_shared/admissions.ts'   /* a form that is an offer's application (openspec: applications-and-intro-calls) */
+import { offersApplyingWith, isApplication, applied } from '../_shared/admissions.ts'   /* a form that is an offer's application (openspec: applications-and-intro-calls) */
 import { formsNow } from '../_shared/forms-live.ts'   /* forms.json in git mode; the rows parsed in cloud mode, so a form written through the API or the admin takes answers at once */
 import { grade, isRight } from '../_shared/forms/score.ts'
 import { definitionOf } from '../_shared/api/typeform/definition.ts'
@@ -197,7 +197,7 @@ Deno.serve(async (req: Request) => {
   if (!w.user && !w.anon) return json({ error: 'no identity', code: 'anon' }, 400)
   /* AN OFFER'S APPLICATION belongs to an account, as the membership it leads to does */
   const applyingFor = offersApplyingWith(slug, (() => { try { return String(JSON.parse(String(body._hidden || '{}')).offer || '') } catch { return '' } })())
-  if (applyingFor.length && !w.user) return json({ error: 'sign in to apply', code: 'signin' }, 401)
+  if (isApplication(slug) && !w.user) return json({ error: 'sign in to apply', code: 'signin' }, 401)
   /* WHAT IT COSTS. A paid form takes no answer until it is paid for — and says so in a shape the
      runner can act on (the sku, so it can send them to the checkout and bring them back). A
      response already open was paid for when it was started, so it is theirs to finish. */

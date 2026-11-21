@@ -12,14 +12,14 @@ sources:
     packages/kit/src/lib/records.ts,
     packages/kit/theme/src/pages/DiagnosticsPage.vue,
   ]
-reviewed: 2026-11-14
+reviewed: 2026-11-20
 ---
 
 For anyone helping a reader, or writing the words a reader sees — this is what the reading side of a site does.
 
 ## The library
 
-`/content` is the hub: books on a shelf, articles, the wiki and the docs, and a search (⌘K or the search button) across all of them — and, where the site has its social network, across the people with a page you may see, listed under People. The shelf can be filtered by theme (the site's _concepts_), and it has two views: **Everything**, the same shelf for everybody, and **Recommended For You**, arranged around what you have been reading and what you have bought. It is offered once there is something to go on; a site with a diagnostic or a survey of its own offers it sooner, with the invitation to take one. The site works out the tags you keep coming back to from the pieces themselves as they are tagged **now**, so a piece re-tagged after you read it changes what you are shown, and nothing you have read to the end is offered back to you — a piece you only skimmed still is, since that is the one you probably meant to come back to, and a book you have started and not finished stays on the shelf until you do.
+`/content` is the hub: books on a shelf, articles, the wiki and the docs, and a search (⌘K or the search button) across all of them — and, where the site has its social network, across the people with a page you may see, listed under People. The shelf is one view with one dropdown: **Recommended For You** first, arranged around what you have been reading and what you have bought, then **Everything**, the same shelf for everybody, then each theme (the site's _concepts_). Recommended For You is chosen for a signed-in reader it has something for, and is offered once there is something to go on; a site with a diagnostic or a survey of its own offers it sooner, with the invitation to take one. The site works out the tags you keep coming back to from the pieces themselves as they are tagged **now**, so a piece re-tagged after you read it changes what you are shown, and nothing you have read to the end is offered back to you — a piece you only skimmed still is, since that is the one you probably meant to come back to, and a book you have started and not finished stays on the shelf until you do.
 
 ## A book
 

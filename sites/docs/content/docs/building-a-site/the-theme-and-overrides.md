@@ -50,7 +50,7 @@ The public `#site` config also carries the community, network and coaching setti
 
 The contracts (`INSTRUMENT`, `RECOMMENDATIONS` in `packages/kit/build/site.mts`) are what let the theme's admin name a reading's areas and levels, or the hub ask for recommendations, on a site that has neither: the demo gets empty lists and nothing breaks.
 
-`invites` is the one that decides whether something is _shown_. It answers whether the site can **earn** recommendations for somebody who has none — a diagnostic to take, a survey, anything other than waiting for them to read more. The kit's answer is no, and then Recommended For You is not offered at all until there is something in it: no toggle, no card, no mention of it. A site that says yes gets the view offered while it is still empty, because there the empty view is not empty — it carries the invitation.
+`invites` is the one that decides whether something is _shown_. It answers whether the site can **earn** recommendations for somebody who has none — a diagnostic to take, a survey, anything other than waiting for them to read more. The kit's answer is no, and then Recommended For You is not in the hub's dropdown at all until there is something in it: no option, no card, no mention of it. A site that says yes gets the option while it is still empty, because there the empty choice is not empty — it carries the invitation.
 
 ## Overrides
 

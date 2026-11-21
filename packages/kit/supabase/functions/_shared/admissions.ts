@@ -15,11 +15,15 @@ import { sendEmail } from './email.ts'
 export type Gate = { call: string | null; callRequired: boolean; apply: string | null; review: 'person' | 'none' | null; openDays: number; gated: boolean }
 export const gateOf = (sku: string): Gate | null => ((offer(sku) as any)?.before as Gate) ?? null
 
-/* the offers whose application is this form, the one the page named first when it named one */
+/* the offer this application is for: the one the page named (the Apply page names it), or the only offer that asks for
+   this form. A form two offers share, sent without naming one, applies to neither rather than to both. */
 export function offersApplyingWith(form: string, named = ''): string[] {
   const all = Object.values<any>(of<Record<string, any>>('catalog').offers ?? {}).filter((o) => o?.before?.apply === form).map((o) => o.sku as string)
-  return named && all.includes(named) ? [named] : all
+  if (named && all.includes(named)) return [named]
+  return all.length === 1 ? all : []
 }
+/* whether a form is any offer's application, so it asks for an account */
+export const isApplication = (form: string) => Object.values<any>(of<Record<string, any>>('catalog').offers ?? {}).some((o) => o?.before?.apply === form)
 /* the offer whose call is this booking type */
 export function offerCalling(type: string): string | null {
   const o = Object.values<any>(of<Record<string, any>>('catalog').offers ?? {}).find((x) => x?.before?.call === type)

@@ -47,7 +47,7 @@ Every key is optional, and an offer with no `before` block sells exactly as befo
 | `apply` and a required `call`    | Apply                             | it is approved, then the call has happened                           |
 | `apply` and an optional `call`   | Apply                             | it is approved; the call is offered on the application's last screen |
 
-**Apply** opens `/apply/<sku>`, which asks the buyer to sign in, then runs the form. Where the offer also offers a call, the last screen comes after the answers are sent: it shows the booker for that booking type and a way to decline it. Declining changes nothing.
+**Apply** opens `/apply/<sku>`, which asks the buyer to sign in, then runs the form. Where the offer also offers a call, the last screen comes after the answers are sent: it shows the booker for that booking type and a way to decline it. Declining changes nothing. Several offers may share one form: the Apply page says which offer the application is for, and the screen keeps one size from the first question to the last.
 
 Once they've applied, the pricing card and the offer's checkout page say **Application sent**, then **Declined**, or show the ways to pay once checkout is open. Checkout stays open until they pay or a reviewer closes it; an offer that sets `open-for` gives it a deadline instead.
 

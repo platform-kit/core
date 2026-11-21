@@ -85,21 +85,23 @@ const askedView = (() => { try { const v = sessionStorage.getItem('dl.hub.view')
  * are recommendations to switch to" and there was no condition on it at all — so a reader with no
  * history landed on an empty For You with a toggle offering to take them back to it.
  */
-const mode = ref('all')
 const loading = ref(false)
 const ranked = ref<any>(null)
 
-/* In the Everything (fallback) state, books are browsed by concept — the
-   dropdown lives here and nowhere else. "Everything" leads it and shows the
-   whole shelf up to one row, so a reader with no profile lands on real books
-   rather than an arbitrary theme. */
+/* ONE VIEW, ONE CONTROL. The books are browsed by the dropdown in their lane, and Recommended For You is its first
+   choice where the site can offer recommendations, before Everything and the themes: choosing it ranks the books
+   against this reader. Everything shows the whole shelf up to one row, so a reader with no profile lands on real
+   books rather than an arbitrary theme. */
 const BOOK_ROW = 7
-const conceptOptions = [{ slug: 'all', name: HUB.browse['all-books'] }].concat(concepts())
 const concept = ref('all')
+const mode = computed(() => (concept.value === 'foryou' ? 'foryou' : 'all'))
+const conceptOptions = computed(() => (offerForYou.value ? [{ slug: 'foryou', name: HUB.toggle.foryou }] : []).concat([{ slug: 'all', name: HUB.browse['all-books'] }], concepts()))
 const conceptBooks = computed(() => {
+  if (concept.value === 'foryou') return recBooks.value
   const list = concept.value === 'all' ? bookShelf() : booksForConcept(concept.value)
   return dropFinished(list).slice(0, BOOK_ROW).map((b: any) => ({ ...b, prog: bookProgress(b.slug) }))
 })
+function picked() { chose = true; if (concept.value === 'foryou') rank() }
 
 /* whether the READER picked the view, as against the page picking it for them. Signing in moves
    somebody who has not chosen onto For You — which is the view an account holder leads with — and
@@ -108,7 +110,7 @@ const conceptBooks = computed(() => {
 let chose = false
 async function show(m: string, byHand = true) {
   if (byHand) chose = true
-  mode.value = m
+  concept.value = m === 'foryou' ? 'foryou' : (concept.value === 'foryou' ? 'all' : concept.value)
   if (m === 'foryou') await rank()
 }
 /* THE RANKING, from both sides at once: the site's words joined to the reader's own tags as the
@@ -163,7 +165,7 @@ onMounted(async () => {
 watch(canRecommend, (can) => { if (can && mode.value === 'foryou') rank() })
 watch(offerForYou, (can) => {
   if (can && !chose && askedView !== 'all' && isSignedIn.value) show('foryou', false)
-  else if (!can && mode.value === 'foryou') mode.value = 'all'
+  else if (!can && mode.value === 'foryou') concept.value = 'all'
 })
 const offIdentity = onIdentity(async (id: any) => {
   /* the interests belong to whoever they were read for, so they go with the identity */
@@ -181,109 +183,19 @@ const img = (a: any) => a.data.image || (Array.isArray(a.data.media) ? a.data.me
 </script>
 
 <template>
-  <div class="wrapwide">
+  <!-- one view: the heading, then each kind in its own lane; the books lane's dropdown leads with Recommended For You -->
+  <div class="wrapwide hub">
     <header style="border:none;">
       <h1>{{ HUB.page.heading }}</h1>
       <p class="subtitle">{{ HUB.page.subtitle }}</p>
     </header>
 
-    <!-- the toggle is the recommended-vs-fallback switch, and it really is only shown when there
-         are recommendations to switch to -->
-    <div class="disc">
-      <div v-if="offerForYou" class="disc-toggle">
-        <button type="button" :class="{ on: mode === 'all' }" @click="show('all')">{{ HUB.toggle.everything }}</button>
-        <button type="button" :class="{ on: mode === 'foryou' }" @click="show('foryou')">{{ HUB.toggle.foryou }}</button>
-      </div>
-      <span v-if="mode === 'foryou' && canRecommend" class="disc-note">
-        {{ HUB.toggle.note }}
-      </span>
-    </div>
-  </div>
-
-  <!-- ===================== THE EMPTY STATE OF "FOR YOU" =====================
-       The card is what that view holds before it holds recommendations, so it appears only where
-       the view itself does — on a site that can EARN them (invites()). A site that cannot never
-       offers the view, and so never shows this either: there is no card, no toggle and no mention
-       of recommendations until there are some. The cards sit inside the measure, never as the
-       measure — a card that is the .wrapwide itself has its border at the screen's edge on a
-       phone. -->
-  <div v-if="!canRecommend && mode === 'foryou'" class="wrapwide">
-  <!-- until the reader has something to draw on: what would arrange the shelf around them -->
-  <div class="find find-diag">
-    <div class="find-txt">
-      <span class="find-eyebrow">{{ HUB.nudge.eyebrow }}</span>
-      <span class="find-h">{{ HUB.nudge.heading }}</span>
-      <span class="find-subtitle">{{ HUB.nudge.subtitle }}</span>
-    </div>
-    <a class="find-cta" href="/app">{{ HUB.nudge.cta }} &rarr;</a>
-  </div>
-  </div>
-
-  <!-- ============================= FOR YOU ============================= -->
-  <div v-if="mode === 'foryou'" class="wrapwide hub">
-    <section class="lane" v-if="recBooks.length">
-      <div class="lane-head"><h2>{{ HUB.lanes.books }}</h2></div>
-      <div class="shelf">
-        <a v-for="b in recBooks" :key="b.slug" class="thumb" :href="'/content/books/' + b.slug">
-          <span class="thumb-img" :style="b.cover ? null : { backgroundImage: coverTint(b.slug) }">
-            <Book3D v-if="b.cover" :slug="b.slug" :art="b.cover.src" :alt="b.title + ' cover'" :title="b.title" :author="b.author" mode="still" />
-            <span v-else class="thumb-ph">{{ b.title }}</span>
-          </span>
-          <b>{{ b.title }}</b>
-          <span v-if="b.author" class="thumb-author">{{ b.author }}</span>
-          <span v-if="b.prog && b.prog.opened" class="thumb-prog" :aria-label="b.prog.pct + '% ' + PROG['aria-read']">
-            <span class="thumb-prog-fill" :style="{ width: b.prog.pct + '%' }" />
-          </span>
-        </a>
-      </div>
-    </section>
-
-    <p v-if="loading" class="disc-loading">{{ HUB.lanes.loading }}</p>
-    <template v-else>
-      <section class="lane" v-if="byKind('article', 4).length >= LANE_MIN">
-        <div class="lane-head"><h2>{{ HUB.lanes.articles }}</h2></div>
-        <div class="art-grid">
-          <a v-for="a in byKind('article', 4)" :key="a.href" class="art-card" :href="a.href">
-            <span class="art-cardimg" :class="{ ph: !a.image }">
-              <img v-if="a.image" :src="a.image" alt="" loading="lazy" />
-            </span>
-            <span class="art-cardbody">
-              <h3>{{ a.title }}</h3>
-              <p>{{ a.sub }}</p>
-            </span>
-          </a>
-        </div>
-      </section>
-
-      <div class="lane-pair" :class="{ 'lane-pair-solo': !(byKind('wiki', 5).length >= LANE_MIN && byKind('doc', 5).length >= LANE_MIN) }" v-if="byKind('wiki', 5).length >= LANE_MIN || byKind('doc', 5).length >= LANE_MIN">
-        <section class="lane" v-if="byKind('wiki', 5).length >= LANE_MIN">
-          <div class="lane-head"><h2>{{ HUB.lanes.wiki }}</h2></div>
-          <ul class="page-list">
-            <li v-for="w in byKind('wiki', 5)" :key="w.href">
-              <a :href="w.href">{{ w.title }}</a>
-            </li>
-          </ul>
-        </section>
-        <section class="lane" v-if="byKind('doc', 5).length >= LANE_MIN">
-          <div class="lane-head"><h2>{{ HUB.lanes.docs }}</h2></div>
-          <ol class="doc-list">
-            <li v-for="d in byKind('doc', 5)" :key="d.href">
-              <a :href="d.href">{{ d.title }}</a>
-            </li>
-          </ol>
-        </section>
-      </div>
-    </template>
-  </div>
-
-  <!-- ============================ EVERYTHING =========================== -->
-  <div v-else class="wrapwide hub">
     <section class="lane" v-if="hasBooks">
       <div class="lane-head lane-head-filter">
         <h2>{{ HUB.browse.heading }}</h2>
         <div class="book-filter">
           <span class="concept-select">
-            <select v-model="concept" :aria-label="HUB.browse['filter-aria']">
+            <select v-model="concept" :aria-label="HUB.browse['filter-aria']" @change="picked">
               <option v-for="o in conceptOptions" :key="o.slug" :value="o.slug">{{ o.name }}</option>
             </select>
             <svg viewBox="0 0 12 8" width="10" height="7" aria-hidden="true"><path d="M1 1.5 6 6.5 11 1.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -291,7 +203,17 @@ const img = (a: any) => a.data.image || (Array.isArray(a.data.media) ? a.data.me
           <a class="lane-more" href="/content/books">{{ HUB.browse['whole-shelf'] }} &rarr;</a>
         </div>
       </div>
-      <div class="shelf" v-if="conceptBooks.length">
+      <!-- Recommended before there is anything to rank on: what would arrange the shelf around them -->
+      <div v-if="concept === 'foryou' && !canRecommend" class="find find-diag">
+        <div class="find-txt">
+          <span class="find-eyebrow">{{ HUB.nudge.eyebrow }}</span>
+          <span class="find-h">{{ HUB.nudge.heading }}</span>
+          <span class="find-subtitle">{{ HUB.nudge.subtitle }}</span>
+        </div>
+        <a class="find-cta" href="/app">{{ HUB.nudge.cta }} &rarr;</a>
+      </div>
+      <p v-else-if="concept === 'foryou' && loading" class="disc-loading">{{ HUB.lanes.loading }}</p>
+      <div class="shelf" v-else-if="conceptBooks.length">
         <a v-for="b in conceptBooks" :key="b.slug" class="thumb" :href="'/content/books/' + b.slug">
           <span class="thumb-img" :style="b.cover ? null : { backgroundImage: coverTint(b.slug) }">
             <Book3D v-if="b.cover" :slug="b.slug" :art="b.cover.src" :alt="b.title + ' cover'" :title="b.title" :author="b.author" mode="still" />
@@ -353,6 +275,9 @@ const img = (a: any) => a.data.image || (Array.isArray(a.data.media) ? a.data.me
 
 <style scoped>
 .hub { padding-bottom: 80px }
+/* the page's heading over its lanes: the global header padding is a page header's, not this one's */
+.hub > header { padding-bottom: 0; margin-bottom: 32px }
+.hub > header + .lane { padding-top: 0 }
 .lane { margin: 0 0 54px }
 /* the nudge card: one strip, never a card that pushes the shelf down */
 .find { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; margin: 0 auto 30px; padding: 14px 20px; border: 1px solid var(--hair); border-radius: 14px; background: color-mix(in srgb, var(--accent2) 6%, var(--paper)) }
