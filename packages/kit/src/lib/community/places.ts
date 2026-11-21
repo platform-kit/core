@@ -35,7 +35,8 @@ const n = (v: any) => Math.max(0, Number(v) || 0)
  *   forYou      the site turned For You on (community.forYou)
  *   signedIn    a reader is signed in
  *   hide        the site's community.hide list
- *   coaching    this reader has a coaching place in the community (coachingPlace)
+ *   coaching    this reader has coaching sessions in the community (coachingPlace.sessions): the Coaching place
+ *   coachChat   this reader may write to a coach (coachingPlace.chat): Coaching Chat, a row of the Inbox
  *   counts      { dms, coaching, notes, mentions, saved, drafts, tickets } — what waits in each
  *   work        [{ key, count }] — the queues this reader answers
  *   locked      the places this reader may not enter (openspec: community-access-by-entitlement) — by
@@ -53,8 +54,13 @@ export function socialPlaces(ctx: any = {}) {
      messages, so community.access's Messages rule still locks it) */
   const dm = shutOf({ key: 'dms', icon: 'dm', word: 'messages', count: n(c.dms) })
   const queues = QUEUES.map((k) => (ctx.work || []).find((w: { key: string }) => w.key === k)).filter(Boolean).map((w) => ({ key: w.key, count: n(w.count) }))
-  const INBOX = queues.length
-    ? { key: 'inbox', icon: 'inbox', word: 'inbox', group: true, count: [dm, ...queues].reduce((s, r) => s + r.count, 0), rows: [...queues, dm] }
+  /* THE COACHING CONVERSATION is a kind of message like the rest, so it is a row of the Inbox (James, 2026-11-21), after
+     the queues and before Direct Messages; the Coaching place keeps the sessions */
+  /* a coach answers their clients from Clients, the same conversations from the other side: no second row for them */
+  const coachChat = signed && ctx.coachChat && !queues.some((q) => q.key === 'clients') ? [{ key: 'coaching-chat', count: n(c.coaching) }] : []
+  const rows = [...queues, ...coachChat, dm]
+  const INBOX = rows.length > 1
+    ? { key: 'inbox', icon: 'inbox', word: 'inbox', group: true, count: rows.reduce((s, r) => s + r.count, 0), rows }
     : { ...dm, icon: 'inbox', word: 'inbox' }
   const first = [
     { key: ctx.network ? 'net' : 'index', icon: 'home', word: 'home' },
@@ -63,7 +69,7 @@ export function socialPlaces(ctx: any = {}) {
     ...(ctx.events !== false ? [{ key: 'events', icon: 'calendar', word: 'events' }] : []),
     /* COACHING, a place of its own where coaching lives in the community: sessions are public to
        discover, while the coaching conversation and its count belong to the signed-in reader. */
-    ...(ctx.coaching || (signed && n(c.coaching) > 0) ? [{ key: 'coaching', icon: 'armchair', word: 'coaching', count: n(c.coaching) }] : []),
+    ...(ctx.coaching ? [{ key: 'coaching', icon: 'armchair', word: 'coaching' }] : []),
     /* THE INBOX, where Messages stood: the queues and Direct Messages, one fold (INBOX, above) */
     ...(signed ? [INBOX] : []),
     /* THE PLACES A SITE REGISTERED (community.places), after the Inbox and before Notifications, in the order given:

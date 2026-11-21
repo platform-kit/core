@@ -123,6 +123,8 @@ export const siteRouteOf = (p: string) => SITE_ROUTES.find((r: { path: string; p
    community, /app/coaching) and every place a site registered (community.places claims) */
 const CLAIMS = [
   ...(((site && site.coaching) || {}).where === 'spaces' ? [{ key: 'coaching', claims: [ROUTES.diagnostics + '/coaching'] }] : []),
+  /* in the social layout the coaching conversation is Coaching Chat in the Inbox: the chat's old address, an email's link, opens it */
+  ...(((site && site.coaching) || {}).where === 'spaces' && ((site && site.community) || {}).layout === 'social' ? [{ key: 'coaching-chat', claims: [ROUTES.diagnostics + '/chat'] }] : []),
   ...(SITE_PLACES || []),
 ]
 /* THE COURSES: their own pages at /courses always (the library, a course, a lesson, a certificate), and the same in the

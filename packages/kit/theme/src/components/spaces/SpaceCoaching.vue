@@ -11,7 +11,9 @@ import type { PropType } from 'vue'
  * says where you are.
  *
  * What is in the place is places.js coachingPlace: the conversation where they may write to a coach,
- * the sessions where the sessions module is on. The coach's side is the desk's Clients queue.
+ * the sessions where the sessions module is on. The community's navigation opens them apart: the
+ * conversation is Coaching Chat in the Inbox, the sessions are Coaching (each a `place` of one), so
+ * the tab bar shows only where a site puts both in one place. The coach's side is the desk's Clients queue.
  */
 import { ref, computed, watch } from 'vue'
 import { us } from 'platformkit/lib/content.js'

@@ -40,6 +40,7 @@ unreads: Unread
 threads: Threads
 support: Support Chat
 clients: Clients
+coaching-chat: Coaching Chat
 comments: Comments
 social-comments: Social Comments
 social-dms: Social Messages

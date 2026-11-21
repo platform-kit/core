@@ -41,6 +41,8 @@ const props = defineProps({
   myTickets: { type: Number, default: 0 },
   /* this reader has a coaching place in the community: its own row after Messages */
   coaching: { type: Boolean, default: false },
+  /* this reader may write to a coach: Coaching Chat in the Inbox */
+  coachChat: { type: Boolean, default: false },
   /* the column, or (on a phone) the bar along the bottom — drawn apart, since the column slides in a drawer */
   part: { type: String, default: 'full' },
   /* the spaces with something coming up, and the ones this reader keeps: their Events and
@@ -56,14 +58,14 @@ const C = (site && site.community) || {}
 
 /* THE FIRST SECTION AND WORK, from the one list */
 const places = computed(() => socialPlaces({
-  network: props.network, events: props.events, forYou: !!C.forYou, hide: C.hide || [], signedIn: isSignedIn.value, coaching: props.coaching, places: SITE_PLACES || [],
+  network: props.network, events: props.events, forYou: !!C.forYou, hide: C.hide || [], signedIn: isSignedIn.value, coaching: props.coaching, coachChat: props.coachChat, places: SITE_PLACES || [],
   counts: { dms: props.dmUnread, coaching: props.coachingUnread, notes: props.netUnread, mentions: props.mentions, saved: props.saved, drafts: props.drafts, tickets: props.myTickets },
   work: props.work,
   /* what this reader may not enter: kept in the list, marked, opening on the join card */
   locked: isSignedIn.value ? lockedPlaces({ home: !(props.network && net.access.known && !net.access.read), admitted: net.places }) : [],
 }))
 const wordOf = (m: any) => (m.place ? W.value[m.word] || m.word : m.word === 'saved' || m.word === 'drafts' || m.word === 'my-tickets' || m.word === 'coaching' ? W.value[m.word] : S.value[m.word])
-const QUEUE_ICON: any = { support: 'head', tickets: 'ticket', clients: 'people', comments: 'thread', 'social-comments': 'thread', 'social-dms': 'dm' }
+const QUEUE_ICON: any = { 'coaching-chat': 'armchair', support: 'head', tickets: 'ticket', clients: 'people', comments: 'thread', 'social-comments': 'thread', 'social-dms': 'dm' }
 const isOn = (key: string) => props.view === key || (key === 'net' && props.view === 'net' && !props.channelId)
 
 /* THE INBOX unfolds by hand, or while one of its rows is open; remembered per browser */

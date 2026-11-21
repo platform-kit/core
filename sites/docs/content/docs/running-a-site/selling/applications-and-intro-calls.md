@@ -16,7 +16,7 @@ sources:
     packages/kit/theme/src/pages/CheckoutPage.vue,
     packages/kit/theme/src/components/admin/ApplicationsAdmin.vue,
   ]
-reviewed: 2026-11-20
+reviewed: 2026-11-21
 ---
 
 Most offers go straight to checkout. A coaching program, a mentorship or a cohort is often sold another way: the buyer applies first, talks to you first, or both. An offer's `before` block says which.

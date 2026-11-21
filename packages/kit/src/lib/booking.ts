@@ -160,7 +160,9 @@ const WEEK = 7 * 864e5, MONTH = 30 * 864e5
    This is the APP's gate: a used-up option shows no calendar. The cal.com link
    itself is public and cal.com knows nothing of tiers, so a booking made straight
    on cal.com is not stopped here — it is mirrored by the webhook and counts. */
-export function sessionOptions(bookings = [], offerings = []) {
+const offerCalls = () => new Set((PRODUCTS || []).map((p: any) => p && p.before && p.before.call).filter(Boolean))
+/* `only`: one type by its slug, hidden or not: a page that offers that type itself (an offer's intro call, at the end of its application) */
+export function sessionOptions(bookings = [], offerings = [], { only = '' }: { only?: string } = {}) {
   const rank = memberRank.value, signed = !!user.value
   const now = Date.now()
   /* ONE LIST, TWO KINDS OF RECORD. A reader choosing a time is not thinking about which of the two
@@ -172,7 +174,9 @@ export function sessionOptions(bookings = [], offerings = []) {
        given. It is not unpublished: it books exactly as any other does, for anybody who has the
        link and passes its gate. A MANAGED type is hidden from this list too, because it is not the
        team's to book: it lives on each member's own page. */
-    .filter((s) => !((s.page || {}).hidden === true) && s.assign !== 'managed')
+    /* AN OFFER'S CALL BEFORE ITS CHECKOUT is the offer's to offer (its application's last screen, its card), never a list of
+       sessions to book: it is off the list the way a hidden type is (openspec: applications-and-intro-calls) */
+    .filter((s) => (only ? s.slug === only : !((s.page || {}).hidden === true) && !offerCalls().has(s.slug)) && s.assign !== 'managed')
     .filter((s) => {
       /* a tier that lists the type admits it, whatever the type's own rules say */
       if ((PRODUCTS || []).some((p: any) => p.kind === 'membership' && p.tier && memberTiers.value.includes(p.tier) && (p.sessions || []).some((r: any) => r.type === s.slug))) return true

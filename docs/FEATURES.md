@@ -474,7 +474,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Coaches can find any member to start a conversation.
 - Chat is open by plan, or for a week around a paid session; coaches see the reply time each member's plan promises.
 - An away email when appropriate, never while the other person is on the site.
-- The site chooses where chat lives: in the reader's app or in the community.
+- The site chooses where chat lives: in the reader's app or in the community. In the community's social layout the conversation is Coaching Chat under the Inbox, beside every other kind of message, and Coaching holds the sessions; an offer's intro call is offered by the offer, not in the list of sessions to book.
 
 ### Staff browser notifications (`push`)
 

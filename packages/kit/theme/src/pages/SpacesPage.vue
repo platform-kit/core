@@ -644,6 +644,8 @@ const ownViewOf = (p: any) => {
   /* a registered place owns its address and everything under it */
   const head = rest.split('/')[0]
   if (SITE_PLACE_KEYS.includes(head)) return head
+  /* Coaching Chat opens on its own address and on one naming a conversation (an email's link, /app/chat/<id>, forwards here) */
+  if (head === 'coaching-chat' && OWN_VIEW[head]) return OWN_VIEW[head]
   /* Events where the community does not run it is no place: the address opens the community's front instead */
   if (rest === 'events' && !EVENTS_ON) return null
   return OWN_VIEW[rest] || null
@@ -713,7 +715,9 @@ const placeRest = computed(() => {
   return p.startsWith(at + '/') ? p.slice(at.length + 1) : ''
 })
 const REGISTRY = [
-  { key: 'coaching', component: SpaceCoaching, wide: true, props: () => ({ place: coachPlace.value }) },
+  /* in the social layout the conversation is Coaching Chat in the Inbox and Coaching is the sessions; the chat layout keeps both in one place */
+  { key: 'coaching', component: SpaceCoaching, wide: true, props: () => ({ place: SOCIAL && coachPlace.value ? { chat: false, sessions: coachPlace.value.sessions } : coachPlace.value }) },
+  ...(SOCIAL ? [{ key: 'coaching-chat', component: SpaceCoaching, wide: true, props: () => ({ place: { chat: true, sessions: false } }) }] : []),
   ...(SITE_PLACES || []).map((x) => ({ ...x, component: x.load ? defineAsyncComponent(x.load) : null, props: () => ({ rest: placeRest.value }) })),
 ]
 const placeOf: any = (k: any) => REGISTRY.find((x) => x.key === k) || null
@@ -722,7 +726,7 @@ const placeOf: any = (k: any) => REGISTRY.find((x) => x.key === k) || null
    cost it the browser's own scrolling — the phone's bar never folds away, back does not return to where you were.
    Such a place lengthens the page instead, and the navigation stays beside it as it scrolls. */
 const FLOW = computed(() => !!(placeOf(view.value) && placeOf(view.value).scroll === 'page'))
-const MINE = [...SITE_PLACE_KEYS, 'net', 'net-notes', 'index', 'support', 'clients', 'comments', 'social-comments', 'social-dms', 'tickets', 'my-tickets', 'coaching', 'dms', 'unreads', 'threads', 'mentions', 'saved', 'drafts', 'discover']
+const MINE = [...SITE_PLACE_KEYS, 'net', 'net-notes', 'index', 'support', 'clients', 'comments', 'social-comments', 'social-dms', 'tickets', 'my-tickets', 'coaching', 'coaching-chat', 'dms', 'unreads', 'threads', 'mentions', 'saved', 'drafts', 'discover']
 const inSpace = computed(() => !MINE.includes(view.value) && !(view.value === 'events' && eventsAll.value))
 const reportable = computed(() => !!space.value && space.value.kind !== 'staff' && !!channel.value && channel.value.kind !== 'dm')
 /* A POST IN A FORUM TAKES THE WHOLE PANE. In a stream a thread belongs beside the room, because the
@@ -828,7 +832,7 @@ const PLACES = ['people', 'events', 'keeping']
    space's events — belong to no space, so they never wear one's address (they used to keep the last
    space's, which read as Coaching being a room of it). Where the network is one place with the spaces
    they sit beside Home under /feed, and an address opens its place; without it, the community's own. */
-const OWN_ADDR: any = { coaching: 'coaching', dms: 'messages', saved: 'saved', drafts: 'drafts', 'my-tickets': 'my-tickets',
+const OWN_ADDR: any = { coaching: 'coaching', 'coaching-chat': 'coaching-chat', dms: 'messages', saved: 'saved', drafts: 'drafts', 'my-tickets': 'my-tickets',
   support: 'support', tickets: 'tickets', clients: 'clients', comments: 'comments', 'social-comments': 'social-comments', 'social-dms': 'social-messages' }
 const OWN_VIEW = Object.fromEntries([...Object.entries(OWN_ADDR).map(([v, a]) => [a, v]), ['events', 'events']])
 
@@ -1098,7 +1102,7 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
           :space-id="inSpace && space ? space.id : ''" :channel-id="view === 'channel' ? (open.id || '') : ''" :work="workList"
           :events="EVENTS_ON" :coaching-unread="coachingHere ? chatUnread : 0" :dm-unread="dmUnread" :mentions="mentionCount"
           :saved="saved.length" :drafts="draftRows.length" :my-tickets="myTicketCount" :net-unread="netUnread"
-          :coaching="coachingHere" :event-spaces="eventSpaces" :keeps="moderating && space ? [space.id] : []"
+          :coaching="!!(coachPlace && coachPlace.sessions)" :coach-chat="!!(coachPlace && coachPlace.chat)" :event-spaces="eventSpaces" :keeps="moderating && space ? [space.id] : []"
           @view="socialGo" @space="(id) => { railOpen = false; pickSpace(id) }" @open="(id) => { railOpen = false; pick(id) }"
           @place="(id, key) => { railOpen = false; openPlace(id, key) }"
           @drawer="railOpen = true" />
@@ -1204,7 +1208,7 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
 
       <SpaceDms
         v-else-if="view === 'dms'" class="sp-plain" :rows="dms" :me="me" :spaces="spaces"
-        :pinned="null" @pinned="goTo('coaching')"
+        :pinned="null" @pinned="goTo(SOCIAL ? 'coaching-chat' : 'coaching')"
         @compose="composing = true" @open="openDmRow" />
 
       <SpaceFeed

@@ -52,7 +52,7 @@ async function loadBookings() {
   rows.value = data || []
 }
 watch(step, (s) => { if (s === 'call') loadBookings() })
-const options = computed(() => (callType.value ? sessionOptions(rows.value as never[]).filter((o: any) => o.slug === callType.value.slug) : []))
+const options = computed(() => (callType.value ? sessionOptions(rows.value as never[], [], { only: callType.value.slug }) : []))
 async function booked() { await loadAdmissions(); step.value = 'booked' }
 </script>
 
