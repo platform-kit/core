@@ -51,3 +51,27 @@ CREATE OR REPLACE FUNCTION "public"."person_bookings"("p_user" "uuid") RETURNS "
              order by b.start_at desc nulls last)
       from public.bookings b where b.user_id = p_user), '[]'::jsonb);
 $$;
+
+-- AN OFFER'S REQUIRED CALL, HELD (openspec: applications-and-intro-calls): a booked admission whose call has ended,
+-- and was neither cancelled nor marked a no-show, opens. The host's "Not a fit" closes it first (the admin function,
+-- through admission_move). Hourly, with the open admissions past an offer's own open-for marked expired.
+CREATE OR REPLACE FUNCTION "public"."admissions_sweep"("p_open_days" "jsonb" DEFAULT '{}'::"jsonb") RETURNS integer
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+declare
+  n integer := 0;
+  r record;
+begin
+  for r in select a.id, a.sku from public.admissions a join public.bookings b on b.uid = a.booking_id
+            where a.status = 'booked' and b.end_at is not null and b.end_at <= now()
+              and b.status in ('accepted', 'ended') and not b.no_show loop
+    perform public.admission_move(r.id, 'open', null, null, coalesce((p_open_days ->> r.sku)::int, 0));
+    n := n + 1;
+  end loop;
+  return n + public.admissions_expire();
+end
+$$;
+REVOKE ALL ON FUNCTION "public"."admissions_sweep"("jsonb") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."admissions_sweep"("jsonb") FROM "anon", "authenticated";
+GRANT EXECUTE ON FUNCTION "public"."admissions_sweep"("jsonb") TO "service_role";

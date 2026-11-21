@@ -251,6 +251,7 @@ const KIT_TESTS = [
   ['icons.mjs', '--check'],   /* every glyph a page names is one something can draw: an unknown name used to be skipped in silence and drew a hole */
   ['yaml-keep.test.mts'],   /* a save keeps the file's own comments, and moves no line it did not change — over every self-documenting record this grammar writes */
   ['strings.test.mts'],
+  ['admissions.test.mts'],   /* what comes before an offer's checkout: the before block and its refusals, and the admission audience (openspec: applications-and-intro-calls) */
   ['images.test.mts'],   /* the image sources as a class: a source with no key is absent, the key stays server-side, and what is chosen lands in the library — plus Unsplash's licence conditions as code */
   ['variants.test.mts'],   /* options in, variants out — and a two-way proof over every book in print that its own cart lines, skus and refusals come out unchanged */
   ['store-kinds.test.mts'],   /* the seam a kind of thing reaches the store through: two slots and an opaque record, driven by a fixture kind for something the kit does not sell */

@@ -10,6 +10,7 @@ import { schedulerOf, schedulerIdOf, videoOf } from './cal.ts'
 import { mirror, spendCredit, returnCredit, typeFor, type Session } from './sessions.ts'
 import { sessionMail } from './session-mail.ts'
 import { deliverSchedulingEvent } from './scheduling-events.ts'
+import { callBooked } from './admissions.ts'   /* the call before an offer, kept on its admission (openspec: applications-and-intro-calls) */
 const tell = (trigger: string, uid: string) => deliverSchedulingEvent(trigger, uid).catch((e) => console.warn('scheduling webhook', trigger, String(e)))
 
 /* `status` because a booking that WAITS for the host's word is made as `pending`, and what happens
@@ -62,6 +63,8 @@ export async function makeBooking(s: Session, o: { start: string; attendee: Atte
     if (theirs) await admin.from('bookings').update({ response_id: resp.id }).eq('uid', made.uid)
     else console.warn('booking: a response that is not this booking\'s was offered and ignored')
   }
+  /* the call an offer names before its checkout: kept on the person's admission for that offer */
+  if (o.user_id) await callBooked(o.user_id, s.slug, made.uid).catch((e) => console.warn('admission call', String(e)))
   return made
 }
 

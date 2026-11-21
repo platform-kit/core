@@ -25,6 +25,7 @@
  */
 import { admin, json, preflight, getUser, appUrl } from '../_shared/lib.ts'
 import { offer } from '../_shared/offers.ts'
+import { offersApplyingWith, applied } from '../_shared/admissions.ts'   /* a form that is an offer's application (openspec: applications-and-intro-calls) */
 import { formsNow } from '../_shared/forms-live.ts'   /* forms.json in git mode; the rows parsed in cloud mode, so a form written through the API or the admin takes answers at once */
 import { grade, isRight } from '../_shared/forms/score.ts'
 import { definitionOf } from '../_shared/api/typeform/definition.ts'
@@ -194,6 +195,9 @@ Deno.serve(async (req: Request) => {
   const w = await who(req)
   if (form.kit.respond === 'authenticated' && !w.user) return json({ error: 'sign in to answer this form', code: 'signin' }, 401)
   if (!w.user && !w.anon) return json({ error: 'no identity', code: 'anon' }, 400)
+  /* AN OFFER'S APPLICATION belongs to an account, as the membership it leads to does */
+  const applyingFor = offersApplyingWith(slug, (() => { try { return String(JSON.parse(String(body._hidden || '{}')).offer || '') } catch { return '' } })())
+  if (applyingFor.length && !w.user) return json({ error: 'sign in to apply', code: 'signin' }, 401)
   /* WHAT IT COSTS. A paid form takes no answer until it is paid for — and says so in a shape the
      runner can act on (the sku, so it can send them to the checkout and bring them back). A
      response already open was paid for when it was started, so it is theirs to finish. */
@@ -300,6 +304,12 @@ Deno.serve(async (req: Request) => {
     if (form.kit.paid && w.user && credit) await admin.from('entitlements').update({ active: false }).eq('id', credit)
     await deliver(slug, form, id)
     await retry(slug, form, id)
+    /* the application is in: its admission starts, and the applicant and the reviewers are told */
+    if (w.user && applyingFor.length) {
+      const made = []
+      for (const sku of applyingFor) { const a = await applied(w.user.id, sku, id); if (a) made.push({ sku, status: a.status }) }
+      out.admissions = made
+    }
   }
   return json(out)
 })

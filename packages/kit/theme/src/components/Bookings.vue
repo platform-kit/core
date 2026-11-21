@@ -17,8 +17,17 @@ import { recordingFor, fetchAgain } from 'platformkit/lib/recordings.js'
 import { placeOf, eventOfType, schedulerOf } from 'platformkit/lib/booking.js'
 import SessionBooker from '../instrument/ui/results/SessionBooker.vue'
 import AdminHead from './admin/AdminHead.vue'
+import { products as GATE_PRODUCTS } from '#content'
 
 const T = us('orders')
+/* the call an offer requires before its checkout (openspec: applications-and-intro-calls) */
+const AR = (us('checkout').review || {}).main || {}
+const gatingCall = (r: any) => (GATE_PRODUCTS || []).some((p: any) => p.before && p.before.call && p.before['call-required'] && (p.before.call === r.event || p.before.call === r.type))
+const unfit = ref<Record<string, boolean>>({})
+async function notAFit(r: any) {
+  const { error } = await supabase!.functions.invoke('admissions', { body: { op: 'not-a-fit', booking: r.uid } })
+  if (!error) unfit.value = { ...unfit.value, [r.uid]: true }
+}
 /* where a native session happens, worded by the booker's lines (the library scope) */
 const BW = (us('library').coaching || {}).booker || {}
 const placeLine = (r: any) => placeOf(r.where, BW)
@@ -188,6 +197,9 @@ function openAuth() { if ((window as any).DLauth) (window as any).DLauth.open() 
             <dl v-if="answersOf(r).length" class="po-facts po-answers">
               <div v-for="(a, i) in answersOf(r)" :key="i"><dt>{{ a.label }}</dt><dd>{{ a.value || '—' }}</dd></div>
             </dl>
+            <!-- the call an offer requires before its checkout: its host may say the person is not a fit (openspec: applications-and-intro-calls) -->
+            <p v-if="gatingCall(r) && !unfit[r.uid]" class="po-facts"><button type="button" class="po-link" :disabled="mediaBusy === r.uid" @click="notAFit(r)">{{ AR['not-a-fit'] }}</button></p>
+            <p v-else-if="unfit[r.uid]" class="po-facts"><i>{{ AR['not-a-fit-done'] }}</i></p>
             <div v-if="watching === r.uid && media[r.uid]" class="po-player"><video v-if="media[r.uid].recording" controls preload="metadata" :src="media[r.uid].play || media[r.uid].recording" /><i v-else>{{ media[r.uid].error }}</i></div>
           </div>
         </li>

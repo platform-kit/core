@@ -37,10 +37,10 @@ export const KIT_SUPABASE = fileURLToPath(new URL('../../supabase/', import.meta
 export const CORE: { schema: string[], functions: string[] } = {
   schema: [
     '10-foundation.sql', '12-compiled.sql', '12-content.sql', '13-search.sql', '14-audience.sql', '15-library.sql',
-    '30-analytics.sql', '40-commerce.sql', '44-commitments.sql', '45-repricings.sql', '46-checkouts.sql', '87-api-rate.sql', '97-comments.sql', '98-achievements.sql', '99-reactions.sql',
+    '30-analytics.sql', '40-commerce.sql', '44-commitments.sql', '45-repricings.sql', '46-checkouts.sql', '47-admissions.sql', '87-api-rate.sql', '97-comments.sql', '98-achievements.sql', '99-reactions.sql',
   ],
   functions: [
-    'admin', 'confirm-checkout', 'content', 'create-checkout-session', 'images', 'ingest', 'payment-provider-webhook',
+    'admin', 'admissions', 'confirm-checkout', 'content', 'create-checkout-session', 'images', 'ingest', 'payment-provider-webhook',
     'push-catalog', 'reader-content', 'share-image', 'stripe-webhook',
   ],
 }

@@ -61,6 +61,51 @@ export type Database = {
         }
         Relationships: []
       }
+      admissions: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          note: string | null
+          open_until: string | null
+          response_id: string | null
+          sku: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          note?: string | null
+          open_until?: string | null
+          response_id?: string | null
+          sku: string
+          status: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          note?: string | null
+          open_until?: string | null
+          response_id?: string | null
+          sku?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       agent_runs: {
         Row: {
           asked_by: string | null
@@ -975,6 +1020,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      checkouts_started: {
+        Row: {
+          id: string
+          offer_sku: string
+          sku: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          offer_sku: string
+          sku: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          offer_sku?: string
+          sku?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       comment_subjects: {
         Row: {
@@ -4438,6 +4507,81 @@ export type Database = {
           },
         ]
       }
+      run_recording_trash: {
+        Row: {
+          prefix: string
+          queued_at: string
+        }
+        Insert: {
+          prefix: string
+          queued_at?: string
+        }
+        Update: {
+          prefix?: string
+          queued_at?: string
+        }
+        Relationships: []
+      }
+      run_recordings: {
+        Row: {
+          bytes: number
+          duration_ms: number | null
+          ended_at: string | null
+          id: string
+          keep_after_membership: number | null
+          keep_days: number | null
+          kind: string
+          marks: Json
+          mime: string
+          parts: number
+          ref: string
+          response_id: string | null
+          source: string
+          staff_read: boolean
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          bytes?: number
+          duration_ms?: number | null
+          ended_at?: string | null
+          id?: string
+          keep_after_membership?: number | null
+          keep_days?: number | null
+          kind: string
+          marks?: Json
+          mime: string
+          parts?: number
+          ref: string
+          response_id?: string | null
+          source: string
+          staff_read?: boolean
+          started_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          bytes?: number
+          duration_ms?: number | null
+          ended_at?: string | null
+          id?: string
+          keep_after_membership?: number | null
+          keep_days?: number | null
+          kind?: string
+          marks?: Json
+          mime?: string
+          parts?: number
+          ref?: string
+          response_id?: string | null
+          source?: string
+          staff_read?: boolean
+          started_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       scheduling_webhooks: {
         Row: {
           active: boolean
@@ -7727,6 +7871,102 @@ export type Database = {
       admin_staff: { Args: { p_q?: string | null }; Returns: Json }
       admin_support: { Args: { days?: number | null }; Returns: Json }
       admin_usage: { Args: { p_days?: number | null }; Returns: Json }
+      admission_apply: {
+        Args: {
+          p_open?: boolean | null
+          p_open_days?: number | null
+          p_response: string | null
+          p_sku: string | null
+          p_user: string | null
+        }
+        Returns: {
+          booking_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          note: string | null
+          open_until: string | null
+          response_id: string | null
+          sku: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "admissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admission_booked: {
+        Args: {
+          p_booking: string | null
+          p_required: boolean | null
+          p_sku: string | null
+          p_user: string | null
+        }
+        Returns: {
+          booking_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          note: string | null
+          open_until: string | null
+          response_id: string | null
+          sku: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "admissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admission_live: {
+        Args: { a: Database["public"]["Tables"]["admissions"]["Row"] | null }
+        Returns: string
+      }
+      admission_move: {
+        Args: {
+          p_by?: string | null
+          p_id: string | null
+          p_note?: string | null
+          p_open_days?: number | null
+          p_to: string | null
+        }
+        Returns: {
+          booking_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          note: string | null
+          open_until: string | null
+          response_id: string | null
+          sku: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "admissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admission_open: {
+        Args: { p_sku: string | null; p_user: string | null }
+        Returns: boolean
+      }
+      admissions_expire: { Args: never; Returns: number }
+      admissions_sweep: { Args: { p_open_days?: Json | null }; Returns: number }
       agent_become: { Args: { p_run: string | null }; Returns: string }
       agent_cancel: { Args: { p_run: string | null }; Returns: Json }
       agent_claim: {
@@ -7916,6 +8156,14 @@ export type Database = {
         Returns: boolean
       }
       chat_unread: { Args: never; Returns: number }
+      checkouts_left: {
+        Args: { uid: string | null }
+        Returns: {
+          offer_sku: string
+          sku: string
+          started_at: string
+        }[]
+      }
       claim_guest_bookings: {
         Args: { p_addr: string | null; p_user: string | null }
         Returns: undefined
@@ -8433,7 +8681,25 @@ export type Database = {
       member_read: { Args: { p_lim?: number | null; p_user: string | null }; Returns: Json }
       member_working: { Args: { p_user: string | null }; Returns: Json }
       message_channel: { Args: { p_message: string | null }; Returns: string }
+      my_admissions: {
+        Args: never
+        Returns: {
+          booked: boolean
+          note: string
+          open_until: string
+          sku: string
+          status: string
+        }[]
+      }
       my_channel_ids: { Args: never; Returns: string[] }
+      my_checkout_left: {
+        Args: never
+        Returns: {
+          offer_sku: string
+          sku: string
+          started_at: string
+        }[]
+      }
       my_class: { Args: never; Returns: string }
       my_courses: { Args: never; Returns: Json }
       my_interests: {
@@ -8755,7 +9021,15 @@ export type Database = {
       run_network_crawl: { Args: never; Returns: undefined }
       run_network_project: { Args: never; Returns: undefined }
       run_print_jobs: { Args: never; Returns: undefined }
+      run_recordings_due: {
+        Args: never
+        Returns: {
+          id: string
+          user_id: string
+        }[]
+      }
       run_repricings: { Args: never; Returns: undefined }
+      run_run_recordings_sweep: { Args: never; Returns: undefined }
       run_session_recordings: { Args: never; Returns: undefined }
       run_session_recordings_retain: { Args: never; Returns: undefined }
       run_session_reminders: { Args: never; Returns: undefined }

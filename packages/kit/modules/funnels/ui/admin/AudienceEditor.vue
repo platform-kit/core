@@ -22,6 +22,7 @@ const emit = defineEmits(['update:modelValue'])
 const a = computed(() => props.modelValue || {})
 const set = (k: string, v: any) => { const next = { ...a.value }; if (v == null || v === '' || (Array.isArray(v) && !v.length)) delete next[k]; else next[k] = v; emit('update:modelValue', next) }
 
+const ADMISSION = [['open', 'Approved, not paid'], ['applied', 'Waiting'], ['declined', 'Declined']]
 /* the rules there are, each with the control it takes */
 const RULES = [
   { key: 'inactive', label: 'Last active', hint: 'an event, an answer, or the profile', kind: 'span' },
@@ -29,7 +30,9 @@ const RULES = [
   { key: 'since-purchase', label: 'Last purchase', hint: 'a paid order', kind: 'span', none: true },
   { key: 'since-session', label: 'Last coaching session', hint: 'attended', kind: 'span', none: true },
   { key: 'abandoned-checkout', label: 'Left a checkout', hint: 'opened checkout and has paid for nothing there since', kind: 'span', none: true },
-  { key: 'abandoned-offer', label: 'Checkout left for', hint: 'narrows Left a checkout to these offers', kind: 'offers' },
+  { key: 'abandoned-offer', label: 'Checkout left for', hint: 'narrows Left a checkout, or Application, to these offers', kind: 'offers' },
+  /* an offer that gates its checkout (openspec: applications-and-intro-calls) */
+  { key: 'admission', label: 'Application', hint: 'approved and not yet paid, waiting for a decision, or declined', kind: 'admission' },
   { key: 'subscription', label: 'Membership', hint: 'none, any, or a tier', kind: 'tiers' },
   { key: 'level', label: 'Working at', hint: 'the level their last reading placed them at', kind: 'levels' },
   { key: 'interest', label: 'Interested in', hint: 'took the area\'s diagnostic, or read content tagged with it', kind: 'areas' },
@@ -132,6 +135,7 @@ watch(rules, () => { count.value = null })
       </div>
       <div v-else-if="r.kind === 'roles'" class="ui-chips"><button v-for="k in ROLES" :key="k" type="button" class="ui-chip" :class="{ 'ui-on': listOf('role').includes(k) }" @click="toggle('role', k)">{{ k }}</button></div>
       <div v-else-if="r.kind === 'offers'" class="ui-chips"><button v-for="[k, name] in OFFERS" :key="k" type="button" class="ui-chip" :class="{ 'ui-on': listOf('abandoned-offer').includes(k) }" @click="toggle('abandoned-offer', k)">{{ name }}</button></div>
+      <div v-else-if="r.kind === 'admission'" class="ui-chips"><button v-for="[k, name] in ADMISSION" :key="k" type="button" class="ui-chip" :class="{ 'ui-on': listOf('admission').includes(k) }" @click="toggle('admission', k)">{{ name }}</button></div>
       <div v-else-if="r.kind === 'grants'" class="ui-chips"><button v-for="k in GRANTS" :key="k" type="button" class="ui-chip" :class="{ 'ui-on': listOf('grant').includes(k) }" @click="toggle('grant', k)">{{ k }}</button></div>
       <div v-else-if="r.kind === 'levels'" class="ui-chips"><button v-for="[k, name] in LVLS" :key="k" type="button" class="ui-chip" :class="{ 'ui-on': listOf('level').includes(k) }" @click="toggle('level', k)">{{ name }}</button></div>
       <div v-else-if="r.kind === 'areas'" class="ui-chips"><button v-for="[k, name] in AREAS" :key="k" type="button" class="ui-chip" :class="{ 'ui-on': listOf('interest').includes(k) }" @click="toggle('interest', k)">{{ name }}</button></div>

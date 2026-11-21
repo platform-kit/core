@@ -13,9 +13,9 @@
    and an email audience said who it reaches in another, so "the coaches" was sayable to one and not
    to the other. "role" and "grant" close that: a role somebody holds on the site, and a capability
    somebody has been granted in a space — the two things the rest of the product already gates on. */
-export const RULE_KEYS = ['inactive', 'signed-up', 'since-purchase', 'since-session', 'subscription', 'interest', 'level', 'answered', 'bought', 'not-bought', 'role', 'grant', 'verified', 'abandoned-checkout', 'abandoned-offer']
+export const RULE_KEYS = ['inactive', 'signed-up', 'since-purchase', 'since-session', 'subscription', 'interest', 'level', 'answered', 'bought', 'not-bought', 'role', 'grant', 'verified', 'abandoned-checkout', 'abandoned-offer', 'admission']
 const SPAN_KEYS = { inactive: 'inactive', 'signed-up': 'signed_up', 'since-purchase': 'since_purchase', 'since-session': 'since_session', 'abandoned-checkout': 'abandoned_checkout' }
-const LIST_KEYS = { subscription: 'subscription', interest: 'interest', level: 'level', bought: 'bought', 'not-bought': 'not_bought', role: 'role', grant: 'grant', 'abandoned-offer': 'abandoned_offer' }
+const LIST_KEYS = { subscription: 'subscription', interest: 'interest', level: 'level', bought: 'bought', 'not-bought': 'not_bought', role: 'role', grant: 'grant', 'abandoned-offer': 'abandoned_offer', admission: 'admission' }
 const UNIT: any = { d: 1, w: 7, h: 1 / 24, m: 30 }
 
 /* "3d" → 3, "2w" → 14, "12h" → 0.5; a bare number is days; null when it is not a span */
@@ -77,6 +77,7 @@ export function describeRules(rules: any) {
   if (r.since_purchase) out.push(spanWords('bought', r.since_purchase))
   if (r.since_session) out.push(spanWords('had a session', r.since_session))
   if (r.abandoned_checkout) out.push((r.abandoned_checkout.none ? 'no checkout left unfinished' : spanWords('left a checkout', r.abandoned_checkout)) + (r.abandoned_offer ? ' for ' + r.abandoned_offer.join(' or ') : ''))
+  if (r.admission) out.push('application ' + r.admission.map((s: string) => (s === 'open' ? 'approved, not yet paid' : s === 'applied' ? 'waiting' : s)).join(' or ') + (r.abandoned_offer && !r.abandoned_checkout ? ' for ' + r.abandoned_offer.join(' or ') : ''))
   if (r.subscription) out.push(r.subscription.map((t: string) => (t === 'none' ? 'no membership' : t === 'any' ? 'any membership' : t)).join(' or '))
   if (r.interest) out.push('interested in ' + r.interest.join(', '))
   if (r.level) out.push('working at ' + r.level.join(' or '))

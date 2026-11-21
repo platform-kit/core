@@ -96,6 +96,7 @@ export const STATE = {
   commitments: 'somebody agreed to pay it all',
   run_recordings: 'somebody recorded a run of the question runner',
   run_recording_trash: 'a deleted recording whose files are still to be removed',
+  admissions: 'where somebody stands with an offer that gates its checkout: applied, approved, declined, open, used (openspec: applications-and-intro-calls)',
   checkouts_started: 'somebody opened a checkout (whether they finished is read from what they have paid for since)',
   repricings: 'a subscriber moved to a new price',
   usage_events: 'what a person and an assistant spent, in measured usage',

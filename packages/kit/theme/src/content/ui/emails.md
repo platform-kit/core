@@ -162,6 +162,30 @@ subject: A payment for {{what}} was missed
 
 subject: A plan for {{what}} is in default
 
+## application-received
+
+### mail
+
+subject: We have your application for {{what}}
+
+## application-review
+
+### mail
+
+subject: {{who}} applied for {{what}}
+
+## application-approved
+
+### mail
+
+subject: Your application for {{what}} is approved
+
+## application-declined
+
+### mail
+
+subject: About your application for {{what}}
+
 ## term-ending
 
 ### mail

@@ -13,7 +13,7 @@ sources:
     packages/kit/theme/src/pages/BookPage.vue,
     packages/kit/build/scheduling-api.test.mts,
   ]
-reviewed: 2026-11-17
+reviewed: 2026-11-20
 ---
 
 ## What it is
@@ -32,7 +32,7 @@ A key of kind **Scheduling** (Settings → API) is the site's authority: every t
 
 ## The judge holds
 
-A booking through the API is judged exactly as one from the app (`judge()` in `_shared/sessions.ts`): the attendee is the account with that address; a guest — no account — is admitted only by a type whose `requires` is `anyone` or `guest` and that sells nothing; the plan's tier and the type's allowance (a week's, a month's) apply; a paid type needs a credit already on the account. A refusal answers 403 (402 for `unpaid`) in cal.com's error shape with the judge's code in `details.code` — `guest`, `not-included`, `over`, `unpaid` — and nothing is made; a time just taken is 409. What is made is the same row the app would have made (`makeBooking` in `_shared/booking.ts`): the Coaching tab shows it at once, the host's time is taken, the site's emails and reminders go, a paid session's credit is spent and coaching chat opens with that session's coach until a week after the session ends. This window is derived from the booking, follows a reschedule and closes on cancellation; it is not a membership entitlement.
+A booking through the API is judged exactly as one from the app (`judge()` in `_shared/sessions.ts`): the attendee is the account with that address; a guest — no account — is admitted only by a type whose `requires` is `anyone` or `guest` and that sells nothing; the plan's tier and the type's allowance (a week's, a month's) apply; a paid type needs a credit already on the account. A refusal answers 403 (402 for `unpaid`) in cal.com's error shape with the judge's code in `details.code` — `guest`, `not-included`, `over`, `unpaid` — and nothing is made; a time just taken is 409. What is made is the same row the app would have made (`makeBooking` in `_shared/booking.ts`): the Coaching tab shows it at once, the host's time is taken, the site's emails and reminders go, a paid session's credit is spent and coaching chat opens with that session's coach until a week after the session ends. A booking of the call an offer names before its checkout is kept on the person's admission for that offer ([Applications and intro calls](/docs/running-a-site/selling/applications-and-intro-calls)). This window is derived from the booking, follows a reschedule and closes on cancellation; it is not a membership entitlement.
 
 ## The shapes
 

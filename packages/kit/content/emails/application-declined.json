@@ -1,0 +1,299 @@
+{
+  "settings": {
+    "width": 600,
+    "backgroundColor": "#fbfaf3",
+    "textColor": "#0c0d0b",
+    "linkColor": "#0c0d0b",
+    "linkUnderline": true,
+    "fontFamily": "Georgia",
+    "locale": "en",
+    "preheaderText": "About your application for {{what}}."
+  },
+  "blocks": [
+    {
+      "id": "appno-0",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        }
+      },
+      "children": [
+        [
+          {
+            "id": "appno-1",
+            "type": "spacer",
+            "height": 28,
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "appno-2",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 34,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "appno-3",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#0c0d0b;font-family:Menlo, Consolas, monospace\">Your site</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 2,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "appno-4",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">What you send it about</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "appno-5",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "appno-6",
+            "type": "divider",
+            "lineStyle": "solid",
+            "color": "#e6e2d6",
+            "thickness": 1,
+            "width": "full",
+            "styles": {
+              "padding": {
+                "top": 18,
+                "right": 0,
+                "bottom": 6,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "appno-7",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "appno-8",
+            "type": "title",
+            "level": 2,
+            "content": "About your application.",
+            "textAlign": "left",
+            "color": "#0c0d0b",
+            "fontFamily": "Georgia, Times New Roman, serif",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 10,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "appno-9",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:16px;color:#0c0d0b\">Hi {{name}}, thank you for applying for {{what}}. We are not able to offer you a place this time.{{#if note}} {{note}}{{/if}}</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 12,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "appno-a",
+            "type": "button",
+            "text": "See the other options",
+            "url": "{{url}}",
+            "backgroundColor": "#0c0d0b",
+            "textColor": "#fbfaf3",
+            "borderRadius": 999,
+            "fontSize": 15,
+            "fontFamily": "Georgia, Times New Roman, serif",
+            "buttonPadding": {
+              "top": 13,
+              "right": 24,
+              "bottom": 13,
+              "left": 24
+            },
+            "align": "left",
+            "styles": {
+              "padding": {
+                "top": 10,
+                "right": 0,
+                "bottom": 14,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "appno-b",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69\">Thank you for your interest.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "appno-c",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 34,
+          "left": 36
+        },
+        "backgroundColor": "#ffffff"
+      },
+      "children": [
+        [
+          {
+            "id": "appno-d",
+            "type": "divider",
+            "lineStyle": "solid",
+            "color": "#e6e2d6",
+            "thickness": 1,
+            "width": "full",
+            "styles": {
+              "padding": {
+                "top": 22,
+                "right": 0,
+                "bottom": 14,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "appno-e",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">Questions? Reply to this email.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 6,
+                "left": 0
+              }
+            }
+          },
+          {
+            "id": "appno-f",
+            "type": "paragraph",
+            "content": "<p><span style=\"font-size:13px;color:#6c6f69;font-family:Georgia, Times New Roman, serif\">You are receiving this because you applied on this site.</span></p>",
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "id": "appno-g",
+      "type": "section",
+      "columns": "1",
+      "styles": {
+        "padding": {
+          "top": 0,
+          "right": 36,
+          "bottom": 0,
+          "left": 36
+        }
+      },
+      "children": [
+        [
+          {
+            "id": "appno-h",
+            "type": "spacer",
+            "height": 28,
+            "styles": {
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              }
+            }
+          }
+        ]
+      ]
+    }
+  ]
+}

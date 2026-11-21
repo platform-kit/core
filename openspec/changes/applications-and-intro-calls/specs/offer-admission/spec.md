@@ -13,12 +13,12 @@ Verified by: `packages/kit/build/catalog.test.mts` and an offer driven in a brow
 
 ### Requirement: An offer may require the call
 
-With `before.call-required: true`, the offer's card SHALL show a way to book the call in place of the buy button. Checkout SHALL open for that person when the call is held, for the offer's `open-for` time, and the person SHALL be emailed the link. The host SHALL be able to mark the person as not a fit, which closes checkout for them and sends the declined email.
+With `before.call-required: true`, the offer's card SHALL show a way to book the call in place of the buy button. Checkout SHALL open for that person when the call is held, and the person SHALL be emailed the link. The host SHALL be able to mark the person as not a fit, which closes checkout for them and sends the declined email.
 
 #### Scenario: checkout opens after the call
 
 - **WHEN** a reader books an offer's required call and the host holds it
-- **THEN** checkout opens for that reader until `open-for` runs out, and they are emailed a link to it
+- **THEN** checkout opens for that reader, and they are emailed a link to it
 
 Verified by: `packages/kit/build/admissions-db.test.mts`
 
@@ -36,7 +36,7 @@ An offer SHALL be able to name a form in `before.apply`. Its card SHALL show App
 #### Scenario: approved
 
 - **WHEN** a signed-in reader applies to an offer with `review: person` and a reviewer approves the application with a note
-- **THEN** the reader is emailed the approval, the note and a link to checkout, and checkout is open for them until `open-for` runs out
+- **THEN** the reader is emailed the approval, the note and a link to checkout, and checkout stays open for them until they pay or a reviewer closes it
 
 Verified by: `packages/kit/build/admissions-db.test.mts`
 
@@ -56,7 +56,7 @@ Verified by: `packages/kit/build/admissions-db.test.mts`
 
 ### Requirement: An application may lead to a call
 
-When an offer names both an application and a call, the application SHALL come first. With a required call, approval SHALL let the person book the call, and checkout SHALL open once the call is held. With an optional call, approval SHALL open checkout, and the approval email SHALL also offer the call.
+When an offer names both an application and a call, the application SHALL come first. With a required call, approval SHALL let the person book the call, and checkout SHALL open once the call is held. With an optional call, the application's last screen, shown after the answers are sent, SHALL offer the call with a way to decline it; booking it SHALL record the call on the admission, and declining SHALL change nothing. Approval SHALL open checkout whether or not the call was booked.
 
 #### Scenario: apply, then talk, then pay
 
@@ -65,9 +65,16 @@ When an offer names both an application and a call, the application SHALL come f
 
 Verified by: `packages/kit/build/admissions-db.test.mts`
 
+#### Scenario: the call offered last
+
+- **WHEN** a reader sends an application to an offer whose call is optional
+- **THEN** the application is recorded first, and the screen after it offers the call and a way to decline it
+
+Verified by: an application driven in a browser
+
 ### Requirement: The server lets only admitted buyers check out
 
-Checkout SHALL refuse an offer that requires an application or a call unless the buyer has an open admission for that offer whose time has not run out. A payment SHALL use up the admission. An admission whose time runs out SHALL close, and its reader SHALL be emailed a day before it does. A reviewer SHALL be able to reopen a closed or expired admission. Payment plans and terms SHALL work unchanged once checkout is open. Every email that opens checkout SHALL link to the offer's checkout page. A funnel's audience SHALL accept `admission` (`open`, `applied` or `declined`), matching people whose admission for any offer, or for the offers `abandoned-offer` names, is in that state.
+Checkout SHALL refuse an offer that requires an application or a call unless the buyer has an open admission for that offer. An open admission SHALL stay open until the buyer pays or a reviewer closes it, unless the offer sets `before.open-for`, in which case it SHALL expire when that time runs out. A payment SHALL use up the admission. A reviewer SHALL be able to close an open admission and reopen a closed or expired one. Payment plans and terms SHALL work unchanged once checkout is open. Every email that opens checkout SHALL link to the offer's checkout page. A funnel's audience SHALL accept `admission` (`open`, `applied` or `declined`), matching people whose admission for any offer, or for the offers `abandoned-offer` names, is in that state.
 
 #### Scenario: a direct checkout request without approval
 
@@ -76,9 +83,9 @@ Checkout SHALL refuse an offer that requires an application or a call unless the
 
 Verified by: `packages/kit/build/checkout-tamper.test.mts`
 
-#### Scenario: the time runs out
+#### Scenario: the time runs out, where the offer sets one
 
-- **WHEN** an admission's `open-for` time passes without a payment
+- **WHEN** an offer sets `open-for` and an admission's time passes without a payment
 - **THEN** checkout now refuses them, and a reviewer can reopen it
 
 Verified by: `packages/kit/build/admissions-db.test.mts`

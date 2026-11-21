@@ -336,6 +336,8 @@ export async function kitConfig(): Promise<any> {
         notice: s.string().optional(),
         changes: s.object({ upgrade: s.enum(['anytime', 'term-end', 'never']).optional(), downgrade: s.enum(['anytime', 'term-end', 'never']).optional() }).optional(),
         missed: s.object({ restrict: s.enum(['immediately', 'after-retries', 'never']).optional(), cancelBookings: s.union([s.string(), s.literal(false)]).optional() }).optional(),
+        /* what comes before checkout: a free call, an application, or both (openspec: applications-and-intro-calls); the catalogue checks it */
+        before: s.object({ call: s.string().optional(), 'call-required': s.boolean().optional(), apply: s.string().optional(), review: s.enum(['person', 'none']).optional(), 'open-for': s.string().optional() }).optional(),
         sessions: s.array(s.object({ type: s.string(), weekly: s.number().default(0), monthly: s.number().default(0) })).default([]),   /* a membership's sessions included: booking types with how many a week and a month (0 = no limit); a listed type is the tier's whatever the type's own rules say */
         book: s.string().optional(),              /* book slug, for a book unlock */
         /* a membership is a tier: its slug is what every price of it carries as

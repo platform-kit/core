@@ -139,6 +139,21 @@ Deno.serve(async (req: Request) => {
     if (key) variants.push(`${sku}:${key}x${qty}`)
   }
   /*
+   * AN OFFER THAT GATES ITS CHECKOUT (openspec: applications-and-intro-calls): one whose `before` block requires an
+   * application or a call sells only to somebody with an open admission for it. A term or a plan is admitted by the
+   * offer it pays for. The page shows Apply or Book a call in place of the button; this is the door for a request
+   * made any other way.
+   */
+  for (const sku of merged.keys()) {
+    const of = commitmentOf(offerOf(sku))?.of ?? sku
+    const gate = offerOf(of)?.before
+    if (!gate || !gate.gated) continue
+    if (!user) return json({ error: `${of}: sign in first — this offer opens after an application or a call`, code: 'admission', sku: of }, 401)
+    const { data: open, error: gateErr } = await admin.rpc('admission_open', { p_user: user.id, p_sku: of })
+    if (gateErr) return json({ error: 'checkout could not be opened — try again in a moment' }, 500)
+    if (!open) return json({ error: `${of}: checkout opens once your application is approved`, code: 'admission', sku: of }, 403)
+  }
+  /*
    * AND THE SHOP MUST STILL HAVE IT. The page already refused — the button is dead and the chip
    * is dimmed — but a page is a picture of a moment and this is the door. Somebody with the tab
    * open since this morning, a second buyer a second behind the first, a request made by hand:

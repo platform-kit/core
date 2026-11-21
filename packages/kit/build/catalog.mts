@@ -167,6 +167,7 @@ const teamSlugs = new Set((() => {
 
 /* the offers */
 const offers: Record<string, any> = {}
+const befores: any[] = []
 const tiers: any = {}   /* tier → rank, from the memberships */
 for (const { file, data: d } of files('content/store/products')) {
   if (d.published === false) continue
@@ -283,6 +284,9 @@ for (const { file, data: d } of files('content/store/products')) {
       }
     }
   }
+  /* WHAT COMES BEFORE CHECKOUT (openspec: applications-and-intro-calls): a call, an application, or both. Read here,
+     checked once the booking types and the forms are known, below. */
+  if (d.before != null) befores.push({ file, sku, before: d.before, ships: ['apparel', 'goods', 'print'].includes(String(d.kind)) })
   /* ITS PLANS AND TERMS, each a way of paying compiled into an offer of its own (build/commitments.mts) */
   {
     const { extra, derived } = compileCommitments({ file, d, base: offers[sku], err, sessions: (site?.modules || {}).sessions !== false })
@@ -530,6 +534,43 @@ for (const { file, data: d } of files('content/sessions')) {
   sessions.push({ title: String(d.title || ''), slug, event, scheduler, username, requires: r, below: d.below || null, weekly: Number(d.weekly) || 0, monthly: Number(d.monthly) || 0, sku: d.sku || null, duration, hosts, rota, team, assign, confirm, repeat, lengths, name, page, form: d.form ? String(d.form) : null, interval, offset: offsetMins, windowDays, windowFrom, windowTo, limits, seats: Number(d.seats) || 0, buffer: Number(d.buffer) || 0, schedule: d.schedule || null, notice: d.notice == null ? 24 : Number(d.notice) || 0, where, record: !!d.record, hours: d.hours || null, repeats: d.repeats || null })
 }
 
+  /* THE GATES, now that the booking types are compiled and the forms can be listed */
+  {
+    let forms: string[] = []
+    try { forms = (await st.list('content/forms', { ext: 'md' })).filter((n: string) => !n.includes('/')) } catch { forms = [] }
+    const sessionsOn = (site?.modules || {}).sessions !== false, formsOn = (site?.modules || {}).forms !== false
+    const KEYS = ['call', 'call-required', 'apply', 'review', 'open-for']
+    for (const { file, sku, before: b, ships } of befores) {
+      if (!b || typeof b !== 'object' || Array.isArray(b)) { err(`${file}: before is a block (call, apply, review, open-for)`); continue }
+      for (const k of Object.keys(b)) if (!KEYS.includes(k)) err(`${file}: before.${k} is not one of ${KEYS.join(', ')}`)
+      if (ships) err(`${file}: before is for an offer that does not ship`)
+      const call = b.call == null ? null : String(b.call), apply = b.apply == null ? null : String(b.apply)
+      if (call) {
+        const t = sessions.find((x: any) => x.slug === call)
+        if (!sessionsOn) err(`${file}: before.call needs the sessions module, which is off`)
+        else if (!t) err(`${file}: before.call names "${call}", and no published booking type has that slug`)
+        else if (t.sku || (t.lengths || []).some((l: any) => l && l.sku)) err(`${file}: before.call "${call}" is a paid booking type; the call before buying is free`)
+      }
+      if (apply) {
+        if (!formsOn) err(`${file}: before.apply needs the forms module, which is off`)
+        else if (!forms.includes(apply)) err(`${file}: before.apply names "${apply}", and there is no content/forms/${apply}.md`)
+      }
+      if (b['call-required'] != null && !call) err(`${file}: before.call-required says whether the call is needed, and no call is named`)
+      if (b['call-required'] != null && typeof b['call-required'] !== 'boolean') err(`${file}: before.call-required is true or false`)
+      if (b.review != null && !apply) err(`${file}: before.review says who reviews the application, and no application is named`)
+      if (b.review != null && !['person', 'none'].includes(b.review)) err(`${file}: before.review is person or none`)
+      let openDays = 0
+      if (b['open-for'] != null) {
+        const m = /^(\d+)d$/.exec(String(b['open-for']))
+        if (!m || !(Number(m[1]) > 0)) err(`${file}: before.open-for is a number of days, like 14d`)
+        else openDays = Number(m[1])
+      }
+      const gated = !!apply || (!!call && b['call-required'] === true)
+      if (b['open-for'] != null && !gated) err(`${file}: before.open-for is how long checkout stays open, and nothing gates this offer`)
+      if (!call && !apply) { err(`${file}: before names neither a call nor an application`); continue }
+      offers[sku].before = { call, callRequired: b['call-required'] === true, apply, review: apply ? (b.review === 'none' ? 'none' : 'person') : null, openDays, gated }
+    }
+  }
   const list = Object.values(offers).map(({ file, ...o }) => o)
   /* THE THREE FACES THE SITE SETS, beside the words and for the same reason: what a function needs
      in order to render something in the site's own voice travels with the catalog. The share-image

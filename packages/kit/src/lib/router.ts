@@ -25,6 +25,8 @@ export const ROUTES = {
   /* AN OFFER'S OWN CHECKOUT: /checkout/<sku> — what it is, the ways to pay, what is agreed to, and Pay; /checkout alone
      picks up the reader's latest unfinished one. Core, so an offer sells with the store off (openspec: offer-checkout-page) */
   checkout: '/checkout',
+  /* AN OFFER'S APPLICATION: /apply/<sku> — its form, then the optional call (openspec: applications-and-intro-calls) */
+  apply: '/apply',
   docs: '/docs',           /* a docs-only site: the docs at the root of the address space (see DOCS_ONLY) */
   form: '/form',           /* a form on its own page, no chrome: /form/<slug> (the forms module) */
   to: '/to',               /* the same page under Typeform's address shape, /to/<slug> — where Typeform's embed looks (forms-api) */
@@ -165,6 +167,8 @@ function normalise(pathname: string) {
   if (p === ROUTES.diagnostics || p.startsWith(ROUTES.diagnostics + '/')) return p
   if (p === ROUTES.hyperswitchCheckout) return p
   if (p === ROUTES.checkout || p.startsWith(ROUTES.checkout + '/')) return p
+  /* an offer's application (openspec: applications-and-intro-calls) */
+  if (p.startsWith(ROUTES.apply + '/') && p.split('/')[2]) return p
   /* with the store off, an offer's old store address is its checkout */
   if (!STORE_ON && p.startsWith(ROUTES.store + '/products/') && p.split('/')[3]) return ROUTES.checkout + '/' + p.split('/')[3]
   if (p === ROUTES.billing) return p
@@ -285,7 +289,7 @@ if (typeof window !== 'undefined') {
     if (a.origin !== location.origin) return
     const target = normalise(a.pathname)
     if (KNOWN.indexOf(target) < 0 && !target.startsWith(ROUTES.content) && !coursesRoute(target) && !target.startsWith(ROUTES.diagnostics + '/') && !(NETWORK_ON && (target === ROUTES.feed || target.startsWith(ROUTES.feed + '/'))) &&
-        !target.startsWith(ROUTES.admin) && !target.startsWith(ROUTES.checkout) && !(STORE_ON && target.startsWith(ROUTES.store)) && !(FORMS_ON && (target.startsWith(ROUTES.form + '/') || target.startsWith(ROUTES.to + '/'))) && !(SESSIONS_ON && target.startsWith(ROUTES.book + '/')) && !(STORE_ON && target.startsWith(ROUTES.cart + '/c/')) && !(moduleOn('support') && target === ROUTES.support) && !entryRoute(target) && !PAGE_ROUTES.has(target) && !siteRouteOf(target)) return
+        !target.startsWith(ROUTES.admin) && !target.startsWith(ROUTES.checkout) && !target.startsWith(ROUTES.apply + '/') && !(STORE_ON && target.startsWith(ROUTES.store)) && !(FORMS_ON && (target.startsWith(ROUTES.form + '/') || target.startsWith(ROUTES.to + '/'))) && !(SESSIONS_ON && target.startsWith(ROUTES.book + '/')) && !(STORE_ON && target.startsWith(ROUTES.cart + '/c/')) && !(moduleOn('support') && target === ROUTES.support) && !entryRoute(target) && !PAGE_ROUTES.has(target) && !siteRouteOf(target)) return
     e.preventDefault()
     navigate(href)
   })

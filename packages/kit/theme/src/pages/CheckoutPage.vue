@@ -15,6 +15,7 @@ import { supabase } from 'platformkit/lib/supabase.js'
 import { replace, ROUTES } from 'platformkit/lib/router.js'
 import { setHead } from 'platformkit/lib/seo.js'
 import { capture } from 'platformkit/lib/analytics.js'
+import { stateOf, applyHref, callHref, gateOf, admissions } from 'platformkit/lib/admissions.js'
 import SiteLayout from '../layouts/SiteLayout.vue'
 import PlanPicker from '../components/store/PlanPicker.vue'
 
@@ -33,7 +34,7 @@ const nothing = ref(false)
 async function resume() {
   if (!resuming.value || !authSettled.value) return
   if (!isSignedIn.value) { nothing.value = true; return }
-  const { data } = await supabase.rpc('my_checkout_left')
+  const { data } = await supabase!.rpc('my_checkout_left')
   const row = Array.isArray(data) ? data[0] : null
   if (row && row.offer_sku) replace(ROUTES.checkout + '/' + row.offer_sku)
   else nothing.value = true
@@ -44,6 +45,13 @@ onMounted(resume)
 setHead({ title: offer.value?.title || W.value.eyebrow, description: offer.value?.subtitle || '', path: ROUTES.checkout + (asked.value ? '/' + asked.value : ''), noindex: true })
 
 const ways = computed(() => (offer.value ? waysToPay(offer.value) : []))
+/* AN OFFER THAT GATES ITS CHECKOUT (openspec: applications-and-intro-calls): Apply, Book a call, or where the reader's
+   application stands, in place of the ways to pay until checkout is open for them; an optional call is a quiet link */
+const A = computed(() => ((us('checkout').admission || {}).card || {}))
+const gate = computed(() => gateOf(offer.value))
+const state = computed(() => stateOf(offer.value))
+const until = computed(() => { const a = offer.value && admissions.value[offer.value.sku]; return a && a.open_until ? new Date(a.open_until).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : '' })
+const optionalCall = computed(() => !!(gate.value && gate.value.call && !gate.value['call-required'] && !gate.value.apply && state.value === 'buy'))
 const owned = computed(() => {
   const o = offer.value
   if (!o || !isSignedIn.value) return false
@@ -125,8 +133,18 @@ const payOne = () => {
             </div>
             <template v-else>
               <p v-if="returned === 'cancel'" class="co-cancelled">{{ W.cancelled }}</p>
-              <PlanPicker v-if="ways.length" :product="offer" :busy="busy" @run="(fn, evt) => run(fn, evt)" />
-              <button v-else type="button" class="co-cta" :disabled="busy" @click="payOne">{{ priceLine }}</button>
+              <a v-if="state === 'apply'" class="co-cta" :href="applyHref(offer)">{{ A.apply }}</a>
+              <a v-else-if="state === 'call'" class="co-cta" :href="callHref(offer)">{{ A.call }}</a>
+              <div v-else-if="state !== 'buy' && state !== 'open'" class="co-gate">
+                <h2 class="co-h2">{{ A[state] }}</h2>
+                <p>{{ A[state + '-note'] }}</p>
+              </div>
+              <template v-else>
+                <p v-if="state === 'open' && until" class="co-signin">{{ fill(A['open-until'], { date: until }) }}</p>
+                <PlanPicker v-if="ways.length" :product="offer" :busy="busy" @run="(fn, evt) => run(fn, evt)" />
+                <button v-else type="button" class="co-cta" :disabled="busy" @click="payOne">{{ priceLine }}</button>
+                <a v-if="optionalCall" class="co-call" :href="callHref(offer)">{{ A['call-link'] }}</a>
+              </template>
               <p v-if="fault" class="co-fault" role="alert">{{ fault }}</p>
               <p v-if="!isSignedIn" class="co-signin">{{ W['signin-note'] }}</p>
             </template>
@@ -152,6 +170,8 @@ const payOne = () => {
 .co-body :deep(li) { margin: 4px 0 }
 .co-card { position: sticky; top: 96px; display: grid; gap: 14px; padding: 24px; border: 1px solid var(--hair); border-radius: 18px; background: var(--paper) }
 .co-done p { margin: 0 0 16px; color: var(--ink2); line-height: 1.5 }
+.co-gate p { margin: 0; color: var(--ink2); line-height: 1.5 }
+.co-call { font-size: .95rem; color: var(--ink2); text-align: center; text-decoration: underline; text-underline-offset: 3px }
 .co-cancelled, .co-signin { margin: 0; color: var(--ink2); font-size: .92rem; line-height: 1.5 }
 .co-fault { margin: 0; color: var(--danger, #b42318); font-size: .92rem }
 .co-cta { display: inline-flex; align-items: center; justify-content: center; width: 100%; font: inherit; font-size: 15.5px; font-weight: 600; color: var(--paper); background: var(--ink);

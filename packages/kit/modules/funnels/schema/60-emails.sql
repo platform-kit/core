@@ -338,6 +338,13 @@ CREATE OR REPLACE FUNCTION "public"."email_audience_match"("uid" "uuid", "rules"
         where (rules->'abandoned_offer' is null or l.offer_sku = any(array(select jsonb_array_elements_text(rules->'abandoned_offer'))))
           and (rules->'abandoned_checkout'->>'min' is null or extract(epoch from now() - l.started_at) / 86400 >= (rules->'abandoned_checkout'->>'min')::numeric)
           and (rules->'abandoned_checkout'->>'max' is null or extract(epoch from now() - l.started_at) / 86400 <= (rules->'abandoned_checkout'->>'max')::numeric)) end))
+    /* where the person stands with an offer that gates its checkout (47-admissions.sql; openspec: applications-and-intro-calls):
+       open (let through, not yet paid), applied (waiting) or declined, narrowed to the offers abandoned_offer names */
+    and (rules->'admission' is null or exists (
+      select 1 from public.admissions ad
+      where ad.user_id = b.id
+        and public.admission_live(ad) = any(array(select jsonb_array_elements_text(rules->'admission')))
+        and (rules->'abandoned_offer' is null or ad.sku = any(array(select jsonb_array_elements_text(rules->'abandoned_offer'))))))
     and (rules->'subscription' is null or exists (
       select 1 from jsonb_array_elements_text(rules->'subscription') t(v)
       where (t.v = 'none' and coalesce(array_length(b.tiers, 1), 0) = 0)

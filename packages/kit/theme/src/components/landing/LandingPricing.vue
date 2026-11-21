@@ -7,6 +7,7 @@ import { products as PRODUCTS } from '#content'
 import { us } from 'platformkit/lib/content.js'
 import { isSignedIn, plan, planKey, planNextKey, planNextAt, refreshEntitlements } from 'platformkit/lib/auth.js'
 import { subscribe, checkout, openPortal, money } from 'platformkit/lib/commerce.js'
+import { stateOf, applyHref, callHref } from 'platformkit/lib/admissions.js'
 import { toast } from 'platformkit/lib/toast.js'
 import { glyph } from './icons.js'
 import { waysToPay } from 'platformkit/lib/payment-plans.js'
@@ -119,8 +120,13 @@ const rows = computed(() => props.tiers.map((t0) => {
      subscribe should know the first days are free before they press, and the only place that can
      say so is here — Stripe's own page is the one after the decision. */
   const trialDays = Number(offer && offer.trial) || 0
-  return { ...t, prices, priceText: alt ? alt.price : t.price || '', perText: alt ? alt.per : t.per || '', note: alt ? alt.note : '', link: withBooker(t.href || ''), buys: !!offer, current, pending, switching, trialDays,
-    label: current ? (props.ctaCurrent || t.cta) : pending ? (props.ctaPending || t.cta).replace('{date}', when(planNextAt.value)) : switching ? (props.ctaSwitch || t.cta) : t.cta }
+  /* AN OFFER THAT GATES ITS CHECKOUT (openspec: applications-and-intro-calls): its button says Apply, Book a call, or
+     where the reader's application stands, until checkout is open for them */
+  const base = t0.sku ? PRODUCTS.find((p: { sku: any }) => p.sku === t0.sku) : null
+  const gate = base ? stateOf(base) : 'buy'
+  const gateLabel = gate === 'buy' || gate === 'open' ? '' : (AW.value[gate] || '')
+  return { ...t, gate, gateSku: base ? base.sku : '', prices, priceText: alt ? alt.price : t.price || '', perText: alt ? alt.per : t.per || '', note: alt ? alt.note : '', link: withBooker(t.href || ''), buys: !!offer, current, pending, switching, trialDays,
+    label: gateLabel ? gateLabel : current ? (props.ctaCurrent || t.cta) : pending ? (props.ctaPending || t.cta).replace('{date}', when(planNextAt.value)) : switching ? (props.ctaSwitch || t.cta) : t.cta }
 }))
 
 /* the switch shows where any rung can be paid both ways; each option's saving is the most a rung saves by it */
@@ -135,8 +141,14 @@ const payOptions = computed(() => PAY_KEYS.map((key) => {
 const SW = (us('store').page || {}).head || {}
 const busy = ref('')
 let pending = ''
-async function buy(t: { buys: any; sku: string; current: any; pending: any; name: string }) {
+const AW = computed(() => ((us('checkout').admission || {}).card || {}))
+async function buy(t: { buys: any; sku: string; current: any; pending: any; name: string; gate?: string; gateSku?: string }) {
   if (!t.buys || busy.value) return
+  /* gated: apply, book the call, or see where the application stands on the offer's own page */
+  const base = t.gateSku ? PRODUCTS.find((p: { sku: any }) => p.sku === t.gateSku) : null
+  if (base && t.gate === 'apply') { window.location.assign(applyHref(base)); return }
+  if (base && t.gate === 'call') { window.location.assign(callHref(base)); return }
+  if (base && t.gate && t.gate !== 'buy' && t.gate !== 'open') { window.location.assign('/checkout/' + encodeURIComponent(base.sku)); return }
   /* an offer sold in terms or on a plan is bought on its own checkout page (openspec: offer-checkout-page), where what
      is agreed to is shown — with the way the switch shows already chosen, and before any sign-in: the page asks for one itself */
   const sold = PRODUCTS.find((p: { sku: any }) => p.sku === t.sku)

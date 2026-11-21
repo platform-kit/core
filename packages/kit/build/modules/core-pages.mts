@@ -18,6 +18,7 @@ export const CORE_PAGES: PageContribution[] = [
   { name: 'HyperswitchCheckoutPage', order: 160, page: 'theme:pages/HyperswitchCheckoutPage.vue', test: T('hyperswitchCheckout'), keyBy: 'route' },
   { name: 'BillingPortalPage', order: 170, page: 'theme:pages/BillingPortalPage.vue', test: T('billing'), keyBy: 'route' },
   /* an offer's own checkout, the store or no store (openspec: offer-checkout-page) */
+  { name: 'ApplyPage', order: 174, page: 'theme:pages/ApplyPage.vue', test: T('apply'), keyBy: 'route', props: { path: 'route' } },
   { name: 'CheckoutPage', order: 175, page: 'theme:pages/CheckoutPage.vue', test: T('offerCheckout'), keyBy: 'route', props: { path: 'route' } },
   { name: 'CommentsEmbedPage', order: 190, page: 'theme:pages/CommentsEmbedPage.vue', test: T('commentsEmbed'), keyBy: 'route', props: { path: 'route' } },
   { name: 'AwardPage', order: 220, page: 'theme:pages/AwardPage.vue', test: T('award'), keyBy: 'route' },

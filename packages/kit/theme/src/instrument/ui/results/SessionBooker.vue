@@ -214,7 +214,9 @@ async function restorePending() {
 /* WHAT IT COSTS, and the three different kinds of nothing are not the same sentence: one of the
    site's own types costs nothing because a membership covers it, a provider's own may simply be
    free, and a paid one already bought is waiting to be used. */
-const costOf = (o: any) => (o.paid ? (o.credits > 0 ? B['credit-line'] : money(o.unit_amount || 0, o.currency || 'usd')) : o.offering ? B.free : B.included)
+/* 'included in your membership' only where a membership gives it: a tier lists it, or it needs a tier; a free type open to anybody (an intro call) is just free */
+const tiered = (o: any) => o.included || (typeof o.requires === 'string' && !['anyone', 'guest', 'authenticated'].includes(o.requires)) || Array.isArray(o.requires)
+const costOf = (o: any) => (o.paid ? (o.credits > 0 ? B['credit-line'] : money(o.unit_amount || 0, o.currency || 'usd')) : o.offering || !tiered(o) ? B.free : B.included)
 /* WHOSE AN OPTION IS, in words — nothing at all for one of the site's own types, which are the
    business's and belong to nobody in particular */
 const fillWords = (s: any, m: any) => String(s || '').replace(/\{(\w+)\}/g, (_, k) => (m[k] == null ? '' : m[k]))

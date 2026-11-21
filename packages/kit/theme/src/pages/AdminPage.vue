@@ -26,6 +26,7 @@ import PageBuilder from '../components/admin/PageBuilder.vue'
 import ExperimentVariants from '../components/admin/ExperimentVariants.vue'
 import ExperimentsAdmin from '../components/admin/ExperimentsAdmin.vue'
 import StringsEditor from '../components/admin/StringsEditor.vue'
+import ApplicationsAdmin from '../components/admin/ApplicationsAdmin.vue'
 import ChapterEditor from '../components/admin/ChapterEditor.vue'
 import CompanionEditor from '../components/admin/CompanionEditor.vue'
 import TeamMembers from '../components/admin/TeamMembers.vue'
@@ -140,7 +141,7 @@ const parsed = computed(() => {
    bookings — nothing that needs the content pipe. A support agent, wherever, sees Notifications and Support and
    nothing else; a reader who is not on the staff sees the gate. */
 const LIVE = !CMS
-const LIVE_VIEWS = new Set(['analytics', 'content-analytics', 'form-analytics', 'support', 'comments', 'spaces', 'orders', 'print-orders', 'bookings', 'network', 'payments', ...(MODULE_SECTIONS as any[]).filter((s) => s.live).map((s) => s.key)])   /* and the module sections that say they are live */
+const LIVE_VIEWS = new Set(['analytics', 'content-analytics', 'form-analytics', 'support', 'comments', 'spaces', 'orders', 'print-orders', 'applications', 'bookings', 'network', 'payments', ...(MODULE_SECTIONS as any[]).filter((s) => s.live).map((s) => s.key)])   /* and the module sections that say they are live */
 const socialAccess = ref(false)
 const socialAccessKnown = ref(false)
 const socialAccessError = ref(false)
@@ -341,7 +342,7 @@ const NAV = [
   { key: 'dashboard', items: ['analytics', 'content-analytics'] },
   { key: 'content', items: ['models', 'media', 'publishing', 'articles', 'books', 'wiki', 'docs', 'pages'] },   /* the machinery first — the builder, the library, and in cloud mode alone the drafts and where a publish goes (navGroups leaves Publishing out of a git-mode admin) — then the kinds; the content models' own rows close the group (navGroups) */
   { key: 'store', items: ['storefront', 'products', 'collections', 'prices', 'promotions', 'sessions'] },   /* what is for sale */
-  { key: 'sales', items: ['orders', 'bookings', 'payouts'] },   /* and what was: every order and what became of it — the printed ones are a FILTER of it rather than a page, since a parcel from a printer and a parcel off a shelf are the same fact about one sale — what cal.com mirrored, and what is owed */
+  { key: 'sales', items: ['orders', 'applications', 'bookings', 'payouts'] },   /* and what was: every order and what became of it — the printed ones are a FILTER of it rather than a page, since a parcel from a printer and a parcel off a shelf are the same fact about one sale — what cal.com mirrored, and what is owed */
   { key: 'marketing', items: ['emails', 'ads', 'experiments'] },   /* reaching people, and the tests of it; a blast is a tab of Emails and the funnels' numbers a tab of Funnels */
   { key: 'forms', items: ['forms', 'form-responses', 'form-analytics'] },
   { key: 'community', items: ['comments', 'community', 'network'] },   /* people reaching the desk, or each other; the policy is a tab of Comments and the spaces a tab of Community */
@@ -466,6 +467,7 @@ const IC: any = {
   'content-analytics': '<path d="M3 16.5 8 10l3.5 3.5L17 6"/><path d="M13 6h4v4"/>',
   'print-orders': '<path d="M3.5 7.5h13v7a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5Z"/><path d="M6 7.5V5a1.5 1.5 0 0 1 1.5-1.5h5A1.5 1.5 0 0 1 14 5v2.5"/><path d="M8 11h4"/>',
   orders: '<path d="M4 5.5h12l-1.2 7.5H5.6Z"/><path d="M4 5.5L3.4 3.5H2"/><circle cx="7" cy="16" r="1.2"/><circle cx="13.5" cy="16" r="1.2"/>',
+  applications: '<path d="M6 3h6l3 3v11H6z"/><path d="M12 3v3h3"/><path d="M8.5 11l1.6 1.6 3-3.2"/>',
   bookings: '<rect x="3" y="4.5" width="14" height="12" rx="2"/><path d="M3 8.5h14M7 3v3M13 3v3"/><path d="M7.5 12.5l1.8 1.8 3.4-3.6"/>',
   emails: '<rect x="3" y="5" width="14" height="10" rx="1.6"/><path d="M3.5 6l6.5 5 6.5-5"/>',
   forms: '<rect x="3.5" y="3.5" width="13" height="13" rx="2"/><path d="M6.5 7.5h7M6.5 10.5h4"/><rect x="6.5" y="13" width="3" height="1.5" rx=".5"/>',
@@ -576,7 +578,7 @@ async function loadList() {
   if (view.value === 'strings') return
   if (SITE_BY_KEY[view.value] && SITE_BY_KEY[view.value].component) return   /* its editor loads its own files */
   if ((SCREENS as any)[view.value]) return   /* a screen a module adds loads its own data: it is not a collection to list */
-  if (['analytics', 'content-analytics', 'publishing', 'media', 'print-orders', 'orders', 'bookings', 'emails', 'support', 'comments', 'spaces', 'people', 'forms', 'form-responses', 'form-analytics', 'models', 'payouts', 'social', 'network'].includes(view.value)) return   /* the dashboards fetch their own data */
+  if (['analytics', 'content-analytics', 'publishing', 'media', 'print-orders', 'orders', 'applications', 'bookings', 'emails', 'support', 'comments', 'spaces', 'people', 'forms', 'form-responses', 'form-analytics', 'models', 'payouts', 'social', 'network'].includes(view.value)) return   /* the dashboards fetch their own data */
   loading.value = true; loadError.value = ''
   try { items.value = await pipe.items(view.value) }
   catch (e) { loadError.value = (e as any).message; items.value = [] }
@@ -1175,6 +1177,9 @@ onMounted(async () => {
       </div>
       <div v-else-if="view === 'orders'" class="ad-analytics">
         <Orders />
+      </div>
+      <div v-else-if="view === 'applications'" class="ad-analytics">
+        <ApplicationsAdmin />
       </div>
       <div v-else-if="view === 'bookings'" class="ad-analytics">
         <Bookings />

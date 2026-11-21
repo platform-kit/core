@@ -10,7 +10,8 @@ A site can sell an offer only by sending the buyer straight to checkout. Coachin
 - **An offer may require the call.** The buy button is replaced by the call. Checkout opens for that person once the call is held, unless the host marks them as not a fit.
 - **An offer may require an application.** It names a form. The buyer applies, and checkout opens for them when a person approves the application, or straight away if the offer says no review is needed.
 - **An offer may require both.** The application comes first, then the call.
-- **Checkout opens for a set time** that the offer chooses, and the buyer is emailed a link to the offer's checkout page (`/checkout/<sku>`).
+- **Checkout stays open** until the buyer pays or a reviewer closes it (an offer may set a deadline instead), and the buyer is emailed a link to the offer's checkout page (`/checkout/<sku>`).
+- **An optional call can come last.** On an offer that requires an application and offers a call, the application's final screen, after the answers are sent, offers the call and a way to decline it.
 - **A site can follow up an open admission** with an ordinary funnel: a new audience condition, `admission: open`, reaches people let through who haven't paid yet, and paying takes them out of it.
 - **The server enforces it.** Checkout refuses an offer that requires an application or a call unless the buyer has been let through.
 - **Reviewers have a queue.** Administrators, and the hosts of the offer's call, see each application with its answers, approve or decline it, and may add a note to the email.

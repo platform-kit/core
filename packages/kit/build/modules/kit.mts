@@ -94,6 +94,8 @@ const LISTED: Array<ModuleDeclaration | string> = [
         { name: 'session-reminders', schedule: '*/5 * * * *', command: 'select public.run_session_reminders()' },
         /* a plan's missed payment, as it touches bookings (glue/core+sessions.sql; openspec: payment-plans) */
         { name: 'commitment-bookings', schedule: '*/5 * * * *', command: 'select public.run_commitment_bookings()' },
+        /* an offer's required call, held, opens its admission (glue/core+sessions.sql; openspec: applications-and-intro-calls) */
+        { name: 'admissions-sweep', schedule: '25 * * * *', command: 'select public.admissions_sweep()' },
       ],
       env: ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM', 'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'CAL_WEBHOOK_SECRET', 'CAL_API_KEY', 'LIVEKIT_URL', 'LIVEKIT_API_KEY', 'LIVEKIT_API_SECRET', 'STORAGE_S3_ACCESS_KEY', 'STORAGE_S3_SECRET_KEY'],
     },

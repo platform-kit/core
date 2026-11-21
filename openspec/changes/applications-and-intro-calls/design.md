@@ -25,7 +25,7 @@ before:
   call-required: false          # false: the call is offered beside the buy button; true: it is the way in
   apply: coaching-application   # a form (content/forms/coaching-application.md); omit for no application
   review: person                # person: someone approves each one; none: applying is enough
-  open-for: 14d                 # how long checkout stays open once it opens
+  open-for: 14d                 # optional: a deadline once checkout opens; omitted, it stays open until paid or closed
 ```
 
 Every key is optional. With no `before` block, nothing changes.
@@ -48,9 +48,9 @@ The build refuses:
 | `apply`, `review: none` | Apply | the application is sent |
 | `apply`, `review: person` | Apply | a reviewer approves it |
 | `apply` and a required `call` | Apply | approved, then the call is held |
-| `apply` and an optional `call` | Apply | approved; the approval email also offers the call |
+| `apply` and an optional `call` | Apply | approved; the application's last screen offers the call, after the answers are sent |
 
-An open admission lets the person check out for `open-for`. When they pay, it is `used`. When the time runs out, it is `expired`, and the buyer can ask the reviewers to reopen it from the same page; a reviewer reopens it from the queue.
+An open admission lets the person check out until they pay or a reviewer closes it; an offer that sets `open-for` gives it a deadline instead. When they pay, it is `used`. When the time runs out, it is `expired`, and the buyer can ask the reviewers to reopen it from the same page; a reviewer reopens it from the queue.
 
 **Why a held call opens checkout by itself.** The alternative is the host opening it by hand after each call. Then a host who forgets leaves a ready buyer with no way to pay. Opening on the held call, with "not a fit" as the host's way to close it, keeps the buyer moving and still leaves the decision with the host.
 
@@ -61,10 +61,11 @@ An open admission lets the person check out for `open-for`. When they pay, it is
 ## Flows
 
 - **Apply.** The Apply button opens the offer's form for a signed-in person. On submit, the `form` function creates the admission (`applied`, or `open` when `review: none`) and emails the buyer and the reviewers.
+- **The optional call, last.** When the offer also names an optional `call`, the application's final screen comes after the answers are sent: it offers the call, with the session booker for that booking type and a plain way to decline. Booking records the call on the admission; declining changes nothing. The answers are never held back by the call. This is the usual pattern for an application with a scheduler (the answers first, the time last), and it needs no booking field in the forms grammar.
 - **Review.** Sales → Applications lists admissions waiting for a decision, newest first, with the form's answers and the person's link. Approve or Decline, with an optional note. Approving moves the admission to `approved` when a required call follows, or to `open` otherwise, and emails the buyer.
 - **The call.** Booking the offer's call records the booking on the admission (`booked`). When the sessions module marks the booking held, the admission opens. The host's booking view has "Not a fit", which closes it and sends the declined email.
 - **Checkout.** `create-checkout-session` looks up the offer's `before` block. If it gates the offer, it requires an `open` admission for this person and sku with `open_until` in the future, and refuses with a clear error otherwise. The success webhook marks the admission `used`.
-- **Expiry.** The existing hourly sweep expires admissions past `open_until`.
+- **Expiry.** Only where an offer sets `open-for`: the existing hourly sweep expires admissions past `open_until`. A reviewer can close an open admission from the queue at any time.
 - **Following up.** The kit sends no reminder of its own. A site writes a funnel with `admission: open` (and `abandoned-offer` or the offer's own `goal`) for as many emails as it wants, each linking to `/checkout/<sku>`; paying moves the admission to `used`, which takes the person out of the audience. `admission: applied` and `admission: declined` are there for a site that wants to write to those people too.
 
 ## Screens

@@ -31,6 +31,7 @@ const FOLLOWUP_MS = 5 * 60 * 1000
 const LINES: string[] = Object.values((strings.lines ?? {}) as Record<string, string>).filter((l) => typeof l === 'string' && l.trim())
 const followupLine = () => (LINES.length ? LINES[Math.floor(Math.random() * LINES.length)] : null)
 import { admin, json } from '../_shared/lib.ts'
+import { callBookedByEvent } from '../_shared/admissions.ts'
 import strings from './strings.json' with { type: 'json' }
 import { judge, cancel as cancelOnCalApi } from '../_shared/cal.ts'
 import { pull } from '../_shared/recordings.ts'
@@ -158,6 +159,8 @@ async function handle(evt: any) {
       /* a booking already cancelled, refused or moved stays so: a late or replayed "created" is not a revival */
       if (await settled()) break
       await upsert({ status: 'accepted' })
+      /* the call an offer names before its checkout, booked on cal.com's own page: kept on the admission (openspec: applications-and-intro-calls) */
+      if (user_id && base.event) await callBookedByEvent(user_id, String(base.event), uid).catch((e) => console.warn('admission call', String(e)))
       /* not the attendee's to book? cancelled, marked, and said — once */
       const { data: row } = await admin.from('bookings').select('refused, status').eq('uid', uid).maybeSingle()
       if (row?.refused) break

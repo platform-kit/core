@@ -131,6 +131,8 @@ term may change tier); and `missed` (`restrict` — `immediately` · `after-retr
 continues at (`then: monthly`), so a minimum term can't be skipped. On any subscription, `existing` (`keep`, the default, or `move`) and `notice` (such as `30d`) say what a price change does to whoever already pays it. [Payment plans and fixed terms](/docs/running-a-site/selling/payment-plans)
 describes them.
 
+**Before checkout.** `before` (`apply`: a form; `review`: `person` · `none`; `call`: a free booking type; `call-required`: true or false; `open-for`: a deadline such as `14d`): an application, a call or both before the offer's checkout opens. [Applications and intro calls](/docs/running-a-site/selling/applications-and-intro-calls) describes them.
+
 Across a cart of several offers: a trial is the subscription's own, since a subscription session is
 one offer; tax is on if **any** offer asks, because the alternative silently under-collects on a
 mixed cart; the payment methods are the **intersection**, so a cart never offers a method one of its

@@ -11,7 +11,7 @@
  * hands it compiled (auth-config.mjs on deploy, supabase/templates locally); their tags are Go
  * templates — `{{ .ConfirmationURL }}` — left intact by fill.js and filled by Supabase.
  */
-export const KINDS = ['order', 'shipped', 'files', 'chat', 'support', 'support-digest', 'magic-link', 'recovery', 'invitation', 'campaign', 'session-booked', 'session-held', 'session-to-confirm', 'session-declined', 'session-moved', 'session-cancelled', 'session-reminder', 'event-reminder', 'provider-terms', 'course-lesson', 'course-complete', 'payment-missed', 'payment-missed-notice', 'payment-default-notice', 'term-ending', 'term-continues', 'price-change']
+export const KINDS = ['order', 'shipped', 'files', 'chat', 'support', 'support-digest', 'magic-link', 'recovery', 'invitation', 'campaign', 'session-booked', 'session-held', 'session-to-confirm', 'session-declined', 'session-moved', 'session-cancelled', 'session-reminder', 'event-reminder', 'provider-terms', 'course-lesson', 'course-complete', 'payment-missed', 'payment-missed-notice', 'payment-default-notice', 'term-ending', 'term-continues', 'price-change', 'application-received', 'application-review', 'application-approved', 'application-declined']
 /* the ones Supabase Auth sends, from the compiled design: never filled here */
 export const GOTRUE = ['magic-link', 'recovery', 'invitation']
 
@@ -127,6 +127,31 @@ export const TAGS: any = {
     { label: 'What is owed', value: '{{owed}}', group: 'Plan', sample: '$7,200.00' },
     { label: 'Link to the admin', value: '{{url}}', group: 'Plan', sample: 'https://example.com/admin' },
   ],
+  /* an offer that gates its checkout (openspec: applications-and-intro-calls): the application arrives, to the applicant
+     and to the reviewers; the decision, to the applicant */
+  'application-received': [
+    { label: 'First name', value: '{{name}}', group: 'Applicant', sample: 'Ada' },
+    { label: 'The offer', value: '{{what}}', group: 'Application', sample: 'Private Mentorship' },
+    { label: 'Link to the offer', value: '{{url}}', group: 'Application', sample: 'https://example.com/checkout/private-mentorship' },
+  ],
+  'application-review': [
+    { label: 'Who applied', value: '{{who}}', group: 'Applicant', sample: 'ada@example.com' },
+    { label: 'The offer', value: '{{what}}', group: 'Application', sample: 'Private Mentorship' },
+    { label: 'Link to the review', value: '{{url}}', group: 'Application', sample: 'https://example.com/admin/applications' },
+  ],
+  'application-approved': [
+    { label: 'First name', value: '{{name}}', group: 'Applicant', sample: 'Ada' },
+    { label: 'The offer', value: '{{what}}', group: 'Application', sample: 'Private Mentorship' },
+    { label: 'The reviewer\'s note', value: '{{note}}', group: 'Application', sample: 'Looking forward to working with you.' },
+    { label: 'Open until', value: '{{until}}', group: 'Application', sample: '17 February 2027' },
+    { label: 'Link to checkout', value: '{{url}}', group: 'Application', sample: 'https://example.com/checkout/private-mentorship' },
+  ],
+  'application-declined': [
+    { label: 'First name', value: '{{name}}', group: 'Applicant', sample: 'Ada' },
+    { label: 'The offer', value: '{{what}}', group: 'Application', sample: 'Private Mentorship' },
+    { label: 'The reviewer\'s note', value: '{{note}}', group: 'Application', sample: 'The group program may suit you better for now.' },
+    { label: 'Link to the other options', value: '{{url}}', group: 'Application', sample: 'https://example.com/pricing' },
+  ],
   /* a fixed term about to end, where nothing follows it (the memberships module) */
   'term-ending': [
     { label: 'First name', value: '{{name}}', group: 'Member', sample: 'Ada' },
@@ -207,6 +232,9 @@ export const PAIRS: any = {
   'payment-missed': [{ label: 'Only when access is paused', before: '{{#if restricted}}', after: '{{/if}}', group: 'Show when' }, { label: 'Only when access is kept for now', before: '{{#unless restricted}}', after: '{{/unless}}', group: 'Show when' }],
   'payment-missed-notice': [{ label: 'Only when access is paused', before: '{{#if restricted}}', after: '{{/if}}', group: 'Show when' }],
   'payment-default-notice': [],
+  'application-received': [], 'application-review': [],
+  'application-approved': [{ label: 'Only with a note', before: '{{#if note}}', after: '{{/if}}', group: 'Show when' }, { label: 'Only with a deadline', before: '{{#if until}}', after: '{{/if}}', group: 'Show when' }],
+  'application-declined': [{ label: 'Only with a note', before: '{{#if note}}', after: '{{/if}}', group: 'Show when' }],
   'term-ending': [{ label: 'Only when the renewal payment was declined', before: '{{#if declined}}', after: '{{/if}}', group: 'Show when' }],
   'price-change': [],
   'term-continues': [{ label: 'Only when a new term begins', before: '{{#if renew}}', after: '{{/if}}', group: 'Show when' }, { label: 'Only when it continues monthly', before: '{{#unless renew}}', after: '{{/unless}}', group: 'Show when' }, { label: 'Only when paid monthly', before: '{{#if monthly}}', after: '{{/if}}', group: 'Show when' }, { label: 'Only for a term paid in full', before: '{{#if full}}', after: '{{/if}}', group: 'Show when' }],
@@ -221,6 +249,10 @@ TAGS['event-reminder'].push({ label: 'How soon', value: '{{in}}', group: 'Sessio
 TAGS['event-reminder'].push({ label: 'What it is', value: '{{what}}', group: 'Session', sample: 'The members\' call' })
 /* one sample order per email, for the editor's preview and a test send */
 export const SAMPLES = {
+  'application-received': { name: 'Ada', what: 'Private Mentorship', url: 'https://example.com/checkout/private-mentorship' },
+  'application-review': { who: 'ada@example.com', what: 'Private Mentorship', url: 'https://example.com/admin/applications' },
+  'application-approved': { name: 'Ada', what: 'Private Mentorship', note: 'Looking forward to working with you.', until: '', url: 'https://example.com/checkout/private-mentorship' },
+  'application-declined': { name: 'Ada', what: 'Private Mentorship', note: '', url: 'https://example.com/pricing' },
   'term-ending': { name: 'Ada', what: 'Coaching', ends: '17 February 2027', url: 'https://example.com/store/products/coaching' },
   'price-change': { name: 'Ada', what: 'Coaching', from: '$1,000.00', to: '$2,000.00', period: 'month', date: '17 February 2027', url: 'https://example.com/billing' },
   'term-continues': { name: 'Ada', what: 'Coaching', ends: '17 February 2027', amount: '$200.00', months: '6', renew: 'yes', monthly: '', full: 'yes', url: 'https://example.com/billing' },

@@ -158,6 +158,7 @@ promotions: Promotions
 print: Print editions
 orders: Orders
 print-orders: Print orders
+applications: Applications
 bookings: Bookings
 sessions: Booking types
 teams: Teams

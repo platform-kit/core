@@ -47,15 +47,15 @@ export function createRunRecorder(plan: RecordPlan) {
   let queue: Promise<unknown> = Promise.resolve()
   const marks: Mark[] = []
 
-  const save = (patch: Record<string, unknown>) => supabase.from('run_recordings').update(patch).eq('id', id)
+  const save = (patch: Record<string, unknown>) => supabase!.from('run_recordings').update(patch as any).eq('id', id)
 
   /* a part, uploaded in turn; three tries with a growing wait, and the row says how far it got (with the marks so far) */
   function upload(data: Uint8Array) {
     const n = parts++
-    const blob = new Blob([data], { type: mimeOf(plan.kind) })
+    const blob = new Blob([data as BlobPart], { type: mimeOf(plan.kind) })
     queue = queue.then(async () => {
       for (let attempt = 0; attempt < 3; attempt++) {
-        const { error } = await supabase.storage.from(BUCKET).upload(`${uid}/${id}/${pad(n)}.${extOf(plan.kind)}`, blob, { contentType: mimeOf(plan.kind), upsert: true })
+        const { error } = await supabase!.storage.from(BUCKET).upload(`${uid}/${id}/${pad(n)}.${extOf(plan.kind)}`, blob, { contentType: mimeOf(plan.kind), upsert: true })
         if (!error) { bytes += data.byteLength; await save({ parts: n + 1, bytes, marks }); return }
         await new Promise((r) => setTimeout(r, 800 * (attempt + 1)))
       }
@@ -73,7 +73,7 @@ export function createRunRecorder(plan: RecordPlan) {
       const M = await mb()
       if (!(await M.canEncodeAudio('aac'))) { const { registerAacEncoder } = await import('@mediabunny/aac-encoder'); registerAacEncoder() }
       id = crypto.randomUUID()
-      const { error } = await supabase.from('run_recordings').insert({
+      const { error } = await supabase!.from('run_recordings').insert({
         id, user_id: uid, source: plan.source, ref: plan.ref, response_id: plan.responseId ?? null, kind: plan.kind, mime: mimeOf(plan.kind),
         staff_read: plan.source === 'form' && !!plan.staffRead, keep_days: plan.keep?.days ?? null, keep_after_membership: plan.keep?.afterMembership ?? null,
       })
@@ -91,7 +91,7 @@ export function createRunRecorder(plan: RecordPlan) {
       console.warn('recording: could not start', e)
       failed.value = 'start'
       stream?.getTracks().forEach((t) => t.stop())
-      if (id) await supabase.from('run_recordings').delete().eq('id', id)
+      if (id) await supabase!.from('run_recordings').delete().eq('id', id)
       return false
     }
   }
@@ -125,22 +125,22 @@ export interface RecordingRow { id: string, source: string, ref: string, kind: R
 
 /* the person's own recordings, newest first; one left mid-way more than an hour ago is closed as partial */
 export async function myRecordings(source?: string): Promise<RecordingRow[]> {
-  let q = supabase.from('run_recordings').select('id, source, ref, kind, mime, started_at, ended_at, duration_ms, parts, marks, status').order('started_at', { ascending: false })
+  let q = supabase!.from('run_recordings').select('id, source, ref, kind, mime, started_at, ended_at, duration_ms, parts, marks, status').order('started_at', { ascending: false })
   if (source) q = q.eq('source', source)
   const { data } = await q
-  const rows = (data || []) as RecordingRow[]
+  const rows = (data || []) as unknown as RecordingRow[]
   const stale = rows.filter((r) => r.status === 'recording' && Date.parse(r.started_at) < Date.now() - 3600e3)
-  if (stale.length) { await supabase.from('run_recordings').update({ status: 'partial' }).in('id', stale.map((r) => r.id)); stale.forEach((r) => { r.status = 'partial' }) }
+  if (stale.length) { await supabase!.from('run_recordings').update({ status: 'partial' }).in('id', stale.map((r) => r.id)); stale.forEach((r) => { r.status = 'partial' }) }
   return rows
 }
 
 /* the parts, in order, joined into one playable file */
 export async function recordingUrl(rec: RecordingRow, owner: string): Promise<string> {
   const prefix = `${owner}/${rec.id}`
-  const { data: files } = await supabase.storage.from(BUCKET).list(prefix, { limit: 1000, sortBy: { column: 'name', order: 'asc' } })
+  const { data: files } = await supabase!.storage.from(BUCKET).list(prefix, { limit: 1000, sortBy: { column: 'name', order: 'asc' } })
   const names = (files || []).map((f: any) => f.name).sort()
   if (!names.length) return ''
-  const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrls(names.map((n: string) => `${prefix}/${n}`), 3600)
+  const { data: signed } = await supabase!.storage.from(BUCKET).createSignedUrls(names.map((n: string) => `${prefix}/${n}`), 3600)
   const blobs = await Promise.all((signed || []).map((s: any) => fetch(s.signedUrl).then((r) => r.blob())))
   return URL.createObjectURL(new Blob(blobs, { type: rec.mime }))
 }
@@ -148,9 +148,9 @@ export async function recordingUrl(rec: RecordingRow, owner: string): Promise<st
 /* a recording gone: its files, then its row (the row's trigger queues the folder too, for anything left) */
 export async function deleteRecording(rec: { id: string }, owner: string): Promise<void> {
   const prefix = `${owner}/${rec.id}`
-  const { data: files } = await supabase.storage.from(BUCKET).list(prefix, { limit: 1000 })
-  if (files && files.length) await supabase.storage.from(BUCKET).remove(files.map((f: any) => `${prefix}/${f.name}`))
-  await supabase.from('run_recordings').delete().eq('id', rec.id)
+  const { data: files } = await supabase!.storage.from(BUCKET).list(prefix, { limit: 1000 })
+  if (files && files.length) await supabase!.storage.from(BUCKET).remove(files.map((f: any) => `${prefix}/${f.name}`))
+  await supabase!.from('run_recordings').delete().eq('id', rec.id)
 }
 
 /* the "record yourself?" question as an ordinary choice screen, offering only the kinds this browser can record */
