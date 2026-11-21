@@ -558,8 +558,9 @@ const lockedHere = computed(() => {
   if (!GATED_PLACES.includes(word)) return false
   return isSignedIn.value ? lockedPlaces({ admitted: net.places }).includes(word) : true
 })
-/* Events is a place only where the events module is on */
-const EVENTS_ON = moduleOn('events')
+/* Events is a place only where the events module is on and the community runs it (content/community.md features.events):
+   switching the feature off takes its place, its tab and the way to it with it, as the docs promise */
+const EVENTS_ON = moduleOn('events') && has('events')
 const NETWORK_ON = moduleOn('network')
 /* the queues this reader answers, in the chat layout's order, with what waits in each */
 const workList = computed(() => [
@@ -580,7 +581,7 @@ const spaceTabs = computed(() => {
   return [
     ...(feedRoom ? [{ key: 'feed', word: RW.feed, on: view.value === 'channel' && open.id === feedRoom.id, go: () => pick(feedRoom.id) }] : []),
     ...(chatRoom ? [{ key: 'chat', word: SH.chat, on: view.value === 'channel' && !!channel.value && channel.value.mode !== 'feed', go: () => pick(chatRoom.id) }] : []),
-    ...(hasEvents.value || (view.value === 'events' && !eventsAll.value) ? [{ key: 'events', word: RW.events, on: view.value === 'events', go: () => openPlace(space.value.id, 'events') }] : []),
+    ...(EVENTS_ON && (hasEvents.value || (view.value === 'events' && !eventsAll.value)) ? [{ key: 'events', word: RW.events, on: view.value === 'events', go: () => openPlace(space.value.id, 'events') }] : []),
     { key: 'people', word: RW.directory, on: view.value === 'people', go: () => goTo('people') },
     ...(moderating.value ? [{ key: 'keeping', word: RW.keeping, on: view.value === 'keeping', go: () => goTo('keeping') }] : []),
   ]
@@ -643,6 +644,8 @@ const ownViewOf = (p: any) => {
   /* a registered place owns its address and everything under it */
   const head = rest.split('/')[0]
   if (SITE_PLACE_KEYS.includes(head)) return head
+  /* Events where the community does not run it is no place: the address opens the community's front instead */
+  if (rest === 'events' && !EVENTS_ON) return null
   return OWN_VIEW[rest] || null
 }
 vueWatch(route, (p) => {

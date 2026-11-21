@@ -15,6 +15,8 @@ reviewed: 2026-11-20
 
 An event gives a community one place to say what is happening, when it happens, who it is for, and how to take part. Events appear in the community calendar and can belong to a space and a room, so readers can find the event and the conversation about it together. Events are part of the community, so the events module needs the spaces module on.
 
+A site that does not run events switches them off in `content/community.md` (`features: { events: false }`): the Events place, every space's Events tab and the way to them go, and `/community/events` opens the community's front instead. Switching the events module off does the same and removes its tables too.
+
 ## One date or a repeating gathering
 
 A one-off event has a start and end. A recurring event describes a calendar pattern instead of requiring a new record for every date. It can repeat by day, week, month, or year, use a named time zone, stop after a date or number of occurrences, and skip exceptions. The calendar expands that pattern into upcoming dates over a rolling year.
