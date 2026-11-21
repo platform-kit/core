@@ -204,5 +204,16 @@ ok('no rule writes no row', communityAccessOf({ community: {} }, process.cwd(), 
 const na = accessOf({ network: { access: { read: { tier: 't1' }, plans: 'pricing' } } }, process.cwd(), { catalog: CAT })
 ok('the plans page is an address on the site', na.faults.some((m) => /plans/.test(m)))
 
+/* THE SITE'S ORDER (community.order): the entries named swap into each other's slots; the rest stay put */
+{
+  const base = socialPlaces({ network: true, events: false, signedIn: true, coaching: true, coachChat: true, places: [{ key: 'courses', word: 'courses', shows: 'everyone' }, { key: 'diagnostics', word: 'diagnostics', shows: 'everyone' }], counts: {} })
+  const words = (p: any) => p.first.map((x: any) => (x.place ? x.key : x.word))
+  ok('without an order, Coaching comes before the Inbox and the places', words(base).join() === 'home,coaching,inbox,courses,diagnostics,notifications', words(base).join())
+  const moved = socialPlaces({ network: true, events: false, signedIn: true, coaching: true, coachChat: true, places: [{ key: 'courses', word: 'courses', shows: 'everyone' }, { key: 'diagnostics', word: 'diagnostics', shows: 'everyone' }], counts: {}, order: ['inbox', 'courses', 'coaching'] })
+  ok('an order puts Coaching below Courses and leaves the rest in place', words(moved).join() === 'home,inbox,courses,coaching,diagnostics,notifications', words(moved).join())
+  let refused = ''
+  try { communityOf({ community: { order: ['nowhere'] } }) } catch (e: any) { refused = e.message }
+  ok('an order naming no entry refuses the build', /community.order: "nowhere" is not a menu entry/.test(refused), refused)
+}
 console.log(`community-nav: ${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

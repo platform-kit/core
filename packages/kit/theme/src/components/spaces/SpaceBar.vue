@@ -76,6 +76,7 @@ const NAV = computed(() => chatNavigation({
   events: props.events,
   forYou: !!SITE_COMMUNITY.forYou,
   hide: SITE_COMMUNITY.hide || [],
+  order: SITE_COMMUNITY.order || [],
   signedIn: isSignedIn.value,
   coaching: props.coaching,
   places: SITE_PLACES || [],

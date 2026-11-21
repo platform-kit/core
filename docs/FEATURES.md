@@ -509,7 +509,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Operations rooms where the site posts its own events: purchases, new memberships, failed print orders, new accounts and escalated support.
 - The staff desk and support tickets live in the community (see "The staff desk" and "Support tickets").
 - Bots in rooms: "Ask {bot}", slash commands, and drafts held for review (see `bots`).
-- Two community layouts: workspace chat (the default) or a social layout like Circle or Skool; the site can rename the community's address and hide places.
+- Two community layouts: workspace chat (the default) or a social layout like Circle or Skool; the site can rename the community's address, hide places and set the order of its menu.
 - Lock community places such as events, messages and notifications behind a membership or purchase, with a join card.
 - Keyboard shortcuts with a help sheet.
 - Admin: rooms, people, roles and permissions, and moderation of recent messages.

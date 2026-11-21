@@ -40,6 +40,7 @@ const n = (v: any) => Math.max(0, Number(v) || 0)
  *   messages    direct messages are on (community.md features.messages, on unless false): Direct Messages, the Inbox's last row
  *   counts      { dms, coaching, notes, mentions, saved, drafts, tickets } — what waits in each
  *   work        [{ key, count }] — the queues this reader answers
+ *   order       the site's community.order: entries named (by word, or a place's key) take each other's slots in that order
  *   locked      the places this reader may not enter (openspec: community-access-by-entitlement) — by
  *               word (home, events, messages, notifications) or a registered place's key. A locked
  *               place stays in the list, marked, with no count: opening it shows the join card.
@@ -82,7 +83,19 @@ export function socialPlaces(ctx: any = {}) {
     ...(signed && n(c.drafts) > 0 && !hide.has('drafts') ? [{ key: 'drafts', icon: 'pencil', word: 'drafts', count: n(c.drafts) }] : []),
     ...(signed && n(c.tickets) > 0 && !hide.has('tickets') ? [{ key: 'my-tickets', icon: 'ticket', word: 'my-tickets', count: n(c.tickets) }] : []),
   ]
-  return { first: first.map((x) => (x.group ? x : shutOf(x))) }
+  return { first: reordered(first.map((x) => (x.group ? x : shutOf(x))), ctx.order || []) }
+}
+
+/* THE SITE'S ORDER: the entries it names keep the slots they had between them and fill them in the order named; every
+   other entry stays where it was. An entry is named by its word (home, inbox, coaching…) or a place's key. */
+export function reordered(list: any[], order: string[] = []) {
+  if (!order.length) return list
+  const nameOf = (x: any) => (x.place ? x.key : x.word)
+  const slots = list.map((x, i) => (order.includes(nameOf(x)) ? i : -1)).filter((i) => i >= 0)
+  const named = slots.map((i) => list[i]).sort((a, b) => order.indexOf(nameOf(a)) - order.indexOf(nameOf(b)))
+  const out = list.slice()
+  slots.forEach((i, n) => { out[i] = named[n] })
+  return out
 }
 
 /*

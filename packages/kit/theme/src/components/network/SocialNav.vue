@@ -59,7 +59,7 @@ const C = (site && site.community) || {}
 
 /* THE FIRST SECTION AND WORK, from the one list */
 const places = computed(() => socialPlaces({
-  network: props.network, events: props.events, forYou: !!C.forYou, hide: C.hide || [], signedIn: isSignedIn.value, coaching: props.coaching, coachChat: props.coachChat, messages: has('messages'), places: SITE_PLACES || [],
+  network: props.network, events: props.events, forYou: !!C.forYou, hide: C.hide || [], order: C.order || [], signedIn: isSignedIn.value, coaching: props.coaching, coachChat: props.coachChat, messages: has('messages'), places: SITE_PLACES || [],
   counts: { dms: props.dmUnread, coaching: props.coachingUnread, notes: props.netUnread, mentions: props.mentions, saved: props.saved, drafts: props.drafts, tickets: props.myTickets },
   work: props.work,
   /* what this reader may not enter: kept in the list, marked, opening on the join card */

@@ -183,12 +183,21 @@ export const deskSourcesOf = (c: any) => ({ sources: ((c.spaces || {}).deskSourc
    hide: what this site does not use, taken out of view only (nothing stored or allowed changes):
    following, saved, drafts, tickets. Nothing by default; a name it does not know refuses the build. */
 const COMMUNITY_HIDE = ['following', 'saved', 'drafts', 'tickets']
+/* order: the menu entries the site wants in another order, by word (home, explore, events, coaching, inbox, notifications,
+   saved, drafts, my-tickets) or a place's key; the ones it names swap into each other's slots, the rest stay where the kit
+   puts them. A word it does not know refuses the build. */
+const COMMUNITY_WORDS = ['home', 'explore', 'events', 'coaching', 'inbox', 'notifications', 'saved', 'drafts', 'my-tickets']
 export const communityOf = (c: any) => {
   const m = c.community || {}
   const hide = Array.isArray(m.hide) ? m.hide.map(String) : []
   const odd = hide.filter((h: string) => !COMMUNITY_HIDE.includes(h))
   if (odd.length) throw new Error(`community.hide: ${odd.map((h: string) => '"' + h + '"').join(', ')} is not something a site can hide — the choices are ${COMMUNITY_HIDE.join(', ')}`)
-  return { layout: m.layout === 'social' ? 'social' : 'chat', forYou: m.forYou === true, hide: [...new Set(hide)], places: [...kitPlacesOf(c), ...placesOf(m.places)], path: pathOf(m.path),
+  const places = [...kitPlacesOf(c), ...placesOf(m.places)]
+  const order = m.order == null ? [] : Array.isArray(m.order) ? m.order.map(String) : null
+  if (order === null) throw new Error('community.order: a list of menu entries, such as [\'inbox\', \'courses\', \'coaching\']')
+  const unknown = order.filter((k: string) => !COMMUNITY_WORDS.includes(k) && !places.some((p: any) => p.key === k))
+  if (unknown.length) throw new Error(`community.order: ${unknown.map((k: string) => '"' + k + '"').join(', ')} is not a menu entry — the kit's are ${COMMUNITY_WORDS.join(', ')}, and the places are ${places.map((p: any) => p.key).join(', ') || 'none'}`)
+  return { layout: m.layout === 'social' ? 'social' : 'chat', forYou: m.forYou === true, hide: [...new Set(hide)], places, order, path: pathOf(m.path),
     /* members choose which spaces reach their Home (Pin to Home) — off: every space they are in does */
     pinning: m.pinning === true,
     /* the places that carry an entry rule (community.access, places[].access): their keys alone — the
