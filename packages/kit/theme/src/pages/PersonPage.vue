@@ -39,6 +39,7 @@ import site from '#site'
 import { showsFollowing } from 'platformkit/lib/community/places.js'
 import { supabase } from 'platformkit/lib/supabase.js'
 import { openDm } from 'platformkit/lib/spaces/api.js'
+import { has } from 'platformkit/lib/spaces/settings.js'
 /* the wider network is offered only where the site federates (platformkit.config.js network.federate) */
 const FEDERATES = !!(site.network && site.network.federate)
 
@@ -62,7 +63,7 @@ const reportingPost = ref<any>(null)
 const itsMe = computed(() => !!(user.value && them.value && user.value.id === them.value.id))
 /* MESSAGE THEM — where the two share a space whose direct messages are on and they have not declined
    them there (space_dm_where asks exactly the rules space_dm_open keeps); otherwise the page says so */
-const SPACES = moduleOn('spaces')
+const SPACES = moduleOn('spaces') && has('messages')
 const dmSpace = ref<any>(null)
 const dmKnown = ref(false)
 async function loadDm(t: any) {

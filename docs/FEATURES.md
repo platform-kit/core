@@ -494,7 +494,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Room types: chat; forum (titled posts, sorting, unanswered and your posts, a full-page post view); and feed (posts with photos and video). Rooms can be open, private or archived, and grouped under headings.
 - Messages can be edited, deleted, pinned, saved for later, drafted, scheduled to send later, and formatted, with emoji, typing indicators, unread and mention badges, "mark all read", "jump to latest" and catching up after being away.
 - Threads, optionally also posted to the channel; mentions of people, roles, everyone and @here.
-- Direct messages across spaces, including group messages; people and spaces can turn direct messages off.
+- Direct messages across spaces, including group messages; people and spaces can turn direct messages off, and a site can switch them off for its whole community.
 - Notification control per channel (mentions, all, nothing), muting a channel for a time, muting a space, and muting a person.
 - Presence: active, away and do not disturb, with an online indicator.
 - Search by who, where and when.

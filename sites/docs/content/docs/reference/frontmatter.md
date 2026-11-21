@@ -11,7 +11,7 @@ sources:
     packages/kit/build/statement-keys.mts,
     packages/kit/build/docs-check.mts,
   ]
-reviewed: 2026-11-20
+reviewed: 2026-11-21
 ---
 
 Every shared record is a markdown file with a frontmatter block; the admin edits the fields as a form. `published` (boolean, default true) is on every collection and is omitted below. A field marked _build_ is written by the build, not by a person. Site-defined model records use the keys declared by that model's `fields` list; those vary by site and are not shared collection fields. This page covers shared content fields; the repository-level purpose and feature overviews are tracked separately and do not define a site's content models.
@@ -289,7 +289,7 @@ invited, or they were put there by hand. The sweep removes only what it put ther
 
 ### `content/community.md` — the community as a whole
 
-Everything about the spaces surface that is not one space, and **content rather than config**, because every one of these is a decision an owner makes about how the place feels: `name` and `tagline` (what it is called wherever it is named), `cover` (the picture behind its front page; without one the page draws a mesh of the community's own hue, which is an answer and not a placeholder), `colours` (`rail`, `side`, `ink`, `on`, `link`, `badge`, `go` — the surface's chrome; each optional, each falling through to the kit's own, so a file that names one colour changes one colour), `home` (`opens`: feed · spaces, and `greeting`, `facts`, `compose`, `events`, `people` — which parts of the front page are drawn) and `features` (`events`, `huddles`, `polls`, `voice`, `files`, `tickets`, `forum`, `moderation` — switching one off takes its buttons, its places and its keyboard shortcuts with it). The body is what the community is. **The file is optional**: a site that writes none gets the kit’s own name, colours and features.
+Everything about the spaces surface that is not one space, and **content rather than config**, because every one of these is a decision an owner makes about how the place feels: `name` and `tagline` (what it is called wherever it is named), `cover` (the picture behind its front page; without one the page draws a mesh of the community's own hue, which is an answer and not a placeholder), `colours` (`rail`, `side`, `ink`, `on`, `link`, `badge`, `go` — the surface's chrome; each optional, each falling through to the kit's own, so a file that names one colour changes one colour), `home` (`opens`: feed · spaces, and `greeting`, `facts`, `compose`, `events`, `people` — which parts of the front page are drawn) and `features` (`events`, `huddles`, `polls`, `voice`, `files`, `tickets`, `forum`, `moderation`, `messages` — switching one off takes its buttons, its places and its keyboard shortcuts with it; `messages: false` takes direct messages out of the Inbox, the phone bar, member cards and profiles, and each space's own `dms: false` is what the server refuses a new one by). The body is what the community is. **The file is optional**: a site that writes none gets the kit’s own name, colours and features.
 
 ## Channels — `content/spaces/<slug>/<channel>.md`
 

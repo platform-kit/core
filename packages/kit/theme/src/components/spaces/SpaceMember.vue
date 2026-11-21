@@ -26,6 +26,7 @@ import type { PropType } from 'vue'
 import { computed, ref, watch } from 'vue'
 import { us } from 'platformkit/lib/content.js'
 import { memberCard, setAbout, hush, unhush, isHushed, flairsOf, giveFlair } from 'platformkit/lib/spaces/api.js'
+import { has } from 'platformkit/lib/spaces/settings.js'
 import { panels } from '#site/member'
 import SpaceAvatar from './SpaceAvatar.vue'
 import SpaceIcon from './SpaceIcon.vue'
@@ -167,7 +168,7 @@ async function save() {
       </div>
 
       <div class="sn-acts">
-        <button v-if="!mine" type="button" class="sn-go" @click="emit('write', card.id)">{{ W.write }}</button>
+        <button v-if="!mine && has('messages')" type="button" class="sn-go" @click="emit('write', card.id)">{{ W.write }}</button>
         <!-- MUTING SOMEBODY is the reader's own and hides nothing: this person's lines are still in
              every room, still read by opening it. What stops is their name arriving with a noise —
              a mention, a reply, a number on the direct message. It is here rather than in a

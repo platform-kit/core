@@ -23,6 +23,7 @@ import { isSignedIn } from 'platformkit/lib/auth.js'
 import { us } from 'platformkit/lib/content.js'
 import { net } from 'platformkit/lib/network/api.js'
 import { chatNavigation, lockedPlaces } from 'platformkit/lib/community/places.js'
+import { has } from 'platformkit/lib/spaces/settings.js'
 import SpaceIcon from './SpaceIcon.vue'
 import SpaceAvatar from './SpaceAvatar.vue'
 
@@ -70,6 +71,7 @@ const myPerson = computed(() => props.myPerson)
 
 const SITE_COMMUNITY = (site && site.community) || {}
 const NAV = computed(() => chatNavigation({
+  messages: has('messages'),
   network: props.network,
   events: props.events,
   forYou: !!SITE_COMMUNITY.forYou,

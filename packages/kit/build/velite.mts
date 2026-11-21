@@ -537,6 +537,8 @@ export async function kitConfig(): Promise<any> {
           polls: s.boolean().default(true), voice: s.boolean().default(true),
           files: s.boolean().default(true), tickets: s.boolean().default(true),
           forum: s.boolean().default(true), moderation: s.boolean().default(true),
+          /* direct messages between members: off takes them out of the navigation, the cards and the profile */
+          messages: s.boolean().default(true),
         }).default({}),
         body: markdown(),
       }),

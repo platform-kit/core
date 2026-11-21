@@ -648,6 +648,8 @@ const ownViewOf = (p: any) => {
   if (head === 'coaching-chat' && OWN_VIEW[head]) return OWN_VIEW[head]
   /* Events where the community does not run it is no place: the address opens the community's front instead */
   if (rest === 'events' && !EVENTS_ON) return null
+  /* nor Direct Messages where the community does not run them */
+  if (rest === 'messages' && !has('messages')) return null
   return OWN_VIEW[rest] || null
 }
 vueWatch(route, (p) => {

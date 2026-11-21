@@ -17,7 +17,7 @@ sources:
     packages/kit/build/avatar.test.mts,
     packages/kit/theme/src/components/spaces/SpaceAvatar.vue,
   ]
-reviewed: 2026-11-14
+reviewed: 2026-11-21
 ---
 
 Everything on this page is the person's own. It is written straight to their profile row under the policy that the row is theirs — no function, no approval — because none of it is a decision anybody else has a say in. The guard trigger refuses the columns that are _not_ theirs: their roles, the proof of their address, the Stripe customer.
@@ -137,6 +137,8 @@ Their own settings also show **Your teams**, where the site puts them in any (se
 [Teams](/content/docs/running-a-site/bookings/teams)): each team, the line its file carries, and which of the
 three ways they came to be in it. Read only — leaving is not offered, because a rule that swept them
 in would sweep them back on the next sweep.
+
+A person's page offers **Message** where the two share a space whose direct messages are on; a community that runs no direct messages (`content/community.md` `features.messages: false`) shows neither the button nor a line saying they cannot be messaged.
 
 ## A coach builds their own page
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PropType } from 'vue'
+import { has } from 'platformkit/lib/spaces/settings.js'
 /*
  * The space's column: the one space being read, and nothing else. Its name at the head with what
  * kind of place it is, then where to go in it that is not a room (its home, its people, its queue,
@@ -54,7 +55,8 @@ const runs = computed(() => [
   ...sections.value.groups.map((g: { name: string; channels: any }) => ({ key: 'group:' + g.name, label: g.name, list: g.channels })),
   { key: 'starred', label: W.value['section-starred'], list: sections.value.starred },
   { key: 'channels', label: W.value['section-channels'], list: sections.value.channels },
-  { key: 'dms', label: W.value['section-direct'], list: sections.value.dms },
+  /* direct messages, where the community runs them (content/community.md features.messages) */
+  ...(has('messages') ? [{ key: 'dms', label: W.value['section-direct'], list: sections.value.dms }] : []),
 ])
 const shown = (list: any[]) => {
   const q = filter.value.trim().toLowerCase()
