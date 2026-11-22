@@ -1944,7 +1944,7 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
 /* a place to read (FLOW): the page grows with it; the navigation sticks beside it on a wide screen */
 .sp-page.sp-flow { height: auto; min-height: calc(100dvh - var(--headh)) }
 .sp-flow .sp-body { height: auto; min-height: calc(100dvh - var(--headh)); align-items: start }
-.sp-flow .sp-body > .sp-plain { height: auto; min-height: calc(100dvh - var(--headh)); align-self: stretch }
+.sp-flow .sp-body > .sp-plain { height: auto; min-height: calc(100dvh - var(--headh)); align-self: stretch; overflow: visible }   /* visible: a sticky inside it (a course's card) sticks to the page, which is what scrolls now */
 @media (min-width: 901px) {
   .sp-flow .sp-nav { position: sticky; top: 0; align-self: start; max-height: 100dvh; overflow-y: auto }
 }

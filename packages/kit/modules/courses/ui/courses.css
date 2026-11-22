@@ -111,6 +111,8 @@
 .crs-ov-side { grid-area: side; position: sticky; top: 24px; }
 /* in the community the pane itself scrolls, from under its own padding: an offset there pushes the card below the title */
 .crs.is-place .crs-ov-side { top: 0; }
+/* …unless the place grows the page (community.places scroll: page): then the page scrolls, and the card keeps its offset */
+.sp-flow .crs.is-place .crs-ov-side { top: 24px; }
 .crs-ov-main { grid-area: main; min-width: 0; }
 .crs-cover.is-side { display: block; aspect-ratio: 16 / 9; margin: -22px -22px 4px; border-radius: 20px 20px 0 0; overflow: hidden; }
 .crs-cover.is-side img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -200,6 +202,8 @@
 .crs-player.is-wide .crs-pside { display: none; }
 .crs-pside { position: sticky; top: var(--crs-bar); max-height: calc(100dvh - var(--crs-bar)); overflow-y: auto; box-sizing: border-box; padding: 18px 14px 40px; border-right: 1px solid var(--hair); background: var(--wash); align-self: stretch; min-height: calc(100dvh - var(--crs-bar) - var(--headh, 68px)); }
 .crs.is-place .crs-pside { max-height: calc(100% - var(--crs-bar)); min-height: 0; }
+/* …and where the place grows the page, the contents column is the window's height under the bar, so it sticks while the lesson scrolls */
+.sp-flow .crs.is-place .crs-pside { max-height: calc(100dvh - var(--crs-bar)); }
 .crs-pside-head { display: flex; align-items: center; gap: 10px; padding: 2px 8px 10px; }
 .crs-pside-head strong { font-size: 15px; }
 .crs-pside-n { font-family: var(--m); font-size: 11.5px; color: var(--ink3); }
