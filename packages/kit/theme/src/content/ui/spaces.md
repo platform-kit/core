@@ -793,6 +793,27 @@ guest-title: Welcome to the community
 guest-line: Sign in to join the conversation, see what's on and meet the people here.
 guest-signin: Sign in
 
+## home
+
+### main
+
+posts: Recent posts
+coaching-title: Coaching
+coaching-next: Your next session
+coaching-open: View session
+coaching-none: No session booked
+coaching-included: Your plan includes coaching sessions.
+coaching-book: Book a session
+coaching-offer: Work with a coach
+coaching-offer-line: One-on-one and group sessions with our coaches.
+coaching-cta: See coaching options
+reading-title: Reading
+reading-reading: Continue reading
+reading-suggested: Suggested for you
+reading-library: From the library
+reading-all: Browse the library
+reading-pct: {n}% read
+
 ## calendar
 
 ### main

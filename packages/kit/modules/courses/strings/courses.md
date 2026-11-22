@@ -205,6 +205,19 @@ empty-theirs: They haven't started a course yet.
 progress: {done} of {total}
 finished: Finished
 
+## home
+
+### main
+
+title: Your course
+all: All courses
+continue: Continue
+start: Start the course
+next: Next: {title}
+opens: The next lesson opens {date}.
+lessons: {n} lessons
+progress: {done} of {total} lessons
+
 ## admin
 
 ### enrollments

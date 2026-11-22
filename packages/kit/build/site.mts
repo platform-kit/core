@@ -197,7 +197,8 @@ export const communityOf = (c: any) => {
   if (order === null) throw new Error('community.order: a list of menu entries, such as [\'inbox\', \'courses\', \'coaching\']')
   const unknown = order.filter((k: string) => !COMMUNITY_WORDS.includes(k) && !places.some((p: any) => p.key === k))
   if (unknown.length) throw new Error(`community.order: ${unknown.map((k: string) => '"' + k + '"').join(', ')} is not a menu entry — the kit's are ${COMMUNITY_WORDS.join(', ')}, and the places are ${places.map((p: any) => p.key).join(', ') || 'none'}`)
-  return { layout: m.layout === 'social' ? 'social' : 'chat', forYou: m.forYou === true, hide: [...new Set(hide)], places, order, path: pathOf(m.path),
+  const home = homeCardsOf(c)
+  return { layout: m.layout === 'social' ? 'social' : 'chat', forYou: m.forYou === true, hide: [...new Set(hide)], places, order, homeCards: home, path: pathOf(m.path),
     /* members choose which spaces reach their Home (Pin to Home) — off: every space they are in does */
     pinning: m.pinning === true,
     /* the places that carry an entry rule (community.access, places[].access): their keys alone — the
@@ -297,6 +298,33 @@ export const courseKindsOf = (c: any) => {
     out[name] = { component: (k as any).component, check: (k as any).check ? String((k as any).check) : null, progress: (k as any).progress ? String((k as any).progress) : null, label: (k as any).label ? String((k as any).label) : null, icon: (k as any).icon ? String((k as any).icon) : null }
   }
   return out
+}
+/*
+ * THE CARDS ON THE COMMUNITY'S HOME (openspec: community-home), where content/community.md home.overview is on: each
+ * module's fill of spaces' home slot, then the site's own community.homeCards — { key, component, order? } — in order. A
+ * site card is ordered 20 unless it says, between the kit's Course (10) and Coaching (30); a key already in use, or a
+ * card with no component, refuses the build.
+ */
+/* the theme's own cards (Coaching, Reading), drawn by CommunityHome itself: a site card may not take their keys */
+const HOME_KIT_CARDS = ['coaching', 'reading']
+export function homeCardsOf(c: any) {
+  const kit = fillsOf(resolveModules(), c.modules || {}, 'spaces:home').map(({ module, with: _w, ...x }: any) => ({ key: String(x.key), order: Number(x.order) || 50, component: inModule(module, x.component) }))
+  const list = (c.community || {}).homeCards
+  if (list == null) return kit.sort((a: any, b: any) => a.order - b.order)
+  if (!Array.isArray(list)) throw new Error('community.homeCards: a list of cards — { key, component, order? }')
+  const seen = new Set<string>([...kit.map((x: any) => x.key), ...HOME_KIT_CARDS])
+  const own = list.map((x: any, i: number) => {
+    const at = `community.homeCards[${i}]`
+    if (!x || typeof x !== 'object') throw new Error(`${at}: a card is { key, component, order? }`)
+    const key = String(x.key || '')
+    if (!/^[a-z][a-z0-9-]*$/.test(key)) throw new Error(`${at}: key "${key}" is a lower-case slug`)
+    if (seen.has(key)) throw new Error(`${at}: "${key}" is a card Home already has`)
+    seen.add(key)
+    if (!x.component || typeof x.component !== 'string') throw new Error(`${at}: component is the path of the card (./src/….vue)`)
+    if (x.order != null && !Number.isFinite(Number(x.order))) throw new Error(`${at}: order is a number`)
+    return { key, order: x.order == null ? 20 : Number(x.order), component: x.component }
+  })
+  return [...kit, ...own].sort((a: any, b: any) => a.order - b.order)
 }
 /* the kit's own places in the community, before the site's: Courses, where the community is there to hold it */
 function kitPlacesOf(c: any) {

@@ -9,3 +9,4 @@ export const api = publicSite(c).api
 export const site = c
 /* the community's registered places; under Node there is no page to load */
 export const places = (publicSite(c).community.places || []).map((x) => ({ ...x, load: null }))
+export const homeCards = (publicSite(c).community.homeCards || []).map((x) => ({ ...x, load: null }))

@@ -135,7 +135,7 @@ function site(c: any, theme: any, keys: string[] = [], pages: any[] = [], module
       })
       return lines.join('\n') + '\n/* the page table: each page with its component, fetched when it is first shown unless it is eager */\nconst COMPONENTS = [' + comps.join(', ') + ']\nexport const PAGES = PAGE_TESTS.map((p, i) => ({ ...p, component: COMPONENTS[i] }))\n'
     }
-    if (id === V['#site']) return `export default ${JSON.stringify(publicSite(c))}\n/* the community's registered places, each page fetched when it is first opened */\nexport const places = [${communityOf(c).places.map((x) => `{ ...${J({ ...x, component: undefined })}, load: () => import(${J(from(x.component))}) }`).join(', ')}]\nexport const modules = ${JSON.stringify(c.modules)}\nexport const moduleKeys = ${JSON.stringify(keys)}\nexport const api = ${JSON.stringify(publicSite(c).api)}\n`
+    if (id === V['#site']) return `export default ${JSON.stringify(publicSite(c))}\n/* the community's registered places, each page fetched when it is first opened */\nexport const places = [${communityOf(c).places.map((x) => `{ ...${J({ ...x, component: undefined })}, load: () => import(${J(from(x.component))}) }`).join(', ')}]\n/* the cards on the community's Home (openspec: community-home), each fetched when Home first draws it */\nexport const homeCards = [${communityOf(c).homeCards.map((x) => `{ ...${J({ ...x, component: undefined })}, load: () => import(${J(from(x.component))}) }`).join(', ')}]\nexport const modules = ${JSON.stringify(c.modules)}\nexport const moduleKeys = ${JSON.stringify(keys)}\nexport const api = ${JSON.stringify(publicSite(c).api)}\n`
     if (id === V['#site/looks']) {
       /*
        * A SITE THAT REGISTERS NO LOOK WEARS THE THEME'S.

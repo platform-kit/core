@@ -20,7 +20,7 @@ const FILE = () => (Array.isArray(community) ? community[0] : community) || {}
 /* the kit's own, which are what a site gets before it has said anything */
 export const DEFAULTS = {
   colours: {},
-  home: { opens: 'feed', greeting: true, facts: true, compose: true, events: true, people: true },
+  home: { opens: 'feed', greeting: true, facts: true, compose: true, events: true, people: true, overview: false },
   /* messages: direct messages between members. Off takes Direct Messages, its Inbox row, the phone bar's button and every
      Message button away; a space's own `dms: false` is what the server refuses a new one by */
   /* notifications: the Notifications place. Off takes it out of the navigation and the phone bar, and its address opens the front */

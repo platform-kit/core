@@ -29,6 +29,8 @@ export default {
       scroll: 'page' }],
     /* the courses somebody is taking, on their card */
     'spaces:member-card': [{ key: 'courses', component: './integrations/spaces/MemberCourses.vue', words: { scope: 'courses', group: 'member-panel', mine: 'title-mine', theirs: 'title-theirs' } }],
+    /* the course in progress, on the community's Home where it opens on an overview (openspec: community-home) */
+    'spaces:home': [{ key: 'course', order: 10, component: './integrations/spaces/HomeCourse.vue', with: ['network'] }],
   },
   owns: {
     routes: ['/courses', '/certificates'],

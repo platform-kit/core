@@ -168,9 +168,9 @@ said every time the repository was redeployed, which is the wrong answer every t
 refuses a content field called `stock`, `quantity`, `available` or their like by name.
 
 > **The declared order of the options is the key.** `leather.lined` is Cover then Ruling because
-> that is the order they are written in, so reordering them rewrites every variant key and
+>
 > orphans anything already in a basket. A value's slug is its identity and its label is not, so a
-> label may be reworded freely after a sale. Neither is ever typed in the admin: the editor shows
+>
 > the options as rows and the variants as a table.
 
 ## Price lists — `content/store/prices/*.md`
@@ -211,16 +211,15 @@ What comes off, and of what:
 | `budget`       | `kind` (`spend` · `usage`) and `limit` — what it may spend, or how often it may be used, before it stops |
 
 > **`allocation` is what makes a flat amount mean anything.** "£10 off" is three different
-> instructions: `each` takes £10 off every line it touches, `across` takes £10 once and splits it
+>
 > between them by each line’s share of the total, and `once` takes it off a single line. A
-> percentage is unambiguous and ignores it.
 
 > **A discount comes off whatever that person pays.** 20% off gives a member 20% off _their_
-> rate and a stranger 20% off the shop’s. Writing "$14" as a price instead could say neither, and
+>
 > would be wrong the moment the product was re-priced.
 
 > **Who gets it is yours to say.** No rules reaches everybody, members included. For a
-> first-order discount, `customer.class ne subscribed` — and a member then keeps their own rate.
+>
 > That one line is the whole policy; nothing is inferred from how specific anything looks.
 
 ## Collections — `content/store/collections/*.md`
@@ -289,7 +288,7 @@ invited, or they were put there by hand. The sweep removes only what it put ther
 
 ### `content/community.md` — the community as a whole
 
-Everything about the spaces surface that is not one space, and **content rather than config**, because every one of these is a decision an owner makes about how the place feels: `name` and `tagline` (what it is called wherever it is named), `cover` (the picture behind its front page; without one the page draws a mesh of the community's own hue, which is an answer and not a placeholder), `colours` (`rail`, `side`, `ink`, `on`, `link`, `badge`, `go` — the surface's chrome; each optional, each falling through to the kit's own, so a file that names one colour changes one colour), `home` (`opens`: feed · spaces, and `greeting`, `facts`, `compose`, `events`, `people` — which parts of the front page are drawn) and `features` (`events`, `huddles`, `polls`, `voice`, `files`, `tickets`, `forum`, `moderation`, `messages`, `notifications` — switching one off takes its buttons, its places and its keyboard shortcuts with it; `messages: false` takes direct messages out of the Inbox, the phone bar, member cards and profiles, and each space's own `dms: false` is what the server refuses a new one by; `notifications: false` takes the Notifications place out of the navigation and the phone bar, and its address opens the community's front). The body is what the community is. **The file is optional**: a site that writes none gets the kit’s own name, colours and features.
+Everything about the spaces surface that is not one space, and **content rather than config**, because every one of these is a decision an owner makes about how the place feels: `name` and `tagline` (what it is called wherever it is named), `cover` (the picture behind its front page; without one the page draws a mesh of the community's own hue, which is an answer and not a placeholder), `colours` (`rail`, `side`, `ink`, `on`, `link`, `badge`, `go` — the surface's chrome; each optional, each falling through to the kit's own, so a file that names one colour changes one colour), `home` (`opens`: feed · spaces, and `greeting`, `facts`, `compose`, `events`, `people` — which parts of the front page are drawn; `overview: true` makes Home a page of the member's own things — the greeting over the community's name and tagline, then cards: Course where courses is on, Coaching and Reading from the theme, and any a module or the site adds (`community.homeCards`) — with the feed below them once there is a post and no empty state before; off by default, which leaves Home as it was) and `features` (`events`, `huddles`, `polls`, `voice`, `files`, `tickets`, `forum`, `moderation`, `messages`, `notifications` — switching one off takes its buttons, its places and its keyboard shortcuts with it; `messages: false` takes direct messages out of the Inbox, the phone bar, member cards and profiles, and each space's own `dms: false` is what the server refuses a new one by; `notifications: false` takes the Notifications place out of the navigation and the phone bar, and its address opens the community's front). The body is what the community is. **The file is optional**: a site that writes none gets the kit’s own name, colours and features.
 
 ## Channels — `content/spaces/<slug>/<channel>.md`
 

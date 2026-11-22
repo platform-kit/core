@@ -528,6 +528,8 @@ export async function kitConfig(): Promise<any> {
           compose: s.boolean().default(true),
           events: s.boolean().default(true),
           people: s.boolean().default(true),
+          /* Home as an overview of the member's own things (openspec: community-home): cards, posts below once there are any */
+          overview: s.boolean().default(false),
         }).default({}),
         /* the features this community runs. Each is a thing a site may simply not want — a book
            club needs no huddles, a support desk needs no polls — and switching one off takes its

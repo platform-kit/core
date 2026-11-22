@@ -250,7 +250,6 @@ otp_expiry = 3600
 # admin_email = "env(SMTP_USER)"
 # sender_name = "PlatformKit Demo"
 
-
 # >>> emails: written by build/emails.mjs
 # The emails Supabase Auth sends locally: the designs built under admin → Emails, compiled by
 # build/emails.mjs (which writes this block); the hosted project gets the same on deploy.
@@ -533,4 +532,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.matrix-api]
+verify_jwt = false
+
+[functions.run-recordings]
 verify_jwt = false
