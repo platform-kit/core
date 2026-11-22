@@ -34,7 +34,8 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { route, ROUTES } from 'platformkit/lib/router.js'
+import { route, ROUTES, replace, COURSES_PLACE_BASE } from 'platformkit/lib/router.js'
+import { authSettled, userClass } from 'platformkit/lib/auth.js'
 import { us } from 'platformkit/lib/content.js'
 import { supabase } from 'platformkit/lib/supabase.js'
 import { setHead } from 'platformkit/lib/seo.js'
@@ -49,6 +50,18 @@ const L = computed(() => W.value.list || {}), C = computed(() => W.value.certifi
 const day = (iso: string|number|Date) => { try { return new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso)) } catch { return String(iso || '') } }
 
 const isCert = computed(() => route.value.startsWith(ROUTES.certificates + '/'))
+/* A SUBSCRIBER TAKES THEIR COURSES IN THE COMMUNITY, where it has a Courses place (site.courses.place): /courses and
+   everything under it is swapped in place for the same address under the place, so Back does not return here to be
+   sent on again. Anybody else, and a certificate (a public address anyone given it can check), stays on these pages. */
+const IN_COMMUNITY = !!(site && (site as any).courses && (site as any).courses.place)
+watch([authSettled, userClass, route], () => {
+  if (!IN_COMMUNITY || !authSettled.value || userClass.value !== 'subscribed' || isCert.value) return
+  const p = route.value
+  if (p !== ROUTES.courses && !p.startsWith(ROUTES.courses + '/')) return
+  const search = typeof location !== 'undefined' ? location.search : ''
+  replace(COURSES_PLACE_BASE + p.slice(ROUTES.courses.length))
+  if (search) history.replaceState(null, '', location.pathname + search)
+}, { immediate: true })
 const rest = computed(() => (route.value.startsWith(ROUTES.courses + '/') ? route.value.slice(ROUTES.courses.length + 1) : ''))
 const loading = ref(false), cert = ref<any>(null)
 watch(route, async () => {

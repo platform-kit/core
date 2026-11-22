@@ -110,6 +110,8 @@ Readers get an email when a lesson opens, and one when they finish. A lesson ema
 
 Courses always have pages of their own at `/courses`. Where the site has a community (the `spaces` and `network` modules), they are also a place in it, the way Circle has them and the way Events are both. A Courses row sits in the community's navigation, and the same library, overview and player appear at `<community>/courses`. Neither address forwards to the other. There is nothing to configure: `courses.where`, which once chose between the two, is refused by name.
 
+**A subscriber takes them in the community.** Where the site has the Courses place, a signed-in reader with a live membership who opens `/courses` (or a course, lesson or workbook under it) is sent to the same address under the place, with the address swapped in place so Back does not return to be sent on again. Anybody else stays on `/courses`, and a certificate always opens at its own public address.
+
 `/app/courses`, where the app area once listed a reader's courses, goes to the library. That holds even on a site whose own community place claims `/app`.
 
 ## In the admin
