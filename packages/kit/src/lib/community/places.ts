@@ -38,6 +38,7 @@ const n = (v: any) => Math.max(0, Number(v) || 0)
  *   coaching    this reader has coaching sessions in the community (coachingPlace.sessions): the Coaching place
  *   coachChat   this reader may write to a coach (coachingPlace.chat): Coaching Chat, a row of the Inbox
  *   messages    direct messages are on (community.md features.messages, on unless false): Direct Messages, the Inbox's last row
+ *   notifications  the Notifications place is on (community.md features.notifications, on unless false)
  *   counts      { dms, coaching, notes, mentions, saved, drafts, tickets } — what waits in each
  *   work        [{ key, count }] — the queues this reader answers
  *   order       the site's community.order: entries named (by word, or a place's key) take each other's slots in that order
@@ -78,7 +79,7 @@ export function socialPlaces(ctx: any = {}) {
     /* THE PLACES A SITE REGISTERED (community.places), after the Inbox and before Notifications, in the order given:
        each with its word and icon, shown to whom its registration says, with the count it carries */
     ...(ctx.places || []).filter((x: { shows: string }) => x.shows === 'everyone' || signed).map((x: { key: string|number; icon: any; word: any }) => ({ key: x.key, icon: x.icon, word: x.word, count: n((c.places || {})[x.key]), place: true })),
-    ...(signed ? [{ key: ctx.network ? 'net-notes' : 'mentions', icon: 'bell', word: 'notifications', count: ctx.network ? n(c.notes) : n(c.mentions) }] : []),
+    ...(signed && ctx.notifications !== false ? [{ key: ctx.network ? 'net-notes' : 'mentions', icon: 'bell', word: 'notifications', count: ctx.network ? n(c.notes) : n(c.mentions) }] : []),
     ...(signed && n(c.saved) > 0 && !hide.has('saved') ? [{ key: 'saved', icon: 'star', word: 'saved' }] : []),
     ...(signed && n(c.drafts) > 0 && !hide.has('drafts') ? [{ key: 'drafts', icon: 'pencil', word: 'drafts', count: n(c.drafts) }] : []),
     ...(signed && n(c.tickets) > 0 && !hide.has('tickets') ? [{ key: 'my-tickets', icon: 'ticket', word: 'my-tickets', count: n(c.tickets) }] : []),

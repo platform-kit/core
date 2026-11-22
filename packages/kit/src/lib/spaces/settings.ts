@@ -23,7 +23,8 @@ export const DEFAULTS = {
   home: { opens: 'feed', greeting: true, facts: true, compose: true, events: true, people: true },
   /* messages: direct messages between members. Off takes Direct Messages, its Inbox row, the phone bar's button and every
      Message button away; a space's own `dms: false` is what the server refuses a new one by */
-  features: { events: true, huddles: true, polls: true, voice: true, files: true, tickets: true, forum: true, moderation: true, messages: true },
+  /* notifications: the Notifications place. Off takes it out of the navigation and the phone bar, and its address opens the front */
+  features: { events: true, huddles: true, polls: true, voice: true, files: true, tickets: true, forum: true, moderation: true, messages: true, notifications: true },
 }
 
 export const settings = () => {

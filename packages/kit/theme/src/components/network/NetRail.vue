@@ -12,6 +12,7 @@ import { moduleOn } from 'platformkit/lib/modules.js'
 import { user, isSignedIn } from 'platformkit/lib/auth.js'
 import { net } from 'platformkit/lib/network/api.js'
 import { unread } from 'platformkit/lib/network/nav.js'
+import { has } from 'platformkit/lib/spaces/settings.js'   /* features.notifications */
 
 const props = defineProps({ view: { type: String, default: 'home' } })
 const emit = defineEmits(['compose'])
@@ -23,7 +24,7 @@ const count = computed(() => (unread.value > 99 ? '99+' : unread.value))
 const items = computed(() => [
   { key: 'home', href: ROUTES.feed, label: S.value.home },
   { key: 'explore', href: ROUTES.feed + '/explore', label: S.value.explore },
-  { key: 'notes', href: ROUTES.feed + '/notifications', label: S.value.notifications, badge: isSignedIn.value && unread.value ? count.value : '' },
+  ...(has('notifications') ? [{ key: 'notes', href: ROUTES.feed + '/notifications', label: S.value.notifications, badge: isSignedIn.value && unread.value ? count.value : '' }] : []),
   ...(SPACES ? [{ key: 'spaces', href: ROUTES.spaces, label: S.value.spaces }] : []),
   ...(isSignedIn.value ? [{ key: 'profile', href: profileHref.value, label: S.value.profile }] : []),
 ])

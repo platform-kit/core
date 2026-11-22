@@ -539,6 +539,8 @@ export async function kitConfig(): Promise<any> {
           forum: s.boolean().default(true), moderation: s.boolean().default(true),
           /* direct messages between members: off takes them out of the navigation, the cards and the profile */
           messages: s.boolean().default(true),
+          /* the Notifications place: off takes it out of the navigation and the phone bar */
+          notifications: s.boolean().default(true),
         }).default({}),
         body: markdown(),
       }),

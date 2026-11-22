@@ -59,7 +59,7 @@ const C = (site && site.community) || {}
 
 /* THE FIRST SECTION AND WORK, from the one list */
 const places = computed(() => socialPlaces({
-  network: props.network, events: props.events, forYou: !!C.forYou, hide: C.hide || [], order: C.order || [], signedIn: isSignedIn.value, coaching: props.coaching, coachChat: props.coachChat, messages: has('messages'), places: SITE_PLACES || [],
+  network: props.network, events: props.events, forYou: !!C.forYou, hide: C.hide || [], order: C.order || [], signedIn: isSignedIn.value, coaching: props.coaching, coachChat: props.coachChat, messages: has('messages'), notifications: has('notifications'), places: SITE_PLACES || [],
   counts: { dms: props.dmUnread, coaching: props.coachingUnread, notes: props.netUnread, mentions: props.mentions, saved: props.saved, drafts: props.drafts, tickets: props.myTickets },
   work: props.work,
   /* what this reader may not enter: kept in the list, marked, opening on the join card */
@@ -199,7 +199,7 @@ watch(() => [props.network, isSignedIn.value], ([on, signed]) => { if (on && sig
       <button v-if="places.first.some((m) => m.key === 'net-explore')" type="button" :class="{ on: view === 'net-explore' }" :aria-label="S.explore" @click="emit('view', 'net-explore')"><SpaceIcon name="search" :size="22" /></button>
       <button type="button" :aria-label="W.spaces" @click="emit('drawer')"><SpaceIcon name="people" :size="22" /></button>
       <button v-if="isSignedIn && has('messages')" type="button" :class="{ on: view === 'dms' }" :aria-label="S.messages" @click="emit('view', 'dms')"><SpaceIcon name="dm" :size="22" /><em v-if="dmUnread + coachingUnread" class="sn-n">{{ count(dmUnread + coachingUnread) }}</em></button>
-      <button v-if="isSignedIn" type="button" :class="{ on: view === 'net-notes' || view === 'mentions' }" :aria-label="S.notifications" @click="emit('view', network ? 'net-notes' : 'mentions')"><SpaceIcon name="bell" :size="22" /><em v-if="network ? netUnread : mentions" class="sn-n">{{ count(network ? netUnread : mentions) }}</em></button>
+      <button v-if="isSignedIn && has('notifications')" type="button" :class="{ on: view === 'net-notes' || view === 'mentions' }" :aria-label="S.notifications" @click="emit('view', network ? 'net-notes' : 'mentions')"><SpaceIcon name="bell" :size="22" /><em v-if="network ? netUnread : mentions" class="sn-n">{{ count(network ? netUnread : mentions) }}</em></button>
       <button v-if="!isSignedIn" type="button" :class="{ on: view === 'events' }" :aria-label="S.events" @click="emit('view', 'events')"><SpaceIcon name="calendar" :size="22" /></button>
   </nav>
 </template>

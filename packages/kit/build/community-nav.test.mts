@@ -4,7 +4,7 @@
    customer's tickets only while they hold something and only where the site has not hidden them,
    every place the chat layout offers reachable from the social layout, and the fold rule. Pure:
    no stack, no browser. */
-import { socialPlaces, chatNavigation, chatPlaces, reachOf, HIDEABLE, QUEUES, showsFollowing, spaceOpen, roomsOf, frontOf, foldOf, coachingPlace, spaceItems, spaceTabbed, forwardOf, socialSpacesHome, lockedPlaces } from '../src/lib/community/places.js'
+import { socialPlaces, chatNavigation, chatPlaces, reachOf, REACH, HIDEABLE, QUEUES, showsFollowing, spaceOpen, roomsOf, frontOf, foldOf, coachingPlace, spaceItems, spaceTabbed, forwardOf, socialSpacesHome, lockedPlaces } from '../src/lib/community/places.js'
 import { communityOf } from './site.mjs'
 import { communityAccessOf, accessOf } from './network-access.mjs'
 
@@ -32,6 +32,8 @@ const CONFIGS = {
   'everything hidden': { network: true, events: true, hide: HIDEABLE },
   /* the community runs no direct messages (community.md features.messages: false) */
   'direct messages off': { network: true, events: true, messages: false },
+  /* the community runs no Notifications place (community.md features.notifications: false) */
+  'notifications off': { network: true, events: true, notifications: false },
 }
 
 for (const [cname, cfg] of Object.entries(CONFIGS)) {
@@ -45,7 +47,7 @@ for (const [cname, cfg] of Object.entries(CONFIGS)) {
     ok(`${at}: Explore only where For You is on`, p.first.some((x) => x.key === 'net-explore') === !!((cfg as any).forYou && cfg.network))
     const msgs = (cfg as any).messages !== false
     ok(`${at}: Direct Messages only for somebody signed in, where the community runs them`, !!dmsOf(p) === (!!person.signedIn && msgs))
-    ok(`${at}: Notifications only for somebody signed in`, p.first.some((x) => x.word === 'notifications') === !!person.signedIn)
+    ok(`${at}: Notifications only for somebody signed in, where the community runs it`, p.first.some((x) => x.word === 'notifications') === (!!person.signedIn && (cfg as any).notifications !== false))
     /* the Inbox: one row, the sum, the queues in order, then Coaching Chat, then Direct Messages, for whoever answers a
        queue or may write to a coach; somebody with neither has Direct Messages alone, never a fold of one row */
     const queues = ((person as any).work || [])
@@ -100,7 +102,9 @@ for (const [cname, cfg] of Object.entries(CONFIGS)) {
     for (const k of chatPlaces(ctx)) {
       const word = k === 'my-tickets' ? 'tickets' : k
       const empty = ['saved', 'drafts', 'my-tickets'].includes(k) && !(((person as any).counts || {})[k === 'my-tickets' ? 'tickets' : k] > 0)
-      const reach = here.has(k) || (reachOf(k, ctx) && here.has(reachOf(k, ctx))) || hidden.has(word) || empty
+      /* mentions and thread replies live in Notifications: switched off with it */
+      const withNotes = (cfg as any).notifications === false && REACH[k] === 'notifications'
+      const reach = here.has(k) || (reachOf(k, ctx) && here.has(reachOf(k, ctx))) || hidden.has(word) || empty || withNotes
       ok(`${at}: the chat layout's ${k} has a home`, reach)
     }
     /* the chat layout keeps the conversation and the sessions in one Coaching place */

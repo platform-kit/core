@@ -72,6 +72,7 @@ const myPerson = computed(() => props.myPerson)
 const SITE_COMMUNITY = (site && site.community) || {}
 const NAV = computed(() => chatNavigation({
   messages: has('messages'),
+  notifications: has('notifications'),
   network: props.network,
   events: props.events,
   forYou: !!SITE_COMMUNITY.forYou,

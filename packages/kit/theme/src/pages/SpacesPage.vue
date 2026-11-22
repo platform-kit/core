@@ -636,7 +636,8 @@ function socialGo(v: any) {
   goTo(v)
 }
 const onFeed = (p: any) => COMMUNITY && (p === ROUTES.feed || p.startsWith(ROUTES.feed + '/'))
-const netViewOf = (p: any) => (p === ROUTES.feed + '/notifications' ? 'net-notes' : 'net')
+/* /feed/notifications where the community runs Notifications (features.notifications); else the address opens the front */
+const netViewOf = (p: any) => (p === ROUTES.feed + '/notifications' && has('notifications') ? 'net-notes' : 'net')
 /* /feed/<place>: one of the reader's own places (OWN_ADDR), else null */
 const ownViewOf = (p: any) => {
   if (!p || !p.startsWith(ROUTES.feed + '/')) return null
@@ -660,6 +661,7 @@ vueWatch(route, (p) => {
 })
 
 async function goTo(where: any) {
+  if (!has('notifications') && (where === 'net-notes' || where === 'mentions')) where = COMMUNITY ? 'net' : 'index'  /* Notifications switched off (features.notifications): the front instead */
   if (where === 'net-explore') { navigate(ROUTES.feed + '/explore'); view.value = 'net'; return }
   if (where === 'net' || where === 'net-notes') {
     navigate(where === 'net-notes' ? ROUTES.feed + '/notifications' : ROUTES.feed)

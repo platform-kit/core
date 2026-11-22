@@ -21,6 +21,7 @@ import { computed, ref, watch, onMounted } from 'vue'
 import { us } from 'platformkit/lib/content.js'
 import { route, ROUTES, navigate } from 'platformkit/lib/router.js'
 import { isSignedIn, authSettled } from 'platformkit/lib/auth.js'
+import { has } from 'platformkit/lib/spaces/settings.js'   /* features.notifications: off, the address is the feed */
 import { setHead } from 'platformkit/lib/seo.js'
 import { net, timeline, discover, findPeople, loadThread, notifications, communityNotes, lastSeen, markSeen, loadSpaces, admission } from 'platformkit/lib/network/api.js'
 import { moduleOn } from 'platformkit/lib/modules.js'
@@ -47,7 +48,7 @@ const fill = (s: any, m: { [x: string]: string }) => String(s || '').replace(/\{
 const view = computed(() => {
   const p = route.value || ''
   if (p.startsWith(ROUTES.feed + '/post/')) return 'thread'
-  if (p === ROUTES.feed + '/notifications') return 'notes'
+  if (p === ROUTES.feed + '/notifications' && has('notifications')) return 'notes'
   if (p === ROUTES.feed + '/explore') return 'explore'
   return 'home'
 })
