@@ -37,6 +37,8 @@ sources:
     packages/kit/build/test.mts,
     packages/kit/build/deploy-checks.mts,
     packages/kit/build/prerender.mts,
+    packages/kit/build/prerender-media.mts,
+    packages/kit/build/prerender-media.test.mts,
     packages/kit/build/routes.mts,
     packages/kit/build/content-export.mts,
     packages/kit/bin/platformkit.mjs,
@@ -236,6 +238,8 @@ This avoids waiting for a release on npm; npm is still used to install the site'
 The build resolves `deployment.content` before running export or compiling the browser bundle: row-backed sites build with the CMS enabled, while file-backed sites build without it. If the site registers admin models and has a backend, a file-backed build is refused; it cannot silently produce an admin with only the live-data views.
 
 Installs Playwright's Chromium, runs the content export when the site is in cloud mode (below), velite, the `prepare` steps, `vite build`, then the `site` steps — the form embed, the models' JSON and `prerender.mjs`: every public route (`routes.mjs`) rendered in headless Chrome over `vite preview` into `dist/<route>/index.html` with `data-prerendered` on the root, plus `sitemap.xml` when the site has a public address — after `share-images.mjs` has photographed every share card and the icon on the same browser, so the baked pages point at files that exist. `PRERENDER=0` skips the prerender, `SHARE_IMAGES=0` the images; `PLAYWRIGHT_CHROMIUM_PATH` names a browser where the bundled one is not installed. `main.js` clears baked markup that belongs to another route.
+
+The prerender preserves the muted state of audio and video in the HTML itself, so muted media remains silent before the app starts.
 
 ## `platformkit deploy`
 

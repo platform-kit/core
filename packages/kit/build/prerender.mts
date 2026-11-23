@@ -22,6 +22,7 @@ import { renderShareImages } from './share-images.mjs'
 import { site as SITE, forms as FORMS } from './content-node.mjs'
 import { FORMS_ON } from './routes.mjs'
 import { context as browserContext } from './browser.mjs'   /* one timeout for every browser here: build/browser.mjs */
+import { preserveMutedMedia } from './prerender-media.mjs'
 
 const DIST = path.resolve('dist')
 const S = Array.isArray(SITE) ? SITE[0] : SITE
@@ -92,6 +93,8 @@ async function main() {
            must never hide its own content behind a script that may not run */
         document.querySelectorAll('.lprv').forEach((n) => n.classList.add('lpin'))
       }, r)
+      /* muted is a DOM property, so preserve it in the HTML before the app boots again */
+      await page.evaluate(preserveMutedMedia)
       const html = await page.content()
       const out = r === '/' ? path.join(DIST, 'index.html') : path.join(DIST, r.replace(/^\//, ''), 'index.html')
       await fs.mkdir(path.dirname(out), { recursive: true })

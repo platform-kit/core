@@ -7,6 +7,7 @@ sources:
     packages/kit/build/one-package.test.mts,
     packages/kit/build/check.test.mts,
     packages/kit/build/browser.mts,
+    packages/kit/build/prerender-media.test.mts,
     packages/kit/build/e2e.mts,
     packages/kit/build/e2e-container.mts,
     packages/kit/build/e2e-slots.test.mts,
@@ -110,6 +111,9 @@ cap — a call that genuinely needs longer still passes its own `{ timeout }`.
 
 `manifests.test.mts` refuses a `newContext` made anywhere else, so a file written next year cannot
 quietly inherit the 30 back.
+
+`prerender-media.test.mts` checks in a browser that muted media stays muted in the serialized page,
+while media that is not muted stays unmuted.
 
 ## Three things that make a suite lie
 

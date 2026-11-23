@@ -56,6 +56,7 @@ const KIT_TESTS = [
   ['avatar.test.mts'],  /* one person, one face: every read that hands out a drawn face hands out the parts it was drawn with, and nothing draws the reader's own face out of their display name */
   ['proposal-trace.test.mts'],  /* what a proposal promises reaches a requirement: the Stripe bullet that named five things against deltas requiring one is how four features were never built, with every check green */
   ['docs-review-date.test.mts'],
+  ['prerender-media.test.mts'],
   ['checkout-params.test.mts'],  /* a trial, tax, the payment methods accepted and a quantity the buyer may change — four things Stripe always offered and the store never passed; and the assertion that an offer declaring none of them resolves to exactly what it did before */
   ['payment-provider-adapters.test.mts'], /* every declared provider operation is mapped by the Stripe and Hyperswitch adapter contracts */
   ['hyperswitch-sdk.test.mts'],
