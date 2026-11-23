@@ -40,9 +40,13 @@ const subdirs = (dir: string): string[] => isDir(dir) ? fs.readdirSync(dir, { wi
 
 /* a manifest file: Node strips TypeScript's types, but never inside node_modules, where the compiled copy is read */
 function manifestFile(dir: string): string | null {
-  const ts = path.join(dir, 'module.ts'), js = path.join(dir, 'module.mjs')
-  if (fs.existsSync(ts)) return ts.includes(`${path.sep}node_modules${path.sep}`) && fs.existsSync(js) ? js : ts
-  return fs.existsSync(js) ? js : null
+  const ts = path.join(dir, 'module.ts'), js = path.join(dir, 'module.js'), mjs = path.join(dir, 'module.mjs')
+  const hasTs = fs.existsSync(ts)
+  if (hasTs && !ts.includes(`${path.sep}node_modules${path.sep}`)) return ts
+  if (fs.existsSync(js)) return js
+  if (fs.existsSync(mjs)) return mjs
+  if (hasTs) throw new Error(`the module manifest ${ts} has no compiled module.js; reinstall or rebuild PlatformKit`)
+  return null
 }
 
 /* the module folders under a root, each a directory with a manifest */

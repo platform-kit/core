@@ -33,6 +33,8 @@ try {
     'packages/kit/build/sites.mts',
     'packages/kit/build/site-file.mts',
     'packages/kit/build/verbose.mts',
+    'packages/kit/build/env-guard.mts',
+    'packages/kit/build/modules/folders.mts',
     /* and what makes a source checkout's TypeScript run: the compile a source install runs, and what it needs */
     'packages/kit/build/compile.mjs',
     'packages/kit/build/is-main.mjs',
@@ -41,6 +43,16 @@ try {
     const destination = path.join(source, file)
     fs.mkdirSync(path.dirname(destination), { recursive: true })
     fs.copyFileSync(path.join(root, file), destination)
+  }
+  const moduleRoot = path.join(root, 'packages', 'kit', 'modules')
+  const moduleKeys = fs.readdirSync(moduleRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(moduleRoot, entry.name, 'module.ts')))
+    .map((entry) => entry.name).sort()
+  assert.ok(moduleKeys.includes('api'))
+  for (const key of moduleKeys) {
+    const destination = path.join(source, 'packages', 'kit', 'modules', key)
+    fs.mkdirSync(destination, { recursive: true })
+    fs.copyFileSync(path.join(moduleRoot, key, 'module.ts'), path.join(destination, 'module.ts'))
   }
   const dependency = path.join(fixture, 'fixture-dependency')
   fs.mkdirSync(dependency, { recursive: true })
@@ -66,6 +78,30 @@ try {
   /* one package, platformkit, with the theme inside it */
   assert.equal(JSON.parse(fs.readFileSync(path.join(site, 'node_modules', 'platformkit', 'package.json'), 'utf8')).name, 'platformkit')
   assert.ok(fs.existsSync(createRequire(manifestPath).resolve('platformkit/theme/theme.js')), 'the theme resolves as platformkit/theme')
+
+  /* The installed package must load compiled folder manifests, not TypeScript under node_modules. */
+  const installed = path.join(site, 'node_modules', 'platformkit')
+  assert.ok(fs.existsSync(path.join(installed, 'modules', 'api', 'module.js')))
+  const siteModules = path.join(site, 'src', 'modules')
+  fs.mkdirSync(path.join(siteModules, 'local'), { recursive: true })
+  fs.writeFileSync(path.join(siteModules, 'local', 'module.ts'), 'export default { key: "local", what: "source" } satisfies Record<string, string>\n')
+  fs.writeFileSync(path.join(siteModules, 'local', 'module.js'), 'export default { key: "local", what: "compiled" }\n')
+  fs.mkdirSync(path.join(siteModules, 'legacy'), { recursive: true })
+  fs.writeFileSync(path.join(siteModules, 'legacy', 'module.mjs'), 'export default { key: "legacy" }\n')
+  const brokenModules = path.join(site, 'node_modules', 'broken-modules')
+  fs.mkdirSync(path.join(brokenModules, 'missing'), { recursive: true })
+  fs.writeFileSync(path.join(brokenModules, 'missing', 'module.ts'), 'export default { key: "missing" }\n')
+  const loadManifests = spawnSync(process.execPath, ['--input-type=module', '-e', `
+    import assert from 'node:assert/strict'
+    import { folderManifests } from ${JSON.stringify(pathToFileURL(path.join(installed, 'build', 'modules', 'folders.mjs')).href)}
+    const manifests = await folderManifests(${JSON.stringify(path.join(installed, 'modules'))})
+    assert.deepEqual(manifests.map(m => m.key), ${JSON.stringify(moduleKeys)})
+    const siteManifests = await folderManifests(${JSON.stringify(siteModules)})
+    assert.deepEqual(siteManifests.map(m => m.key), ['legacy', 'local'])
+    assert.equal(siteManifests[1].what, 'source')
+    await assert.rejects(folderManifests(${JSON.stringify(brokenModules)}), /has no compiled module\\.js/)
+  `], { cwd: site, encoding: 'utf8', env: { ...process.env, NODE_OPTIONS: '' } })
+  assert.equal(loadManifests.status, 0, loadManifests.stderr)
 
   const workspace = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
   assert.equal(workspace.repository, 'github:platform-kit/core')

@@ -291,7 +291,9 @@ A module has two front doors: `index.ts`, what the browser may import of it, and
 
 ## A module is a folder
 
-A module can live in a folder of its own, holding everything it is: `packages/kit/modules/<key>/` for the kit's, `src/modules/<key>/` for a site's. A folder is a module when it holds a `module.ts` manifest, and the folder is named for the manifest's key. What the folder holds for the backend is the module's, so its manifest names none of it:
+A module can live in a folder of its own, holding everything it is: `packages/kit/modules/<key>/` for the kit's, `src/modules/<key>/` for a site's. The folder is named for its manifest's key. A manifest can be `module.ts`, `module.js` or `module.mjs`; in an installed package the loader uses the compiled `module.js` rather than asking Node to run TypeScript under `node_modules`.
+
+What the folder holds for the backend is the module's, so its manifest names none of it:
 
 | In the folder                         | Assembled as                                                                                                     |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
