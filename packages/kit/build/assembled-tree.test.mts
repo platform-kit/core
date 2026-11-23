@@ -6,7 +6,8 @@
    Pinned by npm test. */
 import fs from 'node:fs'
 import path from 'node:path'
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
+import { createServer } from 'node:http'
 import { fileURLToPath } from 'node:url'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
@@ -44,6 +45,58 @@ const step = () => ['assemble.mjs', 'assemble.mjs --check'].map((cmd) => {
 /* 1. a fresh checkout: nothing generated yet */
 for (const r of step()) ok(`no tree: ${r.cmd} passes`, r.status === 0, r.out)
 ok('no tree: the functions were assembled', fs.existsSync(path.join(WORK, 'supabase', 'functions', '_shared')))
+
+/* Supabase's API deploy walks every local import-map target, even unused directory prefixes. */
+{
+  const fns = path.join(WORK, 'supabase', 'functions')
+  const sentinel = path.join(fns, '_shared', 'unrelated-upload-test.txt')
+  const profile = path.join(WORK, 'supabase-test-profile.yaml')
+  const config = path.join(WORK, 'supabase', 'config.toml')
+  const originalConfig = fs.readFileSync(config)
+  const uploads: { slug: string, size: number, includesSentinel: boolean }[] = []
+  fs.writeFileSync(sentinel, 'x'.repeat(6_000_000))
+  fs.writeFileSync(config, 'project_id = "fixture"\n')
+  const server = createServer((req, res) => {
+    if (req.method === 'GET') { res.writeHead(200, { 'content-type': 'application/json' }); res.end('[]'); return }
+    const slug = new URL(req.url || '', 'http://localhost').searchParams.get('slug') || ''
+    if (!slug) { req.resume(); res.writeHead(200, { 'content-type': 'application/json' }); res.end('[]'); return }
+    const chunks: Buffer[] = []
+    req.on('data', (chunk: Buffer) => chunks.push(chunk))
+    req.on('end', () => {
+      const body = Buffer.concat(chunks)
+      uploads.push({ slug, size: body.length, includesSentinel: body.includes('unrelated-upload-test.txt') })
+      if (body.length > 5_000_000) { res.writeHead(413); res.end('too large'); return }
+      res.writeHead(201, { 'content-type': 'application/json' })
+      res.end(JSON.stringify({ id: 'test-id', slug, name: slug, status: 'ACTIVE', version: 1, created_at: 1, updated_at: 1, verify_jwt: true, import_map: true, entrypoint_path: `functions/${slug}/index.ts`, import_map_path: `functions/${slug}/deno.json` }))
+    })
+  })
+  try {
+    await new Promise<void>((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve) })
+    const address = server.address()
+    if (!address || typeof address === 'string') throw new Error('test server has no TCP address')
+    fs.writeFileSync(profile, `name: test\napi_url: http://127.0.0.1:${address.port}\nproject_host: example.invalid\ndashboard_url: http://127.0.0.1:${address.port}\n`)
+    const cli = path.join(WORKSPACE, 'node_modules', '.bin', 'supabase')
+    const result = await new Promise<{ status: number | null, output: string }>((resolve, reject) => {
+      const p = spawn(cli, ['functions', 'deploy', 'social-oauth', 'create-portal-session', 'agent-run', '--use-api', '--remote=abcdefghijklmnopqrst', '--yes', '--jobs=1', '--profile', profile], {
+        cwd: WORK, env: { PATH: process.env.PATH, HOME: WORK, SUPABASE_ACCESS_TOKEN: 'sbp_' + 'a'.repeat(40) },
+      })
+      let output = ''
+      p.stdout.on('data', (chunk) => { output += chunk })
+      p.stderr.on('data', (chunk) => { output += chunk })
+      p.on('error', reject)
+      p.on('close', (status) => resolve({ status, output }))
+    })
+    ok('Supabase CLI deploys module functions without uploading unrelated shared files', result.status === 0, result.output)
+    ok('each requested upload stays below the test limit without the unrelated file',
+      ['social-oauth', 'create-portal-session', 'agent-run'].every((slug) => uploads.some((u) => u.slug === slug)) &&
+      uploads.length === 3 && uploads.every((u) => u.size < 5_000_000 && !u.includesSentinel), JSON.stringify(uploads))
+  } finally {
+    await new Promise<void>((resolve, reject) => server.close((err) => err ? reject(err) : resolve()))
+    fs.rmSync(sentinel, { force: true })
+    fs.rmSync(profile, { force: true })
+    fs.writeFileSync(config, originalConfig)
+  }
+}
 
 /* 2. a stale copy: one assembled file differs from its source */
 const lib = path.join(WORK, 'supabase', 'functions', '_shared', 'lib.ts')

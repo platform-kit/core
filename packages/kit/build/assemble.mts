@@ -161,9 +161,7 @@ const kitFunctions = new Set(['_shared', ...backend.functions])
 const emitted = (f: string) => /(\.d\.m?ts|\.m?js)$/.test(f) && fs.existsSync(f.replace(/(\.d)?\.(m?)[jt]s$/, '.$2ts')) && f !== f.replace(/(\.d)?\.(m?)[jt]s$/, '.$2ts')
 for (const f of walk(path.join(KIT, 'functions'))) { const r = rel(path.join(KIT, 'functions'), f); if (kitFunctions.has(r.split('/')[0]) && !emitted(f)) put('functions/' + r, f) }
 /* a module folder's functions under their own names, and its shared code under _shared/<module>/ (openspec: modules-as-packages) */
-/* A module function reaches shared code by name — @pk/core/ for the kit's _shared, @pk/<key>/ for its own module's — so
-   one import resolves in the module's folder and here; its deno.json maps the names, beside any imports it declares itself */
-const moduleImports = (key: string) => ({ '@pk/core/': '../_shared/', ['@pk/' + key + '/']: '../_shared/' + key + '/' })
+/* Module names are rewritten to relative paths below; their deno.json keeps only the imports it declares itself. */
 const ownerOf = (name: string) => [...MODULE_DIRS].find(([, d]) => backend.sources.functions[name].startsWith(d + path.sep))?.[0]
 for (const name of backend.functions) {
   const src = backend.sources.functions[name]
@@ -172,7 +170,7 @@ for (const name of backend.functions) {
   if (!key) throw new Error(`assemble: function ${name} is in no module folder`)
   for (const f of walk(src)) if (!emitted(f) && path.basename(f) !== 'deno.json') put('functions/' + name + '/' + rel(src, f), f)
   const own = fs.existsSync(path.join(src, 'deno.json')) ? JSON.parse(fs.readFileSync(path.join(src, 'deno.json'), 'utf8')) : {}
-  plan.set('functions/' + name + '/deno.json', { from: path.join(src, 'deno.json') + ' + the module names', content: Buffer.from(JSON.stringify({ ...own, imports: { ...moduleImports(key), ...(own.imports || {}) } }, null, 2) + '\n') })
+  plan.set('functions/' + name + '/deno.json', { from: path.join(src, 'deno.json'), content: Buffer.from(JSON.stringify(own, null, 2) + '\n') })
 }
 for (const [key, src] of Object.entries(backend.shared)) for (const f of walk(src)) if (!emitted(f)) put('functions/_shared/' + key + '/' + rel(src, f), f)
 const siteFn = path.resolve(ROOT, D.functions)

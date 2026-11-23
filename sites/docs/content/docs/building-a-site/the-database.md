@@ -216,6 +216,8 @@ Locally the CLI's Docker shadow takes about fifteen seconds the first time and a
 
 **The tree is generated, never committed.** Every command that needs `supabase/` assembles it first, so a site repository keeps `db/` and `supabase/config.toml` and ignores the rest: `supabase/functions/`, `supabase/schemas/`, `supabase/data.sql`, `supabase/seed.sql` and `supabase/.assembled.json`, with `supabase/templates/` and the CLI's `.temp/` and `.branches/`. A committed copy only records the kit it was assembled from, and drifts from the next one.
 
+Module function imports of `@pk/core/` and `@pk/<key>/` are rewritten to relative shared-code paths; assembly preserves the function's own Deno configuration without adding directory mappings. This prevents the Supabase API deploy from walking an absent module folder or uploading the whole shared tree through an unused mapping. The CLI upload regression in `assembled-tree.test.mts` checks both cases against a local API.
+
 **A site that declares no backend is never assembled.** `deployment: { backend: false }` is the static shape — a checkout, a build, a static host, no Supabase anywhere — so there is no data layer to assemble, and the assembler says so and stops. That decision lives in the assembler itself, which is why `dev`, `test --check` and `deploy` all agree on it: the deploy already skipped assembling for such a site, while dev and the test check did not, so running either in `sites/docs` or `sites/brochure` wrote a six-megabyte `supabase/` tree — a declared schema, every Edge Function, a `config.toml` naming ports — for a database that site has declared it does not have. `--check` passes for such a site rather than demanding a tree it should never hold.
 
 ## A module switched off is not in the backend
