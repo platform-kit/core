@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /*
- * HOME'S READING CARD (openspec: community-home): up to three books. The ones the reader is in the middle of, furthest
- * along first; else the site's suggestions for this reader (#site/recommendations signals().prescribed — the
- * diagnostics' books on a site that has them); else the library's own first books, finished ones dropped. The hub's
+ * HOME'S READING CARD (openspec: community-home): three books. The ones the reader is in the middle of, furthest
+ * along first; the slots left go to the site's suggestions for this reader (#site/recommendations signals().prescribed — the
+ * diagnostics' books on a site that has them), then to the library's own first books, finished ones dropped. The hub's
  * ranking is not run here: it loads an embedding model, and a front page should not pay for that.
  */
 import { computed, onMounted } from 'vue'
@@ -24,15 +24,21 @@ const hrefOf = (slug: string) => library + '/' + slug
 initRecords()
 if (isSignedIn.value) hydrate()
 
+/* THE THREE BOOKS: the ones being read, furthest along first; the slots they leave go to the site's suggestions for this
+   reader, then to the library's own first books — so the row is always full, and the heading names what leads it */
 const pick = computed(() => {
   void sessionRev.value
-  const reading = shelf.map((b: any) => ({ ...b, prog: bookProgress(b.slug) })).filter((b: any) => b.prog.opened && b.prog.pct < 100)
-    .sort((a: any, b: any) => b.prog.pct - a.prog.pct)
-  if (reading.length) return { kind: 'reading', books: reading.slice(0, LIMIT) }
+  const withProg = (b: any) => ({ ...b, prog: bookProgress(b.slug) })
+  const reading = shelf.map(withProg).filter((b: any) => b.prog.opened && b.prog.pct < 100).sort((a: any, b: any) => b.prog.pct - a.prog.pct)
   const sig: any = (() => { try { return signals() } catch { return null } })()
   const named = ((sig && sig.prescribed) || []).map((h: string) => bySlug[String(h).split('/').filter(Boolean).pop() || '']).filter(Boolean)
-  if (named.length) return { kind: 'suggested', books: dropFinished(named).slice(0, LIMIT).map((b: any) => ({ ...b, prog: bookProgress(b.slug) })) }
-  return { kind: 'library', books: dropFinished(shelf).slice(0, LIMIT).map((b: any) => ({ ...b, prog: bookProgress(b.slug) })) }
+  const books: any[] = [], seen = new Set<string>()
+  const take = (list: any[]) => { for (const b of list) { if (books.length >= LIMIT) return; if (seen.has(b.slug)) continue; seen.add(b.slug); books.push(withProg(b)) } }
+  take(reading)
+  take(dropFinished(named))
+  take(dropFinished(shelf))
+  const kind = reading.length ? 'reading' : named.length ? 'suggested' : 'library'
+  return { kind, books }
 })
 const title = computed(() => W.value['reading-' + pick.value.kind])
 function go(href: string, e: Event) { e.preventDefault(); navigate(href) }
@@ -74,16 +80,19 @@ onMounted(() => emit('state', pick.value.books.length ? 'ready' : 'empty'))
 .hr-books { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
 .hr-books li { margin: 0; padding: 0; min-width: 0; }
 .hr-book { display: flex; flex-direction: row; align-items: flex-start; gap: 16px; color: inherit; text-decoration: none; }
-.hr-cover { flex: none; display: block; width: 92px; aspect-ratio: 2 / 3; border-radius: 3px 7px 7px 3px; overflow: hidden; background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+.hr-cover { flex: none; display: block; width: 76px; aspect-ratio: 2 / 3; border-radius: 4px; overflow: hidden; background: color-mix(in srgb, var(--ink) 7%, var(--paper));
   box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 10%, transparent), 0 10px 22px -12px #0008; transition: transform .25s ease, box-shadow .25s ease; }
 .hr-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* an edge, so a white cover does not float on the card */
+.hr-cover { position: relative; }
+.hr-cover::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 10%, transparent); pointer-events: none; }
 .hr-blank { display: flex; align-items: flex-end; height: 100%; padding: 10px; box-sizing: border-box; font-size: 12px; font-weight: 600; color: var(--ink2); }
 @media (hover: hover) { .hr-book:hover .hr-cover { transform: translateY(-3px); box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 10%, transparent), 0 16px 28px -12px #0009; } }
 .hr-words { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-top: 4px; }
-.hr-words strong { font-size: 15.5px; line-height: 1.3; font-weight: 600; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.hr-words strong { max-width: none; font-size: 15px; line-height: 1.3; font-weight: 600; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .hr-book:hover strong { text-decoration: underline; }
 .hr-words em { font-style: normal; font-size: 13.5px; color: var(--ink3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hr-prog { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.hr-prog { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; max-width: 180px; }
 @container (max-width: 640px) {
   .hr-books { gap: 14px; }
   .hr-book { flex-direction: column; gap: 10px; }

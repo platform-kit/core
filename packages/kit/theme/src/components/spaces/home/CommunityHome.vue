@@ -73,72 +73,74 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="ch">
-    <header class="ch-band">
-      <img v-if="C.cover" class="ch-cover" :src="C.cover" alt="" aria-hidden="true" />
-      <div class="ch-band-in">
-        <p v-if="C.name" class="ch-kicker">{{ C.name }}</p>
-        <h1 class="ch-hello">{{ greeting }}</h1>
-        <p v-if="C.tagline" class="ch-tagline">{{ C.tagline }}</p>
+  <div class="cmh">
+    <header class="cmh-band">
+      <img v-if="C.cover" class="cmh-cover" :src="C.cover" alt="" aria-hidden="true" />
+      <div class="cmh-band-in">
+        <h1 class="cmh-hello">{{ greeting }}</h1>
+        <p v-if="C.tagline" class="cmh-tagline">{{ C.tagline }}</p>
       </div>
     </header>
 
-    <div class="ch-grid" :style="{ '--across': across }">
-      <div v-for="c in small" v-show="state[c.key] === 'ready'" :key="c.key" class="ch-cell" :class="{ 'ch-odd': c.key === lastOdd }">
+    <div class="cmh-grid" :style="{ '--across': across }">
+      <div v-for="c in small" v-show="state[c.key] === 'ready'" :key="c.key" class="cmh-cell" :class="{ 'cmh-odd': c.key === lastOdd }">
         <component :is="c.component" @state="(s: string) => (state[c.key] = s)" />
       </div>
     </div>
-    <div v-for="c in full" v-show="state[c.key] === 'ready'" :key="c.key" class="ch-cell ch-full">
+    <div v-for="c in full" v-show="state[c.key] === 'ready'" :key="c.key" class="cmh-cell cmh-full">
       <component :is="c.component" @state="(s: string) => (state[c.key] = s)" />
     </div>
 
-    <section v-if="posts" class="ch-posts">
-      <h2 class="ch-posts-title">{{ W.posts }}</h2>
+    <section v-if="posts" class="cmh-posts">
+      <h2 class="cmh-posts-title">{{ W.posts }}</h2>
       <slot />
     </section>
   </div>
 </template>
 
 <style scoped>
-.ch { max-width: 1040px; margin: 0 auto; padding: 40px 32px 72px; box-sizing: border-box; }
-.ch-band { position: relative; overflow: hidden; margin: 0 0 28px; padding: 0; border: 0; background: none; }
-.ch-cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .18; pointer-events: none; }
-.ch-band-in { position: relative; }
-.ch-kicker { margin: 0 0 10px; font-family: var(--m); font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink3); }
-.ch-hello { margin: 0; font-size: clamp(30px, 4vw, 42px); line-height: 1.1; letter-spacing: -.01em; font-weight: 700; color: var(--ink); }
-.ch-tagline { margin: 10px 0 0; font-size: 17px; line-height: 1.5; color: var(--ink2); max-width: 40em; }
-.ch-grid { display: grid; grid-template-columns: repeat(var(--across, 2), minmax(0, 1fr)); gap: 18px; }
-.ch-cell { min-width: 0; display: flex; }
-.ch-cell > :deep(*) { flex: 1; }
-.ch-full { margin-top: 18px; }
-.ch-posts { margin-top: 44px; }
-.ch-posts-title { margin: 0 0 12px; font-size: 13px; font-family: var(--m); letter-spacing: .12em; text-transform: uppercase; color: var(--ink3); font-weight: 500; }
-@media (max-width: 1100px) { .ch-grid { grid-template-columns: repeat(min(var(--across, 2), 2), minmax(0, 1fr)); } .ch-odd { grid-column: 1 / -1; } }
+/* QUIET BY DESIGN: one greeting, outlined cards on the page's own ground, one weight of label. The cards hold the
+   member's things; nothing around them competes. Every rule says what it wants, since the site styles bare elements
+   (an h1 is capped at 16ch there, which broke the greeting over two lines). */
+.cmh { max-width: 1040px; margin: 0 auto; padding: 44px 32px 72px; box-sizing: border-box; }
+.cmh-band { position: relative; overflow: hidden; margin: 0 0 30px; padding: 0; border: 0; background: none; }
+.cmh-cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .18; pointer-events: none; }
+.cmh-band-in { position: relative; }
+.cmh-hello { max-width: none; text-wrap: pretty; margin: 0; font-size: clamp(26px, 3vw, 34px); line-height: 1.15; letter-spacing: -.01em; font-weight: 700; color: var(--ink); }
+.cmh-tagline { max-width: none; margin: 8px 0 0; font-size: 16.5px; line-height: 1.5; color: var(--ink3); }
+.cmh-grid { display: grid; grid-template-columns: repeat(var(--across, 2), minmax(0, 1fr)); gap: 16px; }
+.cmh-cell { min-width: 0; display: flex; }
+.cmh-cell > :deep(*) { flex: 1; }
+.cmh-full { margin-top: 16px; }
+.cmh-posts { margin-top: 40px; }
+.cmh-posts-title { max-width: none; margin: 0 0 14px; font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--ink); }
+@media (max-width: 1100px) { .cmh-grid { grid-template-columns: repeat(min(var(--across, 2), 2), minmax(0, 1fr)); } .cmh-odd { grid-column: 1 / -1; } }
 @media (max-width: 760px) {
-  .ch { padding: 26px 16px 56px; }
-  .ch-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
-  .ch-full { margin-top: 14px; }
+  .cmh { padding: 26px 16px 56px; }
+  .cmh-band { margin-bottom: 22px; }
+  .cmh-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .cmh-full { margin-top: 12px; }
 }
 </style>
 
-<!-- THE PARTS EVERY CARD SHARES, unscoped so a module's card and a site's look like the kit's: written under .ch so they
+<!-- THE PARTS EVERY CARD SHARES, unscoped so a module's card and a site's look like the kit's: written under .cmh so they
      reach nothing outside Home -->
 <style>
-.ch .hc { position: relative; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box; min-height: 100%; margin: 0; padding: 22px 22px 20px;
-  border: 1px solid var(--hair); border-radius: 18px; background: color-mix(in srgb, var(--ink) 2.5%, var(--paper)); color: var(--ink); }
-.ch .hc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; padding: 0; border: 0; }
-.ch .hc-kicker { margin: 0; font-family: var(--m); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink3); font-weight: 500; }
-.ch .hc-more { font-size: 13.5px; color: var(--ink2); text-decoration: none; white-space: nowrap; }
-.ch .hc-more:hover { color: var(--ink); text-decoration: underline; }
-.ch .hc-title { margin: 0; font-size: 21px; line-height: 1.25; font-weight: 700; letter-spacing: -.005em; color: var(--ink); }
-.ch .hc-line { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink2); }
-.ch .hc-foot { margin-top: auto; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.ch .hc-go { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--ink); color: var(--paper);
-  font: inherit; font-size: 14.5px; font-weight: 600; text-decoration: none; cursor: pointer; }
-.ch .hc-go:hover { opacity: .9; }
-.ch .hc-link { font-size: 14.5px; color: var(--ink); font-weight: 600; text-decoration: none; }
-.ch .hc-link:hover { text-decoration: underline; }
-.ch .hc-bar { display: block; height: 6px; border-radius: 6px; background: color-mix(in srgb, var(--ink) 9%, transparent); overflow: hidden; }
-.ch .hc-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
-.ch .hc-meta { margin: 0; font-family: var(--m); font-size: 12px; color: var(--ink3); font-variant-numeric: tabular-nums; }
+.cmh .hc { position: relative; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box; min-height: 100%; margin: 0; padding: 20px 22px 22px;
+  border: 1px solid var(--hair); border-radius: 16px; background: var(--paper); color: var(--ink); }
+.cmh .hc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 4px; padding: 0; border: 0; background: none; }
+.cmh .hc-kicker { max-width: none; margin: 0; font-family: inherit; font-size: 13.5px; letter-spacing: 0; text-transform: none; color: var(--ink3); font-weight: 500; }
+.cmh .hc-more { font-size: 13.5px; color: var(--ink3); text-decoration: none; white-space: nowrap; }
+.cmh .hc-more:hover { color: var(--ink); text-decoration: underline; }
+.cmh .hc-title { max-width: none; text-wrap: pretty; margin: 0; font-size: 19px; line-height: 1.3; font-weight: 700; letter-spacing: -.005em; color: var(--ink); }
+.cmh .hc-line { max-width: none; margin: 0; font-size: 15px; line-height: 1.55; color: var(--ink2); }
+.cmh .hc-foot { margin-top: auto; padding-top: 8px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.cmh .hc-go { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent); border-radius: 999px;
+  background: transparent; color: var(--ink); font: inherit; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; transition: background .15s, border-color .15s; }
+.cmh .hc-go:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); border-color: color-mix(in srgb, var(--ink) 30%, transparent); }
+.cmh .hc-link { font-size: 14.5px; color: var(--ink); font-weight: 600; text-decoration: none; }
+.cmh .hc-link:hover { text-decoration: underline; }
+.cmh .hc-bar { display: block; height: 4px; border-radius: 4px; background: color-mix(in srgb, var(--ink) 9%, transparent); overflow: hidden; }
+.cmh .hc-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
+.cmh .hc-meta { max-width: none; margin: 0; font-family: inherit; font-size: 13px; color: var(--ink3); font-variant-numeric: tabular-nums; }
 </style>
