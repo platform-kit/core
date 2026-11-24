@@ -27,12 +27,15 @@ test('courses with everything on fills the admin, the member card and the commun
   assert.deepEqual(keys(fillsOf(MODULES, on, 'core:admin-screen')).filter((k) => k.startsWith('courses:')), ['courses:course-enrollments'])
   assert.deepEqual(keys(fillsOf(MODULES, on, 'spaces:member-card')).filter((k) => k.startsWith('courses:')), ['courses:courses'])
   assert.deepEqual(keys(fillsOf(MODULES, on, 'spaces:place')).filter((k) => k.startsWith('courses:')), ['courses:courses'])
+  /* the course in progress, a card on the community's Home (openspec: community-home) */
+  assert.deepEqual(keys(fillsOf(MODULES, on, 'spaces:home')).filter((k) => k.startsWith('courses:')), ['courses:course'])
 })
 
 test('with spaces off, its slots take nothing, and courses still fills the admin', () => {
   const off = { spaces: false }
   assert.deepEqual(fillsOf(MODULES, off, 'spaces:member-card'), [])
   assert.deepEqual(fillsOf(MODULES, off, 'spaces:place'), [])
+  assert.deepEqual(fillsOf(MODULES, off, 'spaces:home'), [])
   assert.ok(keys(fillsOf(MODULES, off, 'core:admin-screen')).includes('courses:course-enrollments'))
 })
 
@@ -43,7 +46,7 @@ test('with the network off, the Courses place is not in the community', () => {
 
 test('with courses off, nothing of it is in any slot', () => {
   const off = { courses: false }
-  for (const slot of ['core:admin-screen', 'spaces:member-card', 'spaces:place']) assert.ok(!fillsOf(MODULES, off, slot).some((f) => f.module === 'courses'), slot)
+  for (const slot of ['core:admin-screen', 'spaces:member-card', 'spaces:place', 'spaces:home']) assert.ok(!fillsOf(MODULES, off, slot).some((f) => f.module === 'courses'), slot)
 })
 
 test('funnels fills the admin with editors handed their path, and its numbers and blasts are tabs of other items', () => {

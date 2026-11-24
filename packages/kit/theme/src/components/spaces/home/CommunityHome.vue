@@ -58,6 +58,8 @@ const full = computed(() => cards.value.filter((c) => c.full))
 const state = ref<Record<string, string>>({})
 /* THE SHORT CARDS SHARE A ROW: three across, or two, or one; four make two rows of two */
 const across = computed(() => { const n = small.value.filter((c) => state.value[c.key] === 'ready').length; return n === 4 ? 2 : Math.max(1, Math.min(3, n)) })
+/* where only two fit across (a narrower screen), an odd card out takes the whole row rather than leaving a hole beside it */
+const lastOdd = computed(() => { const r = small.value.filter((c) => state.value[c.key] === 'ready'); return r.length % 2 === 1 ? r[r.length - 1].key : '' })
 
 /* THE FEED BENEATH, once there is anything in it: one row asked for, never an empty state */
 const posts = ref(false)
@@ -82,7 +84,7 @@ onMounted(async () => {
     </header>
 
     <div class="ch-grid" :style="{ '--across': across }">
-      <div v-for="c in small" v-show="state[c.key] === 'ready'" :key="c.key" class="ch-cell">
+      <div v-for="c in small" v-show="state[c.key] === 'ready'" :key="c.key" class="ch-cell" :class="{ 'ch-odd': c.key === lastOdd }">
         <component :is="c.component" @state="(s: string) => (state[c.key] = s)" />
       </div>
     </div>
@@ -111,7 +113,7 @@ onMounted(async () => {
 .ch-full { margin-top: 18px; }
 .ch-posts { margin-top: 44px; }
 .ch-posts-title { margin: 0 0 12px; font-size: 13px; font-family: var(--m); letter-spacing: .12em; text-transform: uppercase; color: var(--ink3); font-weight: 500; }
-@media (max-width: 1100px) { .ch-grid { grid-template-columns: repeat(min(var(--across, 2), 2), minmax(0, 1fr)); } }
+@media (max-width: 1100px) { .ch-grid { grid-template-columns: repeat(min(var(--across, 2), 2), minmax(0, 1fr)); } .ch-odd { grid-column: 1 / -1; } }
 @media (max-width: 760px) {
   .ch { padding: 26px 16px 56px; }
   .ch-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }

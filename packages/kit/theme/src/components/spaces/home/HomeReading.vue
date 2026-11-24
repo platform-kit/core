@@ -68,20 +68,28 @@ onMounted(() => emit('state', pick.value.books.length ? 'ready' : 'empty'))
 </template>
 
 <style scoped>
-.hr-books { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+/* THE BOOKS ACROSS THE CARD: on a wide card each is a cover with its title, author and progress beside it; on a narrow
+   one (a phone) the covers stand side by side with the words under them */
+.hr { container-type: inline-size; }
+.hr-books { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
 .hr-books li { margin: 0; padding: 0; min-width: 0; }
-.hr-book { display: flex; flex-direction: column; gap: 12px; color: inherit; text-decoration: none; }
-.hr-cover { display: block; aspect-ratio: 2 / 3; border-radius: 4px 8px 8px 4px; overflow: hidden; background: color-mix(in srgb, var(--ink) 7%, var(--paper));
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 10%, transparent), 0 10px 24px -14px #0008; transition: transform .25s ease, box-shadow .25s ease; }
+.hr-book { display: flex; flex-direction: row; align-items: flex-start; gap: 16px; color: inherit; text-decoration: none; }
+.hr-cover { flex: none; display: block; width: 92px; aspect-ratio: 2 / 3; border-radius: 3px 7px 7px 3px; overflow: hidden; background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 10%, transparent), 0 10px 22px -12px #0008; transition: transform .25s ease, box-shadow .25s ease; }
 .hr-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.hr-blank { display: flex; align-items: flex-end; height: 100%; padding: 12px; box-sizing: border-box; font-size: 13px; font-weight: 600; color: var(--ink2); }
-@media (hover: hover) { .hr-book:hover .hr-cover { transform: translateY(-3px); box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 10%, transparent), 0 16px 30px -14px #0009; } }
-.hr-words { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.hr-words strong { font-size: 14.5px; line-height: 1.3; font-weight: 600; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.hr-blank { display: flex; align-items: flex-end; height: 100%; padding: 10px; box-sizing: border-box; font-size: 12px; font-weight: 600; color: var(--ink2); }
+@media (hover: hover) { .hr-book:hover .hr-cover { transform: translateY(-3px); box-shadow: 0 1px 0 color-mix(in srgb, var(--ink) 10%, transparent), 0 16px 28px -12px #0009; } }
+.hr-words { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; padding-top: 4px; }
+.hr-words strong { font-size: 15.5px; line-height: 1.3; font-weight: 600; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .hr-book:hover strong { text-decoration: underline; }
-.hr-words em { font-style: normal; font-size: 13px; color: var(--ink3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hr-prog { display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
-/* where the card spans the row, the covers stay a book's size rather than growing with it */
-:global(.ch-wide) .hr-books { grid-template-columns: repeat(3, minmax(0, 150px)); gap: 28px; }
-@media (max-width: 420px) { .hr-books { gap: 12px; } }
+.hr-words em { font-style: normal; font-size: 13.5px; color: var(--ink3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hr-prog { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+@container (max-width: 640px) {
+  .hr-books { gap: 14px; }
+  .hr-book { flex-direction: column; gap: 10px; }
+  .hr-cover { width: 100%; }
+  .hr-words { padding-top: 0; }
+  .hr-words strong { font-size: 14px; -webkit-line-clamp: 2; }
+  .hr-words em { font-size: 12.5px; }
+}
 </style>
