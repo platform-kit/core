@@ -59,7 +59,7 @@ function choose(k: string) { tab.value = k; try { localStorage.setItem(KEY, k) }
   --chat-field: color-mix(in srgb, var(--ink) 5%, var(--paper));
   --chat-own: var(--ink); --chat-own-ink: var(--paper);
   --qink: var(--ink); --qink2: var(--ink2); --qink3: var(--ink3); --qhair: var(--hair);
-  --qcard: color-mix(in srgb, var(--ink) 2.5%, var(--paper)); --qpaper: var(--paper); --qflip: var(--paper);
+  --qcard: var(--pl-card, color-mix(in srgb, var(--ink) 2.5%, var(--paper))); --qpaper: var(--paper); --qflip: var(--paper);
   --s2: 16px; --s3: 26px;
   display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; background: var(--paper) }
 .scoach-tabs { flex: none; display: flex; gap: 4px; margin: 0; padding: 6px 16px 0; border: 0; border-bottom: 1px solid var(--hair) }
@@ -70,6 +70,7 @@ function choose(k: string) { tab.value = k; try { localStorage.setItem(KEY, k) }
 .scoach-tabs button.on { color: var(--ink); font-weight: 700 }
 .scoach-tabs button.on span::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0; background: var(--accent) }
 .scoach-chat { flex: 1; min-height: 0; overflow: hidden }
-.scoach-sessions { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 20px 40px }
-@media (max-width: 480px) { .scoach-sessions { padding: 12px 12px 24px } }
+/* the sessions at the community's measure (SpacesPage: one look for every place) */
+.scoach-sessions { flex: 1; min-height: 0; overflow-y: auto; padding: var(--pl-top, 20px) var(--pl-x, 20px) var(--pl-bottom, 40px) }
+.scoach-sessions > :deep(*) { max-width: var(--pl-max, none); margin-left: auto; margin-right: auto }
 </style>

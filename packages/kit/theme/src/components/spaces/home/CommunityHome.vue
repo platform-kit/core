@@ -102,24 +102,22 @@ onMounted(async () => {
 /* QUIET BY DESIGN: one greeting, outlined cards on the page's own ground, one weight of label. The cards hold the
    member's things; nothing around them competes. Every rule says what it wants, since the site styles bare elements
    (an h1 is capped at 16ch there, which broke the greeting over two lines). */
-.cmh { max-width: 1040px; margin: 0 auto; padding: 44px 32px 72px; box-sizing: border-box; }
+.cmh { max-width: var(--pl-max, 1040px); margin: 0 auto; padding: var(--pl-top, 44px) var(--pl-x, 32px) var(--pl-bottom, 72px); box-sizing: border-box; }
 .cmh-band { position: relative; overflow: hidden; margin: 0 0 30px; padding: 0; border: 0; background: none; }
 .cmh-cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .18; pointer-events: none; }
 .cmh-band-in { position: relative; }
-.cmh-hello { max-width: none; text-wrap: pretty; margin: 0; font-size: clamp(26px, 3vw, 34px); line-height: 1.15; letter-spacing: -.01em; font-weight: 700; color: var(--ink); }
+.cmh-hello { max-width: none; text-wrap: pretty; margin: 0; font-family: var(--fd, inherit); font-size: var(--pl-title, 34px); line-height: 1.15; letter-spacing: -.02em; font-weight: 600; color: var(--ink); }
 .cmh-tagline { max-width: none; margin: 8px 0 0; font-size: 16.5px; line-height: 1.5; color: var(--ink3); }
-.cmh-grid { display: grid; grid-template-columns: repeat(var(--across, 2), minmax(0, 1fr)); gap: 16px; }
+.cmh-grid { display: grid; grid-template-columns: repeat(var(--across, 2), minmax(0, 1fr)); gap: var(--pl-gap, 16px); }
 .cmh-cell { min-width: 0; display: flex; }
 .cmh-cell > :deep(*) { flex: 1; }
-.cmh-full { margin-top: 16px; }
+.cmh-full { margin-top: var(--pl-gap, 16px); }
 .cmh-posts { margin-top: 40px; }
 .cmh-posts-title { max-width: none; margin: 0 0 14px; font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--ink); }
 @media (max-width: 1100px) { .cmh-grid { grid-template-columns: repeat(min(var(--across, 2), 2), minmax(0, 1fr)); } .cmh-odd { grid-column: 1 / -1; } }
 @media (max-width: 760px) {
-  .cmh { padding: 26px 16px 56px; }
   .cmh-band { margin-bottom: 22px; }
-  .cmh-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
-  .cmh-full { margin-top: 12px; }
+  .cmh-grid { grid-template-columns: minmax(0, 1fr); }
 }
 </style>
 
@@ -127,7 +125,7 @@ onMounted(async () => {
      reach nothing outside Home -->
 <style>
 .cmh .hc { position: relative; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box; min-height: 100%; margin: 0; padding: 20px 22px 22px;
-  border: 1px solid var(--hair); border-radius: 16px; background: var(--paper); color: var(--ink); }
+  border: 1px solid var(--hair); border-radius: var(--pl-r, 16px); background: var(--pl-card, var(--paper)); box-shadow: var(--pl-shadow, none); color: var(--ink); }
 .cmh .hc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 4px; padding: 0; border: 0; background: none; }
 .cmh .hc-kicker { max-width: none; margin: 0; font-family: inherit; font-size: 13.5px; letter-spacing: 0; text-transform: none; color: var(--ink3); font-weight: 500; }
 .cmh .hc-more { font-size: 13.5px; color: var(--ink3); text-decoration: none; white-space: nowrap; }

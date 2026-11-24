@@ -7,7 +7,14 @@
 .crs { --crs-r: 16px; --crs-bar: 56px; --crs-miss: #c2410c; padding: 40px 24px 96px; color: var(--ink); }
 .crs.is-playing { padding: 0; }
 /* in the community the place scrolls inside its pane, as the feed does */
-.crs.is-place { height: 100%; overflow-y: auto; box-sizing: border-box; padding: 28px 28px 72px; }
+/* named under .sp-body too: the community's own `.sp-plain { padding: 0 }` is the same weight, and which wins otherwise depends on
+   which stylesheet loaded last (arriving through /courses loaded this one first, and the place lost its padding) */
+.crs.is-place, .sp-body > .crs.is-place { height: 100%; overflow-y: auto; box-sizing: border-box; padding: var(--pl-top, 28px) var(--pl-x, 28px) var(--pl-bottom, 72px);
+  /* in the community, the community's look (SpacesPage: one look for every place): its card ground and corner */
+  --card: var(--pl-card); --crs-r: var(--pl-r, 16px); }
+.crs.is-place > * { max-width: var(--pl-max, none); margin-left: auto; margin-right: auto; }
+.crs.is-place .crs-side-card { border-radius: var(--pl-r, 20px); box-shadow: var(--pl-shadow, none); }
+.crs.is-place .crs-ov-head h1 { font-family: var(--fd, inherit); font-weight: 600; font-size: var(--pl-title, 50px); letter-spacing: -.02em; line-height: 1.12; }
 .crs.is-place.is-playing { padding: 0; }
 .crs-wrap { width: 100%; max-width: 1140px; margin: 0 auto; }
 .crs h1 { margin: 0 0 14px; max-width: 24ch; text-wrap: balance; }

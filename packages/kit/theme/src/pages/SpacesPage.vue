@@ -1711,6 +1711,20 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
 .sp-locked { overflow-y: auto }
 /* the network's column, in the middle of the pane at the width a timeline reads at */
 .sp-net { overflow-y: auto; background: color-mix(in srgb, var(--ink) 2%, var(--paper)) }
+/* ONE LOOK FOR EVERY PLACE (openspec: community-places-one-look). Home, the Courses place, Sessions, the inboxes and a site's
+   own places (the diagnostics) were each drawn to their own measure — white cards beside tinted ones, three paddings, four
+   title sizes and two type faces — so moving between them felt like moving between products. The booking screen set the
+   bar; its measure is written here once and every place reads it: the page's width and padding, the card's ground, edge,
+   corner and shadow, and the title's face and size. A place outside the community keeps its own (each reads these with a
+   fallback). */
+.sp-page {
+  --pl-max: 1040px; --pl-x: 32px; --pl-top: 32px; --pl-bottom: 72px; --pl-gap: 16px;
+  --pl-card: color-mix(in srgb, var(--ink) 2.5%, var(--paper));
+  --pl-r: 18px; --pl-r-in: 14px;
+  --pl-shadow: 0 1px 2px #0000000a, 0 18px 40px -28px #00000066;
+  --pl-title: clamp(26px, 3vw, 34px);
+}
+@media (max-width: 760px) { .sp-page { --pl-x: 16px; --pl-top: 20px; --pl-bottom: 56px; --pl-gap: 12px } }
 /* Home as an overview: the page's own ground, and the feed beneath the cards one column, as wide as they are */
 .sp-home { background: var(--paper) }
 .sp-home .sp-net-in { display: block; min-height: 0 }
