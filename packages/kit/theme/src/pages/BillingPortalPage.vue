@@ -392,14 +392,14 @@ onBeforeUnmount(() => {
 .billing-panel { min-width: 0; margin: 0; padding: 0; border: 0; background: none }
 .billing-card { display: grid; gap: 18px; width: min(100%, 680px); box-sizing: border-box; border: 1px solid var(--hair); border-radius: 1.1rem; padding: clamp(20px, 5vw, 32px); background: color-mix(in srgb, var(--paper) 88%, transparent); box-shadow: 0 18px 40px -36px color-mix(in srgb, var(--ink) 35%, transparent) }
 .billing-card p { margin: 0 }
-.billing-card-title { margin: 0; font-family: var(--f); font-size: 1.125rem; font-weight: 600; line-height: 1.35; letter-spacing: -.01em }
+.billing-card-title { margin: 0; font-family: var(--fd, var(--f)); font-size: 1.125rem; font-weight: 600; line-height: 1.35; letter-spacing: -.01em }
 .billing-commitment { display: grid; gap: 12px }
 .billing-commitment + .billing-commitment { margin-top: 14px }
-.billing-commitment-title { margin: 0; font-family: var(--f); font-size: 1rem; font-weight: 600; line-height: 1.4 }
+.billing-commitment-title { margin: 0; font-family: var(--fd, var(--f)); font-size: 1rem; font-weight: 600; line-height: 1.4 }
 .billing-card > .billing-button { justify-self: start }
 .billing-empty { display: grid; justify-items: start; gap: 14px; width: min(100%, 680px); padding: 0 }
 .billing-empty-copy { display: grid; gap: 6px }
-.billing-empty-copy h2 { margin: 0; color: var(--ink); font-family: var(--f); font-size: 1.25rem; font-weight: 600; line-height: 1.35; letter-spacing: -.015em }
+.billing-empty-copy h2 { margin: 0; color: var(--ink); font-family: var(--fd, var(--f)); font-size: 1.25rem; font-weight: 600; line-height: 1.35; letter-spacing: -.015em }
 .billing-empty-copy p { margin: 0; color: var(--ink2); font-size: 1rem; line-height: 1.5 }
 .billing-empty-link { justify-self: start; margin-top: 2px }
 .billing-empty-link:focus-visible { outline: 2px solid var(--accent2); outline-offset: 4px; border-radius: 2px }

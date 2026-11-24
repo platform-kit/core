@@ -822,7 +822,7 @@ onBeforeUnmount(() => {
 <style scoped>
 #usage.usage-panel { position: relative; display: grid; gap: clamp(1.5rem, 3vw, 2rem); min-width: 0; margin-top: 0; padding: 0; border: 0; color: var(--ink); }
 .usage-panel .usage-section { display: grid; gap: .65rem; min-width: 0; padding: 0; border: 0; }
-.usage-section > h2 { margin: 0; color: var(--ink); font-family: var(--f); font-size: 1.25rem; font-weight: 600; line-height: 1.35; letter-spacing: -.015em; }
+.usage-section > h2 { margin: 0; color: var(--ink); font-family: var(--fd, var(--f)); font-size: 1.25rem; font-weight: 600; line-height: 1.35; letter-spacing: -.015em; }
 .usage-balances, .usage-packs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: .8rem; }
 .usage-card { min-width: 0; padding: 1.2rem; border: 1px solid var(--hair); border-radius: 1.1rem; background: color-mix(in srgb, var(--paper) 88%, transparent); box-shadow: 0 18px 40px -36px color-mix(in srgb, var(--ink) 35%, transparent); }
 .usage-empty-state { max-width: 42rem; margin: 0; padding: .25rem 0 0; color: var(--ink2); font: 500 1rem/1.5 var(--f); }

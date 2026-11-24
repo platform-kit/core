@@ -43,11 +43,16 @@ body {
   --readw: 788px;
   --readpad: 24px;
 }
+/* A HEADING IS IN THE HEADING FACE: the one the site sets in its admin (content/site.md fonts.heading, the --fd token the build
+   writes), so changing it there changes every heading. It was never said here, so a heading without a rule of its own fell
+   through to the body face and stayed in it whatever the site chose. A component that wants another face (the mono labels)
+   still says so in its own rule. */
 h1,
 h2,
 h3,
 h4 {
   margin: 0;
+  font-family: var(--fd, var(--f));
   font-weight: 700;
   letter-spacing: -0.024em;
   line-height: 1.12;
