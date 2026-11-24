@@ -759,6 +759,22 @@ async function readAll() {
   await loadMentions()
 }
 
+/* A ROOM, AND THE POST THE ADDRESS NAMES IN IT: the room opens as it always does, then the post with its replies */
+const POST_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+async function openRoomAt(roomId: any, post?: string) {
+  await pick(roomId)
+  if (post && POST_ID.test(post)) await openThread(post)
+}
+/* A LINK TO A POST FOLLOWED INSIDE THE COMMUNITY (a card on Home, a timestamp, a pasted link) moves the page rather than
+   reloading it: the router changes the address, and the room and the post are opened here */
+vueWatch(route, async (p) => {
+  const m = /^\/spaces\/([^/]+)\/([^/]+)\/([^/]+)\/?$/.exec(p || '')
+  if (!m || !POST_ID.test(m[3])) return
+  const sp = spaces.value.find((x: any) => x.slug === m[1])
+  const room = sp && channels.value.find((x: any) => x.space_id === sp.id && x.slug === m[2])
+  if (room && !(open.id === room.id && thread.root && thread.root.id === m[3])) await openRoomAt(room.id, m[3])
+})
+
 async function openFromFeed(at: any) {
   await pick(at.channel)
   if (at.thread) await openThread(at.thread)
@@ -815,8 +831,13 @@ function address(c: any) {
   if (!c || typeof history === 'undefined') return
   const sp = spaces.value.find((x: any) => x.id === c.space_id)
   if (!sp) return
-  put(c.kind === 'dm' ? `${ROUTES.spaces}/${sp.slug}` : `${ROUTES.spaces}/${sp.slug}/${c.slug}`)
+  /* A POST HAS AN ADDRESS OF ITS OWN (openspec: space-post-permalinks): /spaces/<space>/<channel>/<post>, written while its
+     thread is open, so a refresh, the back button and a link sent to somebody all come back to the post and its replies */
+  const post = thread.root && thread.root.channel_id === c.id ? thread.root.id : ''
+  put(c.kind === 'dm' ? `${ROUTES.spaces}/${sp.slug}` : `${ROUTES.spaces}/${sp.slug}/${c.slug}${post ? '/' + post : ''}`)
 }
+/* the post opened or closed in the room in front: the address follows it */
+vueWatch(() => (thread.root ? thread.root.id : ''), () => { if (view.value === 'channel') address(channels.value.find((x: any) => x.id === open.id)) })
 /* a space with no room in front of it (a space whose rooms the reader cannot see) is the space's own address */
 function addressOf(id: any) {
   const sp = spaces.value.find((x: any) => x.id === id)
@@ -1046,7 +1067,8 @@ async function hydrate() {
   const sp = named && spaces.value.find((x: any) => x.slug === named[1])
   const asked = named && named[2]
   const room = sp && asked && channels.value.find((x: any) => x.space_id === sp.id && x.slug === asked)
-  if (room) await pick(room.id)
+  /* a post named after the room, or by the ?post= a space post's Share once copied */
+  if (room) await openRoomAt(room.id, named[3] || new URLSearchParams(window.location.search).get('post') || '')
   else if (sp && asked && PLACES.includes(asked)) {
     /* a place rather than a room: /spaces/<space>/events, /people, and /events/<slug> for one */
     enterSpace(sp.id)
@@ -2040,6 +2062,9 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
 }
 @media (max-width: 700px) {
   .sp-page.sp-social { background: var(--paper) }
+  /* a thread, a person or a search on a phone takes the screen: at 62% of 390px its own header and box were cut off at the edge,
+     and a post's link opens straight into it (openspec: space-post-permalinks) */
+  .sp-social .sp-body > .sp-side { width: 100%; box-shadow: none; padding-bottom: calc(58px + env(safe-area-inset-bottom)); box-sizing: border-box }
   .sp-social .sp-body > .sp-main, .sp-social .sp-body > .sp-plain { padding-bottom: calc(58px + env(safe-area-inset-bottom)) }
   .sp-social .sp-bar-m { display: none }
   .sp-social .sp-nav { bottom: calc(58px + env(safe-area-inset-bottom)) }

@@ -68,8 +68,10 @@ watch(() => live.value.kind === 'space' && live.value.text, (t) => {
 }, { immediate: true })
 /* a network post's media, or a space post's own (a feed post may carry it too) */
 const media = computed(() => live.value.media || [])
+/* THE POST'S OWN ADDRESS, either kind (openspec: space-post-permalinks): a network post's page, or a space post in its room
+   with its replies open — what the time links to, what Share copies and where a press on the card goes */
 const threadHref = computed(() => (live.value.kind === 'space'
-  ? ROUTES.spaces + '/' + (live.value.space ? live.value.space.slug + '/' + (live.value.space.channel || '') : '')
+  ? ROUTES.spaces + '/' + (live.value.space ? live.value.space.slug + '/' + (live.value.space.channel || '') + (live.value.space.channel ? '/' + (live.value.thread_root_id || live.value.id) : '') : '')
   : ROUTES.feed + '/post/' + live.value.id))
 const when = computed(() => agoOf(live.value.created_at))
 const whenFull = computed(() => { try { return new Date(live.value.created_at).toLocaleString() } catch { return '' } })
@@ -110,7 +112,6 @@ function open(e: any) {
   /* a press on the card opens the thread — but not one on a link, a button or a picture */
   if (props.quoted || props.focus) return
   if (e.target.closest('a, button, img, input, textarea')) return
-  if (live.value.kind === 'space') { window.location.href = threadHref.value; return }
   navigate(threadHref.value)
 }
 </script>

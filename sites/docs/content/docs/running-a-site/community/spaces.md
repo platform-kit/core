@@ -20,6 +20,10 @@ A space has a name, description, optional cover, and an ordered set of rooms. It
 
 Rooms support different kinds of activity: ongoing conversation, a forum, or a feed, with optional community features such as events, polls, voice, files, and moderation. A room can be public within its space or private. The community's front page can show the feed, events, people, and other sections the site chooses to offer. A room fills the window and scrolls inside it, so its message box stays at the bottom; a place the site adds to be read, such as a page of results, can instead grow the page, with the menu staying beside it as you scroll.
 
+### Every post has an address
+
+A room is at `/spaces/<space>/<room>`, and a post in it at `/spaces/<space>/<room>/<post>`, which opens the room with that post and its replies open. The post's time, its Share button and a press on it in the community's Home all lead there, as a reply or mention email does; a network post's address is `/feed/post/<id>` (or under the community's own path). A link following the older `?post=<id>` form opens the post too. On a phone the post and its replies take the whole screen.
+
 ## Membership and permissions
 
 A space can be invitation-only or filled by a declared rule, such as a role, membership tier, or purchase. The rule describes who qualifies; it never names individual people. Invitations and manual additions remain individual membership records. Space roles and grants control what members may do, while moderation actions apply to people and conversations rather than changing the space's declaration.

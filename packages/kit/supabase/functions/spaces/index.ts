@@ -34,8 +34,8 @@ Deno.serve(async (req: Request) => {
     if (!to || !ch) return json({ error: 'who' }, 400)
     const [{ data: person }, { data: c }, { data: m }] = await Promise.all([
       admin.from('profiles').select('email, display_name, email_verified_at').eq('id', to).maybeSingle(),
-      admin.from('channels').select('name, kind').eq('id', ch).maybeSingle(),
-      admin.from('space_messages').select('body, title, author_id').eq('id', mid).maybeSingle(),
+      admin.from('channels').select('name, kind, slug, space_id').eq('id', ch).maybeSingle(),
+      admin.from('space_messages').select('body, title, author_id, thread_root_id').eq('id', mid).maybeSingle(),
     ])
     /* never to an address that has not answered its own confirmation — the rule the desk keeps */
     if (!person?.email || !person?.email_verified_at) return json({ skipped: 'unconfirmed' })
@@ -44,11 +44,19 @@ Deno.serve(async (req: Request) => {
       : { data: null }
     const who = (from?.display_name || '').trim() || String(from?.email || '').split('@')[0] || 'Someone'
     const app = (env('APP_URL') || '').replace(/\/$/, '')
+    /* WHERE THE EMAIL LEADS (openspec: space-post-permalinks): the post itself, in its room with its replies open —
+       /spaces/<space>/<channel>/<post> — and for a direct message the space it is in. It was /channels/<id>, an address
+       the site stopped answering when the rooms moved to /spaces. */
+    const { data: sp } = c?.space_id ? await admin.from('spaces').select('slug').eq('id', c.space_id).maybeSingle() : { data: null }
+    const post = m?.thread_root_id || mid
+    const url = !sp?.slug ? app + '/spaces'
+      : c?.kind === 'dm' || !c?.slug ? app + '/spaces/' + sp.slug
+      : app + '/spaces/' + sp.slug + '/' + c.slug + (post ? '/' + post : '')
     await sendEmail(person.email, 'chat', {
       name: who,
       message: String(m?.title || m?.body || '').slice(0, 300),
       where: c?.kind === 'dm' ? '' : '#' + (c?.name || ''),
-      url: app + '/channels/' + ch,
+      url,
     })
     return json({ sent: 1 })
   }

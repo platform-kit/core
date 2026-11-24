@@ -31,7 +31,10 @@ const likes = computed(() => (like.value ? like.value.users.length : 0))
 const comments = computed(() => props.message.reply_count || 0)
 const copied = ref(false)
 async function share() {
-  const url = window.location.origin + window.location.pathname + '?post=' + encodeURIComponent(props.message.id)
+  /* the post's own address (openspec: space-post-permalinks): the room's, with the post after it — the room's address may
+     already carry an open post, which this one replaces */
+  const room = window.location.pathname.replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/?$/i, '').replace(/\/$/, '')
+  const url = window.location.origin + room + '/' + encodeURIComponent(props.message.id)
   try { await navigator.clipboard.writeText(url); copied.value = true; setTimeout(() => { copied.value = false }, 1600) } catch { window.prompt(W.value['feed-share'], url) }
 }
 </script>
