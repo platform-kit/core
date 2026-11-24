@@ -2055,6 +2055,21 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
 /* A QUEUE: the tool takes the column and the sidebar's place together. The grid itself never
    changes from page to page, so the navigation never moves */
 @media (min-width: 901px) { .sp-social .sp-body.sp-wide > .sp-main, .sp-social .sp-body.sp-wide > .sp-plain { grid-column: 2 / -1 } }
+/* ONE WIDTH FOR EVERY PAGE (openspec: community-places-one-look): a page with nothing beside it — no thread, card or search
+   open, and a sidebar with nothing coming up — takes the column and the sidebar's place together, as the places do, so moving
+   from Home to a space, a post or People never narrows the page. Something open beside it shares the same frame. */
+@media (min-width: 1101px) {
+  .sp-social .sp-body:not(:has(> .sp-side)):not(:has(> .sp-saside:not(.sa-none))) > .sp-main,
+  .sp-social .sp-body:not(:has(> .sp-side)):not(:has(> .sp-saside:not(.sa-none))) > .sp-plain,
+  .sp-social .sp-body:not(:has(> .sp-side)):not(:has(> .sp-saside:not(.sa-none))) > .sp-shead { grid-column: 2 / -1 }
+}
+/* …and what is in the frame starts where the places' content starts and runs as wide: a space's head and tabs, its feed, a post's page
+   and Explore, each at the community's measure (--pl-max, --pl-x) rather than a 680px column of its own. Their own 16px inset
+   is counted in, so their text lines up with Home's and the course's. */
+.sp-social .sp-shead { padding-left: 0; padding-right: 0 }
+.sp-social .sp-shead > * { max-width: var(--pl-max); margin-left: auto; margin-right: auto; padding-left: var(--pl-x); padding-right: var(--pl-x); box-sizing: border-box }
+.sp-social .sp-feedch { max-width: var(--pl-max); padding-left: var(--pl-x); padding-right: var(--pl-x) }   /* the feed's cards are boxes, their edge where Home's cards stand */
+.sp-social .sp-net .sp-net-in > :deep(.fd-main) { max-width: var(--pl-max); margin-left: auto; margin-right: auto; border: 0; padding-left: max(0px, calc(var(--pl-x) - 16px)); padding-right: max(0px, calc(var(--pl-x) - 16px)); box-sizing: border-box }
 /* NOTHING COMING UP: the sidebar draws nothing and its column stays, empty, so nothing moves */
 .sp-social .sp-body > .sp-saside.sa-none { display: none }
 .sp-social .sp-net-in { display: block }
