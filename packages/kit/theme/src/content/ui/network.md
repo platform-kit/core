@@ -123,7 +123,7 @@ failed: That didn't post. Try again.
 ### main
 
 label: Who can see this
-everyone: Everyone
+everyone: Public
 here: Community Members Only
 space: {space} members
 everyone-note: Anyone signed in here, and anyone who visits your page while it's public.
