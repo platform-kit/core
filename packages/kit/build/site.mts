@@ -301,14 +301,14 @@ export const courseKindsOf = (c: any) => {
 }
 /*
  * THE CARDS ON THE COMMUNITY'S HOME (openspec: community-home), where content/community.md home.overview is on: each
- * module's fill of spaces' home slot, then the site's own community.homeCards — { key, component, order? } — in order. A
+ * module's fill of spaces' home slot, then the site's own community.homeCards — { key, component, order?, full? } — in order. A
  * site card is ordered 20 unless it says, between the kit's Course (10) and Coaching (30); a key already in use, or a
  * card with no component, refuses the build.
  */
 /* the theme's own cards (Coaching, Reading), drawn by CommunityHome itself: a site card may not take their keys */
 const HOME_KIT_CARDS = ['coaching', 'reading']
 export function homeCardsOf(c: any) {
-  const kit = fillsOf(resolveModules(), c.modules || {}, 'spaces:home').map(({ module, with: _w, ...x }: any) => ({ key: String(x.key), order: Number(x.order) || 50, component: inModule(module, x.component) }))
+  const kit = fillsOf(resolveModules(), c.modules || {}, 'spaces:home').map(({ module, with: _w, ...x }: any) => ({ key: String(x.key), order: Number(x.order) || 50, full: x.full === true, component: inModule(module, x.component) }))
   const list = (c.community || {}).homeCards
   if (list == null) return kit.sort((a: any, b: any) => a.order - b.order)
   if (!Array.isArray(list)) throw new Error('community.homeCards: a list of cards — { key, component, order? }')
@@ -322,7 +322,8 @@ export function homeCardsOf(c: any) {
     seen.add(key)
     if (!x.component || typeof x.component !== 'string') throw new Error(`${at}: component is the path of the card (./src/….vue)`)
     if (x.order != null && !Number.isFinite(Number(x.order))) throw new Error(`${at}: order is a number`)
-    return { key, order: x.order == null ? 20 : Number(x.order), component: x.component }
+    if (x.full != null && typeof x.full !== 'boolean') throw new Error(`${at}: full is true or false — whether the card takes the page's width`)
+    return { key, order: x.order == null ? 20 : Number(x.order), full: x.full === true, component: x.component }
   })
   return [...kit, ...own].sort((a: any, b: any) => a.order - b.order)
 }

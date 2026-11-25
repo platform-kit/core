@@ -500,7 +500,7 @@ A feature listed here is available to a site, not switched on everywhere. A site
 - Search by who, where and when.
 - Personal views: threads, unread, mentions, saved, drafts and starred channels.
 - A space home with a greeting, recent activity, upcoming events and members; a community front page across all your spaces; a welcome room for newcomers to read first.
-- Open the community on an overview instead of the feed: a greeting, then cards for the member's own things — the course in progress, the next coaching session, the books being read, and any a module or the site adds — with the feed below once there are posts.
+- Open the community on an overview instead of the feed: a greeting, then cards for the member's own things — the course (an invitation before they begin, their progress and next lesson once they have, Finished after), the next coaching session, the books being read, and any a module or the site adds — with the feed below once there are posts.
 - Member cards: what the space calls the person, join date, message count and bio, plus private panels visible only to them and staff: what they're working on, what they've read and what they've bought, each shown when the site has that module on. A site can reword, reorder or drop these panels and add its own.
 - Badges that moderators give, shown beside names.
 - Polls with single or multiple answers, closing, and who answered.

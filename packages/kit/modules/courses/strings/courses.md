@@ -209,14 +209,20 @@ finished: Finished
 
 ### main
 
-title: Your course
+kicker: Course
+title-new: Begin the course
+title-going: Continue where you left off
+title-done: Your finished courses
 all: All courses
 continue: Continue
 start: Start the course
+review: Review
+finished: Finished
 next: Next: {title}
 opens: The next lesson opens {date}.
 lessons: {n} lessons
-progress: {done} of {total} lessons
+lessons-modules: {n} lessons · {m} modules
+progress: {done} of {total} required lessons
 
 ## admin
 

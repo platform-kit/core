@@ -51,7 +51,7 @@ const cards = computed(() => [
   ...(props.coaching && moduleOn('sessions') ? [{ key: 'coaching', order: 30, component: markRaw(HomeCoaching) }] : []),
   /* Reading is the one card with something to look at: it takes the whole row, under the others */
   ...(bookShelf().length ? [{ key: 'reading', order: 40, full: true, component: markRaw(HomeReading) }] : []),
-  ...((SITE_CARDS || []) as any[]).map((x) => ({ key: x.key, order: x.order, full: false, component: markRaw(defineAsyncComponent(x.load)) })),
+  ...((SITE_CARDS || []) as any[]).map((x) => ({ key: x.key, order: x.order, full: !!x.full, component: markRaw(defineAsyncComponent(x.load)) })),
 ].sort((a, b) => a.order - b.order))
 const small = computed(() => cards.value.filter((c) => !c.full))
 const full = computed(() => cards.value.filter((c) => c.full))
