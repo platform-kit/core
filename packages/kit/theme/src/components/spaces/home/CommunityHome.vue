@@ -21,6 +21,7 @@ import { bookShelf } from 'platformkit/lib/content.js'
 import { settings } from 'platformkit/lib/spaces/settings.js'
 import site, { homeCards as SITE_CARDS } from '#site'
 import { isSignedIn } from 'platformkit/lib/auth.js'
+import { ROUTES, navigate } from 'platformkit/lib/router.js'
 import { products } from 'platformkit/lib/storefront.js'
 import { subscribe, checkout, money } from 'platformkit/lib/commerce.js'
 import HomeCoaching from './HomeCoaching.vue'
@@ -81,8 +82,10 @@ const price = computed(() => {
   return String(A.value[key] || '').replace('{price}', p)
 })
 const busy = ref(false)
+/* somebody not signed in goes to the offer's own checkout page, which says an account comes first and, once they have one,
+   carries straight on to paying — opening the sign-in here left them signed in and still to press Join again */
 async function join() {
-  if (!isSignedIn.value) { if ((window as any).DLauth) (window as any).DLauth.open({ intent: 'buy' }); return }
+  if (!isSignedIn.value) { if (joinSku) navigate(ROUTES.checkout + '/' + joinSku); return }
   if (!offer.value) return
   busy.value = true
   try { if (offer.value.recurring) await subscribe(offer.value.sku); else await checkout([{ sku: offer.value.sku, quantity: 1 }]) } finally { busy.value = false }
