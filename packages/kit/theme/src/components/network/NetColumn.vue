@@ -67,6 +67,13 @@ const FOR_YOU = !!(site.community || {}).forYou && !!(site.network)
 const tab = ref(!FOLLOWING ? 'discover' : (() => { try { return sessionStorage.getItem('dl.feed.tab') || 'following' } catch { return 'following' } })())
 function setTab(t: string) { tab.value = t; try { sessionStorage.setItem('dl.feed.tab', t) } catch { /* private window */ } ; if (t === 'discover' && !ds.st.items.length) ds.refresh(); window.scrollTo({ top: 0 }) }
 const source = computed(() => (view.value === 'explore' || tab.value === 'discover' ? ds : tl))
+/* what is drawn: everything loaded, or the first `limit` of it where the column is a preview */
+const visible = computed(() => (limit.value > 0 ? items.value.slice(0, limit.value) : items.value))
+const hidden = computed(() => limit.value > 0 && items.value.length > limit.value)
+function showMore() {
+  if (limit.value > 0) { limit.value += props.shown; if (items.value.length >= limit.value || source.value.st.done) return }
+  source.value.more()
+}
 const items = computed(() => source.value.st.items.map((it: { post_id: string|number; message_id: string|number }) => ({ ...it, post: it.post_id ? net.posts[it.post_id] : net.messages[it.message_id] })).filter((it: any) => it.post))
 
 /* ---------------------------------------------------------------- explore: people by name */
@@ -90,6 +97,11 @@ watch(q, () => { clearTimeout(findTimer); findTimer = setTimeout(find, 250) })
 const SPACES = moduleOn('spaces')
 const EVENTS = SPACES && moduleOn('events')
 const emit = defineEmits(['open-message', 'open-event'])
+/* HOW MANY POSTS IT SHOWS (0: all it has loaded, as a feed does). Somewhere the feed is a preview — the community's Home —
+   it shows that many, and More shows as many again: from what is already loaded, asking the database only when those run
+   out. */
+const props = defineProps({ shown: { type: Number, default: 0 } })
+const limit = ref(props.shown)
 const PAGE = 60
 const notes = ref<any>([])
 const notesBusy = ref(false)
@@ -278,7 +290,7 @@ defineExpose({ refresh: () => posted() })
     </template>
     <p v-if="source.st.error" class="fd-err">{{ T.error }}</p>
     <div v-if="items.length" class="fd-list">
-      <NetPost v-for="it in items" :key="itemKey(it)" :post="it.post" :reposted-by="it.kind === 'repost' ? it.reposted_by : ''"
+      <NetPost v-for="it in visible" :key="itemKey(it)" :post="it.post" :reposted-by="it.kind === 'repost' ? it.reposted_by : ''"
         @reply="replyTo" @report="(p) => reporting = p" @removed="removed" />
     </div>
     <div v-else-if="!source.st.loading" class="fd-card fd-empty">
@@ -290,9 +302,9 @@ defineExpose({ refresh: () => posted() })
     <div v-else-if="!items.length" class="fd-skel" :aria-label="T.loading" role="status">
       <div v-for="i in 4" :key="i" class="fd-skel-row" :style="{ '--d': i * 0.08 + 's' }"><i class="fd-skel-face"></i><span><i style="width: 34%"></i><i style="width: 92%"></i><i style="width: 70%"></i></span></div>
     </div>
-    <div v-if="(source.st.loading && items.length) || (items.length && !source.st.done)" class="fd-foot">
+    <div v-if="(source.st.loading && items.length) || (items.length && (!source.st.done || hidden))" class="fd-foot">
       <span v-if="source.st.loading" class="fd-spin" :aria-label="T.loading"></span>
-      <button v-else type="button" class="fd-more" @click="source.more()">{{ T.more }}</button>
+      <button v-else type="button" class="fd-more" @click="showMore">{{ T.more }}</button>
     </div>
   </template>
 

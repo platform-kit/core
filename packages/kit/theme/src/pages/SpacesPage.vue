@@ -1208,7 +1208,7 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
       <!-- THE NETWORK'S COLUMN, where the network and the spaces are one place -->
       <div v-else-if="overviewHome" class="sp-plain sp-home">
         <CommunityHome :coaching="coachingHere" :name="myName">
-          <div class="sp-net-in"><NetColumn ref="netColumn" @open-message="openFromFeed" @open-event="(slug) => { eventsAll = true; goTo('events'); openEvent = slug }" /></div>
+          <div class="sp-net-in"><NetColumn ref="netColumn" :shown="5" @open-message="openFromFeed" @open-event="(slug) => { eventsAll = true; goTo('events'); openEvent = slug }" /></div>
         </CommunityHome>
       </div>
       <div v-else-if="view === 'net' || view === 'net-notes'" class="sp-plain sp-net">
