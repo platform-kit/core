@@ -438,7 +438,11 @@ const coachPlace = computed(() => coachingPlace({
 const coachingHere = computed(() => !!coachPlace.value)
 /* HOME AS AN OVERVIEW (content/community.md home.overview; openspec: community-home): the community's own address, signed in,
    opens on the member's cards, with the feed beneath once there is anything in it */
-const overviewHome = computed(() => COMMUNITY && !!community().home.overview && !!me.value && view.value === 'net' && (route.value || '').replace(/\/$/, '') === ROUTES.feed)
+const homeAddress = computed(() => COMMUNITY && !!community().home.overview && view.value === 'net' && (route.value || '').replace(/\/$/, '') === ROUTES.feed)
+/* …and for somebody who may not enter — a visitor, or an account outside network.access read — the same Home, each card in
+   the state it is in before anything is begun, with the way in at its head and the posts kept for members (James, 2026-11-25) */
+const gateHome = computed(() => homeAddress.value && (!me.value || (net.access.known && !net.access.read)))
+const overviewHome = computed(() => homeAddress.value && !!me.value && !gateHome.value)
 const notJoined = computed(() => channels.value.filter((c: any) => c.kind !== 'dm' && (!spaceId.value || c.space_id === spaceId.value) && !unread.value.some((r: any) => r.channel === c.id)))
 const roomsHere = computed(() => channels.value
   .filter((c: any) => c.kind !== 'dm' && (!spaceId.value || c.space_id === spaceId.value))
@@ -625,7 +629,7 @@ async function togglePinHome() {
    take the width beside the navigation, with no sidebar, the way a desk does. A member's coaching
    place is the same shape — a conversation in two panes, or their sessions — and takes the same room. */
 const WORK_VIEWS = ['support', 'tickets', 'clients', 'comments', 'social-comments', 'social-dms']
-const WIDE = computed(() => SOCIAL && (overviewHome.value || WORK_VIEWS.includes(view.value) || !!(placeOf(view.value) && placeOf(view.value).wide)))
+const WIDE = computed(() => SOCIAL && (overviewHome.value || gateHome.value || WORK_VIEWS.includes(view.value) || !!(placeOf(view.value) && placeOf(view.value).wide)))
 /* the navigation's Events is every space's: a space's own events are its tab, not that place */
 const navView = computed(() => (view.value === 'events' && !eventsAll.value ? 'space-events'
   /* without the network, Notifications is Mentions and Threads as tabs: either is that place */
@@ -733,7 +737,7 @@ const placeOf: any = (k: any) => REGISTRY.find((x) => x.key === k) || null
    keep its composer at the bottom; a page of results or lessons has no composer, and scrolling it inside a panel
    cost it the browser's own scrolling — the phone's bar never folds away, back does not return to where you were.
    Such a place lengthens the page instead, and the navigation stays beside it as it scrolls. */
-const FLOW = computed(() => overviewHome.value || !!(placeOf(view.value) && placeOf(view.value).scroll === 'page'))
+const FLOW = computed(() => overviewHome.value || gateHome.value || !!(placeOf(view.value) && placeOf(view.value).scroll === 'page'))
 const MINE = [...SITE_PLACE_KEYS, 'net', 'net-notes', 'index', 'support', 'clients', 'comments', 'social-comments', 'social-dms', 'tickets', 'my-tickets', 'coaching', 'coaching-chat', 'dms', 'unreads', 'threads', 'mentions', 'saved', 'drafts', 'discover']
 const inSpace = computed(() => !MINE.includes(view.value) && !(view.value === 'events' && eventsAll.value))
 const reportable = computed(() => !!space.value && space.value.kind !== 'staff' && !!channel.value && channel.value.kind !== 'dm')
@@ -1206,6 +1210,7 @@ vueWatch(() => open.messages.length, () => { if (open.id && view.value === 'chan
       <!-- /spaces with nothing named: the community's own front page rather than whichever space
            happened to be first, on whichever room happened to have the newest message -->
       <!-- THE NETWORK'S COLUMN, where the network and the spaces are one place -->
+      <div v-else-if="gateHome" class="sp-plain sp-home"><CommunityHome gate :coaching="coachingHere" /></div>
       <div v-else-if="overviewHome" class="sp-plain sp-home">
         <CommunityHome :coaching="coachingHere" :name="myName">
           <div class="sp-net-in"><NetColumn ref="netColumn" :shown="5" @open-message="openFromFeed" @open-event="(slug) => { eventsAll = true; goTo('events'); openEvent = slug }" /></div>

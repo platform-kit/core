@@ -798,6 +798,9 @@ guest-signin: Sign in
 ### main
 
 posts-kicker: Community
+posts-gate: Posts are for members.
+gate-member: Already a member?
+gate-signin: Sign in
 posts: Recent posts
 coaching-title: Coaching
 coaching-next: Your next session

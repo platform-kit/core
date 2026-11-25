@@ -19,7 +19,10 @@ import { supabase } from 'platformkit/lib/supabase.js'
 import { moduleOn } from 'platformkit/lib/modules.js'
 import { bookShelf } from 'platformkit/lib/content.js'
 import { settings } from 'platformkit/lib/spaces/settings.js'
-import { homeCards as SITE_CARDS } from '#site'
+import site, { homeCards as SITE_CARDS } from '#site'
+import { isSignedIn } from 'platformkit/lib/auth.js'
+import { products } from 'platformkit/lib/storefront.js'
+import { subscribe, checkout, money } from 'platformkit/lib/commerce.js'
 import HomeCoaching from './HomeCoaching.vue'
 import HomeReading from './HomeReading.vue'
 
@@ -28,6 +31,10 @@ const props = defineProps({
   coaching: { type: Boolean, default: false },
   /* the reader's name as the community shows it */
   name: { type: String, default: '' },
+  /* SOMEBODY WHO MAY NOT ENTER (SpacesPage gateHome): the same Home, every card as it is before anything is begun, the
+     community's tagline at its head with the way in — the price, Join, and Sign in for a member — and the posts kept for
+     members. The cards ask nothing of an account they cannot see. */
+  gate: { type: Boolean, default: false },
 })
 
 const W = computed(() => us('spaces').home.main)
@@ -61,10 +68,31 @@ const across = computed(() => { const n = small.value.filter((c) => state.value[
 /* where only two fit across (a narrower screen), an odd card out takes the whole row rather than leaving a hole beside it */
 const lastOdd = computed(() => { const r = small.value.filter((c) => state.value[c.key] === 'ready'); return r.length % 2 === 1 ? r[r.length - 1].key : '' })
 
+/* THE WAY IN, at the gate: the offer the site sells the community by (network.access.join), its price, Join — buying it
+   as the join card does — and Sign in for somebody who already is a member. Words: ## access in the network strings. */
+const A = computed(() => us('network').access.main)
+const joinSku = (site.network && site.network.access && site.network.access.join) || ''
+const offer = computed(() => (joinSku ? products.value.find((p: { sku: string }) => p.sku === joinSku) || null : null))
+const price = computed(() => {
+  const o = offer.value
+  if (!o || o.unit_amount == null) return ''
+  const p = money(o.unit_amount, o.currency).replace(/[.,]00(?=\D*$)/, '')
+  const key = o.interval === 'week' ? 'price-week' : o.interval === 'month' ? 'price-month' : 'price-once'
+  return String(A.value[key] || '').replace('{price}', p)
+})
+const busy = ref(false)
+async function join() {
+  if (!isSignedIn.value) { if ((window as any).DLauth) (window as any).DLauth.open({ intent: 'buy' }); return }
+  if (!offer.value) return
+  busy.value = true
+  try { if (offer.value.recurring) await subscribe(offer.value.sku); else await checkout([{ sku: offer.value.sku, quantity: 1 }]) } finally { busy.value = false }
+}
+function signIn() { if ((window as any).DLauth) (window as any).DLauth.open() }
+
 /* THE FEED BENEATH, once there is anything in it: one row asked for, never an empty state */
 const posts = ref(false)
 onMounted(async () => {
-  if (!supabase || !user.value) return
+  if (props.gate || !supabase || !user.value) return
   try {
     const { data } = await supabase.rpc('network_timeline', { p_before: null, p_limit: 1, p_all_spaces: true })
     posts.value = Array.isArray(data) && data.length > 0
@@ -77,8 +105,17 @@ onMounted(async () => {
     <header class="cmh-band">
       <img v-if="C.cover" class="cmh-cover" :src="C.cover" alt="" aria-hidden="true" />
       <div class="cmh-band-in">
-        <h1 class="cmh-hello">{{ greeting }}</h1>
-        <p v-if="C.tagline" class="cmh-tagline">{{ C.tagline }}</p>
+        <template v-if="gate">
+          <h1 class="cmh-hello">{{ C.tagline || C.name }}</h1>
+          <div class="cmh-door">
+            <button v-if="offer || !isSignedIn" type="button" class="cmh-join" :disabled="busy" @click="join">{{ A.join }}<span v-if="price"> · {{ price }}</span></button>
+            <span v-if="!isSignedIn" class="cmh-member">{{ W['gate-member'] }} <button type="button" class="cmh-signin" @click="signIn">{{ W['gate-signin'] }}</button></span>
+          </div>
+        </template>
+        <template v-else>
+          <h1 class="cmh-hello">{{ greeting }}</h1>
+          <p v-if="C.tagline" class="cmh-tagline">{{ C.tagline }}</p>
+        </template>
       </div>
     </header>
 
@@ -91,6 +128,12 @@ onMounted(async () => {
       <component :is="c.component" @state="(s: string) => (state[c.key] = s)" />
     </div>
 
+    <!-- at the gate, the posts are the members': the card says so, and draws none -->
+    <section v-if="gate" class="hc cmh-posts">
+      <header class="hc-head"><p class="hc-kicker">{{ W['posts-kicker'] }}</p></header>
+      <h2 class="hc-title">{{ W.posts }}</h2>
+      <p class="hc-line">{{ W['posts-gate'] }}</p>
+    </section>
     <!-- THE POSTS, a card like the others: its label and heading, the field to write in, then the posts as its rows -->
     <section v-if="posts" class="hc cmh-posts">
       <header class="hc-head"><p class="hc-kicker">{{ W['posts-kicker'] }}</p></header>
@@ -109,6 +152,13 @@ onMounted(async () => {
 .cmh-cover { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .18; pointer-events: none; }
 .cmh-band-in { position: relative; }
 .cmh-hello { max-width: none; text-wrap: pretty; margin: 0; font-family: var(--fd, inherit); font-size: var(--pl-title, 34px); line-height: 1.15; letter-spacing: -.02em; font-weight: 600; color: var(--ink); }
+.cmh-door { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 18px; }
+.cmh-join { font: inherit; font-size: 15px; font-weight: 700; padding: 11px 26px; border: 0; border-radius: 999px; background: var(--ink); color: var(--paper); cursor: pointer; }
+.cmh-join span { font-weight: 500; opacity: .85; }
+.cmh-join:hover { opacity: .9; }
+.cmh-join:disabled { opacity: .6; cursor: default; }
+.cmh-member { font-size: 14.5px; color: var(--ink3); }
+.cmh-signin { font: inherit; font-size: 14.5px; font-weight: 600; padding: 0; border: 0; background: none; color: var(--ink); text-decoration: underline; cursor: pointer; }
 .cmh-tagline { max-width: none; margin: 8px 0 0; font-size: 16.5px; line-height: 1.5; color: var(--ink3); }
 .cmh-grid { display: grid; grid-template-columns: repeat(var(--across, 2), minmax(0, 1fr)); gap: var(--pl-gap, 16px); }
 .cmh-cell { min-width: 0; display: flex; }
