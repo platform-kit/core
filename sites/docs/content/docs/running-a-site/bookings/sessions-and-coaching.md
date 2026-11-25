@@ -11,6 +11,7 @@ sources:
     packages/kit/src/lib/room.ts,
     packages/kit/theme/src/pages/CallPage.vue,
     packages/kit/supabase/functions/_shared/cal.ts,
+    packages/kit/supabase/functions/_shared/cal-webhook-event.ts,
     packages/kit/supabase/functions/_shared/sessions.ts,
     packages/kit/supabase/functions/_shared/booking.ts,
     packages/kit/supabase/functions/_shared/schedulers,
@@ -319,6 +320,8 @@ The sessions are also served to anything written for **cal.com's API** — the s
 Sales → **Bookings** lists every session — the site's own (tagged _This site_, with where it happens) and cal.com's mirrored — upcoming first, then past — with the attendee (and whether they have an account), the coach, the booking type, how long, the status (upcoming, ended, cancelled, rescheduled, no-show, or refused with why), whether a credit paid for it, the join link while it is upcoming, and the recording once the call has left one. It is an administrator's view of every coach's bookings; a coach's own Coaching tab still shows only the sessions they give.
 
 ## Store and access recordings
+
+cal.com sends a meeting's start and end (`MEETING_STARTED`, `MEETING_ENDED`) without the `payload` wrapper its other events carry, and timed by the meeting rather than by when the event was sent; the webhook reads both shapes (`_shared/cal-webhook-event.ts`), so a held call is recognised whichever way it arrives.
 
 When a Cal Video call ends and cal.com says its recording is ready, the site pulls the file into its own private storage at once — asking cal.com for a fresh link (the one in the webhook expires within the hour) and streaming the file into the `recordings` bucket under the booking, the transcript beside it — and remembers where it is. A pull that does not land yet (the recording still being made, a hiccup) is tried again every ten minutes for a day; the row says _pending_ meanwhile, and _failed_ with the reason after, where Sales → Bookings offers **Fetch again**. A call on Zoom or Meet leaves its recording with that provider, and the row shows nothing.
 

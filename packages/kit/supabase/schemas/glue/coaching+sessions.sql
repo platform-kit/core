@@ -25,6 +25,7 @@ begin
     from public.bookings
     where followup_sent_at is null and followup_at is not null and followup_at <= now()
       and provider_id is not null and followup_body is not null
+      and status in ('accepted', 'ended') and not no_show
     for update skip locked
   loop
     for who in

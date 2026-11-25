@@ -43,6 +43,11 @@ let overwritten = []
 for (const [scope, s] of Object.entries(S)) for (const [gk, keys] of Object.entries((s as any).groups as Record<string, Record<string, Record<string, any>>>)) for (const [k, fields] of Object.entries(keys)) for (const [f, v] of Object.entries(fields)) if (byScope[scope].groups[gk][k][f] !== v) overwritten.push(`${scope}.${gk}.${k}.${f}`)
 ok(`no word of the site's is overwritten by a default${overwritten.length ? ' — ' + overwritten.slice(0, 5).join(' ') : ''}`, overwritten.length === 0)
 const spacesRail = byScope.spaces.groups.rail.main
+const coachingRole = [{ scope: 'people', groups: { role: { provider: { work: 'Coaching' } } } }]
+const sessionsRail = mergeUi(coachingRole, theme.strings).find((e) => e.scope === 'spaces').groups.rail.main
+ok('the community sessions label does not follow the role\'s work name', sessionsRail.coaching === 'Sessions')
+const customRail = mergeUi([...coachingRole, { scope: 'spaces', groups: { rail: { main: { coaching: 'Appointments' } } } }], theme.strings).find((e) => e.scope === 'spaces').groups.rail.main
+ok('a site can still name its community sessions label', customRail.coaching === 'Appointments')
 ok('the Spaces rail names Social Comments and Social Messages separately',
   spacesRail['social-comments'] === 'Social Comments' && spacesRail['social-dms'] === 'Social Messages')
 ok('the Spaces rail names the Support Chat and Support Tickets destinations consistently',

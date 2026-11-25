@@ -37,6 +37,7 @@ import { judge, cancel as cancelOnCalApi } from '../_shared/cal.ts'
 import { pull } from '../_shared/recordings.ts'
 import { deliverSchedulingEvent } from '../_shared/scheduling-events.ts'
 import { appMark } from '../_shared/schedulers/cal.ts'
+import { calWebhookPayload, calWebhookTime, isFlatMeetingWebhook } from '../_shared/cal-webhook-event.ts'
 
 /* how old a signed event may be: cal.com sends at once and retries within minutes, so a day is generous,
    and an event replayed after it is refused rather than applied again */
@@ -97,7 +98,7 @@ function attendee(p: any) {
   return { email: a.email ?? p.responses?.email?.value ?? null, name: a.name ?? p.responses?.name?.value ?? null }
 }
 function organizer(p: any) {
-  const o = p.organizer ?? p.booking?.user ?? {}
+  const o = p.organizer ?? p.booking?.user ?? p.user ?? {}
   return { email: o.email ?? null, name: o.name ?? null }
 }
 const lower = (e: unknown) => (typeof e === 'string' && e ? e.toLowerCase() : null)
@@ -118,7 +119,7 @@ function noShowOf(p: any): boolean | null {
 }
 
 async function handle(evt: any) {
-  const p = evt.payload ?? {}
+  const p = calWebhookPayload(evt)
   const uid = String(p.uid ?? p.bookingUid ?? p.booking?.uid ?? '')
   if (!uid) return
   const who = attendee(p)
@@ -188,12 +189,27 @@ async function handle(evt: any) {
     case 'MEETING_STARTED':
       await patch({ started_at: p.startTime ?? base.updated_at }, 'accepted'); break
     case 'MEETING_ENDED': {
-      await upsert({ status: 'ended' })
+      if (isFlatMeetingWebhook(evt)) {
+        const { data: existing, error } = await admin.from('bookings').select('status').eq('uid', uid).maybeSingle()
+        if (error) throw error
+        if (existing) {
+          const { data: ended, error: updateError } = await admin.from('bookings')
+            .update({ status: 'ended', updated_at: base.updated_at }).eq('uid', uid)
+            .in('status', ['pending', 'accepted', 'ended']).select('uid').maybeSingle()
+          if (updateError) throw updateError
+          if (!ended) break
+        } else {
+          const { error: insertError } = await admin.from('bookings').insert({ ...base, status: 'ended' })
+          if (insertError) throw insertError
+        }
+      } else {
+        await upsert({ status: 'ended' })
+      }
       /* the follow-up, once: a retry of this event neither reschedules nor resends */
       const line = followupLine()
       if (line) await admin.from('bookings')
         .update({ followup_at: new Date(Date.now() + FOLLOWUP_MS).toISOString(), followup_body: line })
-        .eq('uid', uid).is('followup_at', null).is('followup_sent_at', null)
+        .eq('uid', uid).eq('status', 'ended').is('followup_at', null).is('followup_sent_at', null)
       break
     }
     case 'BOOKING_NO_SHOW_UPDATED': {
@@ -234,9 +250,11 @@ Deno.serve(async (req: any) => {
   if (!(await verify(raw, req.headers.get('x-cal-signature-256')))) return json({ error: 'bad signature' }, 401)
   let evt: any
   try { evt = JSON.parse(raw) } catch { return json({ error: 'bad json' }, 400) }
+  if (!evt || typeof evt !== 'object' || Array.isArray(evt)) return json({ error: 'bad event' }, 400)
   /* signed but stale: cal.com dates every event it sends, under the signature, so a captured one replayed
      later carries its old date and is refused */
-  const at = Date.parse(evt?.createdAt ?? '')
+  const at = calWebhookTime(evt)
+  if (isFlatMeetingWebhook(evt) && !Number.isFinite(at)) return json({ error: 'invalid meeting time' }, 400)
   if (Number.isFinite(at) && Date.now() - at > TOLERANCE_MS) return json({ error: 'stale event' }, 400)
   try { await handle(evt) } catch (e) { console.error('cal-webhook', e); return json({ error: 'failed' }, 500) }
   return json({ ok: true })
