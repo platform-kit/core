@@ -121,7 +121,6 @@ onMounted(async () => {
 .cmh-feed { margin: 4px -22px -22px; }
 .cmh-feed :deep(.sp-net-in), .cmh-feed :deep(.fd-main) { background: transparent; border: 0; min-height: 0; }
 .cmh-feed :deep(.nc) { padding: 4px 22px 16px; border-bottom: 1px solid var(--hair); }
-.cmh-feed :deep(.nc-line) { background: var(--paper); }
 .cmh-feed :deep(.np) { padding-left: calc(22px + (var(--np-depth, 0) * 28px)); padding-right: 22px; }
 .cmh-feed :deep(.np-row) { padding-left: 0; padding-right: 0; }
 .cmh-feed :deep(.fd-list > :last-child), .cmh-feed :deep(.np:last-child) { border-bottom: 0; border-radius: 0 0 var(--pl-r, 16px) var(--pl-r, 16px); }

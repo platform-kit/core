@@ -124,11 +124,11 @@ failed: That didn't post. Try again.
 
 label: Who can see this
 everyone: Everyone
-here: People here
+here: Community Members Only
 space: {space} members
 everyone-note: Anyone signed in here, and anyone who visits your page while it's public.
 everyone-federated: Anyone on Bluesky can see this. If you delete it, copies other apps already made may stay.
-here-note: Only people signed in to this site.
+here-note: Only members of this community.
 space-note: Only members of this space.
 narrowed: A reply can't reach more people than the post it answers.
 

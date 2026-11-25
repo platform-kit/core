@@ -35,10 +35,15 @@ const audience = ref(defaultAudience(props.replyTo))
 const busy = ref(false)
 const err = ref('')
 const box = ref<any>(null)
-/* FOLDED TO ONE LINE until it is wanted: the face and "Write something…". A reply, or a composer
-   opened in the post window, starts open. It folds back when it is left with nothing in it. */
+/* FOLDED TO ONE LINE until it is wanted. It is ONE field throughout (James, 2026-11-25): the white field a reader sees is
+   the field they type in — pressing it grows it, it does not swap it for a different-looking one — and what writing needs
+   besides (who sees it, a picture, Post) opens beneath it. A reply, or a composer opened in the post window, starts open.
+   It folds back when it is left with nothing in it. */
 const opened = ref(!!(props.replyTo || props.autofocus))
 async function unfold() { opened.value = true; await nextTick(); box.value && box.value.focus() }
+function onFocus() { opened.value = true }
+/* folded again, it gives back the height it grew to */
+watch(opened, (on) => { if (!on && box.value) box.value.style.height = '' })
 function maybeFold(e: any) {
   if (props.replyTo || props.autofocus) return
   const next = e.relatedTarget
@@ -106,19 +111,16 @@ function onKey(e: any) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.
 </script>
 
 <template>
-  <!-- FOLDED: one line, the way into it -->
-  <div v-if="!opened" class="nc nc-folded">
-    <!-- a field, with no face of the writer beside it (James, 2026-11-25): the reader knows who they are -->
-    <button type="button" class="nc-line" @click="unfold">
-      <span>{{ C.write }}</span>
-    </button>
-  </div>
-  <form v-else class="nc nc-open" :class="{ 'nc-reply': replyTo }" @submit.prevent="send" @focusout="maybeFold">
+  <!-- ONE FIELD, folded or open: no face of the writer beside it (James, 2026-11-25) — the reader knows who they are -->
+  <form class="nc" :class="{ 'nc-on': opened, 'nc-reply': replyTo }" @submit.prevent="send" @focusout="maybeFold">
     <div class="nc-row">
       <div class="nc-main">
-        <textarea ref="box" v-model="text" class="nc-text" rows="2" :maxlength="MAX_TEXT + 500"
-          :placeholder="replyTo ? C['reply-placeholder'] : C.placeholder" :aria-label="replyTo ? C['reply-placeholder'] : C.placeholder"
-          @input="grow" @keydown="onKey"></textarea>
+        <textarea ref="box" v-model="text" class="nc-text" rows="1" :maxlength="MAX_TEXT + 500"
+          :placeholder="replyTo ? C['reply-placeholder'] : C.write" :aria-label="replyTo ? C['reply-placeholder'] : C.write"
+          @focus="onFocus" @input="grow" @keydown="onKey"></textarea>
+
+        <!-- WHAT WRITING NEEDS BESIDES, opening beneath the field rather than appearing: out of reach while folded -->
+        <div class="nc-more" :inert="!opened"><div class="nc-more-in">
 
         <ul v-if="files.length" class="nc-pics">
           <li v-for="(f, i) in files" :key="f.url">
@@ -166,6 +168,7 @@ function onKey(e: any) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.
           <em v-if="err" class="nc-err">{{ err }}</em>
           <button type="submit" class="nc-go" :disabled="!canPost">{{ busy ? C.posting : replyTo ? C.reply : C.post }}</button>
         </div>
+        </div></div>
       </div>
     </div>
   </form>
@@ -173,21 +176,27 @@ function onKey(e: any) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.
 
 <style scoped>
 .nc { padding: 16px 18px 12px; border-bottom: 1px solid var(--hair) }
-.nc-folded { padding: 12px 16px }
-.nc-line { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; box-sizing: border-box; padding: 6px 18px; border: 1px solid var(--hair); border-radius: 999px;
-  background: color-mix(in srgb, var(--ink) 2.5%, var(--paper)); font: inherit; font-size: 15px; color: var(--ink3); text-align: left; cursor: text;
-  transition: border-color .2s cubic-bezier(.2, .8, .2, 1), background .2s cubic-bezier(.2, .8, .2, 1) }
-.nc-line:hover { border-color: color-mix(in srgb, var(--ink) 22%, transparent); background: var(--paper) }
-.nc-line:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
-.nc-open:not(.nc-reply) { animation: nc-open .3s cubic-bezier(.2, .8, .2, 1) }
-@keyframes nc-open { from { opacity: .4; transform: translateY(-3px) } }
-@media (prefers-reduced-motion: reduce) { .nc-open { animation: none } .nc-line { transition: none } }
+/* THE FIELD, the same folded and open: white, its edge, its corner and its words' size; open, it is taller */
+.nc-text { display: block; box-sizing: border-box; width: 100%; min-height: 48px; resize: none; margin: 0; padding: 12px 18px;
+  border: 1px solid var(--hair); border-radius: 24px; background: var(--paper); font: inherit; font-size: 16px; line-height: 1.45; color: var(--ink);
+  transition: min-height .28s cubic-bezier(.2, .8, .2, 1), border-color .2s cubic-bezier(.2, .8, .2, 1) }
+.nc-text::placeholder { color: var(--ink3) }
+.nc-text:hover { border-color: color-mix(in srgb, var(--ink) 22%, transparent) }
+.nc-text:focus { outline: none; border-color: color-mix(in srgb, var(--ink) 30%, transparent) }
+.nc.nc-on .nc-text { min-height: 96px }
+/* what opens beneath it: the rows grow from nothing as the controls fade in, so nothing jumps into place */
+.nc-more { display: grid; grid-template-rows: 0fr; opacity: 0;
+  transition: grid-template-rows .28s cubic-bezier(.2, .8, .2, 1), opacity .2s ease }
+.nc-more-in { min-height: 0; overflow: hidden }
+.nc-more-in > :first-child { margin-top: 10px }
+.nc.nc-on .nc-more { grid-template-rows: 1fr; opacity: 1; transition: grid-template-rows .28s cubic-bezier(.2, .8, .2, 1), opacity .24s ease .06s }
+/* open, the audience menu may stand outside it */
+.nc.nc-on .nc-more-in { overflow: visible }
+@media (prefers-reduced-motion: reduce) { .nc-text, .nc-more, .nc.nc-on .nc-more { transition: none } }
 .nc-reply { padding-top: 12px }
 .nc-row { display: flex; gap: 10px; align-items: flex-start }
 .nc-face { flex: none }
 .nc-main { flex: 1 1 auto; min-width: 0 }
-.nc-text { display: block; box-sizing: border-box; width: 100%; min-height: 52px; resize: none; border: 0; padding: 8px 0;
-  background: transparent; font: inherit; font-size: 19px; line-height: 1.45; color: var(--ink) }
 .nc-reply .nc-text { font-size: 15.5px; min-height: 40px }
 .nc-text:focus { outline: none }
 .nc-text::placeholder { color: var(--ink3) }
