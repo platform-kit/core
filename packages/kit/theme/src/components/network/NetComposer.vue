@@ -15,10 +15,8 @@ import type { PropType } from 'vue'
 import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import { us } from 'platformkit/lib/content.js'
 import site from '#site'
-import { myFace, user } from 'platformkit/lib/auth.js'
-import { net, publish, loadSpaces, loadPeople } from 'platformkit/lib/network/api.js'
+import { net, publish, loadSpaces } from 'platformkit/lib/network/api.js'
 import { answerAudiences, defaultAudience, MAX_TEXT, MEDIA, refuseMedia, kindOfType } from 'platformkit/lib/network/model.js'
-import SpaceAvatar from '../spaces/SpaceAvatar.vue'
 
 const props = defineProps({
   replyTo: { type: Object as PropType<any>, default: null },
@@ -51,7 +49,6 @@ const picker = ref<any>(null)
 
 onMounted(async () => {
   if (!props.replyTo) loadSpaces().catch(() => {})
-  if (user.value) loadPeople([user.value.id]).catch(() => {})
   if (props.autofocus) { await nextTick(); box.value && box.value.focus() }
 })
 
@@ -106,20 +103,18 @@ async function send() {
   } catch (e) { err.value = C.value.failed } finally { busy.value = false }
 }
 function onKey(e: any) { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); send() } }
-const me = computed(() => (user.value ? net.people[user.value.id] || myFace.value || null : null))
 </script>
 
 <template>
   <!-- FOLDED: one line, the way into it -->
   <div v-if="!opened" class="nc nc-folded">
+    <!-- a field, with no face of the writer beside it (James, 2026-11-25): the reader knows who they are -->
     <button type="button" class="nc-line" @click="unfold">
-      <SpaceAvatar class="nc-face" :person="me" :size="36" />
       <span>{{ C.write }}</span>
     </button>
   </div>
   <form v-else class="nc nc-open" :class="{ 'nc-reply': replyTo }" @submit.prevent="send" @focusout="maybeFold">
     <div class="nc-row">
-      <SpaceAvatar class="nc-face" :person="me" :size="replyTo ? 32 : 40" />
       <div class="nc-main">
         <textarea ref="box" v-model="text" class="nc-text" rows="2" :maxlength="MAX_TEXT + 500"
           :placeholder="replyTo ? C['reply-placeholder'] : C.placeholder" :aria-label="replyTo ? C['reply-placeholder'] : C.placeholder"
@@ -179,7 +174,7 @@ const me = computed(() => (user.value ? net.people[user.value.id] || myFace.valu
 <style scoped>
 .nc { padding: 16px 18px 12px; border-bottom: 1px solid var(--hair) }
 .nc-folded { padding: 12px 16px }
-.nc-line { display: flex; align-items: center; gap: 12px; width: 100%; padding: 6px 8px 6px 6px; border: 1px solid var(--hair); border-radius: 999px;
+.nc-line { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; box-sizing: border-box; padding: 6px 18px; border: 1px solid var(--hair); border-radius: 999px;
   background: color-mix(in srgb, var(--ink) 2.5%, var(--paper)); font: inherit; font-size: 15px; color: var(--ink3); text-align: left; cursor: text;
   transition: border-color .2s cubic-bezier(.2, .8, .2, 1), background .2s cubic-bezier(.2, .8, .2, 1) }
 .nc-line:hover { border-color: color-mix(in srgb, var(--ink) 22%, transparent); background: var(--paper) }

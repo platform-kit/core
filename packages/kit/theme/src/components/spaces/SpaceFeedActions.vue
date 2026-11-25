@@ -9,8 +9,6 @@ import type { PropType } from 'vue'
  */
 import { computed, ref } from 'vue'
 import { us } from 'platformkit/lib/content.js'
-import { myFace } from 'platformkit/lib/auth.js'
-import SpaceAvatar from './SpaceAvatar.vue'
 
 const LIKE = '❤️'
 const props = defineProps({
@@ -59,7 +57,6 @@ async function share() {
     <span class="sfa-b sfa-gap" aria-hidden="true"></span>
   </div>
   <button v-else-if="mayWrite" type="button" class="sfa-write" @click="emit('comment')">
-    <SpaceAvatar :person="myFace || null" :size="30" />
     <span class="sfa-ph">{{ W['feed-write-comment'] }}</span>
   </button>
 </template>
@@ -80,7 +77,6 @@ async function share() {
 .sfa-gap { visibility: hidden; pointer-events: none }
 .sfa-indent { margin-left: 38px }
 .sfa-write { display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 10px; padding: 0; border: 0; background: transparent; cursor: text; font: inherit }
-.sfa-write > :first-child { flex: none; width: 30px; height: 30px }
 .sfa-write span.sfa-ph { flex: 1; text-align: left; padding: 9px 14px; border-radius: 999px; background: color-mix(in srgb, var(--ink) 5%, var(--paper));
   font-size: 14px; color: var(--ink3) }
 .sfa-write:hover span.sfa-ph { background: color-mix(in srgb, var(--ink) 8%, var(--paper)) }

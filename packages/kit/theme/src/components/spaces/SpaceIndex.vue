@@ -186,7 +186,6 @@ const shown = computed(() => {
                the strongest invitation this page can make; a pill labelled "Start something" at the
                right of a heading is the weakest, and reads as a control rather than an offer. -->
           <button v-if="home.compose && !guest" type="button" class="si-compose" @click="emit('start')">
-            <SpaceAvatar :name="myName || P.you" :person="myPerson" :size="36" />
             <span>{{ W.compose }}</span>
             <SpaceIcon name="pencil" :size="15" />
           </button>
@@ -369,7 +368,7 @@ section.si-feed { margin: 0; padding: 0; border: 0 }
 .si-link:hover { text-decoration: underline; text-underline-offset: 3px }
 .si-quiet { color: var(--ink2); font-size: 14px; margin: 0 }
 
-.si-compose { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px;
+.si-compose { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px;
   width: 100%; text-align: left; font: inherit; font-size: 15px; color: var(--ink3);
   background: var(--card); border: 1px solid var(--hair); border-radius: 16px; padding: 13px 17px;
   margin: 0 0 22px; cursor: pointer;

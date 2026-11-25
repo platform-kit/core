@@ -114,7 +114,8 @@ onMounted(async () => {
 .cmh-cell { min-width: 0; display: flex; }
 .cmh-cell > :deep(*) { flex: 1; }
 .cmh-full { margin-top: var(--pl-gap, 16px); }
-.cmh-posts { margin-top: var(--pl-gap, 16px); }
+/* named under .cmh: the cards' shared rule (.cmh .hc, below) sets margin: 0 and would otherwise win */
+.cmh > .cmh-posts { margin-top: var(--pl-gap, 16px); }
 /* the feed inside the card: no ground or frame of its own, the field to write in on the paper so it reads as a field, and the
    posts as the card's rows — their edges on the card's, a hairline between them, the last without one */
 .cmh-feed { margin: 4px -22px -22px; }
