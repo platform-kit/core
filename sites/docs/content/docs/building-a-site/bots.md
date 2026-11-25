@@ -53,7 +53,7 @@ sources:
     packages/kit/modules/social-publishing/tests/social-automation-admin.test.mts,
     packages/kit/modules/social-publishing/ui/admin,
   ]
-reviewed: 2026-11-21
+reviewed: 2026-11-25
 ---
 
 A bot here is not a chat window bolted to a model. It is an **agent**: it can look things up, call

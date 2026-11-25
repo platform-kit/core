@@ -69,8 +69,14 @@ const NAV_CTA = ALL_LINKS.find((l: any) => l.cta) || null
 const CTA = NAV_CTA || SITE_CTA || (moduleOn('instrument') ? { href: QUIZ_PATH, hrefIn: APP_BASE, key: 'cta', keyIn: 'cta-in', prefix: ROUTES.diagnostics } : null)
 const ctaHref = computed(() => CTA && ((isSignedIn.value && CTA.hrefIn) || CTA.href))
 /* a site's own item says its label; one of the theme's names a string key */
-const ctaLabel = computed(() => CTA && (CTA.label || t(isSignedIn.value && CTA.keyIn ? CTA.keyIn : CTA.key)))
-const ctaOn = computed(() => !!CTA && props.current.startsWith(CTA.prefix || CTA.href))
+const ctaLabel = computed(() => {
+  if (!CTA) return ''
+  /* signed in, the words for somebody signed in where the item gives them; otherwise its own */
+  if (isSignedIn.value && (CTA.labelIn || CTA.keyIn)) return CTA.labelIn || t(CTA.keyIn)
+  return CTA.label || t(CTA.key)
+})
+/* lit on the page it leads to: a theme default names the prefix it owns; a site's item lights on where it goes now */
+const ctaOn = computed(() => !!CTA && props.current.startsWith(typeof CTA.prefix === 'string' ? CTA.prefix : ctaHref.value))
 
 /* the bag: a button in the header, with a count only when there is one */
 const B = us('store').cart.ui

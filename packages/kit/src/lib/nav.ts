@@ -70,6 +70,11 @@ const item = (raw: any) => {
     prefix: !!raw.prefix,
     see: seeOf(raw.see) || undefined,
     cta: !!raw.cta,
+    /* THE CALL TO ACTION SIGNED IN: where it goes and what it says for somebody signed in, where that is not the same as for
+       a visitor (a quiz for a visitor, the community for a member). Read only on the call to action. */
+    ...(raw.cta && raw.hrefIn ? { hrefIn: String(raw.hrefIn).trim() } : {}),
+    ...(raw.cta && raw.labelIn != null ? { labelIn: String(raw.labelIn) } : {}),
+    ...(raw.cta && raw.keyIn != null ? { keyIn: String(raw.keyIn) } : {}),
   }
 }
 

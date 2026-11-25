@@ -69,7 +69,8 @@ const isOwn = (r: { own: any; href: any }) => !!r.own || (!!r.href && !known(r.h
 
 /* the word the header itself would show for an inherited item: its own label, else the key
    through the nav strings — never the bare key, which is what the editor must not have to know */
-const word = (l: { label: any; key: string; href: any }) => l.label || t('nav.' + l.key) || l.key || l.href
+/* a link's words are a nav string; the button's are the site's own key (cta, as SiteLayout reads it) */
+const word = (l: { label: any; key: string; href: any; cta?: boolean }) => l.label || t(l.cta ? l.key : 'nav.' + l.key) || l.key || l.href
 function touch() { emit('update:modelValue', [...rows.value]) }
 function add() {
   rows.value = [...rows.value, { label: '', href: links.value.length ? links.value[0].value : '/', prefix: false }]
@@ -134,6 +135,19 @@ function setCta(r: any, on: any) { for (const x of rows.value) if (x !== r) dele
           </label>
 
           <button type="button" class="ui-navx" :aria-label="W.remove" @click="drop(i)">×</button>
+
+          <!-- THE BUTTON FOR SOMEBODY SIGNED IN, where it differs: what it says and where it goes then (nav.ts hrefIn, labelIn) -->
+          <div v-if="r.cta" class="ui-navin">
+            <span class="ui-navinsay">{{ W['signed-in'] }}</span>
+            <label class="ui-navcell">
+              <span class="ui-navlab">{{ W.says }}</span>
+              <input v-model="r.labelIn" type="text" class="ui-input" :placeholder="r.keyIn ? t(r.keyIn) : (r.label || word(r))" @input="touch" />
+            </label>
+            <label class="ui-navcell">
+              <span class="ui-navlab">{{ W.where }}</span>
+              <input v-model="r.hrefIn" type="text" class="ui-input" :placeholder="r.href" @input="touch" />
+            </label>
+          </div>
         </div>
       </template>
     </draggable>
@@ -150,7 +164,7 @@ function setCta(r: any, on: any) { for (const x of rows.value) if (x !== r) dele
 .ui-navghosts li { font-size: 13px; color: var(--ink3); border: 1px solid var(--hair); border-radius: 999px; padding: 3px 11px }
 .ui-navnone { font-style: italic }
 .ui-navrows { display: flex; flex-direction: column; gap: 8px }
-.ui-navrow { display: flex; align-items: flex-end; gap: 10px; padding: 10px; border: 1px solid var(--hair); border-radius: 12px; background: var(--wash) }
+.ui-navrow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; padding: 10px; border: 1px solid var(--hair); border-radius: 12px; background: var(--wash) }
 .ui-navgrip { cursor: grab; color: var(--ink3); padding: 6px 2px; align-self: center; fill: currentColor }
 .ui-navgrip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px }
 .ui-navcell { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0 }
@@ -161,6 +175,8 @@ function setCta(r: any, on: any) { for (const x of rows.value) if (x !== r) dele
 .ui-navx { border: 0; background: none; color: var(--ink3); font-size: 20px; line-height: 1; cursor: pointer; padding: 0 4px 6px }
 .ui-navx:hover { color: var(--ink) }
 .ui-navadd { align-self: flex-start }
+.ui-navin { flex: 1 1 100%; display: flex; align-items: flex-end; gap: 10px; padding: 10px 0 0 26px; border-top: 1px dashed var(--hair) }
+.ui-navinsay { flex: 0 0 auto; padding-bottom: 9px; font-size: 13px; color: var(--ink2) }
 @media (max-width: 760px) {
   .ui-navrow { flex-wrap: wrap; align-items: stretch }
   .ui-navcell { flex: 1 1 100% }

@@ -34,9 +34,9 @@ The links across the top are the **Header** panel of Site settings — a row per
 | **Icon**          | the same glyph palette the landing sections use, so one vocabulary serves the whole site                                                                                                                                                                                                                     |
 | **Who sees it**   | a rung of the class ladder, and this site's own membership tiers **by their real names** — "Group Coaching and above" rather than `tier:tier-2`                                                                                                                                                              |
 
-**Button** marks the one item drawn as the header's button; turning it on for another turns it off for the first, because only one may be.
+**Button** marks the one item drawn as the header's button; turning it on for another turns it off for the first, because only one may be. The button can say something else and go somewhere else for someone signed in: **For someone signed in** sets its words and where it goes then — a quiz for a visitor, say, and the community for a member. Left empty, it is the same for everyone.
 
-Underneath, it is still a `nav` list in `content/site.md` — a **label**, an **href**, an optional **icon**, `prefix` (highlights for every path beneath it), `see` and `cta` — so a site may write it by hand, and in cloud mode it saves through the pipe like any other record.
+Underneath, it is still a `nav` list in `content/site.md` — a **label**, an **href**, an optional **icon**, `prefix` (highlights for every path beneath it), `see` and `cta`, and on the button `labelIn` (or `keyIn`, a strings key) and `hrefIn` for someone signed in — so a site may write it by hand, and in cloud mode it saves through the pipe like any other record.
 
 `see` is a rung on the class ladder rather than a rule anybody types: signed out only (`guest`, which is what a "Sign in" item wants), `authenticated`, `paid`, `subscribed`, `tier:<slug>`, or `staff`. A rung is a **minimum**, so an item for `paid` is also shown to a subscriber. An item naming none is shown to everyone, and an item pointing at a route a switched-off module owns is never drawn.
 

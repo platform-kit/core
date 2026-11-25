@@ -99,6 +99,10 @@ eq('a site loses one too', hrefs(navLinks({ content: [{ label: 'Shop', href: '/s
 /* at most one call to action, the first that says so */
 const two = [{ label: 'A', href: '/a', cta: true }, { label: 'B', href: '/b', cta: true }]
 eq('one call to action', navLinks({ content: two }).map((l: any) => l.cta).join(','), 'true,false')
+/* the call to action for somebody signed in: its own link and words, read on the call to action alone */
+const inOut = navLinks({ content: [{ key: 'cta', href: '/app/quiz', keyIn: 'cta-in', hrefIn: '/community', cta: true }, { label: 'C', href: '/c', hrefIn: '/x', labelIn: 'X' }] })
+eq('a call to action keeps where it goes signed in, and its words then', [inOut[0].hrefIn, inOut[0].keyIn].join(), '/community,cta-in')
+eq('a plain link carries no signed-in link or words', [inOut[1].hrefIn, inOut[1].labelIn].join(), ',')
 
 /* which layer it came from, for an editor that would rather show what is there than an empty box */
 eq('source: theme', navSource({}), 'theme')

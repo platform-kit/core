@@ -478,6 +478,7 @@ icon: Icon
 who: Who sees it
 cta: Button
 cta-help: draw this one as the button at the end of the header; only one may be
+signed-in: For someone signed in
 add: Add a link
 remove: Remove this link
 reorder: Drag to reorder

@@ -995,6 +995,10 @@ export async function kitConfig(): Promise<any> {
           prefix: s.boolean().default(false),
           see: s.string().optional(),
           cta: s.boolean().default(false),
+          /* the call to action for somebody signed in, where it differs: where it goes, and its words (a label, or a key) */
+          hrefIn: s.string().optional(),
+          labelIn: s.string().optional(),
+          keyIn: s.string().optional(),
         })).optional(),
         /* THE FOOT OF EVERY PAGE. It is chrome, like the header: the same on the store, an
            article, the reader and the landing, so it is the SITE's and not a page's — a footer a
