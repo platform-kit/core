@@ -799,6 +799,7 @@ guest-signin: Sign in
 
 posts-kicker: Community
 posts-gate: Posts are for members.
+posts-gate-signin: Sign in to see them.
 gate-member: Already a member?
 gate-signin: Sign in
 posts: Recent posts

@@ -132,7 +132,7 @@ onMounted(async () => {
     <section v-if="gate" class="hc cmh-posts">
       <header class="hc-head"><p class="hc-kicker">{{ W['posts-kicker'] }}</p></header>
       <h2 class="hc-title">{{ W.posts }}</h2>
-      <p class="hc-line">{{ W['posts-gate'] }}</p>
+      <p class="hc-line">{{ W['posts-gate'] }}<template v-if="!isSignedIn && W['posts-gate-signin']">{{ ' ' }}<button type="button" class="cmh-signin" @click="signIn">{{ W['posts-gate-signin'] }}</button></template></p>
     </section>
     <!-- THE POSTS, a card like the others: its label and heading, the field to write in, then the posts as its rows -->
     <section v-if="posts" class="hc cmh-posts">
