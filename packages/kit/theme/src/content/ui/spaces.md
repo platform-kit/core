@@ -46,7 +46,7 @@ social-comments: Social Comments
 social-dms: Social Messages
 tickets: Support Tickets
 my-tickets: Support Tickets
-coaching: {work}
+coaching: Sessions
 huddles: Huddles
 drafts: Drafts
 mentions: Mentions
@@ -797,6 +797,7 @@ guest-signin: Sign in
 
 ### main
 
+posts-kicker: Community
 posts: Recent posts
 coaching-title: Coaching
 coaching-next: Your next session

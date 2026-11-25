@@ -91,9 +91,11 @@ onMounted(async () => {
       <component :is="c.component" @state="(s: string) => (state[c.key] = s)" />
     </div>
 
-    <section v-if="posts" class="cmh-posts">
-      <h2 class="cmh-posts-title">{{ W.posts }}</h2>
-      <slot />
+    <!-- THE POSTS, a card like the others: its label and heading, the field to write in, then the posts as its rows -->
+    <section v-if="posts" class="hc cmh-posts">
+      <header class="hc-head"><p class="hc-kicker">{{ W['posts-kicker'] }}</p></header>
+      <h2 class="hc-title">{{ W.posts }}</h2>
+      <div class="cmh-feed"><slot /></div>
     </section>
   </div>
 </template>
@@ -112,8 +114,16 @@ onMounted(async () => {
 .cmh-cell { min-width: 0; display: flex; }
 .cmh-cell > :deep(*) { flex: 1; }
 .cmh-full { margin-top: var(--pl-gap, 16px); }
-.cmh-posts { margin-top: 40px; }
-.cmh-posts-title { max-width: none; margin: 0 0 14px; font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--ink); }
+.cmh-posts { margin-top: var(--pl-gap, 16px); }
+/* the feed inside the card: no ground or frame of its own, the field to write in on the paper so it reads as a field, and the
+   posts as the card's rows — their edges on the card's, a hairline between them, the last without one */
+.cmh-feed { margin: 4px -22px -22px; }
+.cmh-feed :deep(.sp-net-in), .cmh-feed :deep(.fd-main) { background: transparent; border: 0; min-height: 0; }
+.cmh-feed :deep(.nc) { padding: 4px 22px 16px; border-bottom: 1px solid var(--hair); }
+.cmh-feed :deep(.nc-line) { background: var(--paper); }
+.cmh-feed :deep(.np) { padding-left: calc(22px + (var(--np-depth, 0) * 28px)); padding-right: 22px; }
+.cmh-feed :deep(.np-row) { padding-left: 0; padding-right: 0; }
+.cmh-feed :deep(.fd-list > :last-child), .cmh-feed :deep(.np:last-child) { border-bottom: 0; border-radius: 0 0 var(--pl-r, 16px) var(--pl-r, 16px); }
 @media (max-width: 1100px) { .cmh-grid { grid-template-columns: repeat(min(var(--across, 2), 2), minmax(0, 1fr)); } .cmh-odd { grid-column: 1 / -1; } }
 @media (max-width: 760px) {
   .cmh-band { margin-bottom: 22px; }

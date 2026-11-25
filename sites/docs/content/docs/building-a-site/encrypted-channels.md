@@ -22,7 +22,7 @@ sources:
     packages/kit/modules/space-encryption/ui/SpaceSealSetup.vue,
     packages/kit/theme/src/content/ui/spaces.md,
   ]
-reviewed: 2026-11-21
+reviewed: 2026-11-25
 ---
 
 A channel can be **end-to-end encrypted**: the ciphertext is the only copy the site has, and every
