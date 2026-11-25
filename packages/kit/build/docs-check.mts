@@ -8,7 +8,8 @@
  *      changed while the page has not is stale, and stale fails: at a commit (the staged files), at the end
  *      of an agent's turn (the working tree), in CI (the commit against its parent). A page is current again
  *      when it is edited in the same change — or, when it was re-read and found still right, when its
- *      `reviewed:` date is set, a deliberate act that shows in the diff.
+ *      `reviewed:` date is set, a deliberate act that shows in the diff — or when the change's own message
+ *      says why no page needed writing ("Docs: none — <reason>"), the reason kept in the history.
  *   2. EXACTNESS. The reference pages state facts the code also states, and those are compared outright:
  *      every environment variable the kit reads is on the environment page and every one listed is read;
  *      every CLI command is a case in bin/platformkit.mjs and vice versa; every module the kit knows is on
@@ -133,7 +134,26 @@ if (touched) {
   else if (hits.length) console.log(`${rel} is described by:\n  ${hits.join('\n  ')}\nUpdate them in this change, or set their reviewed: date having read them.`)
   process.exit(0)
 }
-if (changed) {
+/*
+ * A STALE PAGE MAY BE ANSWERED BY THE MESSAGE. A source a page names can change without the page becoming untrue — a
+ * stylesheet's padding under a page about what the community holds — and the only way past was to move the page's
+ * reviewed: date unread, which empties the date of its meaning: it says a person re-read the page, and nobody had. The
+ * commit says so instead, once, with its reason: "Docs: none — <reason>". The date then moves only when somebody did
+ * re-read the page, and the reason stays with the commit, where the next person looking will find it.
+ *
+ * The message arrives only at commit-msg, so the pre-commit run (--no-message-rule) leaves staleness to it. A range (CI)
+ * reads each commit apart: a page is answered only when every commit in the range that touched what it describes says
+ * why, so one commit's reason does not excuse another's change.
+ */
+const REASON = /^Docs:\s*none\s*[—–-]+\s*\S/im
+const answered = (sources: string[]) => {
+  const r = after('--range')
+  if (!r) return REASON.test(MESSAGE)
+  const commits = git(`log --format=%H ${r}`)
+  const touching = commits.filter((c) => git(`diff-tree --no-commit-id --name-only -r ${c}`).some((f2) => sources.includes(f2)))
+  return touching.length > 0 && touching.every((c) => { try { return REASON.test(execSync(`git log -1 --format=%B ${c}`, { cwd: ROOT, encoding: 'utf8' })) } catch { return false } })
+}
+if (changed && !flag('--no-message-rule')) {
   const set = new Set(changed)
   /* A page reviewed today has been read against today's changes already: a second change the same day
      cannot move the date. `reviewed:` is a human calendar date, so a UTC process also accepts the
@@ -143,7 +163,7 @@ if (changed) {
     if (set.has(p.file)) continue
     if (isReviewedForCurrentDate(p.reviewed || '', now)) continue
     const hit = changed.filter((f) => covers(p, f))
-    if (hit.length) fault(p.file, `stale — describes ${hit.slice(0, 3).join(', ')}${hit.length > 3 ? ` and ${hit.length - 3} more` : ''}, changed while the page was not (edit it, or set reviewed: having re-read it)`)
+    if (hit.length && !answered(hit)) fault(p.file, `stale — describes ${hit.slice(0, 3).join(', ')}${hit.length > 3 ? ` and ${hit.length - 3} more` : ''}, changed while the page was not (edit it; or set reviewed: having re-read it; or say in the commit message why it needed nothing — "Docs: none — <reason>")`)
   }
 }
 /*
@@ -421,7 +441,7 @@ if (json) { console.log(JSON.stringify({ ok: !faults.length, faults })); process
 if (faults.length) {
   console.error(`✖ the docs disagree with the code — ${faults.length} fault(s):`)
   for (const f of faults) console.error(`  ${f.page}: ${f.why}`)
-  console.error('The docs are part of the change: update the page, or set its reviewed: date having re-read it.')
+  console.error('The docs are part of the change: update the page, set its reviewed: date having re-read it, or say why it needed nothing ("Docs: none — <reason>" in the commit message).')
   process.exit(1)
 }
 console.log(`✔ the docs agree with the code (${pages.length} pages${changed ? `, ${changed.length} changed file(s)` : ''})`)
