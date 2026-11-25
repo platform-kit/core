@@ -801,7 +801,10 @@ posts-kicker: Community
 posts: Recent posts
 coaching-title: Coaching
 coaching-next: Your next session
-coaching-open: View session
+coaching-upcoming: Your upcoming sessions
+coaching-all: All sessions
+coaching-session: Session
+coaching-pending: Waiting to be confirmed
 coaching-none: No session booked
 coaching-included: Your plan includes coaching sessions.
 coaching-book: Book a session
